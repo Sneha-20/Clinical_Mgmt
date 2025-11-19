@@ -30,7 +30,9 @@ class PatientVisit(models.Model):
     present_complaint = models.CharField(max_length=255)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    status = models.CharField(max_length=50, default='pending')  # pending , in-progress, completed
+    appointment_date = models.DateField(blank=True, null=True)
+    
 class TestsRequired(models.Model):
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
     pta = models.BooleanField(default=False)
