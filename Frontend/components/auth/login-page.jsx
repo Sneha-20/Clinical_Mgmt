@@ -11,12 +11,12 @@ export default function LoginPage({ onLogin, onToggleSignup }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const demoAccounts = [
-    { email: 'reception@nois.com', password: 'demo123', role: 'reception' },
-    { email: 'audiologist@nois.com', password: 'demo123', role: 'audiologist' },
-    { email: 'speech@nois.com', password: 'demo123', role: 'speech' },
-    { email: 'admin@nois.com', password: 'demo123', role: 'admin' },
-  ]
+  // const demoAccounts = [
+  //   { email: 'reception@nois.com', password: 'demo123', role: 'reception' },
+  //   { email: 'audiologist@nois.com', password: 'demo123', role: 'audiologist' },
+  //   { email: 'speech@nois.com', password: 'demo123', role: 'speech' },
+  //   { email: 'admin@nois.com', password: 'demo123', role: 'admin' },
+  // ]
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -88,7 +88,7 @@ export default function LoginPage({ onLogin, onToggleSignup }) {
               </Button>
             </form>
 
-            <div className="border-t pt-4 sm:pt-6 space-y-3">
+            {/* <div className="border-t pt-4 sm:pt-6 space-y-3">
               <p className="text-xs sm:text-sm font-medium text-muted-foreground">Demo Accounts:</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-2">
                 <Button
@@ -128,7 +128,7 @@ export default function LoginPage({ onLogin, onToggleSignup }) {
                   Admin
                 </Button>
               </div>
-            </div>
+            </div> */}
 
             <div className="border-t pt-4 sm:pt-6 text-center">
               <p className="text-xs sm:text-sm text-muted-foreground mb-3">

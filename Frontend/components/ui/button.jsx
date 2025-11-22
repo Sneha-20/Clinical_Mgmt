@@ -1,6 +1,6 @@
 import React from 'react'
 import { Slot } from '@radix-ui/react-slot'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils/tailwindutils'
 
 const buttonVariants = {
   default: 'bg-teal-600 text-white hover:bg-teal-700 active:bg-teal-800',

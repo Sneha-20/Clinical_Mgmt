@@ -40,7 +40,7 @@ export default function DashboardLayout({ children }) {
 
       <aside className={`${
         sidebarOpen ? 'w-64' : 'w-0'
-      } lg:w-64 bg-white border-r border-slate-200 transition-all duration-300 flex flex-col fixed lg:static h-full z-50 lg:z-auto overflow-hidden`}>
+      } lg:w-64 bg-sidebar border-r border-slate-200 transition-all duration-300 flex flex-col fixed lg:static h-full z-50 lg:z-auto overflow-hidden`}>
         <SidebarNav role={userRole} onItemClick={() => setSidebarOpen(false)} />
       </aside>
 

@@ -16,7 +16,7 @@ export default function Home() {
 
   const handleSignup = (role) => {
     localStorage.setItem('userRole', role)
-    router.push('/dashboard')
+    // router.push('/dashboard')
   }
 
   return showSignup ? (
