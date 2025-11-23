@@ -1,17 +1,23 @@
-import React from 'react'
-import { cn } from '@/lib/utils/tailwindutils'
+import React from "react";
+import { cn } from "@/lib/utils/tailwindutils";
 
-const Input = React.forwardRef(({ className, type, ...props }, ref) => (
-  <input
-    type={type}
-    className={cn(
-      'flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-      className
-    )}
-    ref={ref}
-    {...props}
-  />
-))
-Input.displayName = 'Input'
+const Input = React.forwardRef(
+  ({ label, error, className, type, ...props }, ref) => (
+    <div>
+      <label className="block text-sm font-medium mb-1.5">{label}</label>
+      <input
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:lightblue focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+    </div>
+  )
+);
+Input.displayName = "Input";
 
-export { Input }
+export { Input };

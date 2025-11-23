@@ -5,7 +5,6 @@ import { useDispatch } from "react-redux";
 
 import { staticText } from "@/lib/utils/constants/staticText";
 import { registerSchema } from "@/lib/utils/schema";
-import { extractYupErrors } from "@/lib/utils/helper/ExtractError";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,12 +16,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import { CheckCircle } from "lucide-react";
 import DropDown from "../ui/dropdown";
 import { showToast } from "../ui/toast";
 
 import { register } from "@/lib/services/auth";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
+import RoleSelection from "../ui/RoleSelection";
+import { extractYupErrors } from "@/lib/utils/helper/extractError";
 
 export default function SignupPage({ onSignup, onToggleLogin }) {
   const dispatch = useDispatch();
@@ -32,13 +32,13 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
     email: "",
     password: "",
     confirmPassword: "",
-    clinic_id: "",
+    clinic_id: null,
     role_id: "",
     phone: "",
   });
 
   const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState(false);
+  // const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // -------------------------------
@@ -92,12 +92,11 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     dispatch(startLoading());
-    setSuccess(false);
+    // setSuccess(false);
 
     try {
       await registerSchema.validate(formData, { abortEarly: false });
       setErrors({});
-
       const payload = {
         clinic_id: formData.clinic_id,
         role_id: formData.role_id,
@@ -113,7 +112,7 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
         message: res?.message || "Account created successfully!",
       });
 
-      setSuccess(true);
+      // setSuccess(true);
 
       setTimeout(() => {
         onSignup(formData.role_id);
@@ -149,19 +148,11 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
             <CardTitle>Create Your Account</CardTitle>
             <CardDescription>Join NOIS to manage your clinic</CardDescription>
           </CardHeader>
-
           <CardContent>
-            {success && (
-              <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg mb-5">
-                <CheckCircle className="w-5 h-5" />
-                Account created successfully! Redirecting...
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Full Name + Phone */}
               <div className="grid sm:grid-cols-2 gap-5">
-                <InputField
+                <Input
                   label="Full Name"
                   name="fullName"
                   value={formData.fullName}
@@ -170,7 +161,7 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
                   error={errors.fullName}
                 />
 
-                <InputField
+                <Input
                   label="Phone"
                   name="phone"
                   type="tel"
@@ -193,7 +184,7 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
               />
 
               {/* Email */}
-              <InputField
+              <Input
                 label="Email"
                 name="email"
                 type="email"
@@ -205,7 +196,7 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
 
               {/* Password + Confirm */}
               <div className="grid sm:grid-cols-2 gap-5">
-                <InputField
+                <Input
                   label="Password"
                   name="password"
                   type="password"
@@ -256,15 +247,7 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
    Reusable Sub Components
 ---------------------------------- */
 
-function InputField({ label, error, ...props }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium mb-1.5">{label}</label>
-      <Input {...props} className="bg-input text-sm" />
-      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-    </div>
-  );
-}
+
 
 function PasswordField({ label, showPassword, setShowPassword, error, ...props }) {
   return (
@@ -289,32 +272,4 @@ function PasswordField({ label, showPassword, setShowPassword, error, ...props }
   );
 }
 
-function RoleSelection({ options, selected, onSelect, error }) {
-  return (
-    <div>
-      <label className="block text-sm font-medium mb-2">Select Your Role</label>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        {options.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelect(item.id)}
-            className={`p-4 rounded-lg border-2 transition-all text-left ${
-              selected === item.id
-                ? "border-primary bg-primary/5"
-                : "border-input hover:border-primary/50"
-            }`}
-          >
-            <div className="font-medium text-sm">{item.label}</div>
-            <div className="text-xs text-muted-foreground">
-              {item.description}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-    </div>
-  );
-}

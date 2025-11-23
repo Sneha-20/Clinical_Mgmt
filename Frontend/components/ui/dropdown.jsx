@@ -8,6 +8,7 @@ export default function DropDown({
   placeholder = "Select an option",
   error,
   className = "",
+  name={name}
 }) {
   return (
     <div className={`flex flex-col gap-1 w-full ${className}`}>
@@ -20,12 +21,12 @@ export default function DropDown({
 
       <select
         value={value ?? ""} 
-        onChange={(e) => onChange("clinic_id", Number(e.target.value))}
+        onChange={(e) => onChange(name, Number(e.target.value))}
         className={`
           w-full px-3 py-3 rounded-lg 
           border text-gray-800 
-          focus:outline-none focus:ring-2 
-          focus:ring-teal-600 focus:border-teal-600 
+          focus:outline-none focus:ring-2 focus:ring-offset-2
+          focus:lightblue 
           transition
           ${error ? "border-red-500" : "border-gray-300"}
         `}

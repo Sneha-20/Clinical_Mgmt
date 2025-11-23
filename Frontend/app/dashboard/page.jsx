@@ -30,7 +30,7 @@ export default function Dashboard() {
       case 'speech':
         return <div className="text-center py-12"><p className="text-muted-foreground">Speech Therapist Dashboard - Coming Soon</p></div>
       default:
-        return null
+        return <ReceptionDashboard />
     }
   }
 

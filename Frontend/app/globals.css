@@ -10,6 +10,7 @@
   :root {
     --background: oklch(0.98 0 0);
     --foreground: oklch(0.15 0 0);
+    --primary-text: rgba(20, 67, 91);
 
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.15 0 0);
@@ -17,11 +18,13 @@
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.15 0 0);
 
-    --primary: oklch(0.42 0.12 200.5);
-    --primary-foreground: oklch(1 0 0);
+    /* --primary: rgba(36, 171, 213); */
+     --primary: rgba(0, 173, 238);
+    --primary-foreground: rgba(9, 162, 211);
 
-    --secondary: oklch(0.50 0.08 210.8);
-    --secondary-foreground: oklch(1 0 0);
+    --secondary: rgba(71, 173, 196);
+    --secondary-foreground: rgba(60, 154, 177);
+    --secondary-ligh: rgba(124, 207, 222);
 
     --muted: oklch(0.93 0 0);
     --muted-foreground: oklch(0.50 0 0);
@@ -44,7 +47,7 @@
 
     --radius: 0.5rem;
 
-    --sidebar: oklch(0.95 0.01 200);
+    --sidebar: rgba(229, 244, 249);
     --sidebar-foreground: oklch(0.15 0 0);
     --sidebar-primary: oklch(0.42 0.12 200.5);
     --sidebar-primary-foreground: oklch(1 0 0);

@@ -44,7 +44,7 @@ export default function ReceptionDashboard() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-teal-600">Patient Management</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primaryText">Patient Management</h1>
           <p className="text-xs sm:text-sm text-slate-600 mt-1">Manage patient registrations and daily operations</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">

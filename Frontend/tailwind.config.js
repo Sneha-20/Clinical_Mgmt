@@ -12,6 +12,8 @@ const config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        primaryText: "var(--primary-text)",
+        lightblue: "var(--secondary-light)",
 
         card: {
           DEFAULT: "var(--card)",

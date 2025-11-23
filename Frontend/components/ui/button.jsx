@@ -3,9 +3,9 @@ import { Slot } from '@radix-ui/react-slot'
 import { cn } from '@/lib/utils/tailwindutils'
 
 const buttonVariants = {
-  default: 'bg-teal-600 text-white hover:bg-teal-700 active:bg-teal-800',
+  default: 'bg-secondary text-white hover:bg-secondary-foreground active:bg-teal-800',
   destructive: 'bg-red-600 text-white hover:bg-red-700',
-  outline: 'border-2 border-teal-600 text-teal-600 hover:bg-teal-50',
+  outline: 'border-2 border-secondary text-secondary hover:bg-secondary hover:text-white',
   secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
   ghost: 'hover:bg-gray-100 text-gray-700',
   link: 'text-teal-600 underline hover:text-teal-700'
