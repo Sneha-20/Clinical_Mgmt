@@ -3,6 +3,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from .models import User, Clinic, Role
+import re
 
 class ClinicSimpleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -76,6 +77,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'password', 'name', 'clinic', 'clinic_id', 'role_id', 'phone',)
+
+
+    def validate_phone(self, value):
+        if not re.fullmatch(r'\d{10}', (value or '').strip()):
+            raise serializers.ValidationError("phone must be exactly 10 digits.")
+        return value
+    
 
     def create(self, validated_data):
         role_id = validated_data.pop('role_id', None)
