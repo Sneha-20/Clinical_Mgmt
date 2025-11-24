@@ -25,7 +25,7 @@ class TokenWithClinicSerializer(serializers.Serializer):
     refresh = serializers.CharField(read_only=True)
     user = serializers.DictField(read_only=True)
     clinic = ClinicSimpleSerializer(read_only=True)
-    role_name = serializers.CharField(read_only=True)
+    role = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -64,7 +64,7 @@ class TokenWithClinicSerializer(serializers.Serializer):
                 'id': user.id,
                 'email': user.email,
                 'name': getattr(user, 'name', ''),
-                'role_name': role_data,
+                'role': role_data,
             },
             'clinic': ClinicSimpleSerializer(user.clinic).data,
         }
