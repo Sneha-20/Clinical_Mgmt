@@ -60,13 +60,13 @@ class TokenWithClinicSerializer(serializers.Serializer):
         return {
             'access': access,
             'refresh': refresh,
-            # 'user': {
-            #     'id': user.id,
-            #     'email': user.email,
-            #     'name': getattr(user, 'name', ''),
-            'role_name': role_data['name'],
-            # },
-            'clinic': ClinicSimpleSerializer(user.clinic).data['name'],
+            'user': {
+                'id': user.id,
+                'email': user.email,
+                'name': getattr(user, 'name', ''),
+                'role_name': role_data,
+            },
+            'clinic': ClinicSimpleSerializer(user.clinic).data,
         }
 
 class RegisterSerializer(serializers.ModelSerializer):
