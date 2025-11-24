@@ -75,3 +75,23 @@ class ChangePasswordView(APIView):
         user.set_password(new_password)
         user.save()
         return Response({"status": 200, "message": "Password changed successfully"}, status=status.HTTP_200_OK)
+    
+
+class ProfileView(APIView):
+    permission_classes = [isAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        role_data = RoleSimpleSerializer(user.role).data if user.role else None
+        clinic_data = ClinicSimpleSerializer(user.clinic).data if user.clinic else None
+
+        user_data = {
+            'id': user.id,
+            'email': user.email,
+            'name': getattr(user, 'name', ''),
+            'phone': getattr(user, 'phone', ''),
+            'role': role_data,
+            'clinic': clinic_data,
+        }
+
+        return Response({"status": 200, "data": user_data}, status=status.HTTP_200_OK)
