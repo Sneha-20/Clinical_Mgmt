@@ -21,13 +21,13 @@ export default function Dashboard() {
 
   const renderDashboard = () => {
     switch (userRole) {
-      case 'reception':
+      case 'Reception':
         return <ReceptionDashboard />
-      case 'audiologist':
+      case 'Audiologist':
         return <AudiologistDashboard />
-      case 'admin':
+      case 'Admin':
         return <AdminDashboard />
-      case 'speech':
+      case 'Speech':
         return <div className="text-center py-12"><p className="text-muted-foreground">Speech Therapist Dashboard - Coming Soon</p></div>
       default:
         return <ReceptionDashboard />
