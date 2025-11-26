@@ -8,6 +8,7 @@ class PatientVisitSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientVisit
         fields = [
+            'id',
             'visit_type', 
             # 'purpose_of_visit', 
             'present_complaint', 
@@ -98,7 +99,28 @@ class PatientListRegistrationSerializer(serializers.ModelSerializer):
             'id', 'name', 'age', 'email','phone_primary', 'city']
         
 
-# class Pati
+class PatientDetailSerializer(serializers.ModelSerializer):
+    # latest visit details
+    latest_visit = serializers.SerializerMethodField()
+    # total visits count
+    total_visits = serializers.SerializerMethodField()
+
+
+    def get_latest_visit(self, obj):
+        latest = obj.visits.order_by('-id').first()
+        if latest:
+            return PatientVisitSerializer(latest).data
+        return None
+
+    def get_total_visits(self, obj):
+         return obj.visits.count()
+
+    class Meta:
+        model = Patient
+        fields = [
+            'id', 'name', 'age', 'dob', 'email', 'gender','phone_primary', 'phone_secondary', 'city', 'address',
+            'referral_type', 'referral_doctor', 'created_at', 'updated_at', 'latest_visit', 'total_visits'
+        ]
 
     
     

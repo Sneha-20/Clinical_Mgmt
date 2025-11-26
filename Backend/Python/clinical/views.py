@@ -4,8 +4,8 @@ from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from .serializers import PatientRegistrationSerializer ,PatientListRegistrationSerializer       
-from .models import Patient
+from .serializers import PatientRegistrationSerializer ,PatientListRegistrationSerializer ,PatientDetailSerializer ,PatientVisitSerializer     
+from .models import Patient,PatientVisit
 from clinical_be.utils.pagination import StandardResultsSetPagination
 # Create your views here.
 class PatientRegistrationView(generics.CreateAPIView):
@@ -54,3 +54,35 @@ class PatientListView(generics.ListAPIView):
                 return self.get_paginated_response({"status": 200, "data": serializer.data})
             serializer = self.get_serializer(queryset, many=True)
             return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+    
+
+class PatientDetailView(generics.RetrieveAPIView):  
+    queryset = Patient.objects.all()
+    serializer_class = PatientDetailSerializer
+    permission_classes = [IsAuthenticated]  # Ensure user is logged in
+    lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+
+# GET /patients/<id>/visits
+class PatientVisitsView(generics.ListAPIView):
+    serializer_class = PatientVisitSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.kwargs['id']
+        return PatientVisit.objects.filter(patient__id=patient_id).order_by('-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response({"status": 200, "data": serializer.data})
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+    

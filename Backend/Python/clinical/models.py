@@ -20,7 +20,7 @@ class Patient(models.Model):
 
 class PatientVisit(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='visits')
     seen_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     visit_type = models.CharField(max_length=255)  # e.g., New, Follow-up, Service
     # purpose_of_visit = models.CharField(max_length=255, blank=True, null=True)
