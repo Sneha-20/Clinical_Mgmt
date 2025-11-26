@@ -89,6 +89,16 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             )
 
         return patient
+    
+
+class PatientListRegistrationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Patient
+        fields = [
+            'id', 'name', 'age', 'email','phone_primary', 'city']
+        
+
+# class Pati
 
     
     

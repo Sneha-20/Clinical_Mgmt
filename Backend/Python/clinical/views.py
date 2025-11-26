@@ -4,9 +4,9 @@ from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from .serializers import PatientRegistrationSerializer          
+from .serializers import PatientRegistrationSerializer ,PatientListRegistrationSerializer       
 from .models import Patient
-
+from clinical_be.utils.pagination import StandardResultsSetPagination
 # Create your views here.
 class PatientRegistrationView(generics.CreateAPIView):
     queryset = Patient.objects.all()
@@ -37,3 +37,20 @@ class PatientRegistrationView(generics.CreateAPIView):
         self.perform_create(serializer)
         return Response({"status": 200, "message": "Patient registered successfully"},
                                 status=status.HTTP_200_OK)
+
+
+class PatientListView(generics.ListAPIView):
+    queryset = Patient.objects.all()
+    serializer_class = PatientListRegistrationSerializer
+    permission_classes = [IsAuthenticated]  # Ensure user is logged in
+    pagination_class = StandardResultsSetPagination
+
+    def list(self, request, *args, **kwargs):
+            self.queryset = self.queryset.filter(clinic=getattr(request.user, 'clinic', None)).order_by('-created_at')
+            queryset = self.get_queryset()
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response({"status": 200, "data": serializer.data})
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
