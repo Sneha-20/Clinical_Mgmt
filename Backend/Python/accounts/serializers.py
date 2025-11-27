@@ -41,6 +41,9 @@ class TokenWithClinicSerializer(serializers.Serializer):
 
         if not user.check_password(password):
             raise serializers.ValidationError("Invalid credentials")
+        
+        if user.is_approved is False:
+            raise serializers.ValidationError("User is not approved by admin yet")
 
         # ensure user is active
         if not user.is_active:
