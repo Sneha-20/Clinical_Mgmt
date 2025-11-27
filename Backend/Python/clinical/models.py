@@ -28,7 +28,7 @@ class PatientVisit(models.Model):
     test_requested = models.CharField(max_length=255, blank=True, null=True) # it will be dropdown in frontend
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=50, default='pending')  # pending , in-progress, completed
+    status = models.CharField(max_length=50,null=True)  # pending , in-progress, completed
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

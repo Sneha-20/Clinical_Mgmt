@@ -3,9 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticated as isAuthenticated
-from .models import Clinic , Role
+from rest_framework.permissions import IsAuthenticated
+from .models import Clinic , Role, User
 from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer
+from django.shortcuts import get_object_or_404
 
 def _first_error_message(errors):
     if isinstance(errors, dict):
@@ -57,7 +58,7 @@ class RegisterView(APIView):
 
 
 class ChangePasswordView(APIView):
-    permission_classes = [isAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         # Change password logic here
@@ -78,7 +79,7 @@ class ChangePasswordView(APIView):
     
 
 class ProfileView(APIView):
-    permission_classes = [isAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -95,3 +96,33 @@ class ProfileView(APIView):
         }
 
         return Response({"status": 200, "data": user_data}, status=status.HTTP_200_OK)
+    
+
+
+class ApproveUserView(APIView):
+    permission_classes = [IsAuthenticated]  # restrict to admin users in code below
+
+    def post(self, request, user_id):
+        # you can check role or is_staff/is_superuser
+        if not (request.user.is_superuser or request.user.is_staff or request.user.role.name == 'admin'):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        user = get_object_or_404(User, pk=user_id)
+        user.is_approved = True
+        user.is_active = True  # allow login
+        user.save()
+        return Response({"status":status.HTTP_200_OK, 'message':'Approved' }, status=status.HTTP_200_OK)
+
+class RejectUserView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        if not (request.user.is_superuser or request.user.is_staff):
+            return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+
+        user = get_object_or_404(User, pk=user_id)
+        # either delete or mark as inactive/rejected
+        user.is_approved = False
+        user.is_active = False
+        user.save()
+        return Response({"status":status.HTTP_200_OK, "message":"Rejected" }, status=status.HTTP_200_OK)

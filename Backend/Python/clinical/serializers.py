@@ -92,11 +92,30 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         return patient
     
 
-class PatientListRegistrationSerializer(serializers.ModelSerializer):
+# class PatientListRegistrationSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Patient
+#         fields = [
+#             'id', 'name', 'age', 'email','phone_primary', 'city']
+
+
+class PatientVisitSerializer(serializers.ModelSerializer):
+    patient_id = serializers.IntegerField(source='patient.id', read_only=True)
+    patient_name = serializers.CharField(source='patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    visit_id = serializers.IntegerField(source='id', read_only=True)
+
     class Meta:
-        model = Patient
+        model = PatientVisit
         fields = [
-            'id', 'name', 'age', 'email','phone_primary', 'city']
+            'visit_id',
+            'visit_type', 
+            'appointment_date',
+            'status',
+            'patient_id',
+            'patient_name',
+            'patient_phone'
+        ]
         
 
 class PatientDetailSerializer(serializers.ModelSerializer):
@@ -124,3 +143,30 @@ class PatientDetailSerializer(serializers.ModelSerializer):
 
     
     
+class PatientVisitCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientVisit
+        fields = [
+            'patient',  # Expecting patient ID to link the visit
+            'visit_type', 
+            'present_complaint', 
+            'test_requested', 
+            'notes', 
+            'appointment_date'
+        ]
+    
+    def create(self, validated_data):
+        request = self.context.get('request')
+        current_clinic = getattr(request.user, 'clinic', None)
+
+        visit_type = validated_data.get('visit_type')
+        if visit_type in ['TGA / Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+            status_value = 'Pending for Service'
+        else:
+            status_value = 'Test pending'
+                   
+        return PatientVisit.objects.create(
+            clinic=current_clinic,
+            status=status_value,
+            **validated_data
+        )

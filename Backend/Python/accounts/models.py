@@ -25,6 +25,8 @@ class UserManager(BaseUserManager):
             raise ValueError("Users must have an email address")
 
         email = self.normalize_email(email)
+        # when users self-register they should not be active until approved
+        extra_fields.setdefault('is_active', False)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)  # hashes password
         user.save(using=self._db)
@@ -33,10 +35,11 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('role', 'admin')
-
+        admin_role, _ = Role.objects.get_or_create(name='Admin')
+        extra_fields.setdefault('role', admin_role)        # superusers must be active and approved
+        extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('is_approved', True)
         return self.create_user(email, password, **extra_fields)
-
 
 class User(AbstractBaseUser, PermissionsMixin):
     clinic = models.ForeignKey("Clinic", on_delete=models.SET_NULL, null=True, blank=True)
@@ -47,8 +50,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     phone = models.CharField(max_length=50, unique=True, null=True, blank=True)
 
     email = models.EmailField(unique=True)
-    
-    is_active = models.BooleanField(default=True)
+
+    is_approved = models.BooleanField(default=False)
+
+    is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)

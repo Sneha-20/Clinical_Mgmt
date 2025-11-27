@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from .serializers import PatientRegistrationSerializer ,PatientListRegistrationSerializer ,PatientDetailSerializer ,PatientVisitSerializer     
+from .serializers import PatientRegistrationSerializer ,PatientVisitSerializer ,PatientDetailSerializer ,PatientVisitSerializer ,PatientVisitCreateSerializer    
 from .models import Patient,PatientVisit
 from clinical_be.utils.pagination import StandardResultsSetPagination
 # Create your views here.
@@ -39,9 +39,9 @@ class PatientRegistrationView(generics.CreateAPIView):
                                 status=status.HTTP_200_OK)
 
 
-class PatientListView(generics.ListAPIView):
-    queryset = Patient.objects.all()
-    serializer_class = PatientListRegistrationSerializer
+class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
+    queryset = PatientVisit.objects.all()
+    serializer_class = PatientVisitSerializer
     permission_classes = [IsAuthenticated]  # Ensure user is logged in
     pagination_class = StandardResultsSetPagination
 
@@ -72,6 +72,8 @@ class PatientDetailView(generics.RetrieveAPIView):
 class PatientVisitsView(generics.ListAPIView):
     serializer_class = PatientVisitSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
 
     def get_queryset(self):
         patient_id = self.kwargs['id']
@@ -85,4 +87,47 @@ class PatientVisitsView(generics.ListAPIView):
             return self.get_paginated_response({"status": 200, "data": serializer.data})
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+    
+
+
+# Add Visit Records 
+class PatientVisitCreateView(generics.CreateAPIView):
+    queryset = PatientVisit.objects.all()
+    serializer_class = PatientVisitCreateSerializer
+    permission_classes = [IsAuthenticated]
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        if not serializer.is_valid():
+            return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_create(serializer)   
+        return Response({"status": 200, "message": "Patient visit created successfully"},
+                                status=status.HTTP_200_OK)
+    
+
+
+# Today Patient visit records 
+class TodayPatientVisitsView(generics.ListAPIView):
+    serializer_class = PatientVisitSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+
+
+    def get_queryset(self):
+        from django.utils import timezone
+        today = timezone.now().date()
+        return PatientVisit.objects.filter(appointment_date=today, clinic=getattr(self.request.user, 'clinic', None)).order_by('-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response({"status": 200, "data": serializer.data})
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+
+
+
+
     
