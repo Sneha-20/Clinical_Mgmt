@@ -92,7 +92,12 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         # current_clinic = current_user.profile.clinic if current_user else None 
         current_clinic = getattr(request.user, 'clinic', None)
 
-        
+        visit_type = visit_data.get('visit_type')
+        if visit_type in ['TGA / Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+            status_value = 'Pending for Service'
+        else:
+            status_value = 'Test pending'
+                   
         # C. Atomic Transaction
         with transaction.atomic():
             # 1. Create the Patient
@@ -107,7 +112,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             PatientVisit.objects.create(
                 patient=patient,
                 clinic=patient.clinic, # Inherit clinic from patient
-                status='pending',      # Default status
+                status=status_value,      # Default status
                 **visit_data
             )
 
