@@ -4,11 +4,18 @@ from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
-from .serializers import PatientRegistrationSerializer ,PatientVisitSerializer ,PatientDetailSerializer ,PatientVisitSerializer ,PatientVisitCreateSerializer    
+from .serializers import (PatientRegistrationSerializer ,PatientAllVisitSerializer ,PatientDetailSerializer ,PatientVisitSerializer ,
+PatientVisitCreateSerializer,PatientListSerializer,PatientVisitUpdateSerializer,PatientUpdateSerializer)
 from .models import Patient,PatientVisit
 from clinical_be.utils.pagination import StandardResultsSetPagination
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+
 # Create your views here.
+
+
 class PatientRegistrationView(generics.CreateAPIView):
+    ''' Register a new Patient along with an initial visit record '''
     queryset = Patient.objects.all()
     serializer_class = PatientRegistrationSerializer
     permission_classes = [IsAuthenticated] # Ensure user is logged in
@@ -37,17 +44,48 @@ class PatientRegistrationView(generics.CreateAPIView):
         self.perform_create(serializer)
         return Response({"status": 200, "message": "Patient registered successfully"},
                                 status=status.HTTP_200_OK)
+    
+
+# Edit Patient Visit Records
+class PatientUpdateView(generics.UpdateAPIView):
+    ''' Update Patient Details '''
+    queryset = Patient.objects.all()
+    serializer_class = PatientUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
+        if not serializer.is_valid():
+            return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_update(serializer)
+        return Response({"status": 200, "message": "Patient details updated successfully"},
+                                status=status.HTTP_200_OK)
 
 
 class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
+    ''' 
+    List all Patient Visits 
+    Supports filtering by status, visit_type, appointment_date
+    URL parameters example: ?status=pending&visit_type=New
+    Supports searching by patient name or phone number
+    URL parameters example: ?search=John
+
+    '''
     queryset = PatientVisit.objects.all()
     serializer_class = PatientVisitSerializer
     permission_classes = [IsAuthenticated]  # Ensure user is logged in
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend,SearchFilter]
+    search_fields = ['patient__name','patient__phone_primary']
+    filterset_fields = ['status','visit_type', 'appointment_date']
+    
 
     def list(self, request, *args, **kwargs):
             self.queryset = self.queryset.filter(clinic=getattr(request.user, 'clinic', None)).order_by('-created_at')
-            queryset = self.get_queryset()
+            queryset = self.filter_queryset(self.get_queryset())
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -57,6 +95,7 @@ class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
     
 
 class PatientDetailView(generics.RetrieveAPIView):  
+    ''' Retrieve Patient Details along with latest visit and total visits '''
     queryset = Patient.objects.all()
     serializer_class = PatientDetailSerializer
     permission_classes = [IsAuthenticated]  # Ensure user is logged in
@@ -70,10 +109,10 @@ class PatientDetailView(generics.RetrieveAPIView):
 
 # GET /patients/<id>/visits
 class PatientVisitsView(generics.ListAPIView):
-    serializer_class = PatientVisitSerializer
+    ''' List all visits for a specific patient '''
+    serializer_class = PatientAllVisitSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-
 
     def get_queryset(self):
         patient_id = self.kwargs['id']
@@ -92,6 +131,7 @@ class PatientVisitsView(generics.ListAPIView):
 
 # Add Visit Records 
 class PatientVisitCreateView(generics.CreateAPIView):
+    ''' Create a new Patient Visit record '''
     queryset = PatientVisit.objects.all()
     serializer_class = PatientVisitCreateSerializer
     permission_classes = [IsAuthenticated]
@@ -103,10 +143,29 @@ class PatientVisitCreateView(generics.CreateAPIView):
         return Response({"status": 200, "message": "Patient visit created successfully"},
                                 status=status.HTTP_200_OK)
     
+# Edit the visit records 
+class PatientVisitUpdateView(generics.UpdateAPIView):  
+    ''' Update Patient Visit Details '''     
+    queryset = PatientVisit.objects.all()
+    serializer_class = PatientVisitUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
+        if not serializer.is_valid():
+            return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_update(serializer)
+        return Response({"status": 200, "message": "Patient visit updated successfully"},
+                                status=status.HTTP_200_OK)
+    
 
 
 # Today Patient visit records 
 class TodayPatientVisitsView(generics.ListAPIView):
+    ''' List all Patient Visits for Today '''
     serializer_class = PatientVisitSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
@@ -126,6 +185,22 @@ class TodayPatientVisitsView(generics.ListAPIView):
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
+
+
+# Patient Flat list for dropdowns and search by name
+class PatientFlatListView(generics.ListAPIView):
+    queryset = Patient.objects.values('id', 'name', 'email', 'phone_primary')
+    serializer_class = PatientListSerializer
+    permission_classes = [IsAuthenticated]  # Ensure user is logged in
+    filter_backends = [DjangoFilterBackend,SearchFilter]
+    search_fields = ['name','phone_primary']
+    
+
+    def list(self, request, *args, **kwargs):
+            self.queryset = self.queryset.filter(clinic=getattr(request.user, 'clinic', None)).order_by('name')
+            queryset = self.filter_queryset(self.get_queryset())
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
 
 

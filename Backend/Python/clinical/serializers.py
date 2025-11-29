@@ -4,7 +4,7 @@ from rest_framework import serializers
 from django.db import transaction
 import re
 
-class PatientVisitSerializer(serializers.ModelSerializer):
+class PatientAllVisitSerializer(serializers.ModelSerializer):
     class Meta:
         model = PatientVisit
         fields = [
@@ -21,7 +21,7 @@ class PatientVisitSerializer(serializers.ModelSerializer):
 # 2. Main Serializer for Registration
 class PatientRegistrationSerializer(serializers.ModelSerializer):
     # Define the nested field (write_only because we don't need to read it back in this specific structure usually)
-    visit_details = PatientVisitSerializer(write_only=True)
+    visit_details = PatientAllVisitSerializer(write_only=True)
 
     class Meta:
         model = Patient
@@ -92,11 +92,21 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         return patient
     
 
-# class PatientListRegistrationSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Patient
-#         fields = [
-#             'id', 'name', 'age', 'email','phone_primary', 'city']
+# Edit Patient record 
+class PatientDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Patient
+        fields = [
+             'name', 'age', 'dob', 'email', 'gender','phone_primary', 'phone_secondary', 'city', 'address',
+            'referral_type', 'referral_doctor'
+        ]               
+    
+# Flat List Serializer for dropdowns and search
+class PatientListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Patient
+        fields = [
+            'id', 'name' , 'email', 'phone_primary']
 
 
 class PatientVisitSerializer(serializers.ModelSerializer):
@@ -118,7 +128,7 @@ class PatientVisitSerializer(serializers.ModelSerializer):
         ]
         
 
-class PatientDetailSerializer(serializers.ModelSerializer):
+class PatientUpdateSerializer(serializers.ModelSerializer):
     # latest visit details
     latest_visit = serializers.SerializerMethodField()
     # total visits count
@@ -170,3 +180,15 @@ class PatientVisitCreateSerializer(serializers.ModelSerializer):
             status=status_value,
             **validated_data
         )
+    
+# Edit Patient Visit Serializer (used in Update View)
+class PatientVisitUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientVisit
+        fields = [
+            'visit_type', 
+            'present_complaint', 
+            'test_requested', 
+            'notes', 
+            'appointment_date'
+        ]
