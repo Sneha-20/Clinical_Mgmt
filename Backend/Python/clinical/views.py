@@ -203,8 +203,47 @@ class PatientFlatListView(generics.ListAPIView):
             serializer = self.get_serializer(queryset, many=True)
             return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
     
+
+    
 # Dashboard Tile records count 
 # Total patients , today's visits , pending visits etc can be added here in future
+class DashboardStatsView(APIView):
+    permission_classes = [IsAuthenticated, ReceptionistPermission]
+
+    def get(self, request, *args, **kwargs):
+        from django.utils import timezone
+        today = timezone.now().date()
+        clinic = getattr(request.user, 'clinic', None)
+
+        role = getattr(request.user.role, 'name', None)
+        data = {}
+
+        # If the user.role == 'Reception', show the dashboard
+        if role == 'Reception':
+            total_patients = Patient.objects.filter(clinic=clinic).count()
+            todays_visits = PatientVisit.objects.filter(
+                appointment_date=today, clinic=clinic
+            ).count()
+            pending_tests = PatientVisit.objects.filter(
+                status='Test pending', clinic=clinic
+            ).count()
+            followup_visits = PatientVisit.objects.filter(
+                visit_type='Follow-up', clinic=clinic
+            ).count()
+
+            data = {
+                "total_patients": total_patients,
+                "todays_visits": todays_visits,
+                "pending_visits": pending_tests,
+                "followup_visits": followup_visits
+            }
+
+        else:
+            # Should not normally happen because permission already blocks it
+            data = {"error": "Access restricted to Receptionists only."}
+
+        return Response({"status": 200, "data": data}, status=status.HTTP_200_OK)
+
 
 
 

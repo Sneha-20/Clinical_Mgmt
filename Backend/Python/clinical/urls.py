@@ -2,7 +2,7 @@
 # ...existing code...
 from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
-                    PatientVisitUpdateView,PatientUpdateView,PatientFlatListView)
+                    PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView)
 
 urlpatterns = [
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
@@ -15,6 +15,10 @@ urlpatterns = [
    path('patient/visit/<int:id>/update/', PatientVisitUpdateView.as_view(), name='patient_visit_update'), # Update patient visit
    path('patient/<int:id>/update/', PatientUpdateView.as_view(), name='patient_update'), # Update patient details
    path('patient/flat-list/', PatientFlatListView.as_view(), name='patient_flat_list'), # Flat list of patients for dropdowns and search by name
+
+   path('dashboard/stats/', DashboardStatsView.as_view(), name='dashboard_stats'), # Dashboard statistics
+
+
 
 
 
