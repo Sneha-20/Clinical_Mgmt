@@ -10,6 +10,7 @@ from .models import Patient,PatientVisit
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
+from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission, AuditorPermission, SppechTherapistPermission
 
 # Create your views here.
 
@@ -18,7 +19,7 @@ class PatientRegistrationView(generics.CreateAPIView):
     ''' Register a new Patient along with an initial visit record '''
     queryset = Patient.objects.all()
     serializer_class = PatientRegistrationSerializer
-    permission_classes = [IsAuthenticated] # Ensure user is logged in
+    permission_classes = [IsAuthenticated,ReceptionistPermission] # Ensure user is logged in
 
     # The 'create' logic is handled inside the serializer, 
     # but we can override perform_create if we needed simple logic. 
@@ -51,7 +52,7 @@ class PatientUpdateView(generics.UpdateAPIView):
     ''' Update Patient Details '''
     queryset = Patient.objects.all()
     serializer_class = PatientUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,ReceptionistPermission]
     lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
 
     def update(self, request, *args, **kwargs):
@@ -76,7 +77,7 @@ class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
     '''
     queryset = PatientVisit.objects.all()
     serializer_class = PatientVisitSerializer
-    permission_classes = [IsAuthenticated]  # Ensure user is logged in
+    permission_classes = [IsAuthenticated,ReceptionistPermission]  # Ensure user is logged in
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend,SearchFilter]
     search_fields = ['patient__name','patient__phone_primary']
@@ -98,7 +99,7 @@ class PatientDetailView(generics.RetrieveAPIView):
     ''' Retrieve Patient Details along with latest visit and total visits '''
     queryset = Patient.objects.all()
     serializer_class = PatientDetailSerializer
-    permission_classes = [IsAuthenticated]  # Ensure user is logged in
+    permission_classes = [IsAuthenticated,ReceptionistPermission]  # Ensure user is logged in
     lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
 
     def retrieve(self, request, *args, **kwargs):
@@ -111,7 +112,7 @@ class PatientDetailView(generics.RetrieveAPIView):
 class PatientVisitsView(generics.ListAPIView):
     ''' List all visits for a specific patient '''
     serializer_class = PatientAllVisitSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,ReceptionistPermission]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -134,7 +135,7 @@ class PatientVisitCreateView(generics.CreateAPIView):
     ''' Create a new Patient Visit record '''
     queryset = PatientVisit.objects.all()
     serializer_class = PatientVisitCreateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,ReceptionistPermission]
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
@@ -148,7 +149,7 @@ class PatientVisitUpdateView(generics.UpdateAPIView):
     ''' Update Patient Visit Details '''     
     queryset = PatientVisit.objects.all()
     serializer_class = PatientVisitUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,ReceptionistPermission]
     lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/
 
     def update(self, request, *args, **kwargs):
@@ -167,7 +168,7 @@ class PatientVisitUpdateView(generics.UpdateAPIView):
 class TodayPatientVisitsView(generics.ListAPIView):
     ''' List all Patient Visits for Today '''
     serializer_class = PatientVisitSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,ReceptionistPermission]
     pagination_class = StandardResultsSetPagination
 
 
@@ -201,6 +202,9 @@ class PatientFlatListView(generics.ListAPIView):
             queryset = self.filter_queryset(self.get_queryset())
             serializer = self.get_serializer(queryset, many=True)
             return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+    
+# Dashboard Tile records count 
+# Total patients , today's visits , pending visits etc can be added here in future
 
 
 

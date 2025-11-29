@@ -16,10 +16,11 @@ class RoleSimpleSerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
+# ...existing code...
 class TokenWithClinicSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-    clinic_id = serializers.IntegerField(write_only=True)
+    clinic_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
 
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)
@@ -33,7 +34,6 @@ class TokenWithClinicSerializer(serializers.Serializer):
         clinic_id = attrs.get('clinic_id')
 
         # authenticate using Django; fallback to manual check if needed
-        user = None
         try:
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
@@ -45,13 +45,18 @@ class TokenWithClinicSerializer(serializers.Serializer):
         if user.is_approved is False:
             raise serializers.ValidationError("User is not approved by admin yet")
 
-        # ensure user is active
         if not user.is_active:
             raise serializers.ValidationError("User account is disabled")
+        
+        # Admin users do not need to supply clinic_id / clinic membership check
+        is_admin = bool(user.role and getattr(user.role, 'name', '').strip().lower() == 'admin')
 
-        # check clinic membership
-        if not user.clinic or user.clinic.id != clinic_id:
-            raise serializers.ValidationError("User does not belong to the selected clinic")
+        if not is_admin:
+            # For non-admins clinic_id is required and must match user's clinic
+            if clinic_id is None:
+                raise serializers.ValidationError({"clinic_id": "clinic_id is required for non-admin users"})
+            if not user.clinic or user.clinic.id != clinic_id:
+                raise serializers.ValidationError("User does not belong to the selected clinic")
 
         # build tokens
         refresh = RefreshToken.for_user(user)
@@ -59,6 +64,7 @@ class TokenWithClinicSerializer(serializers.Serializer):
         refresh = str(refresh)
 
         role_data = RoleSimpleSerializer(user.role).data if user.role else None
+        clinic_data = ClinicSimpleSerializer(user.clinic).data if getattr(user, 'clinic', None) else None
 
         return {
             'access': access,
@@ -69,9 +75,9 @@ class TokenWithClinicSerializer(serializers.Serializer):
                 'name': getattr(user, 'name', ''),
                 'role': role_data,
             },
-            'clinic': ClinicSimpleSerializer(user.clinic).data,
+            'clinic': clinic_data,
         }
-
+# ...existing code...
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     role_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)

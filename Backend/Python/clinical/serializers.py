@@ -5,18 +5,40 @@ from django.db import transaction
 import re
 
 class PatientAllVisitSerializer(serializers.ModelSerializer):
+    
+    # Tell DRF what you expect from the API (list of strings)
+    test_requested = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+
     class Meta:
         model = PatientVisit
         fields = [
             'id',
             'visit_type', 
-            # 'purpose_of_visit', 
             'present_complaint', 
             'test_requested', 
             'notes', 
-            # 'seen_by',
             'appointment_date'
         ]
+
+    def validate_test_requested(self, value):
+        """Convert list → string before saving"""
+        if isinstance(value, list):
+            return ",".join(value)
+        return value
+
+    def to_representation(self, instance):
+        """Convert string → list for output"""
+        data = super().to_representation(instance)
+        
+        stored_value = instance.test_requested or ""
+
+        data["test_requested"] = (
+            stored_value.split(",") if stored_value else []
+        )
+        return data
 
 # 2. Main Serializer for Registration
 class PatientRegistrationSerializer(serializers.ModelSerializer):
