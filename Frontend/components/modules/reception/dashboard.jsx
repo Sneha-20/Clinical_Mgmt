@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -8,6 +8,7 @@ import { Plus, Search, Eye } from 'lucide-react'
 import PatientRegistrationForm from './patient-registration-form'
 import PatientProfile from './patient-profile'
 import BillingForm from './billing'
+import { createPatient, getPatientList } from '@/lib/services/dashboard'
 
 export default function ReceptionDashboard() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false)
@@ -15,21 +16,62 @@ export default function ReceptionDashboard() {
   const [showPatientProfile, setShowPatientProfile] = useState(false)
   const [selectedPatientId, setSelectedPatientId] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [patients, setPatients] = useState([
-    { id: 1, name: 'Rajesh Kumar', phone: '9876543210', complaint: 'Hearing problem', status: 'New Test', date: '2024-01-15', device: 'Resound Key 4' },
-    { id: 2, name: 'Priya Singh', phone: '9876543211', complaint: 'Follow-up', status: 'Follow-up', date: '2024-01-14', device: 'Phonak Audeo' },
-    { id: 3, name: 'Amit Patel', phone: '9876543212', complaint: 'Speech delay', status: 'Assessment Pending', date: '2024-01-13', device: '-' },
-  ])
+  const [patients, setPatients] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState({
+    totalItems: 0,
+    totalPages: 1,
+    currentPage: 1,
+  })
+ 
+  useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        setLoading(true)
+        const result = await getPatientList({ page: 1 })
+        // Map API response to component format
+        const mappedPatients = result.patients.map(patient => ({
+          id: patient.patient_id,
+          name: patient.patient_name,
+          phone: patient.patient_phone || '',
+          visitId: patient.visit_id,
+          visitType: patient.visit_type || 'New',
+          status: patient.status || 'Test Pending',
+          appointmentDate: patient.appointment_date, // Default or from API if available
+        }))
+        setPatients(mappedPatients)
+        setPagination({
+          totalItems: result.totalItems || 0,
+          totalPages: result.totalPages || 1,
+          currentPage: 1,
+        })
+      } catch (error) {
+        console.error('Error fetching patients:', error)
+        // Keep empty array on error, or show error message
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPatients()
+  }, [])
 
-  const handleAddPatient = (patientData) => {
-    setPatients([...patients, { ...patientData, id: patients.length + 1, date: new Date().toISOString().split('T')[0], device: '-' }])
-    setShowRegistrationForm(false)
-  }
-
-  const filteredPatients = patients.filter(p =>
+   const filteredPatients = patients.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.phone.includes(searchTerm)
   )
+  const handleAddPatient = async (patientData) => {
+    // PatientRegistrationForm
+    try{
+      console.log('Adding patient:', patientData)
+     const newPatient = await createPatient(patientData)
+    }catch(err){
+      console.error('Error adding patient:', err)
+    }
+    // setPatients([...patients, { ...patientData, id: patients.length + 1, date: new Date().toISOString().split('T')[0], device: '-' }])
+    setShowRegistrationForm(false)
+  }
+
+
 
   const handleViewProfile = (patientId) => {
     setSelectedPatientId(patientId)
@@ -59,7 +101,7 @@ export default function ReceptionDashboard() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard label="Total Patients" value="156" color="bg-blue-100" />
+        <StatCard label="Total Patients" value={pagination.totalItems.toString()} color="bg-blue-100" />
         <StatCard label="Today's Visits" value="12" color="bg-green-100" />
         <StatCard label="Pending Tests" value="5" color="bg-yellow-100" />
         <StatCard label="Follow-ups" value="8" color="bg-purple-100" />
@@ -75,7 +117,6 @@ export default function ReceptionDashboard() {
         <BillingForm
           onClose={() => setShowBillingForm(false)}
           onSubmit={() => {
-            console.log('Bill generated')
             setShowBillingForm(false)
           }}
         />
@@ -97,41 +138,51 @@ export default function ReceptionDashboard() {
             />
           </div>
 
-          <div className="overflow-x-auto -mx-3 sm:mx-0">
-            <table className="w-full text-xs sm:text-sm min-w-max sm:min-w-0">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr className="text-slate-600 text-left">
-                  <th className="py-2 px-2 sm:px-3 font-medium">Name</th>
-                  <th className="py-2 px-2 sm:px-3 font-medium hidden sm:table-cell">Phone</th>
-                  <th className="py-2 px-2 sm:px-3 font-medium hidden md:table-cell">Complaint</th>
-                  <th className="py-2 px-2 sm:px-3 font-medium hidden lg:table-cell">Device</th>
-                  <th className="py-2 px-2 sm:px-3 font-medium">Status</th>
-                  <th className="py-2 px-2 sm:px-3 font-medium text-center">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPatients.map((patient) => (
-                  <tr key={patient.id} className="border-b border-slate-200 hover:bg-slate-50">
-                    <td className="py-2 px-2 sm:px-3 font-medium">{patient.name}</td>
-                    <td className="py-2 px-2 sm:px-3 text-slate-600 hidden sm:table-cell">{patient.phone}</td>
-                    <td className="py-2 px-2 sm:px-3 text-slate-600 hidden md:table-cell text-xs">{patient.complaint}</td>
-                    <td className="py-2 px-2 sm:px-3 text-slate-600 text-xs hidden lg:table-cell">{patient.device}</td>
-                    <td className="py-2 px-2 sm:px-3">
-                      <span className="px-1.5 py-0.5 bg-teal-100 text-teal-700 rounded-full text-xs font-medium">
-                        {patient.status}
-                      </span>
-                    </td>
-                    <td className="py-2 px-2 sm:px-3 text-center">
-                      <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => handleViewProfile(patient.id)}>
-                        <Eye className="w-3 h-3" />
-                        <span className="hidden sm:inline">View</span>
-                      </Button>
-                    </td>
+          {loading ? (
+            <div className="text-center py-8 text-slate-500">
+              Loading patients...
+            </div>
+          ) : filteredPatients.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              No patients found
+            </div>
+          ) : (
+            <div className="overflow-x-auto -mx-3 sm:mx-0">
+              <table className="w-full text-xs sm:text-sm min-w-max sm:min-w-0">
+                <thead className="border-b border-slate-200 bg-slate-50">
+                  <tr className="text-slate-600 text-left">
+                    <th className="py-2 px-2 sm:px-3 font-medium">Name</th>
+                    <th className="py-2 px-2 sm:px-3 font-medium hidden sm:table-cell">Phone</th>
+                    <th className="py-2 px-2 sm:px-3 font-medium hidden md:table-cell">Purpose of visit</th>
+                    <th className="py-2 px-2 sm:px-3 font-medium hidden lg:table-cell">Appointment Date</th>
+                    <th className="py-2 px-2 sm:px-3 font-medium">Status</th>
+                    <th className="py-2 px-2 sm:px-3 font-medium text-center">Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredPatients.map((patient) => (
+                    <tr key={patient.id} className="border-b border-slate-200 hover:bg-slate-50">
+                      <td className="py-2 px-2 sm:px-3 font-medium">{patient.name}</td>
+                      <td className="py-2 px-2 sm:px-3 text-slate-600 hidden sm:table-cell">{patient.phone}</td>
+                      <td className="py-2 px-2 sm:px-3 text-slate-600 hidden md:table-cell text-xs">{patient.visitType}</td>
+                      <td className="py-2 px-2 sm:px-3 text-slate-600 text-xs hidden lg:table-cell">{patient.appointmentDate}</td>
+                      <td className="py-2 px-2 sm:px-3">
+                        <span className="px-1.5 py-0.5 bg-teal-100 text-teal-700 rounded-full text-xs font-medium">
+                          {patient.status}
+                        </span>
+                      </td>
+                      <td className="py-2 px-2 sm:px-3 text-center">
+                        <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => handleViewProfile(patient.id)}>
+                          <Eye className="w-3 h-3" />
+                          <span className="hidden sm:inline">View</span>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

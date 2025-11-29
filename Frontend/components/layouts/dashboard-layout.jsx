@@ -14,11 +14,11 @@ export default function DashboardLayout({ role, onLogout }) {
 
   const renderDashboard = () => {
     switch (role) {
-      case 'reception':
+      case 'Reception':
         return activeTab === 'inventory' ? <InventoryManagement /> : <ReceptionDashboard />
-      case 'audiologist':
+      case 'Audiologist':
         return <AudiologistDashboard />
-      case 'admin':
+      case 'Admin':
         return <AdminDashboard />
       default:
         return <div>Coming Soon</div>
@@ -66,8 +66,8 @@ export default function DashboardLayout({ role, onLogout }) {
         </div>
 
         {/* Main Navigation */}
-        <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
-          {role === 'reception' && (
+        <nav className="flex-1 p-3 space-y-2 overflow-y-auto test">
+          {role === 'Reception' && (
             <>
               <NavItem 
                 icon="👥" 
@@ -91,7 +91,7 @@ export default function DashboardLayout({ role, onLogout }) {
               <NavItem icon="💰" label="Billing" onClick={() => setSidebarOpen(false)} />
             </>
           )}
-          {role === 'audiologist' && (
+          {role === 'Audiologist' && (
             <>
               <NavItem icon="👁️" label="Patient Queue" onClick={() => setSidebarOpen(false)} />
               <NavItem icon="📋" label="Case History" onClick={() => setSidebarOpen(false)} />
@@ -99,7 +99,7 @@ export default function DashboardLayout({ role, onLogout }) {
               <NavItem icon="📱" label="Trials" onClick={() => setSidebarOpen(false)} />
             </>
           )}
-          {role === 'admin' && (
+          {role === 'Admin' && (
             <>
               <NavItem icon="📊" label="Dashboard" onClick={() => setSidebarOpen(false)} />
               <NavItem icon="📈" label="Analytics" onClick={() => setSidebarOpen(false)} />

@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback } from "react";
 import { useDispatch } from "react-redux";
 
-import { staticText } from "@/lib/utils/constants/staticText";
+import { staticText } from "@/lib/utils/constants/staticOption";
 import { registerSchema } from "@/lib/utils/schema";
 
 import { Button } from "@/components/ui/button";

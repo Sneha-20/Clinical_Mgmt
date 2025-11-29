@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { LogOut, Menu, X } from 'lucide-react'
 import SidebarNav from '@/components/layouts/sidebar-nav'
+import { logoutAction } from '@/lib/services/auth'
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -21,6 +22,7 @@ export default function DashboardLayout({ children }) {
   }, [router])
 
   const handleLogout = () => {
+    logoutAction();
     localStorage.removeItem('userRole')
     router.push('/')
   }

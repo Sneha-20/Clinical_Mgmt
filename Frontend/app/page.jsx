@@ -10,6 +10,7 @@ export default function Home() {
   const router = useRouter()
 
   const handleLogin = (role) => {
+    console.log("Logged in as role:", role);
     localStorage.setItem('userRole', role)
     router.push('/dashboard')
   }

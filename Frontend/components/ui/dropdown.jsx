@@ -21,7 +21,7 @@ export default function DropDown({
 
       <select
         value={value ?? ""} 
-        onChange={(e) => onChange(name, Number(e.target.value))}
+        onChange={(e) => onChange(name, e.target.value)}
         className={`
           w-full px-3 py-3 rounded-lg 
           border text-gray-800 

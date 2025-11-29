@@ -10,28 +10,28 @@ export default function SidebarNav({ role, onItemClick }) {
   const pathname = usePathname()
 
   const navItems = {
-    reception: [
+    Reception: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
       { icon: '📝', label: 'New Patient', href: '/dashboard/patients' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
       { icon: '👁️', label: 'Trials', href: '/dashboard/trials' },
     ],
-    audiologist: [
+    Audiologist: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
       { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
       { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
       { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
     ],
-    admin: [
+    Admin: [
       { icon: '📊', label: 'Dashboard', href: '/dashboard' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
       { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
     ],
-    speech: [
+    Speech: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
       { icon: '📝', label: 'Assessment', href: '/dashboard/assessment' },
       { icon: '📊', label: 'Progress', href: '/dashboard/progress' },
@@ -68,7 +68,7 @@ export default function SidebarNav({ role, onItemClick }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-2 overflow-y-auto test1">
         {items.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");

@@ -1,237 +1,339 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X } from 'lucide-react'
+import { useCallback, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { X } from "lucide-react";
+import DropDown from "@/components/ui/dropdown";
+import { patientSchema } from "@/lib/utils/schema";
+
+import {
+  genderOptions,
+  visitTypeOptions,
+  testRequestedOptions,
+  complaintOptions,
+} from "@/lib/utils/constants/staticValue";
+import { extractYupErrors } from "@/lib/utils/helper/extractError";
+import { showToast } from "@/components/ui/toast";
 
 export default function PatientRegistrationForm({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
-    name: '',
-    age: '',
-    gender: 'male',
-    phone: '',
-    secondaryPhone: '',
-    address: '',
-    city: '',
-    referralType: 'self',
-    doctorName: '',
-    complaint: 'Hearing problem',
-    testsRequired: [],
-    purposeOfVisit: 'New Test',
-  })
+    name: "",
+    age: "",
+    dob: "",
+    email: "",
+    gender: "Female",
 
-  const testsOptions = ['Pure Tone Audiometry', 'Tympanometry', 'SRT / SDS', 'UCL', 'Free Field', 'BERA / ASSR', 'OAE']
+    phone_primary: "",
+    phone_secondary: "",
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit(formData)
-  }
+    city: "",
+    address: "",
 
-  const toggleTest = (test) => {
-    setFormData({
-      ...formData,
-      testsRequired: formData.testsRequired.includes(test)
-        ? formData.testsRequired.filter(t => t !== test)
-        : [...formData.testsRequired, test]
-    })
-  }
+    referral_type: "Self",
+    referral_doctor: "",
+
+    visit_details: {
+      visit_type: "New Test",
+      present_complaint: "",
+      test_requested: [], // multiple checkbox values
+      notes: "",
+      appointment_date: "",
+    },
+  });
+
+  const [errors, setErrors] = useState({});
+  const referalTypeOptions = [
+    { label: "Self", value: "Self" },
+    { label: "Doctor", value: "doctor" },
+    { label: "Advertisement", value: "advertisement" },
+    { label: "Other", value: "other" },
+  ];
+
+  const updateField = useCallback(
+    (name, value) => {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    },
+    [errors]
+  );
+
+  const updateVisitDetails = (key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      visit_details: { ...prev.visit_details, [key]: value },
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Submitting patient registration form");
+    console.log("Form Data:", formData);
+    try {
+      await patientSchema.validate(formData, { abortEarly: false });
+      setErrors({});
+      if (onSubmit) onSubmit(formData);
+      console.log("Patient Data:", formData);
+    } catch (error) {
+      console.log("Error during registration:", errors);
+      console.log("ttt",extractYupErrors(error));
+      if (error.name === "ValidationError") {
+        setErrors(extractYupErrors(error)); // <— Your required pattern
+      } else {
+        showToast({
+          type: "error",
+          message: error?.response?.data?.error || "Something went wrong",
+        });
+      }
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
-      <Card className="w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto my-4">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 sticky top-0 bg-card">
-          <CardTitle className="text-lg sm:text-xl">New Patient Registration</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <Card className="w-full max-w-2xl max-h-[95vh] overflow-y-auto">
+        <CardHeader className="flex flex-row justify-between items-center">
+          <CardTitle className="text-lg">New Patient Registration</CardTitle>
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
-        <CardContent className="p-3 sm:p-6">
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* Personal Information */}
+
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* PERSONAL INFO */}
             <div>
-              <h3 className="font-semibold text-primary mb-3 text-sm sm:text-base">Personal Information</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Name *</label>
-                  <Input
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Full name"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Age *</label>
-                  <Input
-                    required
-                    type="number"
-                    value={formData.age}
-                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                    placeholder="Age"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Gender</label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Phone *</label>
-                  <Input
-                    required
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="Primary phone"
-                    className="text-sm"
-                  />
-                </div>
+              <h3 className="font-semibold text-primary mb-3">
+                Personal Information
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  placeholder="Full name"
+                  error={errors.name}
+                />
+
+                <Input
+                  label="Age"
+                  type="number"
+                  name="age"
+                  onChange={(e) => updateField("age", e.target.value)}
+                  value={formData.age}
+                  placeholder="Age"
+                  error={errors.age}
+                />
+
+                <Input
+                  label="Date of Birth"
+                  type="date"
+                  name="dob"
+                  value={formData.dob}
+                  onChange={(e) => updateField("dob", e.target.value)}
+                  error={errors.dob}
+                  placeholder="Date of Birth"
+                />
+
+                <DropDown
+                  label="Gender"
+                  name="gender"
+                  options={genderOptions}
+                  value={formData.gender}
+                  onChange={updateField}
+                  error={errors.gender}
+                />
+
+                <Input
+                  label="Email"
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  placeholder="Email"
+                  error={errors.email}
+                />
+
+                <Input
+                  label="Primary Phone"
+                  name="phone_primary"
+                  value={formData.phone_primary}
+                  onChange={(e) => updateField("phone_primary", e.target.value)}
+                  placeholder="9876543210"
+                  error={errors.phone_primary}
+                />
+
+                <Input
+                  label="Secondary Phone"
+                  name="phone_secondary"
+                  value={formData.phone_secondary}
+                  onChange={(e) =>
+                    updateField("phone_secondary", e.target.value)
+                  }
+                  placeholder="Optional"
+                  error={errors.phone_secondary}
+                />
+
+                <Input
+                  label="City"
+                  name="city"
+                  value={formData.city}
+                  onChange={(e) => updateField("city", e.target.value)}
+                  placeholder="City name"
+                  error={errors.city}
+                />
+
+                <Input
+                  label="Address"
+                  name="address"
+                  value={formData.address}
+                  onChange={(e) => updateField("address", e.target.value)}
+                  placeholder="Full address"
+                  error={errors.address}
+                />
               </div>
             </div>
 
-            {/* Contact Information */}
+            {/* REFERRAL */}
             <div>
-              <h3 className="font-semibold text-primary mb-3 text-sm sm:text-base">Contact Information</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Secondary Phone</label>
-                  <Input
-                    type="tel"
-                    value={formData.secondaryPhone}
-                    onChange={(e) => setFormData({ ...formData, secondaryPhone: e.target.value })}
-                    placeholder="Secondary phone"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">City</label>
-                  <Input
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    placeholder="City"
-                    className="text-sm"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Address</label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Full address"
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                    rows={2}
-                  />
-                </div>
-              </div>
-            </div>
+              <h3 className="font-semibold text-primary mb-3">Referral</h3>
 
-            {/* Referral */}
-            <div>
-              <h3 className="font-semibold text-primary mb-3 text-sm sm:text-base">Referral Information</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Referral Type</label>
-                  <select
-                    value={formData.referralType}
-                    onChange={(e) => setFormData({ ...formData, referralType: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
+              {/* RADIO BUTTONS FOR REFERRAL TYPE */}
+              <div className="flex gap-6">
+                {referalTypeOptions.map((item) => (
+                  <label
+                    key={item.value}
+                    className="flex items-center gap-2 cursor-pointer"
                   >
-                    <option value="self">Self Referral</option>
-                    <option value="doctor">Doctor Referral</option>
-                    <option value="camp">Camp</option>
-                    <option value="old">Old Patient</option>
-                  </select>
-                </div>
-                {formData.referralType === 'doctor' && (
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium mb-1.5">Doctor Name</label>
-                    <Input
-                      value={formData.doctorName}
-                      onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
-                      placeholder="Referring doctor name"
-                      className="text-sm"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Chief Complaint */}
-            <div>
-              <h3 className="font-semibold text-primary mb-3 text-sm sm:text-base">Chief Complaint & Visit</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Present Complaint</label>
-                  <select
-                    value={formData.complaint}
-                    onChange={(e) => setFormData({ ...formData, complaint: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                  >
-                    <option value="Hearing problem">Hearing problem</option>
-                    <option value="Speech delay">Speech delay</option>
-                    <option value="Cell/battery">Cell/battery</option>
-                    <option value="Machine cleaning">Machine cleaning</option>
-                    <option value="Follow-up">Follow-up</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Purpose of Visit</label>
-                  <select
-                    value={formData.purposeOfVisit}
-                    onChange={(e) => setFormData({ ...formData, purposeOfVisit: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                  >
-                    <option value="New Test">New Test</option>
-                    <option value="Follow-up">Follow-up</option>
-                    <option value="Trial">Hearing Aid Trial</option>
-                    <option value="Fitting">Hearing Aid Fitting</option>
-                    <option value="Service">Service/Repair</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Tests Required */}
-            <div>
-              <h3 className="font-semibold text-primary mb-3 text-sm sm:text-base">Tests Required</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {testsOptions.map((test) => (
-                  <label key={test} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted cursor-pointer">
                     <input
-                      type="checkbox"
-                      checked={formData.testsRequired.includes(test)}
-                      onChange={() => toggleTest(test)}
-                      className="w-4 h-4 accent-primary"
+                      type="radio"
+                      name="referral_type"
+                      value={item.value}
+                      checked={formData.referral_type === item.value}
+                      onChange={(e) =>
+                        updateField("referral_type", e.target.value)
+                      }
+                      className="w-4 h-4"
                     />
-                    <span className="text-xs sm:text-sm">{test}</span>
+                    <span>{item.label}</span>
                   </label>
                 ))}
+                {errors?.referral_type && <p className="text-red-500 text-sm mt-1">{errors.referral_type}</p>}
               </div>
+
+              {/* SHOW DOCTOR NAME INPUT ONLY IF "Doctor" SELECTED */}
+              {formData.referral_type === "doctor" && (
+                <Input
+                  label="Doctor Name"
+                  name="referral_doctor"
+                  value={formData.referral_doctor}
+                  onChange={(e) =>
+                    updateField("referral_doctor", e.target.value)
+                  }
+                  placeholder="Enter doctor name"
+                  className="mt-3"
+                  error={errors.referral_doctor}
+                />
+              )}
             </div>
 
-            {/* Submit */}
-            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end pt-4 border-t border-border">
-              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
+            {/* VISIT DETAILS */}
+            <div>
+              <h3 className="font-semibold text-primary mb-3">Visit Details</h3>
+
+              {/* Purpose of visit */}
+              <DropDown
+                label="Purpose of Visit"
+                name="visit_type"
+                options={visitTypeOptions}
+                value={formData.visit_details.visit_type}
+                onChange={(name, value) =>
+                  updateVisitDetails("visit_type", value)
+                }
+                error={errors.visit_type}
+              />
+
+              {/* Present complaint */}
+              <DropDown
+                label="Present Complaint"
+                name="present_complaint"
+                options={complaintOptions}
+                value={formData.visit_details.present_complaint}
+                onChange={(n, v) => updateVisitDetails("present_complaint", v)}
+                error={errors.present_complaint}
+              />
+
+              <textarea
+                className="w-full border rounded p-2 mt-2"
+                placeholder="Notes about complaint"
+                value={formData.visit_details.notes}
+                onChange={(e) => updateVisitDetails("notes", e.target.value)}
+              />
+
+              {/* Tests Required */}
+              <div className="mt-4">
+                <label className="font-medium text-sm text-gray-700">
+                  Tests Required (Tick)
+                </label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  {testRequestedOptions.map((test, idx) => (
+                    <label
+                      key={idx}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        value={test.value}
+                        checked={formData.visit_details.test_requested.includes(
+                          test.value
+                        )}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          let updated = [
+                            ...formData.visit_details.test_requested,
+                          ];
+
+                          if (updated.includes(value)) {
+                            updated = updated.filter((t) => t !== value);
+                          } else {
+                            updated.push(value);
+                          }
+
+                          updateVisitDetails("test_requested", updated);
+                        }}
+                      />
+                      {test.label}
+                    </label>
+                  ))}
+                  {errors?.test_requested && <p className="text-red-500 text-sm mt-1">{errors.test_requested}</p>}
+                </div>
+              </div>
+
+              {/* Appointment Date */}
+              <Input
+                label="Appointment Date"
+                type="date"
+                value={formData.visit_details.appointment_date}
+                onChange={(e) =>
+                  updateVisitDetails("appointment_date", e.target.value)
+                }
+                error={errors.visit_details?.appointment_date}
+              />
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" className="w-full sm:w-auto gap-2">
-                Register Patient
-              </Button>
+              <Button type="submit">Register Patient</Button>
             </div>
           </form>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
