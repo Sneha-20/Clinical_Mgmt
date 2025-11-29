@@ -64,6 +64,7 @@ export default function ReceptionDashboard() {
     try{
       console.log('Adding patient:', patientData)
      const newPatient = await createPatient(patientData)
+     
     }catch(err){
       console.error('Error adding patient:', err)
     }
