@@ -1,26 +1,23 @@
 import { NextResponse } from "next/server";
+import {
+  notToshowForPrivate,
+  privateRoutes,
+  routes,
+} from "./lib/utils/constants/route";
 
 export function middleware(request) {
   const token = request.cookies.get("token"); // check JWT stored in cookie
-  // console.log("Middleware token:", token);
-  const publicRoutes = ["/"]; // pages allowed without login
 
-  const isPublic = publicRoutes.includes(request.nextUrl.pathname);
-
-  // if user tries to access public page while logged in → redirect to dashboard
-  if (isPublic && token) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  // if user tries to access private page without token → redirect to login
-  if (!isPublic && !token) {
-    return NextResponse.redirect(new URL("/", request.url));
+  const isPrivate = privateRoutes.includes(request.nextUrl.pathname);
+  const notToShowForPrivate = notToshowForPrivate; // if user tries to access public page while logged in → redirect to dashboard
+  if (isPrivate && !token) {
+    return NextResponse.redirect(new URL(routes.pages.login, request.url));
+  } else if (notToShowForPrivate.includes(request.nextUrl.pathname) && token) {
+    return NextResponse.redirect(new URL(routes.pages.dashboard, request.url));
   }
 
   return NextResponse.next();
 }
 export const config = {
-  matcher: [
-    "/((?!_next|api|favicon.ico).*)"
-  ],
+  matcher: ["/((?!_next|api|favicon.ico).*)"],
 };

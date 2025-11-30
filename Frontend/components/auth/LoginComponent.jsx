@@ -9,16 +9,32 @@ import {
 } from "@/components/ui/card";
 import Image from "next/image";
 import LoginForm from "./component/LoginForm";
+import { useRouter } from "next/navigation";
+import { routes } from "@/lib/utils/constants/route";
 
-export default function LoginPage({ onLogin, onToggleSignup }) {
- 
+export default function LoginComponent() {
+  const router = useRouter();
+  const handleLogin = (role) => {
+    console.log("Logged in as role:", role);
+    localStorage.setItem("userRole", role);
+    router.push("/dashboard");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-3 sm:p-4">
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
+          <div
+            className="flex items-center justify-center gap-2 mb-3 sm:mb-4"
+            onClick={() => router.push(routes.pages.home)}
+          >
             <div className=" flex items-center justify-center">
-              <Image width={24} height={24} src={Companylogo} alt="compony logo"/>
+              <Image
+                width={24}
+                height={24}
+                src={Companylogo}
+                alt="compony logo"
+              />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-primary">
               NOIS
@@ -38,7 +54,7 @@ export default function LoginPage({ onLogin, onToggleSignup }) {
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-            <LoginForm onLogin={onLogin}/>
+            <LoginForm onLogin={handleLogin} />
             <div className="border-t pt-4 sm:pt-6 text-center">
               <p className="text-xs sm:text-sm text-muted-foreground mb-3">
                 Don't have an account?
@@ -46,7 +62,7 @@ export default function LoginPage({ onLogin, onToggleSignup }) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={onToggleSignup}
+                onClick={() => router.push(routes.pages.signup)}
                 className="w-full"
               >
                 Create New Account

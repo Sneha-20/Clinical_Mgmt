@@ -313,6 +313,7 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
               </div>
 
               {/* Appointment Date */}
+              <div className="mt-4">
               <Input
                 label="Appointment Date"
                 type="date"
@@ -321,7 +322,8 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                   updateVisitDetails("appointment_date", e.target.value)
                 }
                 error={errors.visit_details?.appointment_date}
-              />
+                />
+                </div>
             </div>
 
             {/* ACTION BUTTONS */}

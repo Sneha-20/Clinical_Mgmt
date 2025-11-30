@@ -1,6 +1,6 @@
 'use client'
 
-import PatientRegistration from '@/components/modules/reception/patient-registration-form'
+import PatientRegistration from '@/components/modules/reception/components/patient-registration-form'
 
 export default function PatientsPage() {
   return <PatientRegistration />

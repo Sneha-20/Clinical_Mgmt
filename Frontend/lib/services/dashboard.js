@@ -81,8 +81,9 @@ export const createPatient = async (patientData) => {
     console.log("📤 Creating patient:", patientData);
     
     const response = await apiClient.post(routes.patientRegister, patientData);
+
     console.log("✅ Patient created:", response);
-    
+    getPatientList();
     // Handle nested response structure
     const patient = response?.data?.data || response?.data || response;
     
@@ -135,6 +136,19 @@ export const deletePatient = async (patientId) => {
     const url = `${routes.patientList}${patientId}/`;
     await apiClient.delete(url);
     return true;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const searchPatient = async (searchTerm) => {
+  try {
+     const queryParams = new URLSearchParams();
+     if (searchTerm) queryParams.append("search", searchTerm);
+    const url = `${routes.searchPatient}?${queryParams.toString()}`;
+     const response = await apiClient.get(url);
+
+    return response.data;
   } catch (error) {
     throw error;
   }

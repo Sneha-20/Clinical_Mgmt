@@ -23,10 +23,15 @@ import { register } from "@/lib/services/auth";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 import RoleSelection from "../ui/RoleSelection";
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
+import { routes } from "@/lib/utils/constants/route";
+import { useRouter } from "next/navigation";
 
-export default function SignupPage({ onSignup, onToggleLogin }) {
+export default function SignupComponent() {
   const dispatch = useDispatch();
-
+  const router = useRouter();
+  const handleSignup = (role) => {
+    localStorage.setItem("userRole", role);
+  };
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -115,7 +120,7 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
       // setSuccess(true);
 
       setTimeout(() => {
-        onSignup(formData.role_id);
+        handleSignup(formData.role_id);
       }, 1200);
     } catch (error) {
       console.log("Error during registration:", error);
@@ -136,13 +141,16 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 to-accent/5">
       <div className="w-full max-w-2xl">
         {/* Header */}
-        <div className="mb-6 text-center">
+
+        <div
+          className="mb-6 text-center"
+          onClick={() => router.push(routes.pages.home)}
+        >
           <h1 className="text-3xl font-bold text-primary">NOIS</h1>
           <p className="text-xs text-muted-foreground">
             Navjeevan Operating Intelligence System
           </p>
         </div>
-
         <Card className="shadow-lg border-0">
           <CardHeader>
             <CardTitle>Create Your Account</CardTitle>
@@ -232,7 +240,11 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
 
             {/* Login link */}
             <div className="mt-6 text-center border-t pt-6">
-              <Button variant="outline" className="w-full" onClick={onToggleLogin}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => router.push(routes.pages.login)}
+              >
                 Back to Sign In
               </Button>
             </div>
@@ -247,9 +259,13 @@ export default function SignupPage({ onSignup, onToggleLogin }) {
    Reusable Sub Components
 ---------------------------------- */
 
-
-
-function PasswordField({ label, showPassword, setShowPassword, error, ...props }) {
+function PasswordField({
+  label,
+  showPassword,
+  setShowPassword,
+  error,
+  ...props
+}) {
   return (
     <div className="relative">
       <label className="block text-sm font-medium mb-1.5">{label}</label>
@@ -271,5 +287,3 @@ function PasswordField({ label, showPassword, setShowPassword, error, ...props }
     </div>
   );
 }
-
-

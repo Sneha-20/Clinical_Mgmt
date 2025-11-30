@@ -3,8 +3,10 @@ import { cn } from "@/lib/utils/tailwindutils";
 
 const Input = React.forwardRef(
   ({ label, error, className, type, ...props }, ref) => (
-    <div>
+    <div className="w-full">
+      {label && 
       <label className="block text-sm font-medium mb-1.5">{label}</label>
+      }
       <input
         type={type}
         className={cn(

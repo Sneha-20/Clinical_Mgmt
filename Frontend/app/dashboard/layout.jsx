@@ -1,48 +1,50 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { LogOut, Menu, X } from 'lucide-react'
-import SidebarNav from '@/components/layouts/sidebar-nav'
-import { logoutAction } from '@/lib/services/auth'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { LogOut, Menu, X } from "lucide-react";
+import SidebarNav from "@/components/layouts/sidebar-nav";
+import { logoutAction } from "@/lib/services/auth";
+import { useDispatch } from "react-redux";
+import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 
 export default function DashboardLayout({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userRole, setUserRole] = useState('')
-  const router = useRouter()
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userRole, setUserRole] = useState("");
+  const router = useRouter();
+  const dispatch = useDispatch();
   useEffect(() => {
-    const role = localStorage.getItem('userRole')
+    dispatch(startLoading());
+    const role = localStorage.getItem("userRole");
     if (!role) {
-      router.push('/')
+      router.push("/");
     } else {
-      setUserRole(role)
+      setUserRole(role);
     }
-  }, [router])
+    dispatch(stopLoading());
+  }, [router]);
 
   const handleLogout = () => {
     logoutAction();
-    localStorage.removeItem('userRole')
-    router.push('/')
-  }
-
-  if (!userRole) {
-    return <div className="p-4">Loading...</div>
-  }
+    localStorage.removeItem("userRole");
+    router.push("/");
+  };
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      <aside className={`${
-        sidebarOpen ? 'w-64' : 'w-0'
-      } lg:w-64 bg-sidebar border-r border-slate-200 transition-all duration-300 flex flex-col fixed lg:static h-full z-50 lg:z-auto overflow-hidden`}>
+      <aside
+        className={`${
+          sidebarOpen ? "w-64" : "w-0"
+        } lg:w-64 bg-sidebar border-r border-slate-200 transition-all duration-300 flex flex-col fixed lg:static h-full z-50 lg:z-auto overflow-hidden`}
+      >
         <SidebarNav role={userRole} onItemClick={() => setSidebarOpen(false)} />
       </aside>
 
@@ -54,10 +56,18 @@ export default function DashboardLayout({ children }) {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="lg:hidden"
           >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {sidebarOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </Button>
           <div className="text-xs lg:text-sm text-slate-500 truncate flex-1">
-            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            })}
           </div>
           <Button
             variant="ghost"
@@ -70,10 +80,8 @@ export default function DashboardLayout({ children }) {
           </Button>
         </div>
 
-        <div className="flex-1 overflow-auto p-3 lg:p-6">
-          {children}
-        </div>
+        <div className="flex-1 overflow-auto p-3 lg:p-6">{children}</div>
       </main>
     </div>
-  )
+  );
 }
