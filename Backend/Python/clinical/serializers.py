@@ -6,8 +6,8 @@ import re
 from accounts.models import User
 from accounts.serializers import RoleSimpleSerializer
 
+
 class PatientAllVisitSerializer(serializers.ModelSerializer):
-    
     # Tell DRF what you expect from the API (list of strings)
     seen_by = serializers.CharField(source='seen_by.name', read_only=True)
     test_requested = serializers.ListField(
@@ -22,9 +22,9 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
             'visit_type',
             'service_type',
             'seen_by',
-            'present_complaint', 
-            'test_requested', 
-            'notes', 
+            'present_complaint',
+            'test_requested',
+            'notes',
             'appointment_date'
         ]
 
@@ -37,7 +37,7 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Convert string → list for output"""
         data = super().to_representation(instance)
-        
+
         stored_value = instance.test_requested or ""
 
         data["test_requested"] = (
@@ -45,21 +45,56 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
         )
         return data
 
+
+class PatientVisitRegistrationSerializer(serializers.Serializer):
+    """
+    Nested serializer used only during Patient registration to accept
+    one or more visit records in the incoming payload.
+    """
+
+    visit_type = serializers.CharField()
+    present_complaint = serializers.CharField(required=False, allow_blank=True)
+    test_requested = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+    notes = serializers.CharField(required=False, allow_blank=True)
+    seen_by = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate_seen_by(self, value):
+        if value in (None, ""):
+            return None
+        try:
+            return User.objects.get(pk=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Invalid 'seen_by' user id.")
+
+
 # 2. Main Serializer for Registration
 class PatientRegistrationSerializer(serializers.ModelSerializer):
-    # Define the nested field (write_only because we don't need to read it back in this specific structure usually)
-    visit_details = PatientAllVisitSerializer(write_only=True)
+    """
+    Register a patient together with one or more visit records.
+
+    Matches payload structure provided from frontend.
+    """
+
+    # Root-level extra fields (not stored on Patient model) but used for each visit
+    service_type = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    appointment_date = serializers.DateField(write_only=True, required=False)
+
+    # Nested list of visit records
+    visit_details = PatientVisitRegistrationSerializer(many=True, write_only=True)
 
     class Meta:
         model = Patient
         fields = [
-            'id', 'name', 'age', 'dob', 'email', 'gender', 
-            'phone_primary', 'phone_secondary', 'city', 'address', 
-            'referral_type', 'referral_doctor', 
-            'visit_details' # Include the nested field
+            'id', 'name', 'age', 'dob', 'email', 'gender',
+            'phone_primary', 'phone_secondary', 'city', 'address',
+            'referral_type', 'referral_doctor',
+            'service_type', 'appointment_date',
+            'visit_details'  # Include the nested field
         ]
         read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic']
-
 
     def validate_phone_primary(self, value):
         if not re.fullmatch(r'\d{10}', (value or '').strip()):
@@ -73,7 +108,6 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Secondary Phone must be exactly 10 digits if provided.")
         return value
 
-
     # -- Added email uniqueness validation --
     def validate_email(self, value):
         # Allow blank/null emails to pass (model allows blank)
@@ -84,42 +118,55 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Email already exists.")
         return value
 
-
     def create(self, validated_data):
-        # A. Extract the visit data from the payload
-        visit_data = validated_data.pop('visit_details')
+        # A. Extract visit list and common visit fields from the payload
+        visits_data = validated_data.pop('visit_details', [])
+        service_type = validated_data.pop('service_type', None)
+        appointment_date = validated_data.pop('appointment_date', None)
 
         # B. Get User and Clinic info from the request context (passed from View)
         request = self.context.get('request')
         current_user = request.user if request else None
-        # Assuming the user profile has a clinic, or you send clinic_id in the body. 
         # For this example, we assume the logged-in user belongs to a clinic.
-        # current_clinic = current_user.profile.clinic if current_user else None 
         current_clinic = getattr(request.user, 'clinic', None)
 
-        visit_type = visit_data.get('visit_type')
-        if visit_type in ['TGA / Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
-            status_value = 'Pending for Service'
-        else:
-            status_value = 'Test pending'
-                   
         # C. Atomic Transaction
         with transaction.atomic():
             # 1. Create the Patient
             # We manually add created_by here since it's read_only in the serializer
             patient = Patient.objects.create(
-                created_by=current_user, 
-                clinic=current_clinic, # Uncomment if you have logic to fetch clinic
+                created_by=current_user,
+                clinic=current_clinic,  # Inherit clinic from logged-in user
                 **validated_data
             )
 
-            # 2. Create the PatientVisit linked to this Patient
-            PatientVisit.objects.create(
-                patient=patient,
-                clinic=patient.clinic, # Inherit clinic from patient
-                status=status_value,      # Default status
-                **visit_data
-            )
+            # 2. Create one PatientVisit per item in visits_data
+            for visit_data in visits_data:
+                visit_type = visit_data.get('visit_type')
+                if visit_type in ['TGA / Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+                    status_value = 'Pending for Service'
+                else:
+                    status_value = 'Test pending'
+
+                # Map seen_by (User instance) and test_requested (list -> CSV string)
+                
+                seen_by_user = visit_data.pop('seen_by', None)
+                if seen_by_user is None:
+                    seen_by_user = current_user
+                test_requested = visit_data.pop('test_requested', [])
+                if isinstance(test_requested, list):
+                    test_requested = ",".join(test_requested) if test_requested else ""
+
+                PatientVisit.objects.create(
+                    patient=patient,
+                    clinic=patient.clinic,  # Inherit clinic from patient
+                    status=status_value,
+                    service_type=service_type or None,
+                    appointment_date=appointment_date,
+                    seen_by=seen_by_user,
+                    test_requested=test_requested,
+                    **visit_data
+                )
 
         return patient
     
@@ -146,12 +193,12 @@ class DoctorListSerializer(serializers.ModelSerializer):
 
 
     def get_designation(self, obj):
-        print(obj.roles.all())
-        # if 2 roles, then return both ( Audiologist and Speech Therapist ) else return the first role
-        if obj.roles.all().count() == 2:
-            return "Both"
-        else:
-            return "Audiologist" if obj.roles.all().filter(name='Audiologist').exists() else "Speech Therapist"
+        """
+        With single role per user, designation is simply the role name.
+        """
+        if not getattr(obj, "role", None):
+            return ""
+        return obj.role.name
 
     class Meta:
         model = User
@@ -211,33 +258,71 @@ class PatientUpdateSerializer(serializers.ModelSerializer):
 
     
     
-class PatientVisitCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PatientVisit
-        fields = [
-            'patient',  # Expecting patient ID to link the visit
-            'visit_type', 
-            'present_complaint', 
-            'test_requested', 
-            'notes', 
-            'appointment_date'
+class PatientVisitCreateSerializer(serializers.Serializer):
+    """
+    Create one or more visits for an EXISTING patient.
+
+    Expected payload:
+    {
+        "patient": 3,
+        "service_type": "Clinic",
+        "appointment_date": "2025-11-27",
+        "visit_details": [
+            { ... visit fields ... },
+            { ... visit fields ... }
         ]
-    
+    }
+    """
+
+    patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all())
+    service_type = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    appointment_date = serializers.DateField(write_only=True, required=False)
+    visit_details = PatientVisitRegistrationSerializer(many=True, write_only=True)
+
     def create(self, validated_data):
         request = self.context.get('request')
-        current_clinic = getattr(request.user, 'clinic', None)
+        current_clinic = getattr(request.user, 'clinic', None) if request else None
+        current_user = request.user if request else None
 
-        visit_type = validated_data.get('visit_type')
-        if visit_type in ['TGA / Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
-            status_value = 'Pending for Service'
-        else:
-            status_value = 'Test pending'
-                   
-        return PatientVisit.objects.create(
-            clinic=current_clinic,
-            status=status_value,
-            **validated_data
-        )
+        patient = validated_data.get('patient')
+        service_type = validated_data.get('service_type')
+        appointment_date = validated_data.get('appointment_date')
+        visits_data = validated_data.get('visit_details', [])
+
+        created_visits = []
+
+        with transaction.atomic():
+            for visit_data in visits_data:
+                visit_type = visit_data.get('visit_type')
+                if visit_type in ['Battery Purchase', 'Tip / Dome Change']:
+                    status_value = 'Pending for Service'
+                else:
+                    status_value = 'Test pending'
+
+                # `seen_by` has already been validated by PatientVisitRegistrationSerializer
+                seen_by_user = visit_data.pop('seen_by', None)
+                if seen_by_user is None:
+                    seen_by_user=current_user
+
+                # Convert list of tests to CSV string for storage on the model
+                test_requested = visit_data.pop('test_requested', [])
+                if isinstance(test_requested, list):
+                    test_requested = ",".join(test_requested) if test_requested else ""
+
+                visit = PatientVisit.objects.create(
+                    patient=patient,
+                    clinic=current_clinic or patient.clinic,
+                    status=status_value,
+                    service_type=service_type or None,
+                    appointment_date=appointment_date,
+                    seen_by=seen_by_user,
+                    test_requested=test_requested,
+                    **visit_data
+                )
+                created_visits.append(visit)
+
+        # View does not use serializer.data, so returning list is fine
+        return created_visits
     
 # Edit Patient Visit Serializer (used in Update View)
 class PatientVisitUpdateSerializer(serializers.ModelSerializer):
@@ -270,11 +355,7 @@ class TrialSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['clinic']
 
-# Audiologist Queueu
-# Patient Name
-# Complaint
-# Tests Required
-# Referral Type
+
 class AudiologistQueueSerializer(serializers.ModelSerializer):
     patient_name = serializers.CharField(source='patient.name', read_only=True)
     patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)

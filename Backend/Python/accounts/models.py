@@ -40,8 +40,10 @@ class UserManager(BaseUserManager):
 
         user = self.create_user(email, password, **extra_fields)
 
+        # Ensure superuser has Admin role set
         admin_role, _ = Role.objects.get_or_create(name='Admin')
-        user.roles.add(admin_role)
+        user.role = admin_role
+        user.save(update_fields=['role'])
 
         return user
 
@@ -49,7 +51,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     clinic = models.ForeignKey("Clinic", on_delete=models.SET_NULL, null=True, blank=True)
 
     name = models.CharField(max_length=255)
-    roles = models.ManyToManyField("Role", blank=True, related_name="users")
+    # Each user has exactly one role (or None if not yet assigned)
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="users",
+    )
     phone = models.CharField(max_length=50, unique=True, null=True, blank=True)
 
     email = models.EmailField(unique=True)
