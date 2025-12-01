@@ -105,23 +105,23 @@ WSGI_APPLICATION = 'clinical_be.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'clinical_mgmt_dev',
-    #     'USER': 'postgres',
-    #     'PASSWORD': 'postgres',
-    #     'HOST': 'localhost',   # or your PostgreSQL server IP
-    #     'PORT': '5432',        # default PostgreSQL port
-    # }
-
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'clinical_mgmt_dev',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': '51.20.207.138',   # or your PostgreSQL server IP
+        'HOST': 'localhost',   # or your PostgreSQL server IP
         'PORT': '5432',        # default PostgreSQL port
     }
+
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'clinical_mgmt_dev',
+    #     'USER': 'postgres',
+    #     'PASSWORD': 'postgres',
+    #     'HOST': '51.20.207.138',   # or your PostgreSQL server IP
+    #     'PORT': '5432',        # default PostgreSQL port
+    # }
 }
 
 
