@@ -211,7 +211,7 @@ class PatientFlatListView(generics.ListAPIView):
             serializer = self.get_serializer(queryset, many=True)
             return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
     
-# Doctor name and roles flat list for dropdowns
+# Doctor name and role flat list for dropdowns
 class DoctorFlatListView(generics.ListAPIView):
     """
     List all Doctors (Audiologists and Speech Therapists) for dropdowns and search by name.
@@ -220,19 +220,19 @@ class DoctorFlatListView(generics.ListAPIView):
 
     serializer_class = DoctorListSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    search_fields = ['name', 'roles__name']
+    search_fields = ['name', 'role__name']
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         clinic = getattr(self.request.user, 'clinic', None)
         qs = User.objects.filter(
-            roles__name__in=['Speech Therapist', 'Audiologist'],
+            role__name__in=['Speech Therapist', 'Audiologist','Audiologist &  Speech Therapist'],
         )
         if clinic:
             qs = qs.filter(clinic=clinic)
 
         # Optimize role access in DoctorListSerializer.get_designation
-        return qs.select_related('clinic').prefetch_related('roles').order_by('name').distinct()
+        return qs.select_related('clinic', 'role').order_by('name').distinct()
     
 
     
