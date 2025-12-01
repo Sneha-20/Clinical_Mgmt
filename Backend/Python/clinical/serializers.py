@@ -1,12 +1,15 @@
 
-from .models import Patient, PatientVisit
+from .models import Patient, PatientVisit, AudiologistCaseHistory, VisitTestPerformed, Trial
 from rest_framework import serializers
 from django.db import transaction
 import re
+from accounts.models import User
+from accounts.serializers import RoleSimpleSerializer
 
 class PatientAllVisitSerializer(serializers.ModelSerializer):
     
     # Tell DRF what you expect from the API (list of strings)
+    seen_by = serializers.CharField(source='seen_by.name', read_only=True)
     test_requested = serializers.ListField(
         child=serializers.CharField(),
         required=False
@@ -16,7 +19,9 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
         model = PatientVisit
         fields = [
             'id',
-            'visit_type', 
+            'visit_type',
+            'service_type',
+            'seen_by',
             'present_complaint', 
             'test_requested', 
             'notes', 
@@ -136,17 +141,43 @@ class PatientListSerializer(serializers.ModelSerializer):
             'id', 'name' , 'email', 'phone_primary']
 
 
+class DoctorListSerializer(serializers.ModelSerializer):
+    designation = serializers.SerializerMethodField()
+
+
+    def get_designation(self, obj):
+        print(obj.roles.all())
+        # if 2 roles, then return both ( Audiologist and Speech Therapist ) else return the first role
+        if obj.roles.all().count() == 2:
+            return "Both"
+        else:
+            return "Audiologist" if obj.roles.all().filter(name='Audiologist').exists() else "Speech Therapist"
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'name', 'designation'
+        ]
+
 class PatientVisitSerializer(serializers.ModelSerializer):
     patient_id = serializers.IntegerField(source='patient.id', read_only=True)
     patient_name = serializers.CharField(source='patient.name', read_only=True)
     patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
     visit_id = serializers.IntegerField(source='id', read_only=True)
+    seen_by = serializers.SerializerMethodField()
+
+    def get_seen_by(self, obj):
+        if obj.seen_by is None:
+            return None
+        return obj.seen_by.name
 
     class Meta:
         model = PatientVisit
         fields = [
             'visit_id',
             'visit_type', 
+            'service_type',
+            'seen_by',
             'appointment_date',
             'status',
             'patient_id',
@@ -219,3 +250,71 @@ class PatientVisitUpdateSerializer(serializers.ModelSerializer):
             'notes', 
             'appointment_date'
         ]
+
+
+# Serializers for Audiologist Workflow
+class AudiologistCaseHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AudiologistCaseHistory
+        fields = '__all__'
+        read_only_fields = ['created_by']
+
+class VisitTestPerformedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VisitTestPerformed
+        fields = '__all__'
+
+class TrialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trial
+        fields = '__all__'
+        read_only_fields = ['clinic']
+
+# Audiologist Queueu
+# Patient Name
+# Complaint
+# Tests Required
+# Referral Type
+class AudiologistQueueSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    # present_complaint = serializers.CharField()
+    # test_requested = serializers.CharField()
+
+    class Meta:
+        model = PatientVisit
+        fields = [
+            'id',
+            'patient_name',
+            'patient_phone',
+            'visit_type',
+            'present_complaint',
+            'test_requested',
+            'status',
+            'appointment_date',
+            'referral_type',
+            'referral_doctor'
+        ]
+
+
+# Case History Fill of Patient for Audiologist when test requested is OAE
+class AudiologistCaseHistoryViewSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='visit.patient.phone_primary', read_only=True)
+    visit_id = serializers.IntegerField(source='visit.id', read_only=True)
+
+    class Meta:
+        model = AudiologistCaseHistory
+        fields = [
+            'id',
+            'visit_id',
+            'patient_name',
+            'patient_phone',
+            'medical_history',
+            'family_history',
+            'noise_exposure',
+            'previous_ha_experience',
+            'red_flags',
+            'created_at'
+        ]
+        

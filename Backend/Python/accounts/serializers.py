@@ -26,7 +26,7 @@ class TokenWithClinicSerializer(serializers.Serializer):
     refresh = serializers.CharField(read_only=True)
     user = serializers.DictField(read_only=True)
     clinic = ClinicSimpleSerializer(read_only=True)
-    role = serializers.CharField(read_only=True)
+    roles = RoleSimpleSerializer(many=True, read_only=True)
 
     def validate(self, attrs):
         email = attrs.get('email')
@@ -49,7 +49,7 @@ class TokenWithClinicSerializer(serializers.Serializer):
             raise serializers.ValidationError("User account is disabled")
         
         # Admin users do not need to supply clinic_id / clinic membership check
-        is_admin = bool(user.role and getattr(user.role, 'name', '').strip().lower() == 'admin')
+        is_admin = bool(user.roles and user.roles.filter(name='Admin').exists())
 
         if not is_admin:
             # For non-admins clinic_id is required and must match user's clinic
@@ -63,9 +63,10 @@ class TokenWithClinicSerializer(serializers.Serializer):
         access = str(refresh.access_token)
         refresh = str(refresh)
 
-        role_data = RoleSimpleSerializer(user.role).data if user.role else None
+        roles_qs = user.roles.all()
+        roles_data = RoleSimpleSerializer(roles_qs, many=True).data if roles_qs.exists() else None
         clinic_data = ClinicSimpleSerializer(user.clinic).data if getattr(user, 'clinic', None) else None
-
+        
         return {
             'access': access,
             'refresh': refresh,
@@ -73,20 +74,28 @@ class TokenWithClinicSerializer(serializers.Serializer):
                 'id': user.id,
                 'email': user.email,
                 'name': getattr(user, 'name', ''),
-                'role': role_data,
+                'roles': roles_data,
             },
             'clinic': clinic_data,
         }
 # ...existing code...
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    role_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    roles = serializers.ListField(write_only=True, required=False, allow_null=True)
     clinic_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     clinic = ClinicSimpleSerializer(read_only=True)
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'name', 'clinic', 'clinic_id', 'role_id', 'phone',)
+        fields = ('email', 'password', 'name', 'clinic', 'clinic_id', 'roles', 'phone',)
+
+    def validate_roles(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("roles must be a list")
+        for role_id in value:
+            if not Role.objects.filter(id=role_id).exists():
+                raise serializers.ValidationError(f"Invalid role_id: {role_id}")
+        return value
 
 
     def validate_phone(self, value):
@@ -96,23 +105,18 @@ class RegisterSerializer(serializers.ModelSerializer):
     
 
     def create(self, validated_data):
-        role_id = validated_data.pop('role_id', None)
+        roles = validated_data.pop('roles', None)
         clinic_id = validated_data.pop('clinic_id', None)
         password = validated_data.pop('password')
         user = User(**validated_data)
-
-        if role_id is not None:
-            # optional: validate role exists
-            if not Role.objects.filter(id=role_id).exists():
-                raise serializers.ValidationError({"role_id": "Invalid role_id"})
-            user.role_id = role_id
-
         if clinic_id is not None:
             # optional: validate clinic exists
             if not Clinic.objects.filter(id=clinic_id).exists():
                 raise serializers.ValidationError({"clinic_id": "Invalid clinic_id"})
             user.clinic_id = clinic_id
-
         user.set_password(password)
         user.save()
+        if roles:
+            role_qs = Role.objects.filter(id__in=roles)
+            user.roles.add(*role_qs)
         return user

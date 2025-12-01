@@ -23,7 +23,7 @@ class PatientVisit(models.Model):
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='visits')
     seen_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     visit_type = models.CharField(max_length=255)  # e.g., New, Follow-up, Service
-    # purpose_of_visit = models.CharField(max_length=255, blank=True, null=True)
+    service_type = models.CharField(max_length=255, blank=True, null=True) # Clinic / Home
     present_complaint = models.CharField(max_length=255, blank=True, null=True)
     test_requested = models.CharField(max_length=255, blank=True, null=True) # it will be dropdown in frontend
     notes = models.TextField(blank=True, null=True)

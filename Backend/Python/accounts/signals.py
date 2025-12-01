@@ -8,7 +8,7 @@ from .models import User
 def notify_admin_on_new_user(sender, instance, created, **kwargs):
     if created and not instance.is_approved:
         # example: email all superusers or users with admin role
-        admin_emails = list(User.objects.filter(role__name='Admin').values_list('email', flat=True))
+        admin_emails = list(User.objects.filter(roles__name='Admin').values_list('email', flat=True))
         print(admin_emails)
         if admin_emails:
             send_mail(

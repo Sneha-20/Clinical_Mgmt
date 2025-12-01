@@ -2,18 +2,24 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
-from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticated
-from .serializers import (PatientRegistrationSerializer ,PatientAllVisitSerializer ,PatientDetailSerializer ,PatientVisitSerializer ,
-PatientVisitCreateSerializer,PatientListSerializer,PatientVisitUpdateSerializer,PatientUpdateSerializer)
-from .models import Patient,PatientVisit
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .serializers import (
+    PatientRegistrationSerializer,
+    PatientAllVisitSerializer,
+    PatientDetailSerializer,
+    PatientVisitSerializer,
+    PatientVisitCreateSerializer,
+    PatientListSerializer,
+    PatientVisitUpdateSerializer,
+    PatientUpdateSerializer,
+    DoctorListSerializer,
+)
+from .models import Patient, PatientVisit
+from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission, AuditorPermission, SppechTherapistPermission
-
-# Create your views here.
-
 
 class PatientRegistrationView(generics.CreateAPIView):
     ''' Register a new Patient along with an initial visit record '''
@@ -187,7 +193,9 @@ class TodayPatientVisitsView(generics.ListAPIView):
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
 
-
+# --------------------------------------------------
+# FLAT LIST FO DROPDOWNS
+# ----------------------------------------------------
 # Patient Flat list for dropdowns and search by name
 class PatientFlatListView(generics.ListAPIView):
     queryset = Patient.objects.values('id', 'name', 'email', 'phone_primary')
@@ -202,6 +210,29 @@ class PatientFlatListView(generics.ListAPIView):
             queryset = self.filter_queryset(self.get_queryset())
             serializer = self.get_serializer(queryset, many=True)
             return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+    
+# Doctor name and roles flat list for dropdowns
+class DoctorFlatListView(generics.ListAPIView):
+    """
+    List all Doctors (Audiologists and Speech Therapists) for dropdowns and search by name.
+    If the user has a clinic assigned, only doctors from that clinic are listed.
+    """
+
+    serializer_class = DoctorListSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['name', 'roles__name']
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        qs = User.objects.filter(
+            roles__name__in=['Speech Therapist', 'Audiologist'],
+        )
+        if clinic:
+            qs = qs.filter(clinic=clinic)
+
+        # Optimize role access in DoctorListSerializer.get_designation
+        return qs.select_related('clinic').prefetch_related('roles').order_by('name').distinct()
     
 
     
@@ -243,6 +274,51 @@ class DashboardStatsView(APIView):
             data = {"error": "Access restricted to Receptionists only."}
 
         return Response({"status": 200, "data": data}, status=status.HTTP_200_OK)
+    
+
+
+
+# --------------------------------------------------------------------
+# AUDIOLOGIST 
+# ----------------------------------------------------------------------
+
+# Patient Queue View for Audiologist whose visit type is not either 'TGA / Machine Check' or 'Battery Purchase' or 'Tip / Dome Change'
+class AudiologistPatientQueueView(generics.ListAPIView):
+    ''' List all Patient Visits for Audiologist Queue '''
+    serializer_class = PatientVisitSerializer
+    permission_classes = [IsAuthenticated,AuditorPermission]
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        excluded_types = ['Battery Purchase', 'Tip / Dome Change','Speech Assessment','Speech Therapy Follow-up']
+        return PatientVisit.objects.filter(
+            clinic=getattr(self.request.user, 'clinic', None)
+        ).exclude(visit_type__in=excluded_types).order_by('-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response({"status": 200, "data": serializer.data})
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+    
+
+# Case History Fill of Patient for Audiologist when test requested is OAE
+    # ''' Create Audiologist Case History for a Patient Visit '''
+    # queryset = AudiologistCaseHistory.objects.all()
+    # permission_classes = [IsAuthenticated,AuditorPermission]
+    # serializer_class = PatientVisitCreateSerializer  # Reuse existing serializer or create a new one
+
+    # def create(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data, context={'request': request})
+    #     if not serializer.is_valid():
+    #         return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+    #     self.perform_create(serializer)   
+    #     return Response({"status": 200, "message": "Audiologist case history created successfully"},
+    #                             status=status.HTTP_200_OK)class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
+
 
 
 

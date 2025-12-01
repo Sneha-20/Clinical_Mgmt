@@ -13,7 +13,7 @@ class IsClinicAdmin(BasePermission):
     message = {"status": 403, "error": "You do not have permission to perform this action."}
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and getattr(request.user.role, 'name', '') == 'Admin')
+        return bool(request.user and request.user.is_authenticated and request.user.roles.filter(name='Admin').exists())
     
 
 class ReceptionistPermission(BasePermission):
@@ -23,7 +23,7 @@ class ReceptionistPermission(BasePermission):
     message = {"status": 403, "error": "You do not have permission to perform this action."}
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and getattr(request.user.role, 'name', '') == 'Reception')
+        return bool(request.user and request.user.is_authenticated and request.user.roles.filter(name='Reception').exists())
     
 
 class AuditorPermission(BasePermission):
@@ -33,7 +33,7 @@ class AuditorPermission(BasePermission):
     message = {"status": 403, "error": "You do not have permission to perform this action."}
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and getattr(request.user.role, 'name', '') == 'Audiologist')
+        return bool(request.user and request.user.is_authenticated and request.user.roles.filter(name='Audiologist').exists())
     
 
 class SppechTherapistPermission(BasePermission):
@@ -43,4 +43,4 @@ class SppechTherapistPermission(BasePermission):
     message = {"status": 403, "error": "You do not have permission to perform this action."}
 
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and getattr(request.user.role, 'name', '') == 'Speech Therapist')
+        return bool(request.user and request.user.is_authenticated and request.user.roles.filter(name='Speech Therapist').exists())

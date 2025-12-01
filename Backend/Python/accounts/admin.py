@@ -8,8 +8,12 @@ from .models import User, Role, Clinic
 class UserAdmin(admin.ModelAdmin):
   list_display = ("email", "name", "phone", "is_active", "is_staff", "is_approved")
   search_fields = ("email", "name", "phone")
-  list_filter = ("is_active", "is_staff", "is_approved", "role")
+  list_filter = ("is_active", "is_staff", "is_approved", "roles")
   readonly_fields = ("created_at",)
+
+  def roles(self, obj):
+    return ", ".join([role.name for role in obj.roles.all()])
+  roles.short_description = "Roles"
 
   def save_model(self, request, obj, form, change):
     # If creating a new user or password was changed in admin form, hash it

@@ -35,18 +35,21 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-        admin_role, _ = Role.objects.get_or_create(name='Admin')
-        extra_fields.setdefault('role', admin_role)        # superusers must be active and approved
         extra_fields.setdefault('is_active', True)
         extra_fields.setdefault('is_approved', True)
-        return self.create_user(email, password, **extra_fields)
+
+        user = self.create_user(email, password, **extra_fields)
+
+        admin_role, _ = Role.objects.get_or_create(name='Admin')
+        user.roles.add(admin_role)
+
+        return user
 
 class User(AbstractBaseUser, PermissionsMixin):
     clinic = models.ForeignKey("Clinic", on_delete=models.SET_NULL, null=True, blank=True)
 
     name = models.CharField(max_length=255)
-    role = models.ForeignKey("Role", on_delete=models.SET_NULL, null=True, blank=True)
-
+    roles = models.ManyToManyField("Role", blank=True, related_name="users")
     phone = models.CharField(max_length=50, unique=True, null=True, blank=True)
 
     email = models.EmailField(unique=True)
