@@ -6,6 +6,7 @@ export const routes = {
   // clinical
   patientList: "/clinical/patient/visit/",
   patientRegister: "/clinical/patient/register/",
+  patientVisit: "/clinical/patient/visit/create/",
   searchPatient: "/clinical/patient/flat-list/",
 
   pages: {
@@ -17,4 +18,4 @@ export const routes = {
 };
 export const privateRoutes = [routes.pages.dashboard];
 
-export const notToshowForPrivate = [routes.pages.login, routes.pages.signup];
+export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.home];

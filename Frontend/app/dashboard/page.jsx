@@ -11,24 +11,33 @@ export default function Dashboard() {
   const router = useRouter()
 
   useEffect(() => {
-    const role = localStorage.getItem('userRole')
+    const role = localStorage.getItem("userRole");
     if (!role) {
-      router.push('/')
+      router.push("/");
+    } else if (
+      role === "Audiologist" ||
+      role === "Speech" ||
+      role === "Audiologist &  Speech Therapist"
+    ) {
+      setUserRole("Doctor");
     } else {
-      setUserRole(role)
+      setUserRole(role);
     }
-  }, [router])
-
+  }, [router]);
+ 
+  if (!userRole) {
+    return null
+  }
   const renderDashboard = () => {
     switch (userRole) {
       case 'Reception':
         return <ReceptionDashboard />
-      case 'Audiologist':
-        return <AudiologistDashboard />
-      case 'Admin':
-        return <AdminDashboard />
-      case 'Speech':
-        return <div className="text-center py-12"><p className="text-muted-foreground">Speech Therapist Dashboard - Coming Soon</p></div>
+        case 'Doctor':
+          return <AudiologistDashboard />
+          case 'Admin':
+            return <AdminDashboard />
+      // case 'Speech':
+      //   return <div className="text-center py-12"><p className="text-muted-foreground">Speech Therapist Dashboard - Coming Soon</p></div>
       default:
         return <ReceptionDashboard />
     }

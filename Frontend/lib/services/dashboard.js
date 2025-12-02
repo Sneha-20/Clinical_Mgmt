@@ -77,10 +77,33 @@ export const getPatientById = async (patientId) => {
  * @returns {Promise<Object>} Created patient data
  */
 export const createPatient = async (patientData) => {
+  console.log("📤 Creating patient:", patientData);
   try {
     console.log("📤 Creating patient:", patientData);
     
     const response = await apiClient.post(routes.patientRegister, patientData);
+
+    console.log("✅ Patient created:", response);
+    getPatientList();
+    // Handle nested response structure
+    const patient = response?.data?.data || response?.data || response;
+    
+    return patient;
+  } catch (error) {
+    console.error("❌ Create patient failed:", {
+      status: error?.response?.status,
+      message: error?.message,
+      data: error?.response?.data,
+    });
+    throw error;
+  }
+};
+export const addNewVisit = async (patientData) => {
+  console.log("📤 Creating patient:", patientData);
+  try {
+    console.log("📤 Creating patient:", patientData);
+    
+    const response = await apiClient.post(routes.patientVisit, patientData);
 
     console.log("✅ Patient created:", response);
     getPatientList();

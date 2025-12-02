@@ -3,6 +3,7 @@
 import { routes } from "@/lib/utils/constants/route";
 import apiClient from "../api/client";
 import { getApiBaseURL } from "../utils/config";
+import { useRouter } from "next/navigation";
 
 /**
  * Login user and set token in cookie (client-side)
@@ -10,8 +11,11 @@ import { getApiBaseURL } from "../utils/config";
 export async function login(payload) {
   try {
     const data = await apiClient.post(routes.login, payload);
-    if (data?.data?.access) {
-      apiClient.setToken(data?.data?.access);
+    if (data?.data?.access && data?.data?.user?.role?.name) {
+      const role = data?.data?.user?.role?.name;
+       apiClient.setToken(data?.data?.access);
+       localStorage.setItem("userRole", role);
+      //  router.push("/dashboard");
     } 
     return data;
   } catch (error) {
@@ -43,6 +47,7 @@ export const register = async (payload) => {
 export const logoutAction = async () => {
   try {
     apiClient.removeToken();
+     localStorage.removeItem("userRole");
     return true;
   } catch (error) {
     throw error;

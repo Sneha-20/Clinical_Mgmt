@@ -16,14 +16,14 @@ export default function Modal({ onClose, header, onSubmit, children }) {
         </CardHeader>
 
         <CardContent>{children}</CardContent>
-        <div className="p-6 pt-0">
-
-        <Button variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        </div>
+        {/* <div className="p-6 pt-0">
+          {onClose && (
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          )}
+        </div> */}
       </Card>
-     
     </div>
   );
 }

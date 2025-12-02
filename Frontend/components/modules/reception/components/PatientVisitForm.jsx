@@ -1,73 +1,249 @@
 import { Button } from "@/components/ui/button";
+import DropDown from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
 import Modal from "@/components/ui/Modal";
-import { searchPatient } from "@/lib/services/dashboard";
-import { Plus, Search } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { extractYupErrors } from "@/lib/utils/helper/extractError";
+import { visitPatientSchema } from "@/lib/utils/schema";
+import { useCallback, useState } from "react";
+import {
+  visitTypeOptions,
+  testRequestedOptions,
+  complaintOptions,
+} from "@/lib/utils/constants/staticValue";
 
-export default function PatientVisitForm({ onClose, onSubmit }) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
+export default function PatientVisitForm({
+  onClose,
+  onSubmit,
+  showSelctedPatientId,
+}) {
+  const serviceOption = [
+    { label: "Clinic", value: "clinic" },
+    { label: "Home", value: "home" },
+  ];
+  const [errors, setErrors] = useState({});
+  const [formData, setFormData] = useState({
+    patient: showSelctedPatientId || "",
+    service_type: "",
+    appointment_date: "",
+    visit_details: [
+      {
+        visit_type: "",
+        present_complaint: "",
+        assigned_to: "",
+        test_requested: [],
+        notes: "",
+      },
+    ],
+  });
 
-    useEffect(() => {
-        const searchPatientsList = async () => {
-          try {
-           const response = await searchPatient(searchTerm);
-              setSearchResults(response);
-            console.log("Searching for patients with term:", searchTerm);
-          } catch (error) {
-            console.error("Error searching patients:", error);
-          }}
-      searchPatientsList()
-    }, [searchTerm]);
+  const updateField = useCallback(
+    (name, value) => {
+      console.log("Updating formdata:", formData);  
+      console.log("Updating field:", name, value);
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    },
+    [errors]
+  );
+
+  /* ----------------- Update Visit Details ----------------- */
+  const updateVisitDetails = (index, key, value) => {
+    const updatedVisit = [...formData.visit_details];
+    updatedVisit[index] = { ...updatedVisit[index], [key]: value };
+    setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
+  };
+  const handleAddMoreVisit = () => {
+    const lastVisit = formData.visit_details[formData.visit_details.length - 1];
+
+    if (!lastVisit.visit_type || !lastVisit.present_complaint) {
+      return showToast({
+        type: "error",
+        message:
+          "Please fill in the current visit details before adding a new one.",
+      });
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      visit_details: [
+        ...prev.visit_details,
+        {
+          visit_type: "",
+          present_complaint: "",
+          assigned_to: "",
+          test_requested: [],
+          notes: "",
+        },
+      ],
+    }));
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Submitting form with data:", formData);
+    try {
+      await visitPatientSchema.validate(formData, { abortEarly: false });
+      setErrors({});
+
+      if (onSubmit) onSubmit(formData);
+    } catch (error) {
+      console.log("Validation errors:", extractYupErrors(error));
+      if (error.name === "ValidationError") {
+        setErrors(extractYupErrors(error));
+      } else {
+        showToast({
+          type: "error",
+          message: error?.response?.data?.error || "Something went wrong",
+        });
+      }
+    }
+  };
 
   return (
-    <div>   
-      <Modal
-        header="Schedule Appointment"
-        onClose={onClose}
-        onSubmit={onSubmit}
-      >
-        <div className="flex gap-5">
-          <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-primary">
-              Existing Patient
-            </h3>
-            <div className="flex gap-2 items-center relative w-full">
-              <Input
-                placeholder="Search by name or phone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 text-sm top-[15px] pr-6 w-full"
-              />
-              <Search className="w-5 h-5 text-primary flex-shrink-0 absolute right-1 top-[14px]" />
-            </div>
-            <div>
-            {searchResults.length > 0 ? (
-              <ul className="max-h-40 overflow-y-auto border border-slate-200 rounded-md p-2">
-                {searchResults.map((patient) => (
-                    <li key={patient.id} className="py-1 border-b last:border-0">{patient.name} - {patient.phone}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-slate-500 text-xs sm:text-sm">No patients found</p>
-                )}
-            </div>
-            <p className="text-slate-500 text-xs sm:text-sm">Find an existing patient to book theire appoinment</p>
-          </div>
-
-          <div className="h-auto w-px bg-gray-200"></div>
-
-          <div className="flex flex-col gap-3">
-            <h3 className="font-semibold text-primary">New Patient</h3>
-           <Button className="gap-2 text-sm w-full sm:w-auto">
-            <Plus className="w-4 h-4" />
-            New Patient
-          </Button>
-            <p className="text-slate-500 text-xs sm:text-sm">Create a new patient record and appoinment</p>
+    <Modal onClose={onClose}  header="Patient Visit Form">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <h3 className="font-semibold text-primary mb-3">Service Type</h3>
+          {/* RADIO BUTTONS FOR REFERRAL TYPE */}
+          <div className="flex gap-6">
+            {serviceOption.map((item) => (
+              <label
+                key={item.value}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  name="service_type"
+                  value={item.value}
+                  checked={formData.service_type === item.value}
+                 onChange={(e) => updateField(e.target.name, e.target.value)}
+                  className="w-4 h-4"
+                />
+                <span>{item.label}</span>
+              </label>
+            ))}
+            {errors?.service_type && (
+              <p className="text-red-500 text-sm mt-1">{errors.service_type}</p>
+            )}
           </div>
         </div>
-      </Modal>
-    </div>
+        <div className="mt-4">
+          <Input
+            label="Appointment Date"
+            type="date"
+            name="appointment_date"
+            value={formData.appointment_date}
+            onChange={(e) => updateField(e.target.name, e.target.value)}
+            error={errors.visit_details?.appointment_date}
+          />
+        </div>
+
+        {/* ---------------- VISIT DETAILS (MULTIPLE) ---------------- */}
+        {formData.visit_details.map((visit, index) => (
+          <div key={index} className="border-t pt-4">
+            <h3 className="font-semibold text-primary mb-3">
+              Visit Details {index + 1}
+            </h3>
+
+            <DropDown
+              label="Purpose of Visit"
+              name="visit_type"
+              options={visitTypeOptions}
+              value={visit.visit_type}
+              onChange={(n, v) => updateVisitDetails(index, "visit_type", v)}
+              error={errors.visit_type}
+            />
+
+            <DropDown
+              label="Present Complaint"
+              name="present_complaint"
+              options={complaintOptions}
+              value={visit.present_complaint}
+              onChange={(n, v) =>
+                updateVisitDetails(index, "present_complaint", v)
+              }
+            />
+
+            <textarea
+              className="w-full border rounded p-2 mt-2"
+              placeholder="Notes about complaint"
+              value={visit.notes}
+              onChange={(e) =>
+                updateVisitDetails(index, "notes", e.target.value)
+              }
+            />
+
+            {/* Tests Required */}
+            <div className="mt-4">
+              <label className="font-medium text-sm text-gray-700">
+                Tests Required (Tick)
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                {testRequestedOptions.map((test) => (
+                  <label
+                    key={test.value}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      value={test.value}
+                      checked={visit.test_requested.includes(test.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+
+                        let updated = [...visit.test_requested];
+
+                        if (updated.includes(value)) {
+                          updated = updated.filter((t) => t !== value);
+                        } else {
+                          updated.push(value);
+                        }
+
+                        updateVisitDetails(index, "test_requested", updated);
+                      }}
+                    />
+                    {test.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Add More Visit Button */}
+        <Button
+          type="button"
+          onClick={handleAddMoreVisit}
+          className="mt-2"
+          variant="outline"
+        >
+          + Add More Visit
+        </Button>
+
+        {/* ACTION BUTTONS */}
+        <div className="flex justify-end gap-3 mt-6">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+
+          <Button type="submit">Register Patient</Button>
+        </div>
+      </form>
+    </Modal>
+    //     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+    //   <Card className="w-full max-w-2xl max-h-[95vh] overflow-y-auto">
+    //     <CardHeader className="flex flex-row justify-between items-center">
+    //       <CardTitle className="text-lg">New Patient Registration</CardTitle>
+
+    //       <Button variant="ghost" size="icon" onClick={onClose}>
+    //         <X className="w-4 h-4" />
+    //       </Button>
+    //     </CardHeader>
+
+    //     <CardContent>
+
+    //     </CardContent>
+    //   </Card>
+    // </div>
   );
 }

@@ -11,8 +11,11 @@ import { Button } from "@/components/ui/button";
 import DropDown from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
 import { showToast } from "@/components/ui/toast";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm({ onLogin }) {
+  const router = useRouter();
+
   const dispatch = useDispatch();
   const [userData, setUserData] = useState({
     email: "",
@@ -86,10 +89,11 @@ export default function LoginForm({ onLogin }) {
         };
 
         const res = await login(payload);
-        const role = res?.data?.user?.role?.name || res?.user?.role?.name;
-        if (role) {
-          onLogin(role);
-        }
+        router.push("/dashboard");
+        // const role = res?.data?.user?.role?.name || res?.user?.role?.name;
+        // if (role) {
+        //   onLogin(role);
+        // }
         
         showToast({
           type: "success",
