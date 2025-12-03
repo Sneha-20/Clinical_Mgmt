@@ -295,8 +295,10 @@ class AudiologistPatientQueueView(generics.ListAPIView):
 
     def get_queryset(self):
         excluded_types = ['Battery Purchase', 'Tip / Dome Change','Speech Assessment','Speech Therapy Follow-up']
+        from django.utils import timezone
+        today = timezone.now().date()
         return PatientVisit.objects.filter(
-            clinic=getattr(self.request.user, 'clinic', None),seen_by=self.request.user
+            clinic=getattr(self.request.user, 'clinic', None),seen_by=self.request.user,status='Test pending',appointment_date=today
         ).exclude(visit_type__in=excluded_types).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
