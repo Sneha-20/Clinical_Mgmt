@@ -87,7 +87,7 @@ class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend,SearchFilter]
     search_fields = ['patient__name','patient__phone_primary']
-    filterset_fields = ['status','visit_type', 'appointment_date']
+    filterset_fields = ['status','visit_type', 'appointment_date', 'service_type']
     
 
     def list(self, request, *args, **kwargs):
@@ -176,6 +176,9 @@ class TodayPatientVisitsView(generics.ListAPIView):
     serializer_class = PatientVisitSerializer
     permission_classes = [IsAuthenticated,ReceptionistPermission]
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend,SearchFilter]
+    search_fields = ['patient__name','patient__phone_primary']
+    filterset_fields = ['status','visit_type', 'service_type']
 
 
     def get_queryset(self):

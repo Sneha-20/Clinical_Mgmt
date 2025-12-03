@@ -79,7 +79,11 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
     """
 
     # Root-level extra fields (not stored on Patient model) but used for each visit
-    service_type = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    service_type = serializers.CharField(
+        write_only=True,
+        required=True,
+        error_messages={'required': "Service type is mandatory."},
+    )
     appointment_date = serializers.DateField(write_only=True, required=False)
 
     # Nested list of visit records
