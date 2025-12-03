@@ -210,6 +210,8 @@ class DoctorListSerializer(serializers.ModelSerializer):
             'id', 'name', 'designation'
         ]
 
+
+# All PAtient visit list 
 class PatientVisitSerializer(serializers.ModelSerializer):
     patient_id = serializers.IntegerField(source='patient.id', read_only=True)
     patient_name = serializers.CharField(source='patient.name', read_only=True)
@@ -363,20 +365,25 @@ class TrialSerializer(serializers.ModelSerializer):
 class AudiologistQueueSerializer(serializers.ModelSerializer):
     patient_name = serializers.CharField(source='patient.name', read_only=True)
     patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    visit_id = serializers.IntegerField(source='id', read_only=True)
+    referral_type = serializers.CharField(source='patient.referral_type', read_only=True)
+    referral_doctor = serializers.CharField(source='patient.referral_doctor', read_only=True)
+
+
     # present_complaint = serializers.CharField()
     # test_requested = serializers.CharField()
 
     class Meta:
         model = PatientVisit
         fields = [
-            'id',
+            'visit_id',
             'patient_name',
             'patient_phone',
             'visit_type',
             'present_complaint',
             'test_requested',
             'status',
-            'appointment_date',
+            # 'appointment_date',
             'referral_type',
             'referral_doctor'
         ]

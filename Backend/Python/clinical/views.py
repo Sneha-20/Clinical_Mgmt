@@ -13,6 +13,7 @@ from .serializers import (
     PatientVisitUpdateSerializer,
     PatientUpdateSerializer,
     DoctorListSerializer,
+    AudiologistQueueSerializer,
 )
 from .models import Patient, PatientVisit
 from accounts.models import User
@@ -288,14 +289,14 @@ class DashboardStatsView(APIView):
 # Patient Queue View for Audiologist whose visit type is not either 'TGA / Machine Check' or 'Battery Purchase' or 'Tip / Dome Change'
 class AudiologistPatientQueueView(generics.ListAPIView):
     ''' List all Patient Visits for Audiologist Queue '''
-    serializer_class = PatientVisitSerializer
+    serializer_class = AudiologistQueueSerializer
     permission_classes = [IsAuthenticated,AuditorPermission]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         excluded_types = ['Battery Purchase', 'Tip / Dome Change','Speech Assessment','Speech Therapy Follow-up']
         return PatientVisit.objects.filter(
-            clinic=getattr(self.request.user, 'clinic', None)
+            clinic=getattr(self.request.user, 'clinic', None),seen_by=self.request.user
         ).exclude(visit_type__in=excluded_types).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
@@ -306,6 +307,21 @@ class AudiologistPatientQueueView(generics.ListAPIView):
             return self.get_paginated_response({"status": 200, "data": serializer.data})
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+
+# Get the details view of patient visit records by visit ID 
+class PatientVisitDetailView(generics.RetrieveAPIView):
+    ''' Retrieve details of a Patient Visit by Visit ID '''
+    queryset = PatientVisit.objects.all()
+    serializer_class = AudiologistQueueSerializer
+    permission_classes = [IsAuthenticated,AuditorPermission]
+    lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
     
 
 # Case History Fill of Patient for Audiologist when test requested is OAE
