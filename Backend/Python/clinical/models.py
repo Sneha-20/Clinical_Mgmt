@@ -47,7 +47,6 @@ class AudiologistCaseHistory(models.Model):
 class VisitTestPerformed(models.Model):
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
     # test_code = models.CharField(max_length=100)
-    # required = models.BooleanField(default=False)
     pta = models.BooleanField(default=False)
     immittance = models.BooleanField(default=False)
     oae = models.BooleanField(default=False)
