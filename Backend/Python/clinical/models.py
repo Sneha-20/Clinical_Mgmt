@@ -35,7 +35,14 @@ class PatientVisit(models.Model):
 
 
 class AudiologistCaseHistory(models.Model):
-    visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
+    """
+    Stores case history for a patient.
+    This information is typically filled only once at the patient's first visit.
+    For subsequent revisits, the same records are referenced (one per patient).
+    """
+    patient = models.OneToOneField(Patient, on_delete=models.CASCADE, related_name='case_history', null=True)
+    # Instead of linking to PatientVisit, link directly to Patient for one-time entry.
+
     medical_history = models.TextField()
     family_history = models.TextField()
     noise_exposure = models.TextField()
@@ -43,6 +50,10 @@ class AudiologistCaseHistory(models.Model):
     red_flags = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    # def __str__(self):
+    #     return f"Case History for {self.patient.name}"
+
 
 class VisitTestPerformed(models.Model):
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)

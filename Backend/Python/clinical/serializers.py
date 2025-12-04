@@ -372,6 +372,8 @@ class TrialSerializer(serializers.ModelSerializer):
 
 
 class AudiologistQueueSerializer(serializers.ModelSerializer):
+    
+    patient_id = serializers.IntegerField(source='patient.id', read_only=True)
     patient_name = serializers.CharField(source='patient.name', read_only=True)
     patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
     visit_id = serializers.IntegerField(source='id', read_only=True)
@@ -386,6 +388,7 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
         model = PatientVisit
         fields = [
             'visit_id',
+            'patient_id',
             'patient_name',
             'patient_phone',
             'visit_type',
@@ -423,13 +426,14 @@ class AudiologistCaseHistoryViewSerializer(serializers.ModelSerializer):
 class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
     """
     Simple payload to create:
-      - AudiologistCaseHistory
-      - VisitTestPerformed (test flags)
+      - AudiologistCaseHistory (linked to Patient, one per patient)
+      - VisitTestPerformed (test flags, linked to PatientVisit)
       - TestUpload records (uploaded reports)
 
     Expected payload example:
     {
-        "visit": 1,
+        "patient": 12,  // Required: Patient ID for case history
+        "visit": 1,     // Required: Visit ID for test performed and billing
         "medical_history": "...",
         "family_history": "...",
         "noise_exposure": "...",
@@ -447,7 +451,17 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             { "file_type": "OAE", "file_path": "path-or-url-2" }
         ]
     }
+    
+    Note: Case history is linked to Patient (one per patient), but tests and billing
+    are linked to the specific Visit.
     """
+
+    # Visit field is needed for VisitTestPerformed and billing, but not stored in AudiologistCaseHistory
+    visit = serializers.PrimaryKeyRelatedField(
+        queryset=PatientVisit.objects.all(),
+        write_only=True,
+        help_text="Visit ID for test performed and billing"
+    )
 
     # Flat fields corresponding to VisitTestPerformed model
     # required = serializers.BooleanField(default=False, write_only=True)
@@ -477,7 +491,8 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AudiologistCaseHistory
         fields = [
-            'visit',
+            'patient',  # Changed from 'visit' to 'patient' to match model
+            'visit',    # Keep as write_only for VisitTestPerformed and billing
             'medical_history',
             'family_history',
             'noise_exposure',
@@ -500,12 +515,17 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """
-        1. Create AudiologistCaseHistory
-        2. Create VisitTestPerformed (if any test field is set)
+        1. Create/Update AudiologistCaseHistory (linked to Patient, one per patient)
+        2. Create VisitTestPerformed (if any test field is set, linked to Visit)
         3. Create TestUpload rows for given files
         4. Create / update Bill and BillItem rows based on tests performed
         """
         from .models import TestUpload
+
+        # Extract visit (needed for VisitTestPerformed and billing, but not stored in case history)
+        visit = validated_data.pop('visit', None)
+        if not visit:
+            raise serializers.ValidationError({"visit": "Visit ID is required for test performed and billing."})
 
         # Extract VisitTestPerformed-related fields
         test_fields = [
@@ -540,15 +560,33 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
 
         with transaction.atomic():
-            # 1. Save AudiologistCaseHistory instance
-            case_history = super().create(validated_data)
+            # 1. Create or update AudiologistCaseHistory instance (one per patient)
+            # Use get_or_create since case history should be one per patient
+            patient = validated_data.get('patient')
+            case_history, created = AudiologistCaseHistory.objects.get_or_create(
+                patient=patient,
+                defaults={
+                    'created_by': getattr(request, 'user', None) if request else None,
+                    **validated_data
+                }
+            )
+            
+            # If case history already exists, update it with new data
+            if not created:
+                for key, value in validated_data.items():
+                    if key != 'patient':  # Don't update patient field
+                        setattr(case_history, key, value)
+                if request and request.user:
+                    # Optionally update created_by if needed
+                    pass
+                case_history.save()
 
             # 2. Create VisitTestPerformed only if something meaningful is set
             has_any_test = any(bool(value) for _, value in test_performed_data.items())
             test_performed_instance = None
             if has_any_test:
                 test_performed_instance = VisitTestPerformed.objects.create(
-                    visit=case_history.visit,
+                    visit=visit,  # Use the extracted visit, not case_history.visit
                     **test_performed_data
                 )
 
@@ -566,12 +604,11 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
             # 4. Billing: create / update Bill and BillItems for each test
             if test_performed_instance:
-                visit = case_history.visit
                 clinic = getattr(visit, 'clinic', None)
 
                 # Get or create a Bill for this visit
                 bill, _ = Bill.objects.get_or_create(
-                    visit=visit,
+                    visit=visit,  # Use the extracted visit
                     defaults={
                         'clinic': clinic,
                         'created_by': getattr(request, 'user', None) if request else None,
