@@ -14,9 +14,10 @@ from .serializers import (
     PatientUpdateSerializer,
     DoctorListSerializer,
     AudiologistQueueSerializer,
-    AudiologistCaseHistoryCreateSerializer
+    AudiologistCaseHistoryCreateSerializer,
+    BillDetailSerializer,
 )
-from .models import Patient, PatientVisit, AudiologistCaseHistory
+from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -345,6 +346,83 @@ class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
         )
 
 
+# ============================================================================
+# BILL VIEWS
+# ============================================================================
+
+class BillDetailView(generics.RetrieveAPIView):
+    """
+    Retrieve bill details for a specific visit.
+    
+    GET /api/clinical/bill/visit/<visit_id>/
+    
+    Returns complete bill information including:
+    - Bill details (number, dates, totals)
+    - Patient information
+    - Visit information
+    - All bill items (tests and trials)
+    - Financial summary
+    """
+    serializer_class = BillDetailSerializer
+    permission_classes = [IsAuthenticated, ReceptionistPermission]
+    lookup_field = 'visit_id'
+    lookup_url_kwarg = 'visit_id'
+
+    def get_queryset(self):
+        """Filter bills by clinic"""
+        clinic = getattr(self.request.user, 'clinic', None)
+        if clinic:
+            return Bill.objects.filter(clinic=clinic).select_related(
+                'visit',
+                'visit__patient',
+                'clinic',
+                'created_by'
+            ).prefetch_related(
+                'bill_items__test_type',
+                'bill_items__trial'
+            )
+        return Bill.objects.select_related(
+            'visit',
+            'visit__patient',
+            'clinic',
+            'created_by'
+        ).prefetch_related(
+            'bill_items__test_type',
+            'bill_items__trial'
+        )
+
+    def get_object(self):
+        """Get bill by visit_id, create if doesn't exist"""
+        visit_id = self.kwargs.get(self.lookup_url_kwarg)
+        try:
+            visit = PatientVisit.objects.get(id=visit_id)
+        except PatientVisit.DoesNotExist:
+            from rest_framework.exceptions import NotFound
+            raise NotFound("Visit not found")
+
+        # Get or create bill for this visit
+        bill, created = Bill.objects.get_or_create(
+            visit=visit,
+            defaults={
+                'clinic': visit.clinic,
+                'created_by': self.request.user,
+            }
+        )
+
+        # Ensure bill number is generated
+        if not bill.bill_number:
+            bill.generate_bill_number()
+            bill.save()
+
+        # Recalculate totals to ensure they're up to date
+        bill.calculate_total()
+
+        return bill
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
 
 

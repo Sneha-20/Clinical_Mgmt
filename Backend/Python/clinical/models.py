@@ -47,6 +47,7 @@ class AudiologistCaseHistory(models.Model):
 class VisitTestPerformed(models.Model):
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
     # test_code = models.CharField(max_length=100)
+    # required = models.BooleanField(default=False)
     pta = models.BooleanField(default=False)
     immittance = models.BooleanField(default=False)
     oae = models.BooleanField(default=False)
@@ -141,11 +142,21 @@ class Bill(models.Model):
         return f"Bill {self.bill_number or self.id} - {self.visit.patient.name}"
 
     def calculate_total(self):
-        """Calculate total from all bill items"""
-        from django.db.models import F, Sum
+        """Calculate total from all bill items (fix Decimal/float subtraction)"""
+        from django.db.models import F, Sum, DecimalField
+        from decimal import Decimal
+
+        # Aggregate will always return Decimal or None; ensure default is Decimal
         total = self.bill_items.aggregate(
-            total=Sum(F('cost') * F('quantity'))
-        )['total'] or 0
+            total=Sum(F('cost') * F('quantity'), output_field=DecimalField())
+        )['total']
+        if total is None:
+            total = Decimal('0.00')
+        # Ensure discount_amount is Decimal, not float (avoid subtraction error)
+        if self.discount_amount is None:
+            self.discount_amount = Decimal('0.00')
+        elif not isinstance(self.discount_amount, Decimal):
+            self.discount_amount = Decimal(str(self.discount_amount))  # Convert float to str then Decimal, safe for .00
         self.total_amount = total
         self.final_amount = total - self.discount_amount
         self.save(update_fields=['total_amount', 'final_amount'])

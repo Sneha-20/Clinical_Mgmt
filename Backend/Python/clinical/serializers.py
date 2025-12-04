@@ -1,5 +1,14 @@
 
-from .models import Patient, PatientVisit, AudiologistCaseHistory, VisitTestPerformed, Trial
+from .models import (
+    Patient,
+    PatientVisit,
+    AudiologistCaseHistory,
+    VisitTestPerformed,
+    Trial,
+    TestType,
+    Bill,
+    BillItem,
+)
 from rest_framework import serializers
 from django.db import transaction
 import re
@@ -428,13 +437,9 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         "red_flags": "...",
 
         "pta": true,
-        "immittance": false,
         "oae": true,
-        "bera_assr": false,
         "srt": true,
         "sds": true,
-        "ucl": false,
-        "free_field": false,
         "other_test": "Any other test name or notes",
 
         "test_report_files": [
@@ -498,6 +503,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         1. Create AudiologistCaseHistory
         2. Create VisitTestPerformed (if any test field is set)
         3. Create TestUpload rows for given files
+        4. Create / update Bill and BillItem rows based on tests performed
         """
         from .models import TestUpload
 
@@ -519,31 +525,211 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         # Extract uploaded report files
         test_report_files = validated_data.pop('test_report_files', [])
 
-        # 1. Save AudiologistCaseHistory instance
-        case_history = super().create(validated_data)
+        # Map VisitTestPerformed boolean fields -> TestType names
+        flag_to_testtype_name = {
+            'pta': 'PTA',
+            'immittance': 'Immittance',
+            'oae': 'OAE',
+            'bera_assr': 'BERA/ASSR',
+            'srt': 'SRT',
+            'sds': 'SDS',
+            'ucl': 'UCL',
+            'free_field': 'Free Field',
+        }
 
-        # 2. Create VisitTestPerformed only if something meaningful is set
-        has_any_test = any(
-            bool(value) for key, value in test_performed_data.items()
-        )
-        test_performed_instance = None
-        if has_any_test:
-            test_performed_instance = VisitTestPerformed.objects.create(
-                visit=case_history.visit,
-                **test_performed_data
-            )
+        request = self.context.get('request')
 
-        # 3. Save uploaded report files in the TestUpload table
-        if test_performed_instance and test_report_files:
-            for f in test_report_files:
-                file_type = f.get('file_type')
-                file_path = f.get('file_path')
-                if file_type and file_path:
-                    TestUpload.objects.create(
-                        visit=test_performed_instance,
-                        file_type=file_type,
-                        file_path=file_path,
-                    )
+        with transaction.atomic():
+            # 1. Save AudiologistCaseHistory instance
+            case_history = super().create(validated_data)
+
+            # 2. Create VisitTestPerformed only if something meaningful is set
+            has_any_test = any(bool(value) for _, value in test_performed_data.items())
+            test_performed_instance = None
+            if has_any_test:
+                test_performed_instance = VisitTestPerformed.objects.create(
+                    visit=case_history.visit,
+                    **test_performed_data
+                )
+
+            # 3. Save uploaded report files in the TestUpload table
+            if test_performed_instance and test_report_files:
+                for f in test_report_files:
+                    file_type = f.get('file_type')
+                    file_path = f.get('file_path')
+                    if file_type and file_path:
+                        TestUpload.objects.create(
+                            visit=test_performed_instance,
+                            file_type=file_type,
+                            file_path=file_path,
+                        )
+
+            # 4. Billing: create / update Bill and BillItems for each test
+            if test_performed_instance:
+                visit = case_history.visit
+                clinic = getattr(visit, 'clinic', None)
+
+                # Get or create a Bill for this visit
+                bill, _ = Bill.objects.get_or_create(
+                    visit=visit,
+                    defaults={
+                        'clinic': clinic,
+                        'created_by': getattr(request, 'user', None) if request else None,
+                    },
+                )
+
+                # For each True flag in VisitTestPerformed, add a BillItem
+                for field_name, testtype_name in flag_to_testtype_name.items():
+                    if getattr(test_performed_instance, field_name, False):
+                        try:
+                            test_type = TestType.objects.get(name__iexact=testtype_name)
+                        except TestType.DoesNotExist:
+                            # Skip if no configured TestType for this test
+                            continue
+
+                        BillItem.objects.create(
+                            bill=bill,
+                            item_type='Test',
+                            test_type=test_type,
+                            description=test_type.name,
+                            cost=test_type.cost,
+                            quantity=1,
+                        )
+
+                # Also handle "other_test" if you have a configured TestType with that name
+                other_test_name = test_performed_instance.other_test
+                if other_test_name:
+                    try:
+                        other_test_type = TestType.objects.get(name__iexact=other_test_name)
+                        BillItem.objects.create(
+                            bill=bill,
+                            item_type='Test',
+                            test_type=other_test_type,
+                            description=other_test_type.name,
+                            cost=other_test_type.cost,
+                            quantity=1,
+                        )
+                    except TestType.DoesNotExist:
+                        # If no TestType exists for this free-text test, skip billing
+                        pass
+
+                # Recalculate totals explicitly (BillItem.save also does this, but this is safe)
+                bill.calculate_total()
 
         return case_history
+
+
+# ============================================================================
+# BILL SERIALIZERS
+# ============================================================================
+
+class BillItemSerializer(serializers.ModelSerializer):
+    """Serializer for individual bill items"""
+    test_type_name = serializers.CharField(source='test_type.name', read_only=True)
+    test_type_code = serializers.CharField(source='test_type.code', read_only=True)
+    trial_brand = serializers.CharField(source='trial.brand', read_only=True)
+    trial_model = serializers.CharField(source='trial.model', read_only=True)
+    item_total = serializers.SerializerMethodField()
+
+    def get_item_total(self, obj):
+        """Calculate total for this item (cost * quantity)"""
+        return float(obj.cost * obj.quantity)
+
+    class Meta:
+        model = BillItem
+        fields = [
+            'id',
+            'item_type',
+            'test_type',
+            'test_type_name',
+            'test_type_code',
+            'trial',
+            'trial_brand',
+            'trial_model',
+            'description',
+            'cost',
+            'quantity',
+            'item_total',
+            'created_at',
+        ]
+
+
+class BillDetailSerializer(serializers.ModelSerializer):
+    """Complete bill serializer with all details for frontend display"""
+    # Patient information
+    patient_id = serializers.IntegerField(source='visit.patient.id', read_only=True)
+    patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='visit.patient.phone_primary', read_only=True)
+    patient_email = serializers.EmailField(source='visit.patient.email', read_only=True)
+    patient_address = serializers.CharField(source='visit.patient.address', read_only=True)
+    patient_city = serializers.CharField(source='visit.patient.city', read_only=True)
+
+    # Visit information
+    visit_id = serializers.IntegerField(source='visit.id', read_only=True)
+    visit_type = serializers.CharField(source='visit.visit_type', read_only=True)
+    visit_date = serializers.DateTimeField(source='visit.created_at', read_only=True)
+    appointment_date = serializers.DateField(source='visit.appointment_date', read_only=True)
+    service_type = serializers.CharField(source='visit.service_type', read_only=True)
+
+    # Clinic information
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    clinic_address = serializers.CharField(source='clinic.address', read_only=True)
+    clinic_phone = serializers.CharField(source='clinic.phone', read_only=True)
+
+    # Bill items
+    bill_items = BillItemSerializer(many=True, read_only=True)
+
+    # Calculated fields
+    items_count = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
+
+    def get_items_count(self, obj):
+        """Total number of items in the bill"""
+        return obj.bill_items.count()
+
+    def get_subtotal(self, obj):
+        """Subtotal before discount (same as total_amount)"""
+        return float(obj.total_amount)
+
+    class Meta:
+        model = Bill
+        fields = [
+            # Bill basic info
+            'id',
+            'bill_number',
+            'created_at',
+            'updated_at',
+            'payment_status',
+            'notes',
+            
+            # Patient info
+            'patient_id',
+            'patient_name',
+            'patient_phone',
+            'patient_email',
+            'patient_address',
+            'patient_city',
+            
+            # Visit info
+            'visit_id',
+            'visit_type',
+            'visit_date',
+            'appointment_date',
+            'service_type',
+            
+            # Clinic info
+            'clinic_name',
+            'clinic_address',
+            'clinic_phone',
+            
+            # Bill items
+            'bill_items',
+            'items_count',
+            
+            # Financial summary
+            'total_amount',
+            'discount_amount',
+            'final_amount',
+            'subtotal',
+        ]
 
