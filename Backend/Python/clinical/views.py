@@ -186,7 +186,7 @@ class TodayPatientVisitsView(generics.ListAPIView):
     def get_queryset(self):
         from django.utils import timezone
         today = timezone.now().date()
-        return PatientVisit.objects.filter(appointment_date=today, clinic=getattr(self.request.user, 'clinic', None)).order_by('created_at')
+        return PatientVisit.objects.filter(appointment_date=today, clinic=getattr(self.request.user, 'clinic', None)).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -300,7 +300,7 @@ class AudiologistPatientQueueView(generics.ListAPIView):
         today = timezone.now().date()
         return PatientVisit.objects.filter(
             clinic=getattr(self.request.user, 'clinic', None),seen_by=self.request.user,status='Test pending',appointment_date=today
-        ).exclude(visit_type__in=excluded_types).order_by('-created_at')
+        ).exclude(visit_type__in=excluded_types).order_by('created_at')
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
