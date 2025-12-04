@@ -14,8 +14,9 @@ from .serializers import (
     PatientUpdateSerializer,
     DoctorListSerializer,
     AudiologistQueueSerializer,
+    AudiologistCaseHistoryCreateSerializer
 )
-from .models import Patient, PatientVisit
+from .models import Patient, PatientVisit, AudiologistCaseHistory
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -185,7 +186,7 @@ class TodayPatientVisitsView(generics.ListAPIView):
     def get_queryset(self):
         from django.utils import timezone
         today = timezone.now().date()
-        return PatientVisit.objects.filter(appointment_date=today, clinic=getattr(self.request.user, 'clinic', None)).order_by('-created_at')
+        return PatientVisit.objects.filter(appointment_date=today, clinic=getattr(self.request.user, 'clinic', None)).order_by('created_at')
     
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -326,20 +327,22 @@ class PatientVisitDetailView(generics.RetrieveAPIView):
 
     
 
-# Case History Fill of Patient for Audiologist when test requested is OAE
-    # ''' Create Audiologist Case History for a Patient Visit '''
-    # queryset = AudiologistCaseHistory.objects.all()
-    # permission_classes = [IsAuthenticated,AuditorPermission]
-    # serializer_class = PatientVisitCreateSerializer  # Reuse existing serializer or create a new one
+# Case History Create View for Audiologist (includes AudiologistCaseHistory, VisitTestPerformed, TestUpload)
+class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
+    """Create Audiologist Case History, Performed Tests, and Upload Test Reports for a Patient Visit"""
+    queryset = AudiologistCaseHistory.objects.all()
+    permission_classes = [IsAuthenticated, AuditorPermission]
+    serializer_class = AudiologistCaseHistoryCreateSerializer  # This serializer handles all related creation
 
-    # def create(self, request, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data, context={'request': request})
-    #     if not serializer.is_valid():
-    #         return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-    #     self.perform_create(serializer)   
-    #     return Response({"status": 200, "message": "Audiologist case history created successfully"},
-    #                             status=status.HTTP_200_OK)class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
-
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        if not serializer.is_valid():
+            return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        self.perform_create(serializer)
+        return Response(
+            {"status": 200, "message": "Audiologist case history, test performed, and reports saved successfully"},
+            status=status.HTTP_200_OK,
+        )
 
 
 

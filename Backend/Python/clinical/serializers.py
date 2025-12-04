@@ -389,7 +389,7 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
         ]
 
 
-# Case History Fill of Patient for Audiologist when test requested is OAE
+# Case History Fill of Patient for Audiologist when test requested 
 class AudiologistCaseHistoryViewSerializer(serializers.ModelSerializer):
     patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
     patient_phone = serializers.CharField(source='visit.patient.phone_primary', read_only=True)
@@ -409,4 +409,141 @@ class AudiologistCaseHistoryViewSerializer(serializers.ModelSerializer):
             'red_flags',
             'created_at'
         ]
-        
+
+
+class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
+    """
+    Simple payload to create:
+      - AudiologistCaseHistory
+      - VisitTestPerformed (test flags)
+      - TestUpload records (uploaded reports)
+
+    Expected payload example:
+    {
+        "visit": 1,
+        "medical_history": "...",
+        "family_history": "...",
+        "noise_exposure": "...",
+        "previous_ha_experience": "...",
+        "red_flags": "...",
+
+        "pta": true,
+        "immittance": false,
+        "oae": true,
+        "bera_assr": false,
+        "srt": true,
+        "sds": true,
+        "ucl": false,
+        "free_field": false,
+        "other_test": "Any other test name or notes",
+
+        "test_report_files": [
+            { "file_type": "PTA", "file_path": "path-or-url-1" },
+            { "file_type": "OAE", "file_path": "path-or-url-2" }
+        ]
+    }
+    """
+
+    # Flat fields corresponding to VisitTestPerformed model
+    # required = serializers.BooleanField(default=False, write_only=True)
+    pta = serializers.BooleanField(default=False, write_only=True)
+    immittance = serializers.BooleanField(default=False, write_only=True)
+    oae = serializers.BooleanField(default=False, write_only=True)
+    bera_assr = serializers.BooleanField(default=False, write_only=True)
+    srt = serializers.BooleanField(default=False, write_only=True)
+    sds = serializers.BooleanField(default=False, write_only=True)
+    ucl = serializers.BooleanField(default=False, write_only=True)
+    free_field = serializers.BooleanField(default=False, write_only=True)
+    other_test = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_blank=True,
+        write_only=True
+    )
+
+    # List of uploaded report files
+    test_report_files = serializers.ListField(
+        child=serializers.DictField(),
+        required=False,
+        write_only=True,
+        help_text="List of {'file_type': str, 'file_path': str} items"
+    )
+
+    class Meta:
+        model = AudiologistCaseHistory
+        fields = [
+            'visit',
+            'medical_history',
+            'family_history',
+            'noise_exposure',
+            'previous_ha_experience',
+            'red_flags',
+            # VisitTestPerformed fields
+            # 'required',
+            'pta',
+            'immittance',
+            'oae',
+            'bera_assr',
+            'srt',
+            'sds',
+            'ucl',
+            'free_field',
+            'other_test',
+            # TestUpload helper
+            'test_report_files',
+        ]
+
+    def create(self, validated_data):
+        """
+        1. Create AudiologistCaseHistory
+        2. Create VisitTestPerformed (if any test field is set)
+        3. Create TestUpload rows for given files
+        """
+        from .models import TestUpload
+
+        # Extract VisitTestPerformed-related fields
+        test_fields = [
+            # 'required',
+            'pta',
+            'immittance',
+            'oae',
+            'bera_assr',
+            'srt',
+            'sds',
+            'ucl',
+            'free_field',
+            'other_test',
+        ]
+        test_performed_data = {field: validated_data.pop(field, False) for field in test_fields}
+
+        # Extract uploaded report files
+        test_report_files = validated_data.pop('test_report_files', [])
+
+        # 1. Save AudiologistCaseHistory instance
+        case_history = super().create(validated_data)
+
+        # 2. Create VisitTestPerformed only if something meaningful is set
+        has_any_test = any(
+            bool(value) for key, value in test_performed_data.items()
+        )
+        test_performed_instance = None
+        if has_any_test:
+            test_performed_instance = VisitTestPerformed.objects.create(
+                visit=case_history.visit,
+                **test_performed_data
+            )
+
+        # 3. Save uploaded report files in the TestUpload table
+        if test_performed_instance and test_report_files:
+            for f in test_report_files:
+                file_type = f.get('file_type')
+                file_path = f.get('file_path')
+                if file_type and file_path:
+                    TestUpload.objects.create(
+                        visit=test_performed_instance,
+                        file_type=file_type,
+                        file_path=file_path,
+                    )
+
+        return case_history
+
