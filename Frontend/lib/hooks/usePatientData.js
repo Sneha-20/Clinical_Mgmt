@@ -138,8 +138,10 @@ export default function usePatientData() {
     try {
       await addNewVisit(data);
       await fetchAll(pagination.currentPage);
+      dispatch(stopLoading());
     } catch (err) {
       console.error("Error adding visit:", err);
+      dispatch(stopLoading());
       throw err;
     }
   };

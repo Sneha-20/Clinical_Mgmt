@@ -34,7 +34,7 @@ export default function PatientVisitForm({
       {
         visit_type: "",
         present_complaint: "",
-        seen_by: "reception",
+        seen_by: "",
         test_requested: [],
         notes: "",
       },

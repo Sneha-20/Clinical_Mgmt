@@ -8,6 +8,7 @@ import SidebarNav from "@/components/layouts/sidebar-nav";
 import { logoutAction } from "@/lib/services/auth";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
+import CommonLoader from "@/components/ui/CommonLoader";
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -33,6 +34,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <CommonLoader />
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
