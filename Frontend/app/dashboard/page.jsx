@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import ReceptionDashboard from '@/components/modules/reception/dashboard'
 import AudiologistDashboard from '@/components/modules/audiologist/dashboard'
 import AdminDashboard from '@/components/modules/admin/dashboard'
+import ReceptionistDashboard from '@/components/modules/receptionist/Receptionistdashboard'
 
 export default function Dashboard() {
   const [userRole, setUserRole] = useState('')
@@ -31,7 +32,7 @@ export default function Dashboard() {
   const renderDashboard = () => {
     switch (userRole) {
       case 'Reception':
-        return <ReceptionDashboard />
+        return <ReceptionistDashboard />
         case 'Doctor':
           return <AudiologistDashboard />
           case 'Admin':

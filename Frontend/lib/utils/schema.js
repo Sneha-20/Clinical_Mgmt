@@ -42,9 +42,6 @@ export const patientSchema = Yup.object({
   name: Yup.string().required("Name is required"),
   age: Yup.number().required("Age is required"),
   dob: Yup.string().required("Date of birth is required"),
-  email: Yup.string()
-    .email("Invalid email format")
-    .required("Email is required"),
 
   gender: Yup.string().required("Gender is required"),
 
@@ -59,6 +56,7 @@ export const patientSchema = Yup.object({
 
   referral_type: Yup.string().required("Referral type is required"),
   service_type: Yup.string().required("Service type is required"),
+  appointment_date: Yup.string().required("Appointment date is required"),
 
   referral_doctor: Yup.string().when("referral_type", {
     is: (val) => val === "doctor",   // <-- MUST be a function
@@ -66,7 +64,13 @@ export const patientSchema = Yup.object({
     otherwise: (schema) => schema.nullable(),
   }),
 
-  //  visit_type: Yup.string().required("Visit type is required"),
+     visit_details: Yup.array()
+    .of(
+      Yup.object({
+        visit_type: Yup.string().required("Visit type is required"),
+      })
+    )
+    .min(1, "At least one visit detail is required"),
 });
 
 export const visitPatientSchema = Yup.object({

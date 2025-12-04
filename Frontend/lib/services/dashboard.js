@@ -27,7 +27,6 @@ export const getPatientList = async (params = {}) => {
     if (search) queryParams.append("search", search);
     
     const url = `${routes.patientList}?${queryParams.toString()}`;
-    console.log("📋 Fetching patient list:", url);
     const response = await apiClient.get(url);
     const patientData = {
       status: response.status || 200,
@@ -35,7 +34,7 @@ export const getPatientList = async (params = {}) => {
       previousPage: response.previousPage,
       totalItems: response.totalItems,
       totalPages: response.totalPages,
-      patients: response?.data?.data || response?.data || [],
+      patients:   response?.data || [],
     };
     
     return patientData;
@@ -43,6 +42,44 @@ export const getPatientList = async (params = {}) => {
     throw error;
   }
 };
+
+export const getTodayPatientList = async (params = {}) => {
+  try {
+    const { page = 1, limit, search } = params;
+    // Build query string
+    const queryParams = new URLSearchParams();
+    queryParams.append("page", page.toString());
+    if (limit) queryParams.append("limit", limit.toString());
+    if (search) queryParams.append("search", search);
+    
+    const url = `${routes.todayPatientList}?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    const patientData = {
+      status: response.status || 200,
+      nextPage: response.nextPage,
+      previousPage: response.previousPage,
+      totalItems: response.totalItems,
+      totalPages: response.totalPages,
+      patients:  response?.data || [],
+    };
+    
+    return patientData;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDoctorList = async () => {
+  try {
+    const url = `${routes.doctorList}`;
+    const response = await apiClient.get(url);
+    const doctorData =  response?.data || [];
+    return doctorData;
+  } catch (error) {
+    throw error;
+  }
+}
+
 
 /**
  * Get single patient by ID
@@ -52,13 +89,9 @@ export const getPatientList = async (params = {}) => {
 export const getPatientById = async (patientId) => {
   try {
     const url = `${routes.patientList}${patientId}/`;
-    console.log("📋 Fetching patient by ID:", url);
-    
     const response = await apiClient.get(url);
-    console.log("✅ Patient response:", response);
-    
     // Handle nested response structure
-    const patient = response?.data?.data || response?.data || response;
+    const patient = response?.data || response;
     
     return patient;
   } catch (error) {
@@ -77,13 +110,12 @@ export const getPatientById = async (patientId) => {
  * @returns {Promise<Object>} Created patient data
  */
 export const createPatient = async (patientData) => {
-  console.log("📤 Creating patient:", patientData);
   try {
-    console.log("📤 Creating patient:", patientData);
+    // console.log("📤 Creating patient:", patientData);
     
     const response = await apiClient.post(routes.patientRegister, patientData);
 
-    console.log("✅ Patient created:", response);
+    // console.log("✅ Patient created:", response);
     getPatientList();
     // Handle nested response structure
     const patient = response?.data?.data || response?.data || response;
@@ -99,13 +131,8 @@ export const createPatient = async (patientData) => {
   }
 };
 export const addNewVisit = async (patientData) => {
-  console.log("📤 Creating patient:", patientData);
   try {
-    console.log("📤 Creating patient:", patientData);
-    
     const response = await apiClient.post(routes.patientVisit, patientData);
-
-    console.log("✅ Patient created:", response);
     getPatientList();
     // Handle nested response structure
     const patient = response?.data?.data || response?.data || response;
@@ -130,10 +157,7 @@ export const addNewVisit = async (patientData) => {
 export const updatePatient = async (patientId, patientData) => {
   try {
     const url = `${routes.patientList}${patientId}/`;
-    console.log("📤 Updating patient:", url, patientData);
-    
     const response = await apiClient.put(url, patientData);
-    console.log("✅ Patient updated:", response);
     
     // Handle nested response structure
     const patient = response?.data?.data || response?.data || response;

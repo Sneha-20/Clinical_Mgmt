@@ -16,8 +16,15 @@ import {
 } from "@/lib/utils/constants/staticValue";
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { showToast } from "@/components/ui/toast";
+import { startLoading } from "@/lib/redux/slice/uiSlice";
 
-export default function PatientRegistrationForm({ onClose, onSubmit }) {
+export default function PatientRegistrationForm({
+  onClose,
+  onSubmit,
+  doctorList,
+}) {
+  console.log("doctorList", doctorList);
+  
   const [formData, setFormData] = useState({
     name: "",
     age: "",
@@ -30,13 +37,13 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
     address: "",
     referral_type: "Self",
     referral_doctor: "",
-    appointment_date: "2000-02-02",
-    service_type: "",
+    appointment_date: "",
+    service_type: "clinic",
     visit_details: [
       {
         visit_type: "",
         present_complaint: "",
-        assigned_to: "",
+        seen_by: "reception",
         test_requested: [],
         notes: "",
       },
@@ -54,6 +61,14 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
   const serviceOption = [
     { label: "Clinic", value: "clinic" },
     { label: "Home", value: "home" },
+  ];
+  const doctors = doctorList.map((doctor) => ({
+    label: doctor.name,
+    value: doctor.id,
+  }));
+  const doctorOption = [
+    { label: "Receptionist", value: "reception" },
+    ...doctors,
   ];
 
   /* ----------------- Update Field ----------------- */
@@ -101,8 +116,8 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
 
   /* ----------------- Submit Form ----------------- */
   const handleSubmit = async (e) => {
+    console.log("formData",formData)
     e.preventDefault();
-    console.log("Submitting form with data:", formData);
     try {
       await patientSchema.validate(formData, { abortEarly: false });
       setErrors({});
@@ -147,6 +162,7 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                   value={formData.name}
                   onChange={(e) => updateField("name", e.target.value)}
                   placeholder="Full name"
+                  important
                   error={errors.name}
                 />
 
@@ -157,11 +173,13 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                   value={formData.age}
                   onChange={(e) => updateField("age", e.target.value)}
                   placeholder="Age"
+                  important
                   error={errors.age}
                 />
 
                 <Input
                   label="Date of Birth"
+                  important
                   type="date"
                   name="dob"
                   value={formData.dob}
@@ -172,6 +190,7 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                 <DropDown
                   label="Gender"
                   name="gender"
+                  important
                   options={genderOptions}
                   value={formData.gender}
                   onChange={updateField}
@@ -191,6 +210,7 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                 <Input
                   label="Primary Phone"
                   name="phone_primary"
+                  important
                   value={formData.phone_primary}
                   onChange={(e) => updateField("phone_primary", e.target.value)}
                   placeholder="9876543210"
@@ -211,6 +231,7 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                 <Input
                   label="City"
                   name="city"
+                  important
                   value={formData.city}
                   onChange={(e) => updateField("city", e.target.value)}
                   placeholder="City name"
@@ -220,23 +241,24 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                 <Input
                   label="Address"
                   name="address"
+                  important
                   value={formData.address}
                   onChange={(e) => updateField("address", e.target.value)}
                   placeholder="Full address"
                   error={errors.address}
                 />
-              </div>
-              {/* <div className="mt-4">
                 <Input
                   label="Appointment Date"
+                  important
                   type="date"
-                  value={formData.visit_details.appointment_date}
+                  name="appointment_date"
+                  value={formData.appointment_date}
                   onChange={(e) =>
-                    updateVisitDetails("appointment_date", e.target.value)
+                    updateField(e.target.name, e.target.value)
                   }
-                  error={errors.visit_details?.appointment_date}
+                  error={errors?.appointment_date}
                 />
-              </div> */}
+              </div>
             </div>
             {/* REFERRAL */}
             <div>
@@ -272,6 +294,7 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                 <Input
                   label="Doctor Name"
                   name="referral_doctor"
+                  important
                   value={formData.referral_doctor}
                   onChange={(e) =>
                     updateField("referral_doctor", e.target.value)
@@ -319,28 +342,35 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                 <h3 className="font-semibold text-primary mb-3">
                   Visit Details {index + 1}
                 </h3>
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <DropDown
+                    label="Purpose of Visit"
+                    important
+                    name="visit_type"
+                    options={visitTypeOptions}
+                    value={visit.visit_type}
+                    onChange={(n, v) =>
+                      updateVisitDetails(index, "visit_type", v)
+                    }
+                   error={errors.visit_details?.[index]?.visit_type}
+                  />
+                  <DropDown
+                    label="Present Complaint"
+                    name="present_complaint"
+                    options={complaintOptions}
+                    value={visit.present_complaint}
+                    onChange={(n, v) =>
+                      updateVisitDetails(index, "present_complaint", v)
+                    }
+                  />
+                </div>
                 <DropDown
-                  label="Purpose of Visit"
-                  name="visit_type"
-                  options={visitTypeOptions}
-                  value={visit.visit_type}
-                  onChange={(n, v) =>
-                    updateVisitDetails(index, "visit_type", v)
-                  }
-                  error={errors.visit_type}
+                  label="Assigned To"
+                  name="seen_by"
+                  options={doctorOption}
+                  value={visit.seen_by}
+                  onChange={(n, v) => updateVisitDetails(index, "seen_by", v)}
                 />
-
-                <DropDown
-                  label="Present Complaint"
-                  name="present_complaint"
-                  options={complaintOptions}
-                  value={visit.present_complaint}
-                  onChange={(n, v) =>
-                    updateVisitDetails(index, "present_complaint", v)
-                  }
-                />
-
                 <textarea
                   className="w-full border rounded p-2 mt-2"
                   placeholder="Notes about complaint"
@@ -353,7 +383,7 @@ export default function PatientRegistrationForm({ onClose, onSubmit }) {
                 {/* Tests Required */}
                 <div className="mt-4">
                   <label className="font-medium text-sm text-gray-700">
-                    Tests Required (Tick)
+                    Tests Required
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">

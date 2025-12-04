@@ -17,7 +17,14 @@ import PatientVisitForm from "./components/PatientVisitForm";
 import SchedulAppoinment from "./components/SchedulAppoinment";
 import PatientProfile from "./patient-profile";
 
-import { addNewVisit, createPatient, getPatientList } from "@/lib/services/dashboard";
+import {
+  addNewVisit,
+  createPatient,
+  getPatientList,
+  getTodayPatientList,
+} from "@/lib/services/dashboard";
+import Tabs from "@/components/ui/CommonTab";
+import AppoinmentList from "./components/AppoinmentList";
 
 export default function ReceptionDashboard() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
@@ -30,6 +37,7 @@ export default function ReceptionDashboard() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [patients, setPatients] = useState([]);
+  const [todayPatients, setTodayPatients] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [pagination, setPagination] = useState({
@@ -38,7 +46,7 @@ export default function ReceptionDashboard() {
     currentPage: 1,
   });
   // Fetch Patients
-  const fetchPatients = async () => {
+  const fetchTotalPatients = async () => {
     try {
       setLoading(true);
       const result = await getPatientList({ page: 1 });
@@ -66,8 +74,40 @@ export default function ReceptionDashboard() {
     }
   };
 
+  const fetchTodayPatients = async () => {
+    try {
+      setLoading(true);
+      const result = await getTodayPatientList({ page: 1 });
+
+      const mappedPatients = result.patients.map((p) => ({
+        id: p.patient_id,
+        name: p.patient_name,
+        phone: p.patient_phone || "",
+        visitId: p.visit_id,
+        visitType: p.visit_type || "New",
+        status: p.status || "Test Pending",
+        appointmentDate: p.appointment_date || "-",
+      }));
+
+      setTodayPatients(mappedPatients);
+      setPagination({
+        totalItems: result.totalItems ?? 0,
+        totalPages: result.totalPages ?? 1,
+        currentPage: 1,
+      });
+    } catch (err) {
+      console.error("Error fetching patients:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchPatients();
+    fetchTotalPatients();
+  }, []);
+
+  useEffect(() => {
+    fetchTodayPatients();
   }, []);
 
   const filteredPatients = patients.filter(
@@ -75,24 +115,31 @@ export default function ReceptionDashboard() {
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.phone.includes(searchTerm)
   );
-
+  const filteredTodayPatients = todayPatients.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.phone.includes(searchTerm)
+  );
+  console.log("filteredTodayPatients:", filteredTodayPatients);
   // Add Patient
   const handleAddPatient = async (data) => {
     console.log("Adding patient with data:", data);
     try {
       await createPatient(data);
-      fetchPatients();
+      fetchTotalPatients();
+      fetchTodayPatients();
     } catch (err) {
       console.error("Error adding patient:", err);
     }
     setShowRegistrationForm(false);
   };
 
-    const handleAddVisit = async (data) => {
+  const handleAddVisit = async (data) => {
     console.log("Adding patient with dataaaaaaaaaaaa:", data);
     try {
       await addNewVisit(data);
-      fetchPatients();
+      fetchTotalPatients();
+      fetchTodayPatients();
     } catch (err) {
       console.error("Error adding patient:", err);
     }
@@ -113,10 +160,9 @@ export default function ReceptionDashboard() {
       />
     );
   }
-
+  console.log("todayPatients:", todayPatients);
   return (
     <div className="space-y-4 sm:space-y-6">
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -141,14 +187,18 @@ export default function ReceptionDashboard() {
 
       {/* Stats Section */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard label="Total Patients" value={pagination.totalItems} color="bg-blue-100" />
+        <StatCard
+          label="Total Patients"
+          value={pagination.totalItems}
+          color="bg-blue-100"
+        />
         <StatCard label="Today's Visits" value="12" color="bg-green-100" />
         <StatCard label="Pending Tests" value="5" color="bg-yellow-100" />
         <StatCard label="Follow-ups" value="8" color="bg-purple-100" />
       </div>
 
       {/* Modals */}
-        {showScheduleAppointment && (
+      {showScheduleAppointment && (
         <SchedulAppoinment
           onClose={() => setShowScheduleAppointment(false)}
           setShowRegistrationForm={setShowRegistrationForm}
@@ -165,24 +215,24 @@ export default function ReceptionDashboard() {
 
       {showSelctedPatientId && (
         <PatientVisitForm
-         showSelctedPatientId={showSelctedPatientId}
+          showSelctedPatientId={showSelctedPatientId}
           onClose={() => setShowSelctedPatientId(null)}
           onSubmit={handleAddVisit}
         />
       )}
 
-    
       {/* Patient Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg sm:text-xl">Patient List</CardTitle>
+          <CardTitle className="text-lg sm:text-xl">
+            Total Patient List
+          </CardTitle>
           <CardDescription className="text-xs sm:text-sm">
             Today's registrations and previous patients
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
-
           {/* Search */}
           <div className="relative w-[300px]">
             <Input
@@ -194,58 +244,32 @@ export default function ReceptionDashboard() {
             <Search className="w-5 h-5 text-primary absolute right-2 top-2.5" />
           </div>
 
-          {/* Table */}
-          {loading ? (
-            <div className="text-center py-8 text-slate-500">Loading patients...</div>
-          ) : filteredPatients.length === 0 ? (
-            <div className="text-center py-8 text-slate-500">No patients found</div>
-          ) : (
-            <div className="overflow-x-auto -mx-3 sm:mx-0">
-              <table className="w-full text-xs sm:text-sm">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="py-2 px-3 text-left">Name</th>
-                    <th className="py-2 px-3 text-left hidden sm:table-cell">Phone</th>
-                    <th className="py-2 px-3 text-left hidden md:table-cell">Purpose</th>
-                    <th className="py-2 px-3 text-left hidden lg:table-cell">Appointment</th>
-                    <th className="py-2 px-3">Status</th>
-                    <th className="py-2 px-3 text-center">Action</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {filteredPatients.map((p) => (
-                    <tr key={p.visit_id} className="border-b hover:bg-slate-50">
-                      <td className="py-2 px-3 font-medium">{p.name}</td>
-                      <td className="py-2 px-3 hidden sm:table-cell">{p.phone}</td>
-                      <td className="py-2 px-3 hidden md:table-cell text-xs">{p.visitType}</td>
-                      <td className="py-2 px-3 hidden lg:table-cell text-xs">{p.appointmentDate}</td>
-
-                      <td className="py-2 px-3">
-                        <span className="px-2 py-1 bg-teal-100 text-teal-700 rounded-full text-xs">
-                          {p.status}
-                        </span>
-                      </td>
-
-                      <td className="py-2 px-3 text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1 text-xs"
-                          onClick={() => handleViewProfile(p.id)}
-                        >
-                          <Eye className="w-3 h-3" />
-                          <span className="hidden sm:inline">View</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-
-              </table>
-            </div>
-          )}
-
+          <Tabs
+            tabs={[
+              {
+                label: "Today",
+                value: "today",
+                content: (
+                  <AppoinmentList
+                    loading={loading}
+                    filteredPatients={filteredTodayPatients}
+                    handleViewProfile={handleViewProfile}
+                  />
+                ),
+              },
+              {
+                label: "Total",
+                value: "total",
+                content: (
+                  <AppoinmentList
+                    loading={loading}
+                    filteredPatients={filteredPatients}
+                    handleViewProfile={handleViewProfile}
+                  />
+                ),
+              },
+            ]}
+          />
         </CardContent>
       </Card>
     </div>

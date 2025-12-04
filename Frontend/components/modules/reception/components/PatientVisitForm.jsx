@@ -15,11 +15,16 @@ export default function PatientVisitForm({
   onClose,
   onSubmit,
   showSelctedPatientId,
+  doctorList
 }) {
   const serviceOption = [
     { label: "Clinic", value: "clinic" },
     { label: "Home", value: "home" },
   ];
+   const doctors = doctorList.map((doctor) => ({
+    label: doctor.name,
+    value: doctor.id,
+  }));
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     patient: showSelctedPatientId || "",
@@ -29,7 +34,7 @@ export default function PatientVisitForm({
       {
         visit_type: "",
         present_complaint: "",
-        assigned_to: "",
+        seen_by: "reception",
         test_requested: [],
         notes: "",
       },
@@ -99,7 +104,7 @@ export default function PatientVisitForm({
   };
 
   return (
-    <Modal onClose={onClose}  header="Patient Visit Form">
+    <Modal onClose={onClose} header="Patient Visit Form">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <h3 className="font-semibold text-primary mb-3">Service Type</h3>
@@ -115,7 +120,7 @@ export default function PatientVisitForm({
                   name="service_type"
                   value={item.value}
                   checked={formData.service_type === item.value}
-                 onChange={(e) => updateField(e.target.name, e.target.value)}
+                  onChange={(e) => updateField(e.target.name, e.target.value)}
                   className="w-4 h-4"
                 />
                 <span>{item.label}</span>
@@ -144,14 +149,24 @@ export default function PatientVisitForm({
               Visit Details {index + 1}
             </h3>
 
-            <DropDown
-              label="Purpose of Visit"
-              name="visit_type"
-              options={visitTypeOptions}
-              value={visit.visit_type}
-              onChange={(n, v) => updateVisitDetails(index, "visit_type", v)}
-              error={errors.visit_type}
-            />
+            <div>
+              <DropDown
+                label="Purpose of Visit"
+                name="visit_type"
+                options={visitTypeOptions}
+                value={visit.visit_type}
+                onChange={(n, v) => updateVisitDetails(index, "visit_type", v)}
+                error={errors.visit_type}
+              />
+              <DropDown
+                label="Assigned To"
+                name="seen_by"
+                options={doctors}
+                value={visit.seen_by}
+                onChange={(n, v) => updateVisitDetails(index, "seen_by", v)}
+                error={errors.seen_by}
+              />
+            </div>
 
             <DropDown
               label="Present Complaint"
