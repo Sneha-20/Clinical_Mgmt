@@ -99,7 +99,8 @@ class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
             page = self.paginate_queryset(queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response({"status": 200, "data": serializer.data})
+                # Pagination class already wraps with status and data
+                return self.get_paginated_response(serializer.data)
             serializer = self.get_serializer(queryset, many=True)
             return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
     
@@ -133,7 +134,8 @@ class PatientVisitsView(generics.ListAPIView):
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response({"status": 200, "data": serializer.data})
+            # Pagination class already wraps with status and data
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
     
@@ -194,7 +196,7 @@ class TodayPatientVisitsView(generics.ListAPIView):
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response({"status": 200, "data": serializer.data})
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
@@ -239,9 +241,12 @@ class DoctorFlatListView(generics.ListAPIView):
 
         # Optimize role access in DoctorListSerializer.get_designation
         return qs.select_related('clinic', 'role').order_by('name').distinct()
-    
 
-    
+    def list(self, request, *args, **kwargs):
+            queryset = self.get_queryset()
+            serializer = self.get_serializer(queryset, many=True)
+            return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
 # Dashboard Tile records count 
 # Total patients , today's visits , pending visits etc can be added here in future
 class DashboardStatsView(APIView):
@@ -308,7 +313,7 @@ class AudiologistPatientQueueView(generics.ListAPIView):
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response({"status": 200, "data": serializer.data})
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
@@ -345,6 +350,25 @@ class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
             status=status.HTTP_200_OK,
         )
 
+
+# List audiologist case history records for a specific visit ID
+# class AudiologistCaseHistoryView(generics.ListAPIView):
+#     """
+#     List all AudiologistCaseHistory records for a given visit ID.
+
+#     GET /api/clinical/casehistory/visit/<visit_id>/
+
+#     Returns:
+#     - All case history records associated with the specified visit.
+#     """
+#     serializer_class = Audiolog
+#     permission_classes = [IsAuthenticated, AuditorPermission]
+
+#     def get_queryset(self):
+#         visit_id = self.kwargs.get('visit_id')
+#         return AudiologistCaseHistory.objects.filter(visit__id=visit_id)
+
+    
 
 # ============================================================================
 # BILL VIEWS
