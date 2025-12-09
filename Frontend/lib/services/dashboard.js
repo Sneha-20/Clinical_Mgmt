@@ -130,6 +130,7 @@ export const createPatient = async (patientData) => {
     throw error;
   }
 };
+
 export const addNewVisit = async (patientData) => {
   try {
     const response = await apiClient.post(routes.patientVisit, patientData);

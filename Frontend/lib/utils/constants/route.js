@@ -14,11 +14,12 @@ export const routes = {
   // pages
   pages: {
     dashboard: "/dashboard",
+    userptofile: "/dashboard/userprofile",
     signup: "/signup",
     login: "/login",
     home: "/",
   },
 };
-export const privateRoutes = [routes.pages.dashboard];
+export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile];
 
 export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.home];

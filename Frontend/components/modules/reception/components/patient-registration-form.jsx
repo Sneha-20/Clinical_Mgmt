@@ -17,6 +17,7 @@ import {
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { showToast } from "@/components/ui/toast";
 import { startLoading } from "@/lib/redux/slice/uiSlice";
+import CommonDatePicker from "@/components/ui/CommonDatePicker";
 
 export default function PatientRegistrationForm({
   onClose,
@@ -177,13 +178,14 @@ export default function PatientRegistrationForm({
                   error={errors.age}
                 />
 
-                <Input
+                <CommonDatePicker
                   label="Date of Birth"
-                  important
-                  type="date"
-                  name="dob"
-                  value={formData.dob}
-                  onChange={(e) => updateField("dob", e.target.value)}
+                  className="coomon-datePicker"
+                  selectedDate={formData.dob ? new Date(formData.dob) : null}
+                  onChange={(date) =>
+                    updateField("dob", date?.toISOString().split("T")[0])
+                  }
+                  placeholder="Select DOB"
                   error={errors.dob}
                 />
 
@@ -253,9 +255,7 @@ export default function PatientRegistrationForm({
                   type="date"
                   name="appointment_date"
                   value={formData.appointment_date}
-                  onChange={(e) =>
-                    updateField(e.target.name, e.target.value)
-                  }
+                  onChange={(e) => updateField(e.target.name, e.target.value)}
                   error={errors?.appointment_date}
                 />
               </div>
@@ -352,7 +352,7 @@ export default function PatientRegistrationForm({
                     onChange={(n, v) =>
                       updateVisitDetails(index, "visit_type", v)
                     }
-                   error={errors.visit_details?.[index]?.visit_type}
+                    error={errors.visit_details?.[index]?.visit_type}
                   />
                   <DropDown
                     label="Present Complaint"

@@ -7,7 +7,6 @@ import PatientTabs from "./component/Patientstab";
 import TodayList from "./component/TodayList";
 import TotalList from "./component/TotalList";
 import SearchBox from "./component/SearchBox";
-import PatientProfile from "../reception/patient-profile";
 import usePatientData from "@/lib/hooks/usePatientData";
 import SchedulAppoinment from "../reception/components/SchedulAppoinment";
 import PatientRegistrationForm from "../reception/components/patient-registration-form";
@@ -20,9 +19,6 @@ export default function ReceptionistDashboard() {
   const [showSelctedPatientId, setShowSelctedPatientId] = useState(null);
   const [showVisitForm, setShowVisitForm] = useState(false);
   const [showScheduleAppointment, setShowScheduleAppointment] = useState(false);
-  const [showPatientProfile, setShowPatientProfile] = useState(false);
-
-  const [selectedPatientId, setSelectedPatientId] = useState(null);
 
   // search state
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,6 +35,7 @@ export default function ReceptionistDashboard() {
     goToPreviousPage,
     handleAddPatient,
     handleAddVisit,
+    handleViewProfile,
   } = usePatientData();
   // filtered lists based on search
   const filteredPatients = patients.filter(
@@ -74,20 +71,6 @@ export default function ReceptionistDashboard() {
     }
   };
 
-  const handleViewProfile = (id) => {
-    setSelectedPatientId(id);
-    setShowPatientProfile(true);
-  };
-
-  // Render profile page route if viewing profile
-  if (showPatientProfile && selectedPatientId) {
-    return (
-      <PatientProfile
-        patientId={selectedPatientId}
-        onBack={() => setShowPatientProfile(false)}
-      />
-    );
-  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

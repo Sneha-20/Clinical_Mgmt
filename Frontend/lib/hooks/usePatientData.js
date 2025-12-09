@@ -9,12 +9,15 @@ import {
 } from "@/lib/services/dashboard";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
+import { useRouter } from "next/navigation";
+import { routes } from "@/lib/utils/constants/route";
 
 /**
  * usePatientData - handles listing, today's list, adding patient, adding visit,
  * and pagination.
  */
 export default function usePatientData() {
+  const router = useRouter()
   const [patients, setPatients] = useState([]);
   const [todayPatients, setTodayPatients] = useState([]);
   const [loadingTotal, setLoadingTotal] = useState(false);
@@ -26,7 +29,7 @@ export default function usePatientData() {
     totalPages: 1,
     currentPage: 1,
   });
-
+ const userprofile = routes.pages.userptofile;
   /** -------------------------
    *  MAP API PATIENT DATA
    * ------------------------*/
@@ -37,6 +40,7 @@ export default function usePatientData() {
         name: p.patient_name,
         phone: p.patient_phone || "",
         visitId: p.visit_id,
+        seenBy: p.seen_by,
         visitType: p.visit_type || "New",
         status: p.status || "Test Pending",
         appointmentDate: p.appointment_date || "-",
@@ -81,7 +85,6 @@ export default function usePatientData() {
 
         setTodayPatients(mapPatients(result.patients || []));
 
-        // If you want separate pagination for today, make a new state
         setPagination((prev) => ({
           ...prev,
           totalItems: result.totalItems ?? prev.totalItems,
@@ -153,7 +156,6 @@ export default function usePatientData() {
     } catch (err) {
       console.error("Error fetching doctor list:", err);
     }
-    // Placeholder for fetching doctor list if needed in future
   };
    useEffect(() => {
       fetchDoctorList();
@@ -175,6 +177,10 @@ export default function usePatientData() {
     }
   };
 
+   const handleViewProfile = (id) => {
+    console.log("id",id)
+   router.push(`${userprofile}/${id}`);
+  };
   return {
     patients,
     todayPatients,
@@ -200,5 +206,7 @@ export default function usePatientData() {
     // expose setters if needed
     setPatients,
     setTodayPatients,
+
+    handleViewProfile,
   };
 }

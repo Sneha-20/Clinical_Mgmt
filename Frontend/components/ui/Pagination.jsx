@@ -4,7 +4,7 @@ import React from "react";
 
 export default function Pagination({ page, totalPages, onNext, onPrevious }) {
   return (
-    <div className="flex items-center justify-center gap-4 mt-4">
+    <div className="flex items-center justify-end gap-4 mt-4">
       <button
         onClick={onPrevious}
         disabled={page === 1}

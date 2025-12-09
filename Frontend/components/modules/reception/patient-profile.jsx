@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft, Download, Phone, Mail, MapPin, Calendar } from 'lucide-react'
 
 export default function PatientProfile({ patientId, onBack }) {
+  console.log("patientId",patientId)
   const [patient] = useState({
     id: 1,
     name: 'Rajesh Kumar',
@@ -71,6 +72,8 @@ export default function PatientProfile({ patientId, onBack }) {
       items: 'Service & Adjustment'
     }
   ])
+
+  
 
   return (
     <div className="space-y-4 sm:space-y-6">
