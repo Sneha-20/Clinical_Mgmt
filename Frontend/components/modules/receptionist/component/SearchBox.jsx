@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 
 export default function SearchBox({ value, onChange, className = "" }) {
   return (
-    <div className={`relative w-[300px] ${className}`}>
+    <div className={`relative ${className}`}>
       <Input
         placeholder="Search by name or phone..."
         value={value}

@@ -4,6 +4,11 @@ export const genderOptions = [
   { label: "Other", value: "Other" },
 ];
 
+export const serviceOption = [
+  { label: "home", value: "home" },
+  { label: "Clinic", value: "clinic" },
+];
+
 export const complaintOptions = [
   { label: "Hearing problem", value: "Hearing" },
   { label: "Speech delay", value: "Speech" },

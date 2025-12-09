@@ -18,13 +18,14 @@ import apiClient from "../api/client";
  */
 export const getPatientList = async (params = {}) => {
   try {
-    const { page = 1, limit, search } = params;
+    const { page = 1, service, search } = params;
     
     // Build query string
     const queryParams = new URLSearchParams();
     queryParams.append("page", page.toString());
-    if (limit) queryParams.append("limit", limit.toString());
+    // if (limit) queryParams.append("limit", limit.toString());
     if (search) queryParams.append("search", search);
+     if (service) queryParams.append("service_type", service);
     
     const url = `${routes.patientList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -45,12 +46,13 @@ export const getPatientList = async (params = {}) => {
 
 export const getTodayPatientList = async (params = {}) => {
   try {
-    const { page = 1, limit, search } = params;
+    const { page = 1, service, search } = params;
     // Build query string
     const queryParams = new URLSearchParams();
     queryParams.append("page", page.toString());
-    if (limit) queryParams.append("limit", limit.toString());
+    // if (limit) queryParams.append("limit", limit.toString());
     if (search) queryParams.append("search", search);
+      if (service) queryParams.append("service_type", service);
     
     const url = `${routes.todayPatientList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);

@@ -12,7 +12,7 @@ export default function AppointmentList({ loading, filteredPatients = [], onView
       ) : (
         <div className="overflow-x-auto -mx-3 sm:mx-0">
           <table className="w-full text-xs sm:text-sm">
-            <thead className="bg-slate-50 border-b">
+            <thead className="bg-slate-100 border-b">
               <tr>
                 <th className="py-2 px-3 text-left">Name</th>
                 <th className="py-2 px-3 text-left hidden sm:table-cell">Phone</th>
@@ -26,7 +26,7 @@ export default function AppointmentList({ loading, filteredPatients = [], onView
 
             <tbody>
               {filteredPatients.map((p) => (
-                <tr key={p.visitId ?? p.id} className="border-b hover:bg-slate-50">
+                <tr key={p.visitId ?? p.id} className="border-b hover:bg-slate-100">
                   <td className="py-2 px-3 font-medium">{p.name}</td>
                   <td className="py-2 px-3 hidden sm:table-cell">{p.phone}</td>
                   <td className="py-2 px-3 hidden md:table-cell text-xs">{p.visitType}</td>

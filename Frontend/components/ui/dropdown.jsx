@@ -25,35 +25,38 @@ export default function DropDown({
 
       {/* React Select Component */}
       <Select
-  name={name}
-  value={options.find((opt) => opt.value === value) || null}
-  onChange={(selected) => onChange(name, selected?.value)}
-  options={options}
-  placeholder={placeholder}
-  styles={{
-    control: (base, state) => ({
-      ...base,
-      borderColor: error ? "red" : state.isFocused ? "#3b82f6" : "#d1d5db",
-      boxShadow: state.isFocused ? "0 0 0 2px #bfdbfe" : "none",
-      padding: "2px",
-      borderRadius: "8px",
-      minHeight: "38px",
-    }),
+        name={name}
+        value={options.find((opt) => opt.value === value) || null}
+        onChange={(selected) => onChange(name, selected?.value)}
+        options={options}
+        placeholder={placeholder}
+        styles={{
+          control: (base, state) => ({
+            ...base,
+            borderColor: error
+              ? "red"
+              : state.isFocused
+              ? "#3b82f6"
+              : "#d1d5db",
+            boxShadow: state.isFocused ? "0 0 0 2px #bfdbfe" : "none",
+            padding: "2px",
+            borderRadius: "8px",
+            minHeight: "38px",
+          }),
 
-    option: (base, state) => ({
-      ...base,
-      backgroundColor: state.isSelected
-        ? "rgba(20, 67, 91)"     // ★ SELECTED COLOR
-        : state.isFocused
-        ? "rgba(20, 67, 91, 0.15)" // ★ HOVER COLOR
-        : "white",
-      color: state.isSelected ? "white" : "#111",
-      cursor: "pointer",
-      padding: "8px 12px",
-    }),
-  }}
-/>
-
+          option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isSelected
+              ? "rgba(20, 67, 91)" // ★ SELECTED COLOR
+              : state.isFocused
+              ? "rgba(20, 67, 91, 0.15)" // ★ HOVER COLOR
+              : "white",
+            color: state.isSelected ? "white" : "#111",
+            cursor: "pointer",
+            padding: "8px 12px",
+          }),
+        }}
+      />
 
       {/* Error message */}
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}

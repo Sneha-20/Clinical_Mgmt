@@ -7,32 +7,37 @@ import {
   addNewVisit,
   getDoctorList,
 } from "@/lib/services/dashboard";
-import { useDispatch } from "react-redux";
-import { startLoading, stopLoading } from "../redux/slice/uiSlice";
 import { useRouter } from "next/navigation";
 import { routes } from "@/lib/utils/constants/route";
 
-/**
- * usePatientData - handles listing, today's list, adding patient, adding visit,
- * and pagination.
- */
 export default function usePatientData() {
-  const router = useRouter()
+  const router = useRouter();
+
+  const userprofile = routes.pages.userptofile;
+
+  // Active tab
+  const [activeTab, setActiveTab] = useState("today");
+   const [serviceType, setServiceType] = useState("");
+
+  // Search
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Data
   const [patients, setPatients] = useState([]);
   const [todayPatients, setTodayPatients] = useState([]);
-  const [loadingTotal, setLoadingTotal] = useState(false);
+  const [doctorList, setDoctorList] = useState([]);
+
+  // Loading
   const [loadingToday, setLoadingToday] = useState(false);
-  const [doctorList, seDoctorList] = useState([])
-   const dispatch = useDispatch();
+  const [loadingTotal, setLoadingTotal] = useState(false);
+
+  // Pagination
   const [pagination, setPagination] = useState({
-    totalItems: 0,
-    totalPages: 1,
-    currentPage: 1,
+    today: { currentPage: 1, totalPages: 1, totalItems: 0 },
+    total: { currentPage: 1, totalPages: 1, totalItems: 0 },
   });
- const userprofile = routes.pages.userptofile;
-  /** -------------------------
-   *  MAP API PATIENT DATA
-   * ------------------------*/
+
+  // MAP
   const mapPatients = useCallback(
     (list = []) =>
       list.map((p) => ({
@@ -48,25 +53,39 @@ export default function usePatientData() {
     []
   );
 
-  /** -------------------------
-   *  FETCH ALL PATIENTS
-   * ------------------------*/
+  // ------------------------------------------
+  // FETCH DOCTORS
+  // ------------------------------------------
+  const loadDoctors = async () => {
+    try {
+      const result = await getDoctorList();
+      setDoctorList(result || []);
+    } catch (e) {
+      console.log("Doctor fetch error:", e);
+    }
+  };
+
+  // ------------------------------------------
+  // FETCH TOTAL PATIENTS
+  // ------------------------------------------
   const fetchTotalPatients = useCallback(
-    async (opts = { page: 1 }) => {
+    async ({ page = 1, search = "",service="" } = {}) => {
       setLoadingTotal(true);
       try {
-        const result = await getPatientList(opts);
+        const res = await getPatientList({ page, search, service });
 
-        setPatients(mapPatients(result.patients || []));
+        setPatients(mapPatients(res.patients || []));
 
         setPagination((prev) => ({
           ...prev,
-          totalItems: result.totalItems ?? prev.totalItems,
-          totalPages: result.totalPages ?? prev.totalPages,
-          currentPage: opts.page ?? prev.currentPage,
+          total: {
+            currentPage: page,
+            totalPages: res.totalPages,
+            totalItems: res.totalItems,
+          },
         }));
-      } catch (err) {
-        console.error("Error fetching total patients:", err);
+      } catch (e) {
+        console.log("Total fetch error:", e);
       } finally {
         setLoadingTotal(false);
       }
@@ -74,25 +93,27 @@ export default function usePatientData() {
     [mapPatients]
   );
 
-  /** -------------------------
-   *  FETCH TODAY PATIENTS
-   * ------------------------*/
+  // ------------------------------------------
+  // FETCH TODAY PATIENTS
+  // ------------------------------------------
   const fetchTodayPatients = useCallback(
-    async (opts = { page: 1 }) => {
+    async ({ page = 1, search = "", service= "" } = {}) => {
       setLoadingToday(true);
       try {
-        const result = await getTodayPatientList(opts);
+        const res = await getTodayPatientList({ page, search, service });
 
-        setTodayPatients(mapPatients(result.patients || []));
+        setTodayPatients(mapPatients(res.patients || []));
 
         setPagination((prev) => ({
           ...prev,
-          totalItems: result.totalItems ?? prev.totalItems,
-          totalPages: result.totalPages ?? prev.totalPages,
-          currentPage: opts.page ?? prev.currentPage,
+          today: {
+            currentPage: page,
+            totalPages: res.totalPages,
+            totalItems: res.totalItems,
+          },
         }));
-      } catch (err) {
-        console.error("Error fetching today patients:", err);
+      } catch (e) {
+        console.log("Today fetch error:", e);
       } finally {
         setLoadingToday(false);
       }
@@ -100,113 +121,119 @@ export default function usePatientData() {
     [mapPatients]
   );
 
-  /** -------------------------
-   *  FETCH BOTH LISTS IN PARALLEL
-   * ------------------------*/
-  const fetchAll = useCallback(async (page = 1) => {
-    await Promise.all([
-      fetchTotalPatients({ page }),
-      fetchTodayPatients({ page }),
-    ]);
-  }, [fetchTotalPatients, fetchTodayPatients]);
-
-  /** -------------------------
-   *  INITIAL LOAD
-   * ------------------------*/
+  // ------------------------------------------
+  // LOAD ON MOUNT
+  // ------------------------------------------
   useEffect(() => {
-    fetchAll(1);
-  }, [fetchAll]);
+    loadDoctors();
+    fetchTodayPatients({ page: 1 });
+  }, []);
 
-  /** -------------------------
-   *  ADD NEW PATIENT
-   * ------------------------*/
-  const handleAddPatient = async (data) => {
-     dispatch(startLoading());
-    try {
-      await createPatient(data);
-      await fetchAll(pagination.currentPage);
-    } catch (err) {
-      console.error("Error adding patient:", err);
-      throw err;
-    }finally{
-      dispatch(stopLoading());
-    }
-  };
+  // ------------------------------------------
+  // TAB SWITCH
+  // ------------------------------------------
+useEffect(() => {
+  console.log("serviceType",serviceType)
+  if (!serviceType) return;
 
-  /** -------------------------
-   *  ADD NEW VISIT
-   * ------------------------*/
-  const handleAddVisit = async (data) => {
-    dispatch(startLoading());
-    try {
-      await addNewVisit(data);
-      await fetchAll(pagination.currentPage);
-      dispatch(stopLoading());
-    } catch (err) {
-      console.error("Error adding visit:", err);
-      dispatch(stopLoading());
-      throw err;
-    }
-  };
+  if (activeTab === "today") {
+    fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType });
+  } else {
+    fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType });
+  }
+}, [serviceType,activeTab]);
 
-  const fetchDoctorList = async () => {
-    try {
-      const res = await getDoctorList();
-      seDoctorList(res);
-    } catch (err) {
-      console.error("Error fetching doctor list:", err);
+  // ------------------------------------------
+  // SEARCH
+  // ------------------------------------------
+  useEffect(() => {
+    if (activeTab === "today") {
+      fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType });
+    } else {
+      fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType});
     }
-  };
-   useEffect(() => {
-      fetchDoctorList();
-    }, []);
-  /** -------------------------
-   *  PAGINATION HANDLERS
-   * ------------------------*/
+  }, [searchTerm]);
+
+  // useEffect(() => {
+  //   if (serviceType === "today") {
+  //     fetchTodayPatients({ page: 1, search: searchTerm });
+  //   } else {
+  //     fetchTotalPatients({ page: 1, search: searchTerm });
+  //   }
+  // }, [searchTerm]);
+
+  // ------------------------------------------
+  // PAGINATION
+  // ------------------------------------------
   const goToNextPage = () => {
-    if (pagination.currentPage < pagination.totalPages) {
-      const nextPage = pagination.currentPage + 1;
-      fetchAll(nextPage);
+    const curr = pagination[activeTab];
+    if (curr.currentPage < curr.totalPages) {
+      const next = curr.currentPage + 1;
+
+      activeTab === "today"
+        ? fetchTodayPatients({ page: next, search: searchTerm })
+        : fetchTotalPatients({ page: next, search: searchTerm });
     }
   };
 
   const goToPreviousPage = () => {
-    if (pagination.currentPage > 1) {
-      const prevPage = pagination.currentPage - 1;
-      fetchAll(prevPage);
+    const curr = pagination[activeTab];
+    if (curr.currentPage > 1) {
+      const prev = curr.currentPage - 1;
+
+      activeTab === "today"
+        ? fetchTodayPatients({ page: prev, search: searchTerm })
+        : fetchTotalPatients({ page: prev, search: searchTerm });
     }
   };
 
-   const handleViewProfile = (id) => {
-    console.log("id",id)
-   router.push(`${userprofile}/${id}`);
+  // ------------------------------------------
+  // ADD PATIENT
+  // ------------------------------------------
+  const handleAddPatient = async (data) => {
+    await createPatient(data);
+    fetchTodayPatients({ page: 1 });
   };
+
+  // ------------------------------------------
+  // ADD VISIT
+  // ------------------------------------------
+  const handleAddVisit = async (data) => {
+    await addNewVisit(data);
+    fetchTodayPatients({ page: 1 });
+  };
+
+  // ------------------------------------------
+  // VIEW PROFILE
+  // ------------------------------------------
+  const handleViewProfile = (id) => {
+    router.push(`${userprofile}/${id}`);
+  };
+
   return {
+    serviceType,
+    setServiceType,
+
+    activeTab,
+    setActiveTab,
+
+    searchTerm,
+    setSearchTerm,
+
     patients,
     todayPatients,
-    loadingTotal,
-    loadingToday,
-    pagination,
     doctorList,
 
-    // pagination handlers
+    loadingToday,
+    loadingTotal,
+
+    pagination: pagination[activeTab],
+
     goToNextPage,
     goToPreviousPage,
 
-    // direct fetch methods
-    fetchTotalPatients,
-    fetchTodayPatients,
-    fetchDoctorList,
-    fetchAll,
-
-    // update patient/visit
     handleAddPatient,
     handleAddVisit,
-
-    // expose setters if needed
-    setPatients,
-    setTodayPatients,
-
     handleViewProfile,
   };
 }
