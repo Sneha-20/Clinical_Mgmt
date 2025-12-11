@@ -25,7 +25,7 @@ export const getPatientList = async (params = {}) => {
     queryParams.append("page", page.toString());
     // if (limit) queryParams.append("limit", limit.toString());
     if (search) queryParams.append("search", search);
-     if (service) queryParams.append("service_type", service);
+    if (service && service !== "All") queryParams.append("service_type", service);
     
     const url = `${routes.patientList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -52,7 +52,7 @@ export const getTodayPatientList = async (params = {}) => {
     queryParams.append("page", page.toString());
     // if (limit) queryParams.append("limit", limit.toString());
     if (search) queryParams.append("search", search);
-      if (service) queryParams.append("service_type", service);
+    if (service && service !== "All") queryParams.append("service_type", service);
     
     const url = `${routes.todayPatientList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -83,28 +83,7 @@ export const getDoctorList = async () => {
 }
 
 
-/**
- * Get single patient by ID
- * @param {number} patientId - Patient ID
- * @returns {Promise<Object>} Patient data
- */
-export const getPatientById = async (patientId) => {
-  try {
-    const url = `${routes.patientList}${patientId}/`;
-    const response = await apiClient.get(url);
-    // Handle nested response structure
-    const patient = response?.data || response;
-    
-    return patient;
-  } catch (error) {
-    console.error("❌ Get patient by ID failed:", {
-      patientId,
-      status: error?.response?.status,
-      message: error?.message,
-    });
-    throw error;
-  }
-};
+
 
 /**
  * Create new patient

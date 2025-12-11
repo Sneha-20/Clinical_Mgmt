@@ -17,7 +17,7 @@ export default function usePatientData() {
 
   // Active tab
   const [activeTab, setActiveTab] = useState("today");
-   const [serviceType, setServiceType] = useState("");
+   const [serviceType, setServiceType] = useState("All");
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");

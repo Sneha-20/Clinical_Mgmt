@@ -48,7 +48,7 @@ export default function ReceptionistDashboard() {
     handleViewProfile,
 
     serviceType,
-    setServiceType
+    setServiceType,
   } = usePatientData();
 
   /** -----------------------------
@@ -129,14 +129,13 @@ export default function ReceptionistDashboard() {
 
         {/* Search Input */}
         <div className="grid grid-cols-4 gap-3">
-
-        <SearchBox value={searchTerm} onChange={setSearchTerm} />
-        <DropDown
-  options={serviceOption}
-  value={serviceType}
-  name="serviceType"
-  onChange={(name, value) => setServiceType(value)}
-/>
+          <SearchBox value={searchTerm} onChange={setSearchTerm} />
+          <DropDown
+            options={serviceOption}
+            value={serviceType}
+            name="serviceType"
+            onChange={(name, value) => setServiceType(value)}
+          />
         </div>
 
         {/* Tabs (Today / Total) */}

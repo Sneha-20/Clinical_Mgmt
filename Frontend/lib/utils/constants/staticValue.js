@@ -5,8 +5,9 @@ export const genderOptions = [
 ];
 
 export const serviceOption = [
-  { label: "home", value: "home" },
+  { label: "Home", value: "home" },
   { label: "Clinic", value: "clinic" },
+  { label: "All", value: "All" },
 ];
 
 export const complaintOptions = [

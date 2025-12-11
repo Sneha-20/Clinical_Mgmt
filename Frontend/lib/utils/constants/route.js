@@ -10,6 +10,7 @@ export const routes = {
   patientVisit: "/clinical/patient/visit/create/",
   searchPatient: "/clinical/patient/flat-list/",
   doctorList: "/clinical/doctor/flat-list/",
+  patientProfile: "/clinical/patient/",
   
   // pages
   pages: {

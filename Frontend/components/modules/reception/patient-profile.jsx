@@ -4,22 +4,13 @@ import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Download, Phone, Mail, MapPin, Calendar } from 'lucide-react'
+import usePatientProfile from '@/lib/hooks/usePatientProfile'
 
 export default function PatientProfile({ patientId, onBack }) {
+  const {patient, patientVisit} = usePatientProfile(patientId)
+  console.log("patientData",patientVisit)
   console.log("patientId",patientId)
-  const [patient] = useState({
-    id: 1,
-    name: 'Rajesh Kumar',
-    age: 62,
-    gender: 'Male',
-    phone: '9876543210',
-    secondaryPhone: '9876543211',
-    email: 'rajesh@email.com',
-    address: '123 Main Street',
-    city: 'Mumbai',
-    referralType: 'Doctor',
-    doctorName: 'Dr. Sharma',
-  })
+ const status="In Progress"
 
   const [visitHistory] = useState([
     {
@@ -76,6 +67,7 @@ export default function PatientProfile({ patientId, onBack }) {
   
 
   return (
+    // <p>{patient?.name}</p>
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -83,8 +75,8 @@ export default function PatientProfile({ patientId, onBack }) {
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
         </Button>
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-primary">{patient.name}</h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">Patient ID: #{patient.id}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">{patient?.name}</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">Patient ID: #{patient?.id}</p>
         </div>
       </div>
 
@@ -98,20 +90,20 @@ export default function PatientProfile({ patientId, onBack }) {
           <CardContent className="space-y-3 sm:space-y-4">
             <div>
               <p className="text-xs sm:text-sm text-muted-foreground">Age</p>
-              <p className="font-semibold text-sm sm:text-base">{patient.age} years</p>
+              <p className="font-semibold text-sm sm:text-base">{patient?.age} years</p>
             </div>
             <div>
               <p className="text-xs sm:text-sm text-muted-foreground">Gender</p>
-              <p className="font-semibold text-sm sm:text-base">{patient.gender}</p>
+              <p className="font-semibold text-sm sm:text-base">{patient?.gender}</p>
             </div>
             <div>
               <p className="text-xs sm:text-sm text-muted-foreground">Referral Type</p>
-              <p className="font-semibold text-sm sm:text-base">{patient.referralType}</p>
+              <p className="font-semibold text-sm sm:text-base">{patient?.referral_type}</p>
             </div>
-            {patient.doctorName && (
+            {patient?.referral_doctor && (
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Doctor</p>
-                <p className="font-semibold text-sm sm:text-base">{patient.doctorName}</p>
+                <p className="font-semibold text-sm sm:text-base">{patient?.referral_doctor}</p>
               </div>
             )}
           </CardContent>
@@ -127,21 +119,21 @@ export default function PatientProfile({ patientId, onBack }) {
               <Phone className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Primary</p>
-                <p className="font-medium text-xs sm:text-sm">{patient.phone}</p>
+                <p className="font-medium text-xs sm:text-sm">{patient?.phone_primary}</p>
               </div>
             </div>
             <div className="flex items-start gap-2 sm:gap-3">
               <Phone className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Secondary</p>
-                <p className="font-medium text-xs sm:text-sm">{patient.secondaryPhone}</p>
+                <p className="font-medium text-xs sm:text-sm">{patient?.phone_secondary}</p>
               </div>
             </div>
             <div className="flex items-start gap-2 sm:gap-3">
               <MapPin className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Address</p>
-                <p className="font-medium text-xs sm:text-sm">{patient.address}, {patient.city}</p>
+                <p className="font-medium text-xs sm:text-sm">{patient?.address}, {patient?.city}</p>
               </div>
             </div>
           </CardContent>
@@ -155,15 +147,15 @@ export default function PatientProfile({ patientId, onBack }) {
           <CardContent className="space-y-3 sm:space-y-4">
             <div>
               <p className="text-xs sm:text-sm text-muted-foreground">Total Visits</p>
-              <p className="text-xl sm:text-2xl font-bold text-accent">{visitHistory.length}</p>
+              <p className="text-xl sm:text-2xl font-bold text-accent">{patientVisit?.totalItems}</p>
             </div>
             <div>
               <p className="text-xs sm:text-sm text-muted-foreground">Total Spent</p>
-              <p className="text-xl sm:text-2xl font-bold text-accent">₹{bills.reduce((sum, b) => sum + b.amount, 0).toLocaleString()}</p>
+              <p className="text-xl sm:text-2xl font-bold text-accent">₹400</p>
             </div>
             <div>
               <p className="text-xs sm:text-sm text-muted-foreground">Last Visit</p>
-              <p className="font-semibold text-sm">2 days ago</p>
+              <p className="font-semibold text-sm">{patientVisit?.[0]?.appointment_date || "No date"}</p>
             </div>
           </CardContent>
         </Card>
@@ -177,12 +169,12 @@ export default function PatientProfile({ patientId, onBack }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-3 sm:space-y-4">
-            {visitHistory.map((visit, index) => (
+            {patientVisit?.map((visit, index) => (
               <div key={index} className="relative pb-3 sm:pb-4 last:pb-0">
                 <div className="flex gap-3 sm:gap-4">
                   <div className="flex flex-col items-center">
                     <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-accent mt-2"></div>
-                    {index !== visitHistory.length - 1 && (
+                    {index !== patientVisit.length - 1 && (
                       <div className="w-0.5 h-12 sm:h-16 bg-border mt-1"></div>
                     )}
                   </div>
@@ -190,19 +182,19 @@ export default function PatientProfile({ patientId, onBack }) {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <Calendar className="w-3 sm:w-4 h-3 sm:h-4 text-muted-foreground flex-shrink-0" />
-                        <p className="font-semibold text-xs sm:text-sm truncate">{visit.purpose}</p>
+                        <p className="font-semibold text-xs sm:text-sm truncate">{visit.visit_type}</p>
                       </div>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                        visit.status === 'Completed' ? 'bg-green-100 text-green-600' :
-                        visit.status === 'In Progress' ? 'bg-blue-100 text-blue-600' :
+                        status === 'Completed' ? 'bg-green-100 text-green-600' :
+                        status === 'In Progress' ? 'bg-blue-100 text-blue-600' :
                         'bg-yellow-100 text-yellow-600'
                       }`}>
-                        {visit.status}
+                        {status}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground">{visit.date} at {visit.time}</p>
+                    <p className="text-xs text-muted-foreground">{visit.appointment_dat}</p>
                     <p className="text-xs sm:text-sm mt-1">{visit.notes}</p>
-                    <p className="text-xs text-muted-foreground mt-1">By: {visit.audiologist}</p>
+                    <p className="text-xs text-muted-foreground mt-1">By: {visit.seen_by}</p>
                   </div>
                 </div>
               </div>
@@ -212,7 +204,7 @@ export default function PatientProfile({ patientId, onBack }) {
       </Card>
 
       {/* Bills & Transactions */}
-      <Card>
+      {/* <Card>
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-lg sm:text-xl">Bills & Transactions</CardTitle>
           <CardDescription className="text-xs sm:text-sm">Invoice history and payment status</CardDescription>
@@ -243,7 +235,7 @@ export default function PatientProfile({ patientId, onBack }) {
             ))}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   )
 }
