@@ -128,7 +128,7 @@ export default function ReceptionistDashboard() {
         </div>
 
         {/* Search Input */}
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid sm:grid-cols-4 grid-cols-1 gap-3">
           <SearchBox value={searchTerm} onChange={setSearchTerm} />
           <DropDown
             options={serviceOption}

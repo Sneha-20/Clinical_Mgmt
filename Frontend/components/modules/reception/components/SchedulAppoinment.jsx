@@ -17,9 +17,7 @@ export default function SchedulAppoinment({
     const searchPatientsList = async () => {
       try {
         const response = await searchPatient(searchTerm);
-        console.log("Search response:", response);
         setSearchResults(response);
-        console.log("Searching for patients with term:", searchTerm);
       } catch (error) {
         console.error("Error searching patients:", error);
       }
@@ -29,7 +27,7 @@ export default function SchedulAppoinment({
 
   return (
     <Modal header="Schedule Appointment" onClose={onClose}>
-      <div className="flex gap-5">
+      <div className="flex sm:flex-row flex-col gap-5">
         {/* LEFT SIDE — EXISTING PATIENT */}
         <div className="flex flex-col gap-3">
           <h3 className="font-semibold text-primary">Existing Patient</h3>
@@ -41,7 +39,7 @@ export default function SchedulAppoinment({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 text-sm pr-6 w-full"
             />
-            <Search className="w-5 h-5 text-primary absolute right-1 top-[14px]" />
+            <Search className="w-5 h-5 text-primary absolute right-[6px] top-[10px]" />
           </div>
 
           <div>
@@ -56,7 +54,7 @@ export default function SchedulAppoinment({
                       onClose();                      // close schedule modal
                     }}
                   >
-                    {patient.name} - {patient.phone}
+                    {patient.name} - {patient.phone_primary}
                   </li>
                 ))}
               </ul>

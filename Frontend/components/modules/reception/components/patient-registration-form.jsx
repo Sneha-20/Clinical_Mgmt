@@ -18,6 +18,8 @@ import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { showToast } from "@/components/ui/toast";
 import { startLoading } from "@/lib/redux/slice/uiSlice";
 import CommonDatePicker from "@/components/ui/CommonDatePicker";
+import CommonCheckbox from "@/components/ui/CommonCheckbox";
+import CommonRadio from "@/components/ui/CommonRadio";
 
 export default function PatientRegistrationForm({
   onClose,
@@ -123,7 +125,7 @@ export default function PatientRegistrationForm({
       await patientSchema.validate(formData, { abortEarly: false });
       setErrors({});
 
-      if (onSubmit) onSubmit(formData);
+      // if (onSubmit) onSubmit(formData);
     } catch (error) {
       console.log("Validation errors:", extractYupErrors(error));
       if (error.name === "ValidationError") {
@@ -249,19 +251,27 @@ export default function PatientRegistrationForm({
                   placeholder="Full address"
                   error={errors.address}
                 />
-                <Input
+                <CommonDatePicker
                   label="Appointment Date"
-                  important
-                  type="date"
-                  name="appointment_date"
-                  value={formData.appointment_date}
-                  onChange={(e) => updateField(e.target.name, e.target.value)}
-                  error={errors?.appointment_date}
+                  className="coomon-datePicker"
+                  selectedDate={
+                    formData.appointment_date
+                      ? new Date(formData.appointment_date)
+                      : null
+                  }
+                  onChange={(date) =>
+                    updateField(
+                      "appointment_date",
+                      date?.toISOString().split("T")[0]
+                    )
+                  }
+                  placeholder="Select Appointment Date"
+                  error={errors.appointment_date}
                 />
               </div>
             </div>
             {/* REFERRAL */}
-            <div>
+            {/* <div>
               <h3 className="font-semibold text-primary mb-3">Referral</h3>
               <div className="flex gap-6">
                 {referalTypeOptions.map((item) => (
@@ -289,7 +299,46 @@ export default function PatientRegistrationForm({
                 )}
               </div>
 
-              {/* SHOW DOCTOR NAME INPUT ONLY IF "Doctor" SELECTED */}
+             
+              {formData.referral_type === "doctor" && (
+                <Input
+                  label="Doctor Name"
+                  name="referral_doctor"
+                  important
+                  value={formData.referral_doctor}
+                  onChange={(e) =>
+                    updateField("referral_doctor", e.target.value)
+                  }
+                  placeholder="Enter doctor name"
+                  className="mt-3"
+                  error={errors.referral_doctor}
+                />
+              )}
+            </div> */}
+            <div>
+              <h3 className="font-semibold text-primary mb-3">Referral</h3>
+
+              <div className="flex gap-6">
+                {referalTypeOptions.map((item) => (
+                  <CommonRadio
+                    key={item.value}
+                    label={item.label}
+                    value={item.value}
+                    name="referral_type"
+                    checked={formData.referral_type === item.value}
+                    onChange={(e) =>
+                      updateField("referral_type", e.target.value)
+                    }
+                  />
+                ))}
+              </div>
+
+              {errors?.referral_type && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.referral_type}
+                </p>
+              )}
+
               {formData.referral_type === "doctor" && (
                 <Input
                   label="Doctor Name"
@@ -311,22 +360,32 @@ export default function PatientRegistrationForm({
               {/* RADIO BUTTONS FOR REFERRAL TYPE */}
               <div className="flex gap-6">
                 {serviceOption.map((item) => (
-                  <label
+                  // <label
+                  //   key={item.value}
+                  //   className="flex items-center gap-2 cursor-pointer"
+                  // >
+                  //   <input
+                  //     type="radio"
+                  //     name="service_type"
+                  //     value={item.value}
+                  //     checked={formData.service_type === item.value}
+                  //     onChange={(e) =>
+                  //       updateField("service_type", e.target.value)
+                  //     }
+                  //     className="w-4 h-4"
+                  //   />
+                  //   <span>{item.label}</span>
+                  // </label>
+                  <CommonRadio
                     key={item.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="service_type"
-                      value={item.value}
-                      checked={formData.service_type === item.value}
-                      onChange={(e) =>
-                        updateField("service_type", e.target.value)
-                      }
-                      className="w-4 h-4"
-                    />
-                    <span>{item.label}</span>
-                  </label>
+                    label={item.label}
+                    value={item.value}
+                    name="service_type"
+                    checked={formData.service_type === item.value}
+                    onChange={(e) =>
+                      updateField("service_type", e.target.value)
+                    }
+                  />
                 ))}
                 {errors?.service_type && (
                   <p className="text-red-500 text-sm mt-1">
@@ -386,7 +445,7 @@ export default function PatientRegistrationForm({
                     Tests Required
                   </label>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                     {testRequestedOptions.map((test) => (
                       <label
                         key={test.value}
@@ -413,9 +472,32 @@ export default function PatientRegistrationForm({
                               updated
                             );
                           }}
+                          
                         />
                         {test.label}
                       </label>
+                    ))}
+                  </div> */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {testRequestedOptions.map((test) => (
+                      <CommonCheckbox
+                        key={test.value}
+                        label={test.label}
+                        value={test.value}
+                        checked={visit.test_requested.includes(test.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          let updated = [...visit.test_requested];
+
+                          if (updated.includes(value)) {
+                            updated = updated.filter((t) => t !== value);
+                          } else {
+                            updated.push(value);
+                          }
+
+                          updateVisitDetails(index, "test_requested", updated);
+                        }}
+                      />
                     ))}
                   </div>
                 </div>
