@@ -16,7 +16,9 @@ from .serializers import (
     AudiologistQueueSerializer,
     AudiologistCaseHistoryCreateSerializer,
     BillDetailSerializer,
+    PatientVisitWithCaseHistorySerializer
 )
+
 from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
@@ -109,7 +111,7 @@ class PatientDetailView(generics.RetrieveAPIView):
     ''' Retrieve Patient Details along with latest visit and total visits '''
     queryset = Patient.objects.all()
     serializer_class = PatientDetailSerializer
-    permission_classes = [IsAuthenticated,ReceptionistPermission]  # Ensure user is logged in
+    permission_classes = [IsAuthenticated,ReceptionistPermission | AuditorPermission]  # Ensure user is logged in
     lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
 
     def retrieve(self, request, *args, **kwargs):
@@ -122,7 +124,7 @@ class PatientDetailView(generics.RetrieveAPIView):
 class PatientVisitsView(generics.ListAPIView):
     ''' List all visits for a specific patient '''
     serializer_class = PatientAllVisitSerializer
-    permission_classes = [IsAuthenticated,ReceptionistPermission]
+    permission_classes = [IsAuthenticated, ReceptionistPermission | AuditorPermission]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -297,19 +299,45 @@ class DashboardStatsView(APIView):
 class AudiologistPatientQueueView(generics.ListAPIView):
     ''' List all Patient Visits for Audiologist Queue '''
     serializer_class = AudiologistQueueSerializer
-    permission_classes = [IsAuthenticated,AuditorPermission]
+    permission_classes = [IsAuthenticated, AuditorPermission]
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['patient__name', 'patient__phone_primary']
+    filterset_fields = ['service_type','appointment_date']
 
     def get_queryset(self):
-        excluded_types = ['Battery Purchase', 'Tip / Dome Change','Speech Assessment','Speech Therapy Follow-up']
-        from django.utils import timezone
-        today = timezone.now().date()
-        return PatientVisit.objects.filter(
-            clinic=getattr(self.request.user, 'clinic', None),seen_by=self.request.user,status='Test pending',appointment_date=today
-        ).exclude(visit_type__in=excluded_types).order_by('created_at')
+        """
+        Return a queryset of PatientVisit records for the audiologist queue after applying filters.
+        """
+        excluded_types = [
+            'Battery Purchase',
+            'Tip / Dome Change',
+            'Speech Assessment',
+            'Speech Therapy Follow-up'
+        ]
+
+        queryset = PatientVisit.objects.filter(
+            clinic=getattr(self.request.user, 'clinic', None),
+            seen_by=self.request.user,
+            status='Test pending'
+        ).exclude(visit_type__in=excluded_types)
+
+        # Support direct filtering by GET parameters if provided
+        appointment_date = self.request.query_params.get('appointment_date', None)
+        if appointment_date:
+            queryset = queryset.filter(appointment_date=appointment_date)
+        else:
+            # Default: today's records only
+            from django.utils import timezone
+            today = timezone.now().date()
+            queryset = queryset.filter(appointment_date=today)
+
+        # The rest of the filtering will be handled by DjangoFilterBackend and search/filter classes
+
+        return queryset.order_by('created_at')
     
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -322,7 +350,7 @@ class AudiologistPatientQueueView(generics.ListAPIView):
 class PatientVisitDetailView(generics.RetrieveAPIView):
     ''' Retrieve details of a Patient Visit by Visit ID '''
     queryset = PatientVisit.objects.all()
-    serializer_class = AudiologistQueueSerializer
+    serializer_class = PatientVisitWithCaseHistorySerializer
     permission_classes = [IsAuthenticated,AuditorPermission]
     lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/
 
@@ -351,24 +379,7 @@ class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
         )
 
 
-# List audiologist case history records for a specific visit ID
-# class AudiologistCaseHistoryView(generics.ListAPIView):
-#     """
-#     List all AudiologistCaseHistory records for a given visit ID.
 
-#     GET /api/clinical/casehistory/visit/<visit_id>/
-
-#     Returns:
-#     - All case history records associated with the specified visit.
-#     """
-#     serializer_class = Audiolog
-#     permission_classes = [IsAuthenticated, AuditorPermission]
-
-#     def get_queryset(self):
-#         visit_id = self.kwargs.get('visit_id')
-#         return AudiologistCaseHistory.objects.filter(visit__id=visit_id)
-
-    
 
 # ============================================================================
 # BILL VIEWS

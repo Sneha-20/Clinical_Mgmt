@@ -24,6 +24,12 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
         required=False
     )
 
+    total_bill = serializers.SerializerMethodField()
+
+    def get_total_bill(self, obj):
+        from django.db.models import Sum
+        return Bill.objects.filter(visit=obj).aggregate(total_amount=Sum('total_amount'))['total_amount'] or 0
+
     class Meta:
         model = PatientVisit
         fields = [
@@ -34,7 +40,8 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
             'present_complaint',
             'test_requested',
             'notes',
-            'appointment_date'
+            'appointment_date',
+            'total_bill'
         ]
 
     def validate_test_requested(self, value):
@@ -356,8 +363,16 @@ class PatientVisitUpdateSerializer(serializers.ModelSerializer):
 class AudiologistCaseHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = AudiologistCaseHistory
-        fields = '__all__'
-        read_only_fields = ['created_by']
+        fields = [
+            # 'id',
+            # 'patient',
+            'medical_history',
+            'family_history',
+            'noise_exposure',
+            'previous_ha_experience',
+            'red_flags',
+        ]
+        # read_only_fields = ['created_by']
 
 class VisitTestPerformedSerializer(serializers.ModelSerializer):
     class Meta:
@@ -379,6 +394,18 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
     visit_id = serializers.IntegerField(source='id', read_only=True)
     referral_type = serializers.CharField(source='patient.referral_type', read_only=True)
     referral_doctor = serializers.CharField(source='patient.referral_doctor', read_only=True)
+    # service_type = serializers.CharField(source='service_type', read_only=True)
+
+    def to_representation(self, instance):
+        """Convert string → list for output"""
+        data = super().to_representation(instance)
+
+        stored_value = instance.test_requested or ""
+
+        data["test_requested"] = (
+            stored_value.split(",") if stored_value else []
+        )
+        return data
 
 
     # present_complaint = serializers.CharField()
@@ -397,7 +424,35 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
             'status',
             # 'appointment_date',
             'referral_type',
-            'referral_doctor'
+            'referral_doctor',
+            'service_type'
+        ]
+
+
+# Visit record of Patient with case history record of a patient
+class PatientVisitWithCaseHistorySerializer(serializers.ModelSerializer):
+    visit_id = serializers.IntegerField(source='id', read_only=True)
+    patient_id = serializers.IntegerField(source='patient.id', read_only=True)
+    patient_name = serializers.CharField(source='patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    referral_type = serializers.CharField(source='patient.referral_type', read_only=True)
+    referral_doctor = serializers.CharField(source='patient.referral_doctor', read_only=True)
+    case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
+
+    class Meta:
+        model = PatientVisit
+        fields = [
+            'visit_id',
+            'patient_id',
+            'patient_name',
+            'patient_phone',
+            'visit_type',
+            'present_complaint',
+            'test_requested',
+            'referral_type',
+            'referral_doctor',
+            'service_type',
+            'case_history'
         ]
 
 
@@ -432,8 +487,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
     Expected payload example:
     {
-        "patient": 12,  // Required: Patient ID for case history
-        "visit": 1,     // Required: Visit ID for test performed and billing
+        # "visit": 1,     // Required: Visit ID for test performed and billing
         "medical_history": "...",
         "family_history": "...",
         "noise_exposure": "...",
@@ -491,7 +545,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AudiologistCaseHistory
         fields = [
-            'patient',  # Changed from 'visit' to 'patient' to match model
+            'patient',  # This is not required in the payload anymore, but required as model field; we will set it in create().
             'visit',    # Keep as write_only for VisitTestPerformed and billing
             'medical_history',
             'family_history',
@@ -526,6 +580,12 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         visit = validated_data.pop('visit', None)
         if not visit:
             raise serializers.ValidationError({"visit": "Visit ID is required for test performed and billing."})
+
+        # Get the patient from the visit, override any patient present in the payload
+        patient = visit.patient
+
+        # Remove any 'patient' from validated_data if present, to avoid conflicts in get_or_create (we'll add it manually)
+        validated_data.pop('patient', None)
 
         # Extract VisitTestPerformed-related fields
         test_fields = [
@@ -562,7 +622,6 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             # 1. Create or update AudiologistCaseHistory instance (one per patient)
             # Use get_or_create since case history should be one per patient
-            patient = validated_data.get('patient')
             case_history, created = AudiologistCaseHistory.objects.get_or_create(
                 patient=patient,
                 defaults={
@@ -571,15 +630,19 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                 }
             )
             
-            # If case history already exists, update it with new data
+            # If case history already exists, update only the specified fields
             if not created:
-                for key, value in validated_data.items():
-                    if key != 'patient':  # Don't update patient field
-                        setattr(case_history, key, value)
-                if request and request.user:
-                    # Optionally update created_by if needed
-                    pass
-                case_history.save()
+                fields_to_update = [
+                    'medical_history',
+                    'family_history',
+                    'noise_exposure',
+                    'previous_ha_experience',
+                    'red_flags',
+                ]
+                for key in fields_to_update:
+                    if key in validated_data:
+                        setattr(case_history, key, validated_data[key])
+                case_history.save(update_fields=fields_to_update)
 
             # 2. Create VisitTestPerformed only if something meaningful is set
             has_any_test = any(bool(value) for _, value in test_performed_data.items())

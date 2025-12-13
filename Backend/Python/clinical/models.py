@@ -173,15 +173,12 @@ class Bill(models.Model):
         self.save(update_fields=['total_amount', 'final_amount'])
 
     def generate_bill_number(self):
-        """Auto-generate a unique bill number"""
         if not self.bill_number:
             from datetime import datetime
             date_prefix = datetime.now().strftime('%Y%m%d')
-            # Get the count of bills created today
-            today_bills = Bill.objects.filter(
-                bill_number__startswith=date_prefix
-            ).count()
-            self.bill_number = f"BILL-{date_prefix}-{today_bills + 1:04d}"
+            last = Bill.objects.filter(bill_number__startswith=f'BILL-{date_prefix}-').order_by('-bill_number').first()
+            n = int(last.bill_number.split('-')[-1]) if last and last.bill_number else 0
+            self.bill_number = f"BILL-{date_prefix}-{n+1:04d}"
         return self.bill_number
 
     def save(self, *args, **kwargs):
