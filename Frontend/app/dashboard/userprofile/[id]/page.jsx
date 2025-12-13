@@ -1,4 +1,4 @@
-import PatientProfile from '@/components/modules/reception/patient-profile'
+import PatientProfile from '@/components/modules/PatientProfile/patient-profile'
 import React from 'react'
 
 export default function page({params}) {

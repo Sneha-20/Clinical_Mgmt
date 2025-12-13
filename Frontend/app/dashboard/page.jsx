@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ReceptionDashboard from "@/components/modules/reception/dashboard";
-import AudiologistDashboard from "@/components/modules/audiologist/dashboard";
+import AudiologistDashboard from "@/components/modules/audiologist/Audiologistdashboard";
 import AdminDashboard from "@/components/modules/admin/dashboard";
 import ReceptionistDashboard from "@/components/modules/receptionist/Receptionistdashboard";
 
@@ -33,14 +32,14 @@ export default function Dashboard() {
     switch (userRole) {
       case "Reception":
         return <ReceptionistDashboard />;
-      case "Doctor":
-        return <AudiologistDashboard />;
+        case "Doctor":
+          return <AudiologistDashboard />;
       case "Admin":
         return <AdminDashboard />;
       // case 'Speech':
       //   return <div className="text-center py-12"><p className="text-muted-foreground">Speech Therapist Dashboard - Coming Soon</p></div>
       default:
-        return <ReceptionDashboard />;
+        return <ReceptionistDashboard />;
     }
   };
 

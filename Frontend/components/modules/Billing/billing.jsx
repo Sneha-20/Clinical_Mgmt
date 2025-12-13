@@ -28,13 +28,10 @@ export default function BillingForm({ onClose, onSubmit }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
-      <Card className="w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto my-4">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 sticky top-0 bg-card">
+    <div>
+      <Card className="w-full my-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 bg-card">
           <CardTitle className="text-lg sm:text-xl">Generate Bill</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-            <X className="w-4 h-4" />
-          </Button>
         </CardHeader>
         <CardContent className="p-3 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">

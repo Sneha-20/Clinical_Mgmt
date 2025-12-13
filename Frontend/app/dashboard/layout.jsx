@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X } from "lucide-react";
-import SidebarNav from "@/components/layouts/sidebar-nav";
+import SidebarNav from "@/components/sidebar/sidebar-nav";
 import { logoutAction } from "@/lib/services/auth";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";

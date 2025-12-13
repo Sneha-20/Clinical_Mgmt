@@ -1,6 +1,6 @@
 'use client'
 
-import InventoryManagement from '@/components/modules/reception/inventory-management'
+import InventoryManagement from '@/components/modules/InventoryManagement/inventory-management'
 
 export default function InventoryPage() {
   return <InventoryManagement />

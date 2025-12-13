@@ -4,9 +4,13 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Users, Clock, CheckCircle } from 'lucide-react'
-import CaseHistoryForm from './case-history-form'
+import useAudiologist from '@/lib/hooks/useAudiologist'
+import AppoinmentListCard from './components/AppoinmentListCard'
 
 export default function AudiologistDashboard() {
+  const {handleViewPatient,appoinementList} = useAudiologist()
+
+  console.log("appoinementList",appoinementList)
   const [queue, setQueue] = useState([
     { id: 1, name: 'Rajesh Kumar', complaint: 'Hearing problem', testsRequired: ['PTA', 'Tympanometry'], referral: 'Doctor' },
     { id: 2, name: 'Priya Singh', complaint: 'Follow-up Trial', testsRequired: ['Free Field'], referral: 'Self' },
@@ -37,17 +41,6 @@ export default function AudiologistDashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {showCaseHistory && selectedPatient && (
-        <CaseHistoryForm
-          patientName={selectedPatient}
-          onClose={() => {
-            setShowCaseHistory(false)
-            setSelectedPatient(null)
-          }}
-          onSubmit={handleCaseHistorySubmit}
-        />
-      )}
-
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-teal-600">Audiologist Dashboard</h1>
         <p className="text-xs sm:text-sm text-slate-600 mt-1">Manage patient queue and audiological tests</p>
@@ -97,37 +90,7 @@ export default function AudiologistDashboard() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-lg sm:text-xl">Patient Queue</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Patients waiting for audiological assessment</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 sm:space-y-3">
-            {queue.map((patient, index) => (
-              <div key={patient.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-50">
-                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center font-bold text-teal-600 flex-shrink-0">
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm sm:text-base">{patient.name}</h4>
-                  <p className="text-xs sm:text-sm text-slate-600">{patient.complaint}</p>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {patient.testsRequired.map((test) => (
-                      <span key={test} className="text-xs px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full">
-                        {test}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <Button className="gap-2 text-sm w-full sm:w-auto" onClick={() => handleStartTest(patient.name)}>
-                  Start Test
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <AppoinmentListCard appoinementList={appoinementList}/>
 
       <Card>
         <CardHeader className="pb-3 sm:pb-4">

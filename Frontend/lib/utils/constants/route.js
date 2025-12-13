@@ -11,11 +11,16 @@ export const routes = {
   searchPatient: "/clinical/patient/flat-list/",
   doctorList: "/clinical/doctor/flat-list/",
   patientProfile: "/clinical/patient/",
+
+  audiologist:{
+   appointmentList:"clinical/audiologits/queue/"
+  },
   
   // pages
   pages: {
     dashboard: "/dashboard",
     userptofile: "/dashboard/userprofile",
+    patientCaseHistory: "/dashboard/case-history",
     signup: "/signup",
     login: "/login",
     home: "/",

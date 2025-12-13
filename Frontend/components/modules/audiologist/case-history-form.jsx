@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Upload } from 'lucide-react'
 
-export default function CaseHistoryForm({ patientName, onClose, onSubmit }) {
+export default function CaseHistoryForm({ patientId, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
     symptoms: '',
     onset: '',
@@ -49,13 +49,13 @@ export default function CaseHistoryForm({ patientName, onClose, onSubmit }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
-      <Card className="w-full max-w-3xl max-h-[90vh] overflow-y-auto my-4">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 sticky top-0 bg-card">
-          <CardTitle className="text-lg sm:text-xl">Case History - {patientName}</CardTitle>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+    <div>
+      <Card className="w-full my-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 bg-card">
+          <CardTitle className="text-lg sm:text-xl">Case History - {patientId}</CardTitle>
+          {/* <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5" />
-          </Button>
+          </Button> */}
         </CardHeader>
         <CardContent className="p-3 sm:p-6">
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
