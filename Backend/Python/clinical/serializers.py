@@ -78,8 +78,9 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     seen_by = serializers.IntegerField(required=False, allow_null=True)
 
     def validate_seen_by(self, value):
-        if value in (None, ""):
-            return None
+        print(value)
+        if value in (None, "",0):
+            return 0
         try:
             return User.objects.get(pk=value)
         except User.DoesNotExist:
@@ -134,8 +135,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         if not value:
             return value
         # Case-insensitive check for existing patient email
-        if Patient.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("Email already exists.")
+        # if Patient.objects.filter(email__iexact=value).exists():
+        #     raise serializers.ValidationError("Email already exists.")
         return value
 
     def create(self, validated_data):
@@ -170,8 +171,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 
                 # Map seen_by (User instance) and test_requested (list -> CSV string)
                 
-                seen_by_user = visit_data.pop('seen_by', None)
-                if seen_by_user is None:
+                seen_by_user = visit_data.pop('seen_by') # 0 is the default value if seen_by is not provided
+                if seen_by_user == 0:
                     seen_by_user = current_user
                 test_requested = visit_data.pop('test_requested', [])
                 if isinstance(test_requested, list):
@@ -322,8 +323,8 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     status_value = 'Test pending'
 
                 # `seen_by` has already been validated by PatientVisitRegistrationSerializer
-                seen_by_user = visit_data.pop('seen_by', None)
-                if seen_by_user is None:
+                seen_by_user = visit_data.pop('seen_by', 0)
+                if seen_by_user == 0:
                     seen_by_user=current_user
 
                 # Convert list of tests to CSV string for storage on the model

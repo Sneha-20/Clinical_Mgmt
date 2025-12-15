@@ -41,6 +41,7 @@ class PatientRegistrationView(generics.CreateAPIView):
         if not serializer.is_valid():
             # extract first error message
             def _first_error(err):
+                print(err)
                 if isinstance(err, list) and err:
                     return str(err[0])
                 if isinstance(err, dict):
@@ -194,7 +195,7 @@ class TodayPatientVisitsView(generics.ListAPIView):
         return PatientVisit.objects.filter(appointment_date=today, clinic=getattr(self.request.user, 'clinic', None)).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
+        queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
