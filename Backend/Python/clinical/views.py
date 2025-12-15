@@ -195,6 +195,7 @@ class TodayPatientVisitsView(generics.ListAPIView):
         return PatientVisit.objects.filter(appointment_date=today, clinic=getattr(self.request.user, 'clinic', None)).order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
+        # filters 
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         if page is not None:
