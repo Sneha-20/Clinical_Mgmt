@@ -3,7 +3,7 @@
 from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
-                    PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView)
+                    PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillListView)
 
 urlpatterns = [
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
@@ -25,5 +25,6 @@ urlpatterns = [
    path('audiologist/test/perform/',AudiologistCaseHistoryCreateView.as_view()), # PAtient test performed and result uploaded 
    
    # Bill endpoints
+   path('bill/', BillListView.as_view(), name='bill_list'), # List bills with patient info and status
    path('bill/visit/<int:visit_id>/', BillDetailView.as_view(), name='bill_detail'), # Get bill details by visit ID
 ]

@@ -194,11 +194,21 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 
 # Edit Patient record 
 class PatientDetailSerializer(serializers.ModelSerializer):
+    total_visits = serializers.SerializerMethodField()
+    total_bill = serializers.SerializerMethodField()
+
+    def get_total_bill(self, obj):
+        from django.db.models import Sum
+        return Bill.objects.filter(visit__patient=obj).aggregate(total_amount=Sum('total_amount'))['total_amount'] or 0
+
+    def get_total_visits(self, obj):
+        return PatientVisit.objects.filter(patient=obj).count()
+
     class Meta:
         model = Patient
         fields = [
              'name', 'age', 'dob', 'email', 'gender','phone_primary', 'phone_secondary', 'city', 'address',
-            'referral_type', 'referral_doctor'
+            'referral_type', 'referral_doctor', 'total_visits', 'total_bill'
         ]               
     
 # Flat List Serializer for dropdowns and search
@@ -723,6 +733,30 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 # ============================================================================
 # BILL SERIALIZERS
 # ============================================================================
+
+class BillListSerializer(serializers.ModelSerializer):
+    """Compact bill summary for listing screens"""
+    patient_id = serializers.IntegerField(source='visit.patient.id', read_only=True)
+    patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='visit.patient.phone_primary', read_only=True)
+    visit_id = serializers.IntegerField(source='visit.id', read_only=True)
+    visit_date = serializers.DateField(source='visit.appointment_date', read_only=True)
+
+    class Meta:
+        model = Bill
+        fields = [
+            'id',
+            'bill_number',
+            'payment_status',
+            'final_amount',
+            'created_at',
+            'patient_id',
+            'patient_name',
+            'patient_phone',
+            'visit_id',
+            'visit_date',
+        ]
+
 
 class BillItemSerializer(serializers.ModelSerializer):
     """Serializer for individual bill items"""

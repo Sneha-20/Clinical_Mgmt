@@ -16,6 +16,7 @@ from .serializers import (
     AudiologistQueueSerializer,
     AudiologistCaseHistoryCreateSerializer,
     BillDetailSerializer,
+    BillListSerializer,
     PatientVisitWithCaseHistorySerializer
 )
 
@@ -386,6 +387,34 @@ class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
 # ============================================================================
 # BILL VIEWS
 # ============================================================================
+
+class BillListView(generics.ListAPIView):
+    """
+    List all bills with patient info and payment status for the logged-in clinic.
+    Supports search by patient name/phone and bill number, and filtering by payment_status.
+    """
+    serializer_class = BillListSerializer
+    permission_classes = [IsAuthenticated, ReceptionistPermission]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['visit__patient__name', 'visit__patient__phone_primary', 'bill_number']
+    filterset_fields = ['payment_status']
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        qs = Bill.objects.select_related('visit', 'visit__patient', 'clinic').order_by('-created_at')
+        if clinic:
+            qs = qs.filter(clinic=clinic)
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
 class BillDetailView(generics.RetrieveAPIView):
     """
