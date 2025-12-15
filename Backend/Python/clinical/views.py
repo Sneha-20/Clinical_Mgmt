@@ -396,9 +396,9 @@ class BillListView(generics.ListAPIView):
     serializer_class = BillListSerializer
     permission_classes = [IsAuthenticated, ReceptionistPermission]
     pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, SearchFilter]
+    # Use SearchFilter only; handle payment_status filtering manually to avoid ChoiceField setup issues
+    filter_backends = [SearchFilter]
     search_fields = ['visit__patient__name', 'visit__patient__phone_primary', 'bill_number']
-    filterset_fields = ['payment_status']
 
     def get_queryset(self):
         clinic = getattr(self.request.user, 'clinic', None)
@@ -408,7 +408,15 @@ class BillListView(generics.ListAPIView):
         return qs
 
     def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.get_queryset()
+
+        # Optional filter by payment_status (?payment_status=Paid/Pending/Partially%20Paid)
+        payment_status = request.query_params.get('payment_status')
+        if payment_status:
+            queryset = queryset.filter(payment_status=payment_status)
+
+        # Apply search filter afterwards (name/phone/bill_number)
+        queryset = self.filter_queryset(queryset)
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
