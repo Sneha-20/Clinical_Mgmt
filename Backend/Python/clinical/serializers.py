@@ -450,6 +450,17 @@ class PatientVisitWithCaseHistorySerializer(serializers.ModelSerializer):
     referral_doctor = serializers.CharField(source='patient.referral_doctor', read_only=True)
     case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
 
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # test requested to list
+        stored_value = instance.test_requested or ""
+        data["test_requested"] = (
+            stored_value.split(",") if stored_value else []
+        )
+        return data
+
+
     class Meta:
         model = PatientVisit
         fields = [
