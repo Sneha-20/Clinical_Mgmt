@@ -507,26 +507,28 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
       - VisitTestPerformed (test flags, linked to PatientVisit)
       - TestUpload records (uploaded reports)
 
-    Expected payload example:
-    {
-        # "visit": 1,     // Required: Visit ID for test performed and billing
-        "medical_history": "...",
-        "family_history": "...",
-        "noise_exposure": "...",
-        "previous_ha_experience": "...",
-        "red_flags": "...",
-
-        "pta": true,
-        "oae": true,
-        "srt": true,
-        "sds": true,
-        "other_test": "Any other test name or notes",
-
-        "test_report_files": [
-            { "file_type": "PTA", "file_path": "path-or-url-1" },
-            { "file_type": "OAE", "file_path": "path-or-url-2" }
-        ]
-    }
+    # Serializer for AudiologistCaseHistory creation with nested VisitTestPerformed model and TestUpload file list.
+    #
+    # Expected payload example:
+    # {
+    #     "visit": 1,       // Required: Visit ID for VisitTestPerformed and report files
+    #     "medical_history": "...",
+    #     "family_history": "...",
+    #     "noise_exposure": "...",
+    #     "previous_ha_experience": "...",
+    #     "red_flags": "...",
+    #     "test_requested": ["pta", "oae"],    // List of test flags performed, sets VisitTestPerformed model fields
+    #     "other_test": "",                    // Optional: text for other test
+    #     "test_report_files": [
+    #         { "file_type": "PTA", "file_path": "path-or-url-1" },
+    #         { "file_type": "OAE", "file_path": "path-or-url-2" }
+    #     ]
+    # }
+    # Usage:
+    # - On create, it will
+    #   (a) create AudiologistCaseHistory (or update if exists for patient)
+    #   (b) create VisitTestPerformed for the visit with test flags from 'test_requested'
+    #   (c) create TestUpload records for the uploaded reports, if provided
     
     Note: Case history is linked to Patient (one per patient), but tests and billing
     are linked to the specific Visit.
@@ -539,16 +541,16 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         help_text="Visit ID for test performed and billing"
     )
 
-    # Flat fields corresponding to VisitTestPerformed model
-    # required = serializers.BooleanField(default=False, write_only=True)
-    pta = serializers.BooleanField(default=False, write_only=True)
-    immittance = serializers.BooleanField(default=False, write_only=True)
-    oae = serializers.BooleanField(default=False, write_only=True)
-    bera_assr = serializers.BooleanField(default=False, write_only=True)
-    srt = serializers.BooleanField(default=False, write_only=True)
-    sds = serializers.BooleanField(default=False, write_only=True)
-    ucl = serializers.BooleanField(default=False, write_only=True)
-    free_field = serializers.BooleanField(default=False, write_only=True)
+    # List of test flags - converts to boolean fields on VisitTestPerformed
+    test_requested = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        write_only=True,
+        help_text="List of test flags performed, e.g., ['pta', 'oae', 'srt']. Valid values: pta, immittance, oae, bera_assr, srt, sds, ucl, free_field"
+    )
+    
+    # Optional text for other test
     other_test = serializers.CharField(
         max_length=255,
         required=False,
@@ -575,15 +577,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             'previous_ha_experience',
             'red_flags',
             # VisitTestPerformed fields
-            # 'required',
-            'pta',
-            'immittance',
-            'oae',
-            'bera_assr',
-            'srt',
-            'sds',
-            'ucl',
-            'free_field',
+            'test_requested',  # List of test flags
             'other_test',
             # TestUpload helper
             'test_report_files',
@@ -609,20 +603,45 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         # Remove any 'patient' from validated_data if present, to avoid conflicts in get_or_create (we'll add it manually)
         validated_data.pop('patient', None)
 
-        # Extract VisitTestPerformed-related fields
-        test_fields = [
-            # 'required',
-            'pta',
-            'immittance',
-            'oae',
-            'bera_assr',
-            'srt',
-            'sds',
-            'ucl',
-            'free_field',
-            'other_test',
-        ]
-        test_performed_data = {field: validated_data.pop(field, False) for field in test_fields}
+        # Extract test_requested list and convert to boolean fields for VisitTestPerformed
+        test_requested = validated_data.pop('test_requested', [])
+        other_test = validated_data.pop('other_test', None)
+        
+        # Valid test field names (case-insensitive mapping)
+        valid_test_fields = {
+            'pta': 'pta',
+            'immittance': 'immittance',
+            'oae': 'oae',
+            'bera_assr': 'bera_assr',
+            'bera/assr': 'bera_assr',  # Allow alternative format
+            'srt': 'srt',
+            'sds': 'sds',
+            'ucl': 'ucl',
+            'free_field': 'free_field',
+            'freefield': 'free_field',  # Allow alternative format
+        }
+        
+        # Convert test_requested list to boolean fields
+        test_performed_data = {
+            'pta': False,
+            'immittance': False,
+            'oae': False,
+            'bera_assr': False,
+            'srt': False,
+            'sds': False,
+            'ucl': False,
+            'free_field': False,
+        }
+        
+        # Set True for tests in the test_requested list
+        for test_name in test_requested:
+            test_key = valid_test_fields.get(test_name.lower().strip())
+            if test_key:
+                test_performed_data[test_key] = True
+        
+        # Add other_test if provided
+        if other_test:
+            test_performed_data['other_test'] = other_test
 
         # Extract uploaded report files
         test_report_files = validated_data.pop('test_report_files', [])
@@ -667,7 +686,9 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                 case_history.save(update_fields=fields_to_update)
 
             # 2. Create VisitTestPerformed only if something meaningful is set
-            has_any_test = any(bool(value) for _, value in test_performed_data.items())
+            # Check if any boolean test field is True, or if other_test is provided
+            boolean_test_fields = ['pta', 'immittance', 'oae', 'bera_assr', 'srt', 'sds', 'ucl', 'free_field']
+            has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields) or bool(test_performed_data.get('other_test'))
             test_performed_instance = None
             if has_any_test:
                 test_performed_instance = VisitTestPerformed.objects.create(
