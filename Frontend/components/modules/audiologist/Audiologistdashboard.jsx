@@ -90,7 +90,7 @@ export default function AudiologistDashboard() {
         </Card>
       </div>
 
-      <AppoinmentListCard appoinementList={appoinementList}/>
+      <AppoinmentListCard appoinementList={appoinementList} handleViewPatient={handleViewPatient}/>
 
       <Card>
         <CardHeader className="pb-3 sm:pb-4">

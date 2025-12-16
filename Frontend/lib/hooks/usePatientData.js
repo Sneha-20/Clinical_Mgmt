@@ -9,8 +9,12 @@ import {
 } from "@/lib/services/dashboard";
 import { useRouter } from "next/navigation";
 import { routes } from "@/lib/utils/constants/route";
+import { startLoading, stopLoading } from "../redux/slice/uiSlice";
+import { showToast } from "@/components/ui/toast";
+import { useDispatch } from "react-redux";
 
 export default function usePatientData() {
+   const dispatch = useDispatch();
   const router = useRouter();
 
   const userprofile = routes.pages.userptofile;
@@ -97,7 +101,7 @@ export default function usePatientData() {
   // FETCH TODAY PATIENTS
   // ------------------------------------------
   const fetchTodayPatients = useCallback(
-    async ({ page = 1, search = "", service= "" } = {}) => {
+    async ({ page = "", search = "", service= "" } = {}) => {
       setLoadingToday(true);
       try {
         const res = await getTodayPatientList({ page, search, service });
@@ -191,16 +195,48 @@ useEffect(() => {
   // ADD PATIENT
   // ------------------------------------------
   const handleAddPatient = async (data) => {
-    await createPatient(data);
-    fetchTodayPatients({ page: 1 });
+    dispatch(startLoading());
+    try {
+      await createPatient(data);
+      showToast({
+        type: "success",
+        message: data.status || "Registration Successful",
+      });
+      fetchTodayPatients({ page: 1 });
+       dispatch(stopLoading());
+    } catch (error) {
+      console.log("ttttt",error)
+      showToast({
+        type: "error",
+        message: error?.error || "Registration Failed",
+      });
+       dispatch(stopLoading());
+    }
   };
 
   // ------------------------------------------
   // ADD VISIT
   // ------------------------------------------
   const handleAddVisit = async (data) => {
-    await addNewVisit(data);
-    fetchTodayPatients({ page: 1 });
+    console.log("tttttt")
+     dispatch(startLoading());
+    try {
+     await addNewVisit(data);
+      showToast({
+        type: "success",
+        message: data.status || "Registration Successful",
+      });
+      fetchTodayPatients({ page: 1 });
+      dispatch(stopLoading());
+    } catch (error) {
+      console.log("ttttt",error)
+      showToast({
+        type: "error",
+        message: error?.error || "Registration Failed",
+      });
+       dispatch(stopLoading());
+    }
+    
   };
 
   // ------------------------------------------
@@ -209,6 +245,8 @@ useEffect(() => {
   const handleViewProfile = (id) => {
     router.push(`${userprofile}/${id}`);
   };
+
+  
 
   return {
     serviceType,

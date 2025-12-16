@@ -31,6 +31,7 @@ export const testRequestedOptions = [
   { label: "BERA / ASSR", value: "bera_assr" },
   { label: "OAE", value: "oae" },
   { label: "Any special test", value: "special" },
+  {label:"Immittance", value: "Immittance"}
 ];
 
 export const visitTypeOptions = [
@@ -45,3 +46,9 @@ export const visitTypeOptions = [
   { label: "Speech Assessment", value: "Speech Assessment" },
   { label: "Speech Therapy Follow-up", value: "Speech Therapy Follow-up" },
 ];
+
+export const previousHearingAidsOptions =[
+   { label: "No", value: "no" },
+  { label: "Yes - Currently Using", value: "yes-current" },
+  { label: "Yes - Used in Past", value: "yes-past" },
+]

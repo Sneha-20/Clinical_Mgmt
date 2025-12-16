@@ -13,7 +13,9 @@ export const routes = {
   patientProfile: "/clinical/patient/",
 
   audiologist:{
-   appointmentList:"clinical/audiologits/queue/"
+   appointmentList:"clinical/audiologits/queue/",
+   patientCaseHistory:"clinical/patient/visit/",
+   registerCaseHistory: "clinical/audiologist/test/perform/"
   },
   
   // pages

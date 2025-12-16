@@ -1,66 +1,147 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, Upload } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { X, Upload, MessageSquare, Stethoscope, User } from "lucide-react";
+import useCaseHistory from "@/lib/hooks/useCaseHistory";
+import { useFormik } from "formik";
+import { CaseHistorySchema } from "@/lib/utils/schema";
+import TextArea from "@/components/ui/TextArea";
+import DropDown from "@/components/ui/dropdown";
+import {
+  previousHearingAidsOptions,
+  testRequestedOptions,
+} from "@/lib/utils/constants/staticValue";
+import CommonCheckbox from "@/components/ui/CommonCheckbox";
 
-export default function CaseHistoryForm({ patientId, onClose, onSubmit }) {
-  const [formData, setFormData] = useState({
-    symptoms: '',
-    onset: '',
-    duration: '',
-    medicalHistory: '',
-    familyHistory: '',
-    noiseExposure: '',
-    previousHearingAids: 'no',
-    redFlags: '',
-    testsPerformed: [],
-    srtValue: '',
-    sdsValue: '',
-    uclValue: '',
-  })
+export default function CaseHistoryForm({ patientId }) {
+  const { patientsCaseHistory, fetchPatientFormData, registerCasehistory } =
+    useCaseHistory();
+  // const parseTests = (testString = "") =>
+  // testString
+  //   .split(",")
+  //   .map((t) => t.trim())
+  //   .filter(Boolean);
+
+  useEffect(() => {
+    if (patientId) {
+      fetchPatientFormData(patientId);
+    }
+  }, [patientId]);
+
+  const formik = useFormik({
+    enableReinitialize: true, // ⭐ IMPORTANT
+    initialValues: {
+      medical_history: patientsCaseHistory?.case_history?.medical_history || "",
+      family_history: patientsCaseHistory?.case_history?.family_history || "",
+      noise_exposure: patientsCaseHistory?.case_history?.noise_exposure || "",
+      previous_ha_experience:
+        patientsCaseHistory?.case_history?.previous_ha_experience || "no",
+      red_flags: patientsCaseHistory?.case_history?.red_flags || "",
+      test_requested: patientsCaseHistory?.test_requested || [],
+      srtValue: "",
+      sdsValue: "",
+      uclValue: "",
+    },
+    validationSchema: CaseHistorySchema,
+    onSubmit: (values) => {
+      console.log("submit value", values);
+      registerCasehistory({
+        ...values,
+        uploads,
+        patientId,
+        visit: patientsCaseHistory?.visit_id,
+      });
+    },
+  });
 
   const [uploads, setUploads] = useState({
     audiogram: null,
     tympResult: null,
     beraFile: null,
-  })
+  });
 
-  const testsOptions = ['PTA', 'Immittance', 'OAE', 'BERA/ASSR', 'SRT', 'SDS', 'UCL', 'Free Field']
-
-  const toggleTest = (test) => {
-    setFormData({
-      ...formData,
-      testsPerformed: formData.testsPerformed.includes(test)
-        ? formData.testsPerformed.filter(t => t !== test)
-        : [...formData.testsPerformed, test]
-    })
-  }
+  // const toggleTest = (test) => {
+  //   setFormData({
+  //     ...formData,
+  //     testsPerformed: formData.testsPerformed.includes(test)
+  //       ? formData.testsPerformed.filter((t) => t !== test)
+  //       : [...formData.testsPerformed, test],
+  //   });
+  // };
 
   const handleFileUpload = (field, file) => {
-    setUploads({ ...uploads, [field]: file })
-  }
+    setUploads({ ...uploads, [field]: file });
+  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSubmit({ ...formData, uploads })
-  }
-
+  // const handleSubmit = (e) => {
+  //   e.preventDefault();
+  //   onSubmit({ ...formData, uploads });
+  // };
+  useEffect(() => {
+    console.log("Formik errors:", formik.errors);
+  }, [formik.errors]);
   return (
     <div>
       <Card className="w-full my-4">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 sm:pb-4 bg-card">
-          <CardTitle className="text-lg sm:text-xl">Case History - {patientId}</CardTitle>
-          {/* <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="w-5 h-5" />
-          </Button> */}
+          <CardTitle className="text-lg sm:text-xl">
+            {patientsCaseHistory?.patient_name}
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-3 sm:p-6">
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-            {/* Audiological History */}
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 pb-6 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground">
+                  Patient Name
+                </span>
+                <p className="text-base font-semibold text-foreground">
+                  {patientsCaseHistory?.patient_name}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                <Stethoscope className="h-5 w-5 text-cyan-500" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground">
+                  Visit Type
+                </span>
+                <p className="text-base font-semibold text-foreground">
+                  {patientsCaseHistory?.visit_type}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <MessageSquare className="h-5 w-5 text-amber-500" />
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground">
+                  Present Complaint
+                </span>
+                <p className="text-base font-semibold text-foreground">
+                  {patientsCaseHistory?.present_complaint}
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+        <CardContent className="p-3 sm:p-6">
+          <form
+            onSubmit={formik.handleSubmit}
+            className="space-y-4 sm:space-y-6"
+          >
+            {/* <div>
               <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">Audiological History</h3>
               <div className="space-y-3 sm:space-y-4">
                 <div>
@@ -94,69 +175,53 @@ export default function CaseHistoryForm({ patientId, onClose, onSubmit }) {
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Medical History */}
             <div>
-              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">Medical & Family History</h3>
+              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">
+                Medical & Family History
+              </h3>
               <div className="space-y-3 sm:space-y-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Medical History</label>
-                  <textarea
-                    value={formData.medicalHistory}
-                    onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
-                    placeholder="Diabetes, Hypertension, etc..."
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Family History</label>
-                  <textarea
-                    value={formData.familyHistory}
-                    onChange={(e) => setFormData({ ...formData, familyHistory: e.target.value })}
-                    placeholder="Any hearing loss in family..."
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Noise Exposure History</label>
-                  <textarea
-                    value={formData.noiseExposure}
-                    onChange={(e) => setFormData({ ...formData, noiseExposure: e.target.value })}
-                    placeholder="Work environment, hobbies, etc..."
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                    rows={2}
-                  />
-                </div>
+                <label className="block text-xs sm:text-sm font-medium mb-1.5">
+                  Medical History
+                </label>
+                <TextArea
+                  label="Medical History"
+                  name="medical_history"
+                  formik={formik}
+                />
+                <TextArea
+                  label="Family History"
+                  name="family_history"
+                  formik={formik}
+                />
+                <TextArea
+                  label="Noise Exposure"
+                  name="noise_exposure"
+                  formik={formik}
+                />
               </div>
             </div>
 
             {/* Previous Experience & Red Flags */}
             <div>
-              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">Experience & Red Flags</h3>
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Previous Hearing Aid Experience</label>
-                  <select
-                    value={formData.previousHearingAids}
-                    onChange={(e) => setFormData({ ...formData, previousHearingAids: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                  >
-                    <option value="no">No</option>
-                    <option value="yes-current">Yes - Currently Using</option>
-                    <option value="yes-past">Yes - Used in Past</option>
-                  </select>
+                  <DropDown
+                    label="Experience & Red Flags"
+                    options={previousHearingAidsOptions}
+                    value={formik.values.previous_ha_experience}
+                    onChange={(n, v) =>
+                      formik.setFieldValue("previous_ha_experience", v)
+                    }
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">Red Flags (if any)</label>
-                  <textarea
-                    value={formData.redFlags}
-                    onChange={(e) => setFormData({ ...formData, redFlags: e.target.value })}
-                    placeholder="Unilateral loss, sudden onset, etc..."
-                    className="w-full px-3 py-2 border border-border rounded-md bg-input text-sm"
-                    rows={2}
+                  <TextArea
+                    label="Red Flags"
+                    name="red_flags"
+                    formik={formik}
                   />
                 </div>
               </div>
@@ -164,80 +229,85 @@ export default function CaseHistoryForm({ patientId, onClose, onSubmit }) {
 
             {/* Tests Performed */}
             <div>
-              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">Tests Performed</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-                {testsOptions.map((test) => (
-                  <label key={test} className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.testsPerformed.includes(test)}
-                      onChange={() => toggleTest(test)}
-                      className="w-4 h-4 accent-primary"
-                    />
-                    <span className="text-xs sm:text-sm">{test}</span>
-                  </label>
+              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">
+                Tests Performed
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                {testRequestedOptions.map((test) => (
+                  <CommonCheckbox
+                    key={test.value}
+                    label={test.label}
+                    value={test.value}
+                    checked={formik.values.test_requested.includes(test.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+
+                      const updated = formik.values.test_requested.includes(
+                        value
+                      )
+                        ? formik.values.test_requested.filter(
+                            (t) => t !== value
+                          )
+                        : [...formik.values.test_requested, value];
+
+                      formik.setFieldValue("test_requested", updated);
+                    }}
+                  />
                 ))}
               </div>
 
               {/* Test Values */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">SRT Value (dB)</label>
-                  <Input
-                    type="number"
-                    value={formData.srtValue}
-                    onChange={(e) => setFormData({ ...formData, srtValue: e.target.value })}
-                    placeholder="e.g., 45"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">SDS Value (%)</label>
-                  <Input
-                    type="number"
-                    value={formData.sdsValue}
-                    onChange={(e) => setFormData({ ...formData, sdsValue: e.target.value })}
-                    placeholder="e.g., 92"
-                    className="text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs sm:text-sm font-medium mb-1.5">UCL Value (dB)</label>
-                  <Input
-                    type="number"
-                    value={formData.uclValue}
-                    onChange={(e) => setFormData({ ...formData, uclValue: e.target.value })}
-                    placeholder="e.g., 105"
-                    className="text-sm"
-                  />
-                </div>
+                <Input
+                  label="SRT (dB)"
+                  name="srtValue"
+                  value={formik.values.srtValue}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.srtValue && formik.errors.srtValue}
+                />
+                <Input
+                  label="SDS (%)"
+                  name="sdsValue"
+                  value={formik.values.sdsValue}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.sdsValue && formik.errors.sdsValue}
+                />
+                <Input
+                  label="UCL (dB)"
+                  name="uclValue"
+                  value={formik.values.uclValue}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.uclValue && formik.errors.uclValue}
+                />
               </div>
             </div>
 
             {/* File Uploads */}
             <div>
-              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">Upload Test Results</h3>
+              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">
+                Upload Test Results
+              </h3>
               <div className="space-y-2 sm:space-y-3">
                 <FileUploadField
                   label="Audiogram (Image/PDF)"
-                  onFileChange={(file) => handleFileUpload('audiogram', file)}
+                  onFileChange={(file) => handleFileUpload("audiogram", file)}
                 />
                 <FileUploadField
                   label="Tympanometry Result"
-                  onFileChange={(file) => handleFileUpload('tympResult', file)}
+                  onFileChange={(file) => handleFileUpload("tympResult", file)}
                 />
                 <FileUploadField
                   label="BERA/ASSR File"
-                  onFileChange={(file) => handleFileUpload('beraFile', file)}
+                  onFileChange={(file) => handleFileUpload("beraFile", file)}
                 />
               </div>
             </div>
 
             {/* Submit */}
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end pt-4 border-t border-border">
-              <Button type="button" variant="outline" onClick={onClose} className="w-full sm:w-auto">
-                Cancel
-              </Button>
               <Button type="submit" className="w-full sm:w-auto gap-2">
                 Save Case History
               </Button>
@@ -246,11 +316,11 @@ export default function CaseHistoryForm({ patientId, onClose, onSubmit }) {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 function FileUploadField({ label, onFileChange }) {
-  const [fileName, setFileName] = useState(null)
+  const [fileName, setFileName] = useState(null);
 
   return (
     <div className="border-2 border-dashed border-border rounded-lg p-3 sm:p-4 text-center hover:bg-muted/50 cursor-pointer transition-colors">
@@ -258,18 +328,21 @@ function FileUploadField({ label, onFileChange }) {
         type="file"
         accept="image/*,.pdf"
         onChange={(e) => {
-          const file = e.target.files?.[0] || null
-          onFileChange(file)
-          setFileName(file?.name || null)
+          const file = e.target.files?.[0] || null;
+          onFileChange(file);
+          setFileName(file?.name || null);
         }}
         className="hidden"
         id={`upload-${label}`}
       />
-      <label htmlFor={`upload-${label}`} className="cursor-pointer flex flex-col items-center gap-2">
+      <label
+        htmlFor={`upload-${label}`}
+        className="cursor-pointer flex flex-col items-center gap-2"
+      >
         <Upload className="w-4 sm:w-5 h-4 sm:h-5 text-muted-foreground" />
         <p className="text-xs sm:text-sm font-medium">{label}</p>
         {fileName && <p className="text-xs text-accent">{fileName}</p>}
       </label>
     </div>
-  )
+  );
 }

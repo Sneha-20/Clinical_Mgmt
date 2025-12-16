@@ -7,7 +7,8 @@ export default function DropDown({
   important = false,
   options = [],
   value,
-  onChange = () => {},
+  onChange,
+  onBlur,
   placeholder = "Select an option",
   error,
   className = "",
@@ -23,13 +24,14 @@ export default function DropDown({
         </label>
       )}
 
-      {/* React Select Component */}
+      {/* React Select */}
       <Select
         name={name}
         value={options.find((opt) => opt.value === value) || null}
-        onChange={(selected) => onChange(name, selected?.value)}
         options={options}
         placeholder={placeholder}
+        onChange={(selected) => onChange?.(name, selected?.value)}
+        onBlur={() => onBlur?.(name)}
         styles={{
           control: (base, state) => ({
             ...base,
@@ -43,13 +45,12 @@ export default function DropDown({
             borderRadius: "8px",
             minHeight: "38px",
           }),
-
           option: (base, state) => ({
             ...base,
             backgroundColor: state.isSelected
-              ? "rgba(20, 67, 91)" // ★ SELECTED COLOR
+              ? "rgba(20, 67, 91)"
               : state.isFocused
-              ? "rgba(20, 67, 91, 0.15)" // ★ HOVER COLOR
+              ? "rgba(20, 67, 91, 0.15)"
               : "white",
             color: state.isSelected ? "white" : "#111",
             cursor: "pointer",
@@ -58,7 +59,7 @@ export default function DropDown({
         }}
       />
 
-      {/* Error message */}
+      {/* Error */}
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );

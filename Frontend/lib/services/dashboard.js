@@ -46,10 +46,10 @@ export const getPatientList = async (params = {}) => {
 
 export const getTodayPatientList = async (params = {}) => {
   try {
-    const { page = 1, service, search } = params;
+    const { page , service, search } = params;
     // Build query string
     const queryParams = new URLSearchParams();
-    queryParams.append("page", page.toString());
+    if (page) queryParams.append("page", page.toString());
     // if (limit) queryParams.append("limit", limit.toString());
     if (search) queryParams.append("search", search);
     if (service && service !== "All") queryParams.append("service_type", service);
@@ -108,7 +108,7 @@ export const createPatient = async (patientData) => {
       message: error?.message,
       data: error?.response?.data,
     });
-    throw error;
+    throw error?.response?.data;
   }
 };
 

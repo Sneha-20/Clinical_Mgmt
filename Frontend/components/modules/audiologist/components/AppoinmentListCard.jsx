@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function AppoinmentListCard({ appoinementList }) {
+export default function AppoinmentListCard({ appoinementList,handleViewPatient }) {
   console.log("appoinementListtt", appoinementList);
   return (
     <div>
@@ -47,7 +47,7 @@ export default function AppoinmentListCard({ appoinementList }) {
                     {/* ))} */}
                   </div>
                 </div>
-                <Button className="gap-2 text-sm w-full sm:w-auto">
+                <Button className="gap-2 text-sm w-full sm:w-auto" onClick={() => handleViewPatient(patient.visit_id)}>
                   Start Test
                 </Button>
               </div>

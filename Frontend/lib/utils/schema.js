@@ -79,4 +79,15 @@ export const visitPatientSchema = Yup.object({
 
 });
 
+export const CaseHistorySchema = Yup.object({
+  medical_history: Yup.string().required('Medical history is required'),
+  family_history: Yup.string().required('Family history is required'),
+  noise_exposure: Yup.string().required('This firld is required'),
+  previous_ha_experience: Yup.string().required('This firld is required'),
+  red_flags: Yup.string('This firld is required'),
+  test_requested: Yup.array().min(1, 'Select at least one test'),
+  srtValue: Yup.number().nullable(),
+  sdsValue: Yup.number().nullable(),
+  uclValue: Yup.number().nullable(),
+})
 
