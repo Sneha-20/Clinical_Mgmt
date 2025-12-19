@@ -34,8 +34,8 @@ export default function Dashboard() {
         return <ReceptionistDashboard />;
         case "Doctor":
           return <AudiologistDashboard />;
-      case "Admin":
-        return <AdminDashboard />;
+          case "Admin":
+            return <AdminDashboard />;
       // case 'Speech':
       //   return <div className="text-center py-12"><p className="text-muted-foreground">Speech Therapist Dashboard - Coming Soon</p></div>
       default:

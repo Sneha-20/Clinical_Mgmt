@@ -17,6 +17,11 @@ export const routes = {
    patientCaseHistory:"clinical/patient/visit/",
    registerCaseHistory: "clinical/audiologist/test/perform/"
   },
+
+   billing:{
+   billingList:"clinical/bill/",
+   billingDetail:"clinical/bill/visit/"
+  },
   
   // pages
   pages: {
