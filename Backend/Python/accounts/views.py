@@ -5,7 +5,7 @@ from rest_framework import status, generics
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from .models import Clinic , Role, User
-from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer
+from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer,UserSerializer
 from django.shortcuts import get_object_or_404
 
 def _first_error_message(errors):
@@ -126,3 +126,10 @@ class RejectUserView(APIView):
         user.is_active = False
         user.save()
         return Response({"status":status.HTTP_200_OK, "message":"Rejected" }, status=status.HTTP_200_OK)
+
+
+
+class UserListView(generics.ListAPIView):
+    """List all users except Admin"""
+    queryset = User.objects.exclude(role__name='Admin')
+    serializer_class = UserSerializer

@@ -119,3 +119,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.save()
 
         return user
+
+
+class UserSerializer(serializers.ModelSerializer):
+    role_name = serializers.CharField(source='role.name', read_only=True)
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'name', 'role_name', 'clinic_name', 'phone', 'is_active', 'is_approved')

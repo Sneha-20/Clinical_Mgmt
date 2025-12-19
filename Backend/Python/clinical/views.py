@@ -388,7 +388,7 @@ class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
 # BILL VIEWS
 # ============================================================================
 
-class BillListView(generics.ListAPIView):
+class BillPaidListView(generics.ListAPIView):
     """
     List all bills with patient info and payment status for the logged-in clinic.
     Supports search by patient name/phone and bill number, and filtering by payment_status.
@@ -402,7 +402,7 @@ class BillListView(generics.ListAPIView):
 
     def get_queryset(self):
         clinic = getattr(self.request.user, 'clinic', None)
-        qs = Bill.objects.select_related('visit', 'visit__patient', 'clinic').order_by('-created_at')
+        qs = Bill.objects.select_related('visit', 'visit__patient', 'clinic').filter(payment_status='Paid').order_by('-created_at')
         if clinic:
             qs = qs.filter(clinic=clinic)
         return qs
@@ -423,6 +423,43 @@ class BillListView(generics.ListAPIView):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+class BillPendingListView(generics.ListAPIView):
+    """
+    List all bills with patient info and payment status for the logged-in clinic.
+    Supports search by patient name/phone and bill number, and filtering by payment_status.
+    """
+    serializer_class = BillListSerializer
+    permission_classes = [IsAuthenticated, ReceptionistPermission]
+    pagination_class = StandardResultsSetPagination
+    # Use SearchFilter only; handle payment_status filtering manually to avoid ChoiceField setup issues
+    filter_backends = [SearchFilter]
+    search_fields = ['visit__patient__name', 'visit__patient__phone_primary', 'bill_number']
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        qs = Bill.objects.select_related('visit', 'visit__patient', 'clinic').filter(payment_status='Pending').order_by('-created_at')
+        if clinic:
+            qs = qs.filter(clinic=clinic)
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Optional filter by payment_status (?payment_status=Paid/Pending/Partially%20Paid)
+        payment_status = request.query_params.get('payment_status')
+        if payment_status:
+            queryset = queryset.filter(payment_status=payment_status)
+
+        # Apply search filter afterwards (name/phone/bill_number)
+        queryset = self.filter_queryset(queryset)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
 
 class BillDetailView(generics.RetrieveAPIView):
     """
@@ -500,4 +537,3 @@ class BillDetailView(generics.RetrieveAPIView):
 
 
 
-    

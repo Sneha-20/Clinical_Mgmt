@@ -1,4 +1,3 @@
-
 from .models import (
     Patient,
     PatientVisit,
@@ -8,10 +7,16 @@ from .models import (
     TestType,
     Bill,
     BillItem,
+    InventorySerial,
+    InventoryItem,
+    ServiceVisit,
+    PatientPurchase,
+    Trial,
 )
 from rest_framework import serializers
 from django.db import transaction
 import re
+from datetime import timedelta
 from accounts.models import User
 from accounts.serializers import RoleSimpleSerializer
 
@@ -900,3 +905,425 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'subtotal',
         ]
 
+
+
+class InventorySerialSerializer(serializers.ModelSerializer):
+    '''
+    # It should acceept multiple serial numbers for same inventory item in one go.
+#     Instead of inventory_item id, it should accept product_name, brand, model_type, category to identify the inventory item.
+#       Example
+#     {
+#         "product_name": "Glucometer X200",
+#         "brand": "HealthTech",
+#         "model_type": "X200",
+#         "category": "Diagnostic",
+#         "serial_numbers": ["SN001", "SN002", "SN003"]
+#     } '''
+
+    product_name = serializers.CharField(write_only=True, help_text="Product Name of the Inventory Item")
+    brand = serializers.CharField(write_only=True, help_text="Brand of the Inventory Item")
+    model_type = serializers.CharField(write_only=True, help_text="Model Type of the Inventory Item")
+    category = serializers.CharField(write_only=True, help_text="Category of the Inventory Item")
+    serial_numbers = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        help_text="List of serial numbers to create"
+    )
+
+    class Meta:
+        model = InventorySerial
+        fields = [
+            'product_name',
+            'brand',    
+            'model_type',
+            'category',
+            'serial_numbers',
+        ]
+
+    def create(self, validated_data):
+        product_name = validated_data.get('product_name')
+        brand = validated_data.get('brand')
+        model_type = validated_data.get('model_type')
+        category = validated_data.get('category')
+        serial_numbers = validated_data.get('serial_numbers', [])
+
+        created_serials = []
+
+        with transaction.atomic():
+            inventory_item, created = InventoryItem.objects.get(
+                product_name=product_name,
+                brand=brand,
+                model_type=model_type,
+                category=category,
+                defaults={'quantity_in_stock': 0}
+
+            )
+            for sn in serial_numbers:
+                serial_instance = InventorySerial.objects.create(
+                    inventory_item=inventory_item,
+                    serial_number=sn,
+                    status='IN_STOCK'  # Default status
+                )
+                created_serials.append(serial_instance)
+
+            # Update the quantity_in_stock on InventoryItem
+            inventory_item.update_quantity_from_serials()
+
+        return created_serials
+    
+
+class InventoryUpdateItemSerializer(serializers.ModelSerializer):
+    """Serializer for updating inventory items."""
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'category', 'product_name', 'brand', 'model_type', 'description',
+            'quantity_in_stock', 'reorder_level', 'location',
+            'notes', 'use_in_trial', 'unit_price'
+        ]
+
+    def validate_quantity_in_stock(self, value):
+        """Prevent direct updates to quantity_in_stock for serialized items."""
+        if self.instance and self.instance.stock_type == 'Serialized':
+            raise serializers.ValidationError("Quantity for serialized items is managed by its serial numbers and cannot be updated directly.")
+        return value
+    
+
+class InventoryItemSerializer(serializers.ModelSerializer):
+    # is_expired = serializers.BooleanField(read_only=True)
+    # is_near_expiry = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'id',
+            'category',
+            'product_name',
+            'brand',
+            'model_type',
+            'description',
+            'stock_type',
+            'quantity_in_stock',
+            # 'reorder_level',
+            # 'expiry_date',
+            'notes',
+            'use_in_trial',
+            'unit_price',
+            # 'is_expired',
+            # 'is_near_expiry',
+        ]
+
+
+class InventoryItemCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer to create a new Inventory Item.
+
+    **Payload for Serialized Item:**
+    ```json
+    {
+        "category": "Hearing Aid",
+        "product_name": "Audeo Paradise P90",
+        "brand": "Phonak",
+        "model_type": "P90-R",
+        "description": "Premium rechargeable hearing aid.",
+        "stock_type": "Serialized",
+        "reorder_level": 2,
+        "location": "Main Shelf",
+        "unit_price": "1500.00",
+        "use_in_trial": true,
+        "serial_numbers": ["SN12345", "SN12346", "SN12347"]
+    }
+    ```
+
+    **Payload for Non-Serialized Item:**
+    ```json
+    {
+        "category": "Battery",
+        "product_name": "Hearing Aid Battery Size 10",
+        "brand": "Rayovac",
+        "model_type": "10",
+        "description": "Pack of 8 batteries.",
+        "stock_type": "Non-Serialized",
+        "quantity_in_stock": 100,
+        "reorder_level": 20,
+        "location": "Drawer 3",
+        "unit_price": "5.00",
+        "expiry_date": "2027-12-31"
+    }
+    ```
+    """
+    serial_numbers = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        required=False,
+        help_text="List of serial numbers. Required if stock_type is 'Serialized'."
+    )
+
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'category', 'product_name', 'brand', 'model_type', 'description',
+            'stock_type', 'quantity_in_stock', 'reorder_level', 'location',
+            'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers'
+        ]
+        extra_kwargs = {
+            'quantity_in_stock': {'required': False, 'allow_null': True}
+        }
+
+    def validate(self, data):
+        stock_type = data.get('stock_type')
+        serial_numbers = data.get('serial_numbers', [])
+        quantity_in_stock = data.get('quantity_in_stock')
+
+        if stock_type == 'Serialized':
+            if not serial_numbers:
+                raise serializers.ValidationError({"serial_numbers": "Serial numbers are required for serialized items."})
+            if quantity_in_stock is not None:
+                raise serializers.ValidationError({"quantity_in_stock": "Quantity should not be provided for serialized items; it's calculated from serial numbers."})
+            
+            # Check for duplicate serial numbers within the payload
+            if len(serial_numbers) != len(set(serial_numbers)):
+                raise serializers.ValidationError({"serial_numbers": "Duplicate serial numbers found in the payload."})
+
+            # Check for existing serial numbers in the database
+            existing_serials = InventorySerial.objects.filter(serial_number__in=serial_numbers).values_list('serial_number', flat=True)
+            if existing_serials:
+                raise serializers.ValidationError({
+                    "serial_numbers": f"The following serial numbers already exist: {', '.join(existing_serials)}"
+                })
+
+        elif stock_type == 'Non-Serialized':
+            if serial_numbers:
+                raise serializers.ValidationError({"serial_numbers": "Serial numbers should not be provided for non-serialized items."})
+            if quantity_in_stock is None:
+                raise serializers.ValidationError({"quantity_in_stock": "Quantity is required for non-serialized items."})
+        return data
+
+    def create(self, validated_data):
+        serial_numbers = validated_data.pop('serial_numbers', [])
+        stock_type = validated_data.get('stock_type')
+
+        with transaction.atomic():
+            if stock_type == 'Serialized':
+                validated_data['quantity_in_stock'] = len(serial_numbers)
+            
+            inventory_item = InventoryItem.objects.create(**validated_data)
+
+            if stock_type == 'Serialized':
+                serials_to_create = [
+                    InventorySerial(
+                        inventory_item=inventory_item,
+                        serial_number=sn,
+                        status='In Stock'
+                    ) for sn in serial_numbers
+                ]
+                InventorySerial.objects.bulk_create(serials_to_create)
+        
+        return inventory_item
+
+
+class ServiceVisitListSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='visit.patient.phone_primary', read_only=True)
+    device_details = serializers.SerializerMethodField()
+    device_serial_number = serializers.CharField(source='device_serial.serial_number', read_only=True, default=None)
+
+    class Meta:
+        model = ServiceVisit
+        fields = [
+            'id',
+            'visit',
+            'patient_name',
+            'patient_phone',
+            'status',
+            'service_type',
+            'complaint',
+            'action_taken',
+            'device_details',
+            'device_serial_number',
+            'created_at',
+        ]
+    
+    def get_device_details(self, obj):
+        if obj.device and obj.device.inventory_item:
+            item = obj.device.inventory_item
+            return f"{item.brand} {item.model_type} ({item.product_name})"
+        return None
+
+
+class PatientPurchaseSerializer(serializers.ModelSerializer):
+    """Serializer for listing a patient's purchased items."""
+    item_name = serializers.CharField(source='inventory_item.product_name', read_only=True)
+    item_brand = serializers.CharField(source='inventory_item.brand', read_only=True)
+    item_model = serializers.CharField(source='inventory_item.model_type', read_only=True)
+    serial_number = serializers.CharField(source='inventory_serial.serial_number', read_only=True)
+
+    class Meta:
+        model = PatientPurchase
+        fields = [
+            'id', 'item_name', 'item_brand', 'item_model', 'serial_number', 'purchased_at'
+        ]
+
+
+class ServiceQueueSerializer(serializers.ModelSerializer):
+    """Serializer for the service queue, showing patients pending service."""
+    patient_name = serializers.CharField(source='patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    purchased_devices = PatientPurchaseSerializer(source='patient.purchases', many=True, read_only=True)
+
+    class Meta:
+        model = PatientVisit
+        fields = [
+            'id', # Visit ID
+            'patient_name',
+            'patient_phone',
+            'visit_type',
+            'service_type',
+            'status',
+            'appointment_date',
+            'purchased_devices',
+        ]
+
+
+class TrialCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a new trial record.
+
+    **Payload Example:**
+    ```json
+    {
+        "visit": 1,
+        "device_inventory_id": 5,
+        "serial_number": "SN-TRIAL-001",
+        "receiver_size": "M",
+        "ear_fitted": "Right",
+        "dome_type": "Open",
+        "gain_settings": "Initial fitting with minor adjustments for high frequencies.",
+        "srt_before": "45 dB",
+        "sds_before": "88%",
+        "ucl_before": "100 dB",
+        "patient_response": "Positive, reports better clarity in quiet environments.",
+        "counselling_notes": "Counselled on device usage and maintenance. Follow-up scheduled.",
+        "cost": "500.00",
+        "trial_start_date": "2025-12-19",
+        "trial_end_date": "2026-01-02"
+    }
+    ```
+    """
+    class Meta:
+        model = Trial
+        fields = '__all__'
+        read_only_fields = ['clinic', 'created_at', 'assigned_patient']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        visit = validated_data.get('visit')
+
+        if not visit:
+            raise serializers.ValidationError("A visit is required to create a trial.")
+
+        validated_data['clinic'] = request.user.clinic
+        validated_data['assigned_patient'] = visit.patient
+        # Automatically set followup_date to the day after trial_end_date
+        trial_end_date = validated_data.get('trial_end_date')
+        if trial_end_date:
+            validated_data['followup_date'] = trial_end_date + timedelta(days=1)
+        else:
+            validated_data['followup_date'] = None
+
+        
+        device_serial_number = validated_data.get('serial_number')
+        if device_serial_number:
+            if not InventorySerial.objects.filter(serial_number=device_serial_number).exists():
+                raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
+
+        # Update the status of Patient visit ( Trial Given )
+        visit.status = 'Trial Given'
+        visit.save()
+        
+        with transaction.atomic():
+            trial = super().create(validated_data)
+            
+            # If a cost is associated, add it to the bill for this visit
+            if trial.cost and trial.cost > 0 and trial.visit:
+                bill, _ = Bill.objects.get_or_create(
+                    visit=trial.visit,
+                    defaults={
+                        'clinic': trial.clinic,
+                        'created_by': request.user,
+                    }
+                )
+                
+                # Create a bill item for the trial security deposit
+                description = "Security deposit for trial"
+                if trial.device_inventory_id:
+                    description += f" of {trial.device_inventory_id.product_name}"
+
+                BillItem.objects.create(
+                    bill=bill,
+                    item_type='Trial',
+                    trial=trial,
+                    description=description,
+                    cost=trial.cost,
+                    quantity=1,
+                )
+                
+                # Recalculate bill totals
+                bill.calculate_total()
+
+        return trial
+
+
+class TrialListSerializer(serializers.ModelSerializer):
+    """Serializer for listing trial records with detailed information."""
+    patient_name = serializers.CharField(source='assigned_patient.name', read_only=True)
+    doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
+    device_name = serializers.CharField(source='device_inventory_id.product_name', read_only=True)
+    device_brand = serializers.CharField(source='device_inventory_id.brand', read_only=True)
+    device_model = serializers.CharField(source='device_inventory_id.model_type', read_only=True)
+
+    class Meta:
+        model = Trial
+        fields = [
+            'id',
+            'patient_name',
+            'doctor_name',
+            'device_name',
+            'device_brand',
+            'device_model',
+            'serial_number',
+            'ear_fitted',
+            'trial_start_date',
+            'trial_end_date',
+            'followup_date',
+            'patient_response',
+            'created_at',
+        ]
+
+
+class TrialDeviceSerialSerializer(serializers.ModelSerializer):
+    """Serializer for individual serial numbers of trial devices."""
+    class Meta:
+        model = InventorySerial
+        fields = ['id', 'serial_number', 'status']
+
+
+class TrialDeviceSerializer(serializers.ModelSerializer):
+    """Serializer for listing inventory items available for trial."""
+    available_serials = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'id',
+            'product_name',
+            'brand',
+            'model_type',
+            'stock_type',
+            'available_serials',
+        ]
+
+    def get_available_serials(self, obj):
+        if obj.stock_type == 'Serialized':
+            serials = obj.serials.filter(status='In Stock')
+            return TrialDeviceSerialSerializer(serials, many=True).data
+        return []

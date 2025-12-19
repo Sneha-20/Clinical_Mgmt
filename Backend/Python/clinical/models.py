@@ -1,4 +1,5 @@
-from django.db import models
+from django.db import models, transaction
+from django.core.exceptions import ValidationError
 from accounts.models import User,Clinic
 class Patient(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
@@ -7,7 +8,7 @@ class Patient(models.Model):
     dob = models.DateField()
     email = models.EmailField(blank=True, null=True)
     gender = models.CharField(max_length=50)
-    phone_primary = models.CharField(max_length=50, unique=True)
+    phone_primary = models.CharField(max_length=50)
     phone_secondary = models.CharField(max_length=50, blank=True, null=True)
     city = models.CharField(max_length=255)
     address = models.TextField()
@@ -32,6 +33,7 @@ class PatientVisit(models.Model):
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
 
 
 class AudiologistCaseHistory(models.Model):
@@ -79,25 +81,25 @@ class TestUpload(models.Model):
 
 class Trial(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
-    visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
-    # device_inventory_id = models.IntegerField() # Assuming linkage to an inventory system
-    brand = models.CharField(max_length=255)
-    model = models.CharField(max_length=255)
-    technology_level = models.CharField(max_length=255,blank=True, null=True)
-    serial_number = models.CharField(max_length=255,blank=True, null=True)
-    receiver_size  = models.CharField(max_length=255,blank=True, null=True)
-    ear_fitted = models.CharField(max_length=50,blank=True, null=True)  #Ear fitted (Right / Left / Both)
-    dome_type = models.CharField(max_length=255,blank=True, null=True) # e.g., Open, Closed, Custom
-    gain_settings = models.TextField(blank=True, null=True) # Gain settings (initial fitting gain, target adjustments, comfort changes)
+    visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE, null=True)
+    device_inventory_id = models.ForeignKey('InventoryItem', on_delete=models.SET_NULL, null=True, blank=True)
+    serial_number = models.CharField(max_length=255, blank=True, null=True)
+    receiver_size = models.CharField(max_length=255, blank=True, null=True)
+    ear_fitted = models.CharField(max_length=50, blank=True, null=True)  # Ear fitted (Right / Left / Both)
+    dome_type = models.CharField(max_length=255, blank=True, null=True)  # e.g., Open, Closed, Custom
+    gain_settings = models.TextField(blank=True, null=True)  # Gain settings (initial fitting gain, target adjustments, comfort changes)
     srt_before = models.CharField(max_length=255, blank=True, null=True)
     sds_before = models.CharField(max_length=255, blank=True, null=True)
     ucl_before = models.CharField(max_length=255, blank=True, null=True)
-    patient_response = models.CharField(max_length=255,blank=True, null=True)
+    patient_response = models.CharField(max_length=255, blank=True, null=True)
     counselling_notes = models.TextField()
     discount_offered = models.FloatField(blank=True, null=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="Cost associated with the trial")
     followup_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    trial_start_date = models.DateField(blank=True, null=True)
+    trial_end_date = models.DateField(blank=True, null=True)
+    assigned_patient = models.ForeignKey(Patient, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class TestType(models.Model):
@@ -196,10 +198,11 @@ class BillItem(models.Model):
     ITEM_TYPE_CHOICES = [
         ('Test', 'Test'),
         ('Trial', 'Trial'),
+        ('Service', 'Service'),
     ]
 
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='bill_items')
-    item_type = models.CharField(max_length=10, choices=ITEM_TYPE_CHOICES, help_text="Type of item: Test or Trial")
+    item_type = models.CharField(max_length=10, choices=ITEM_TYPE_CHOICES, help_text="Type of item: Test / Trial / Service")
     test_type = models.ForeignKey(
         TestType,
         on_delete=models.SET_NULL,
@@ -216,6 +219,14 @@ class BillItem(models.Model):
         related_name='bill_items',
         help_text="If item_type is 'Trial', link to Trial"
     )
+    service_visit = models.ForeignKey(
+        "ServiceVisit",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="bill_items",
+        help_text="If item_type is 'Service', link to ServiceVisit",
+    )
     description = models.CharField(max_length=255, help_text="Description of the item")
     cost = models.DecimalField(max_digits=10, decimal_places=2, help_text="Cost of this item")
     quantity = models.IntegerField(default=1, help_text="Quantity (usually 1 for tests/trials)")
@@ -228,12 +239,29 @@ class BillItem(models.Model):
         return f"{self.item_type} - {self.description} - ₹{self.cost}"
 
     def clean(self):
-        """Validate that either test_type or trial is set based on item_type"""
+        """Validate correct linkage based on item_type."""
         from django.core.exceptions import ValidationError
-        if self.item_type == 'Test' and not self.test_type:
-            raise ValidationError("Test type must be specified for Test items")
-        if self.item_type == 'Trial' and not self.trial:
-            raise ValidationError("Trial must be specified for Trial items")
+
+        if self.item_type == 'Test':
+            if not self.test_type:
+                raise ValidationError("Test type must be specified for Test items")
+            # Ensure other links are not set
+            if self.trial_id or self.service_visit_id:
+                raise ValidationError("Only test_type must be set for Test items")
+
+        if self.item_type == 'Trial':
+            if not self.trial:
+                raise ValidationError("Trial must be specified for Trial items")
+            if self.test_type_id or self.service_visit_id:
+                raise ValidationError("Only trial must be set for Trial items")
+
+        if self.item_type == 'Service':
+            if not self.service_visit:
+                raise ValidationError("Service visit must be specified for Service items")
+            if self.test_type_id or self.trial_id:
+                raise ValidationError("Only service_visit must be set for Service items")
+
+        # If more item types are added in future, they must be validated here.
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -242,7 +270,269 @@ class BillItem(models.Model):
         if self.bill:
             self.bill.calculate_total()
 
+    def delete(self, *args, **kwargs):
+        bill = self.bill
+        result = super().delete(*args, **kwargs)
+        if bill:
+            bill.calculate_total()
+        return result
+
+class PatientPurchase(models.Model):
+    PURCHASE_TYPE = [
+        ('Consumable', 'Consumable'),   # battery, dome, receiver
+        ('Device', 'Device'),           # hearing aid
+    ]
+    clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
 
 
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="purchases"
+    )
 
+    visit = models.ForeignKey(
+        PatientVisit,
+        on_delete=models.CASCADE,
+        related_name="purchases"
+    )
+
+    inventory_item = models.ForeignKey(
+        'InventoryItem',
+        on_delete=models.PROTECT
+    )
+
+    inventory_serial = models.ForeignKey(
+        'InventorySerial',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+#     purchase_type = models.CharField(
+#         max_length=20,
+#         choices=PURCHASE_TYPE
+#   )
+
+    quantity = models.IntegerField(default=1)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    purchased_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        """Ensure that a serial number is provided for serialized items."""
+        if self.inventory_item.stock_type == 'Serialized' and not self.inventory_serial:
+            raise ValidationError(
+                f"A serial number must be provided for serialized items like '{self.inventory_item}'."
+            )
+        if self.inventory_item.stock_type == 'Non-Serialized' and self.inventory_serial:
+            raise ValidationError(
+                f"A serial number should not be provided for non-serialized items like '{self.inventory_item}'."
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+from django.db import models
+from django.utils import timezone
+
+# Choices for category
+CATEGORY_CHOICES = [
+    ('Battery', 'Battery'),
+    ('Dome', 'Dome'),
+    ('Receiver', 'Receiver'),
+    ('Mold', 'Mold'),
+    ('Tube', 'Tube'),
+    ('Hearing Aid', 'Hearing Aid'),
+    ('Trial Stock', 'Trial Stock'),
+    ('Speech Material', 'Speech Material'),
+]
+
+class InventoryItem(models.Model):
+    # clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
+    brand = models.CharField(max_length=50)  # Brand / Manufacturer
+    model_type = models.CharField(max_length=100)  # Model / Type
+    STOCK_TYPE_CHOICES = [
+        ('Serialized', 'Serialized'),
+        ('Non-Serialized', 'Non-Serialized'),
+    ]
+    description = models.TextField(blank=True, null=True)
+    stock_type = models.CharField(max_length=20, choices=STOCK_TYPE_CHOICES, default='Non-Serialized')
+    quantity_in_stock = models.PositiveIntegerField(default=0)
+    reorder_level = models.PositiveIntegerField(default=10, help_text="Alert when stock falls to this level")
+    location = models.CharField(max_length=100, blank=True, null=True)
+    expiry_date = models.DateField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    use_in_trial = models.BooleanField(default=False)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    class Meta:
+        verbose_name = "Inventory Item"
+        verbose_name_plural = "Inventory Items"
+        ordering = ['category', 'brand', 'model_type']
+
+    def __str__(self):
+        return f"{self.item_id} - {self.brand} {self.model_type}"
+
+    @property
+    def is_expired(self):
+        """Return True if the item is expired."""
+        if self.expiry_date:
+            return self.expiry_date < timezone.now().date()
+        return False
+
+    @property
+    def is_near_expiry(self):
+        """Return True if the item is within 30 days of expiry."""
+        if self.expiry_date:
+            return 0 <= (self.expiry_date - timezone.now().date()).days <= 30
+        return False
+
+    def update_quantity_from_serials(self):
+        """
+        Update quantity_in_stock to match the number of InventorySerials with status 'In Stock'.
+        """
+        count = self.serials.filter(status='In Stock').count()
+        self.quantity_in_stock = count
+        self.save(update_fields=["quantity_in_stock"])
+
+class InventorySerial(models.Model):
+    inventory_item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='serials')
+    serial_number = models.CharField(max_length=255, unique=True)
+
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            ('In Stock', 'In Stock'),
+            ('Trial', 'Trial'),
+            ('Sold', 'Sold'),
+            ('Service', 'Service'),
+            ('Lost', 'Lost'),
+        ]
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ServiceVisit(models.Model):
+    SERVICE_TYPE_CHOICES = [
+        ('TGA', 'TGA'),
+        ('Machine Check', 'Machine Check'),
+        ('Cleaning', 'Cleaning'),
+        ('Dome Change', 'Dome Change'),
+        ('Filter Change', 'Filter Change'),
+        ('Battery Change', 'Battery Change'),
+        ('Receiver Change', 'Receiver Change'),
+        ('Tube Change', 'Tube Change'),
+        ('Quick Tuning', 'Quick Tuning'),
+        ('Repair', 'Repair'),
+    ]
+
+    visit = models.OneToOneField(
+        PatientVisit,
+        on_delete=models.CASCADE,
+        related_name="service"
+    )
+
+    SERVICE_STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
+    ]
+    status = models.CharField(max_length=20, choices=SERVICE_STATUS_CHOICES, default='Pending')
+
+    device = models.ForeignKey(
+        PatientPurchase,
+        on_delete=models.SET_NULL,
+        null=True,
+        help_text="The purchased item being serviced."
+    )
+
+    device_serial = models.ForeignKey(
+        InventorySerial,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="The specific serialized item being serviced."
+    )
+
+    service_type = models.CharField(max_length=50, choices=SERVICE_TYPE_CHOICES)
+
+    complaint = models.TextField()
+    action_taken = models.TextField()
+
+    warranty_applicable = models.BooleanField(default=False)
+    charges_collected = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    rtc_date = models.DateField(blank=True, null=True)
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ServicePartUsed(models.Model):
+    service = models.ForeignKey(
+        ServiceVisit,
+        on_delete=models.CASCADE,
+        related_name="parts_used"
+    )
+    inventory_item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT)
+    quantity = models.IntegerField()
+    
+
+    def clean(self):
+        """Ensure that serialized items are not used as service parts."""
+        if self.inventory_item.stock_type == 'Serialized':
+            raise ValidationError(
+                f"Serialized items like '{self.inventory_item}' cannot be used as service parts."
+            )
+
+    def save(self, *args, **kwargs):
+        """
+        Auto-deduct inventory on create/update for non-serialized items.
+        - Create: deduct full quantity
+        - Update: deduct only the delta (new - old)
+        Prevents inventory from going negative.
+        """
+        self.full_clean()  # Run validation before saving
+
+        if self.quantity is None or int(self.quantity) <= 0:
+            raise ValidationError("quantity must be a positive integer")
+
+        with transaction.atomic():
+            # Lock inventory row to avoid race conditions
+            inv = InventoryItem.objects.select_for_update().get(pk=self.inventory_item_id)
+
+            old_qty = 0
+            if self.pk:
+                old_qty = (
+                    ServicePartUsed.objects.select_for_update()
+                    .only("quantity")
+                    .get(pk=self.pk)
+                    .quantity
+                )
+
+            delta = int(self.quantity) - int(old_qty)
+            if delta > 0 and inv.quantity_in_stock < delta:
+                raise ValidationError(
+                    f"Insufficient stock for {inv.product_name}. Available={inv.quantity_in_stock}, required={delta}."
+                )
+
+            inv.quantity_in_stock -= delta
+            inv.save(update_fields=["quantity_in_stock"])
+            super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        """Revert inventory when a part-used row is deleted."""
+        with transaction.atomic():
+            inv = InventoryItem.objects.select_for_update().get(pk=self.inventory_item_id)
+            inv.quantity = inv.quantity + int(self.quantity or 0)
+            inv.save(update_fields=["quantity"])
+            return super().delete(*args, **kwargs)
 
