@@ -12,8 +12,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 
 # Quick-start development settings - unsuitable for production
@@ -169,8 +171,28 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=2),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-# ...existing code...
 
+
+
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID = 'AKIA3NCOW5AYBDHZFHFO'
+AWS_SECRET_ACCESS_KEY = 'IaoA4869mSb9VE3oc7JmAFy6wOAKgWKFNEQWOcG8'
+AWS_STORAGE_BUCKET_NAME = 'clinical-mgmt'
+AWS_S3_REGION_NAME = 'eu-north-1'  # e.g., 'us-east-1'
+AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+
+# Media files storage
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'update-followup-status': {
+        'task': 'clinical.tasks.update_followup_status',
+        'schedule': crontab(hour=8, minute=0),  # Daily at 8 AM
+    },
+}
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
