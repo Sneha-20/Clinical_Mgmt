@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,12 +27,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-y)!b_z!t2$$zl)ot_ba0g*k=(mi2a78-iy7&ck1t-vd#b##5ri'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-y)!b_z!t2$$zl)ot_ba0g*k=(mi2a78-iy7&ck1t-vd#b##5ri')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -109,21 +114,12 @@ WSGI_APPLICATION = 'clinical_be.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'clinical_mgmt_dev',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'localhost',   # or your PostgreSQL server IP
-        'PORT': '5432',        # default PostgreSQL port
+        'NAME': os.getenv('DB_NAME', 'clinical_mgmt_dev'),
+        'USER': os.getenv('DB_USER', 'postgres'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
-
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': 'clinical_mgmt_dev',
-    #     'USER': 'postgres',
-    #     'PASSWORD': 'postgres',
-    #     'HOST': '51.20.207.138',   # or your PostgreSQL server IP
-    #     'PORT': '5432',        # default PostgreSQL port
-    # }
 }
 
 
@@ -175,10 +171,10 @@ SIMPLE_JWT = {
 
 
 # AWS S3 Configuration
-AWS_ACCESS_KEY_ID = 'AKIA3NCOW5AYBDHZFHFO'
-AWS_SECRET_ACCESS_KEY = 'IaoA4869mSb9VE3oc7JmAFy6wOAKgWKFNEQWOcG8'
-AWS_STORAGE_BUCKET_NAME = 'clinical-mgmt'
-AWS_S3_REGION_NAME = 'eu-north-1'  # e.g., 'us-east-1'
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', 'AKIA3NCOW5AYBDHZFHFO')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', 'IaoA4869mSb9VE3oc7JmAFy6wOAKgWKFNEQWOcG8')
+AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', 'clinical-mgmt')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'eu-north-1')
 AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
 
 # Media files storage
