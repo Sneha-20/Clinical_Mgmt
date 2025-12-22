@@ -1296,17 +1296,18 @@ class TrialCreateSerializer(serializers.ModelSerializer):
 
 class TrialListSerializer(serializers.ModelSerializer):
     """Serializer for listing trial records with detailed information."""
-    patient_name = serializers.CharField(source='assigned_patient.name', read_only=True)
+    # patient_name = serializers.CharField(source='assigned_patient.name', read_only=True)
     doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
     device_name = serializers.CharField(source='device_inventory_id.product_name', read_only=True)
     device_brand = serializers.CharField(source='device_inventory_id.brand', read_only=True)
     device_model = serializers.CharField(source='device_inventory_id.model_type', read_only=True)
+    assigned_patient = serializers.CharField(source='assigned_patient.name', read_only=True)
+    assigned_patient_phone = serializers.CharField(source='assigned_patient.phone_primary', read_only=True)
 
     class Meta:
         model = Trial
         fields = [
             'id',
-            'patient_name',
             'doctor_name',
             'device_name',
             'device_brand',
@@ -1316,8 +1317,9 @@ class TrialListSerializer(serializers.ModelSerializer):
             'trial_start_date',
             'trial_end_date',
             'followup_date',
+            'assigned_patient',
+            'assigned_patient_phone',
             'patient_response',
-            'created_at',
         ]
 
 
@@ -1348,3 +1350,37 @@ class TrialDeviceSerializer(serializers.ModelSerializer):
             serials = obj.serials.filter(status='In Stock')
             return TrialDeviceSerialSerializer(serials, many=True).data
         return []
+
+
+class ProductInfoBySerialSerializer(serializers.ModelSerializer):
+    """Serializer for product information by serial number."""
+    inventory_item_details = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = InventorySerial
+        fields = [
+            'serial_number',
+            'status',
+            'created_at',
+            'inventory_item_details'
+        ]
+    
+    def get_inventory_item_details(self, obj):
+        """Get detailed inventory item information."""
+        item = obj.inventory_item
+        return {
+            'id': item.id,
+            'product_name': item.product_name,
+            'brand': item.brand,
+            'model_type': item.model_type,
+            'category': item.category,
+            'stock_type': item.stock_type,
+            'description': item.description,
+            'unit_price': item.unit_price,
+            'use_in_trial': item.use_in_trial,
+            'quantity_in_stock': item.quantity_in_stock,
+            'reorder_level': item.reorder_level,
+            'location': item.location,
+            'expiry_date': item.expiry_date,
+            'notes': item.notes,
+        }

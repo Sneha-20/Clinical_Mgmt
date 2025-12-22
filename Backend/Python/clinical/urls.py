@@ -14,6 +14,7 @@ from .api_service_visit_list import ServiceVisitListView
 from .api_service_queue import ServiceQueueView
 from .api_trials import TrialCreateView, TrialListView
 from .api_trial_devices import TrialDeviceListView
+from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySerialView
 
 from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
@@ -64,6 +65,12 @@ urlpatterns = [
 
    # Trial devices from inventory
    path('inventory/trial-devices/', TrialDeviceListView.as_view(), name='trial_device_list'),
+
+   # Trial device serials with count > 0
+   path('inventory/trial-device-serials/', TrialDeviceSerialListView.as_view(), name='trial_device_serial_list'),
+
+   # Product info by serial number
+   path('inventory/product-by-serial/<str:serial_number>/', ProductInfoBySerialView.as_view(), name='product_info_by_serial'),
 
 
    path('test-uploads/', TestUploadListCreateView.as_view(), name='test-upload-list-create'),
