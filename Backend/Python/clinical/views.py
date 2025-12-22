@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.db import models
 from .serializers import (
     PatientRegistrationSerializer,
     PatientAllVisitSerializer,
@@ -20,7 +21,7 @@ from .serializers import (
     PatientVisitWithCaseHistorySerializer
 )
 
-from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill
+from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend

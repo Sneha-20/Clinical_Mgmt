@@ -29,7 +29,7 @@ class PatientVisit(models.Model):
     test_requested = models.CharField(max_length=255, blank=True, null=True) # it will be dropdown in frontend
     notes = models.TextField(blank=True, null=True)
     # created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=50,null=True)  #  ( Test Pending / Trial Given / Booked / Follow-up)
+    status = models.CharField(max_length=50,null=True)  #  ( Test Pending / Trial active/ Booked / Follow-up)
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -93,7 +93,7 @@ class Trial(models.Model):
     ucl_before = models.CharField(max_length=255, blank=True, null=True)
     patient_response = models.CharField(max_length=255, blank=True, null=True)
     counselling_notes = models.TextField()
-    discount_offered = models.FloatField(blank=True, null=True)
+    discount_offered = models.IntegerField(blank=True, null=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="Cost associated with the trial")
     followup_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -568,7 +568,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         child=serializers.DictField(),
         required=False,
         write_only=True,
-        help_text="List of {'file_type': str, 'file_path': str} items"
+        help_text="List of {'file_type': str, 'file_path': str} items OR {'file_type': str, 'file': File} items"
     )
 
     class Meta:
@@ -703,9 +703,20 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
             # 3. Save uploaded report files in the TestUpload table
             if test_performed_instance and test_report_files:
+                from .file_utils import upload_file_to_s3
+                
                 for f in test_report_files:
                     file_type = f.get('file_type')
-                    file_path = f.get('file_path')
+                    
+                    # Handle both file_path (URL) and direct file upload
+                    if 'file' in f:
+                        # Direct file upload - upload to S3 first
+                        uploaded_file = f['file']
+                        file_path = upload_file_to_s3(uploaded_file, file_type)
+                    else:
+                        # Use provided file_path (existing URL)
+                        file_path = f.get('file_path')
+                    
                     if file_type and file_path:
                         TestUpload.objects.create(
                             visit=test_performed_instance,
@@ -1206,6 +1217,8 @@ class TrialCreateSerializer(serializers.ModelSerializer):
         "cost": "500.00",
         "trial_start_date": "2025-12-19",
         "trial_end_date": "2026-01-02"
+        "discount_offered": "10",
+
     }
     ```
     """
@@ -1236,11 +1249,11 @@ class TrialCreateSerializer(serializers.ModelSerializer):
             if not InventorySerial.objects.filter(serial_number=device_serial_number).exists():
                 raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
 
-        # Update the status of Patient visit ( Trial Given )
-        visit.status = 'Trial Given'
+        # Update the status of Patient visit ( Trial Active )
+        visit.status = 'Trial Active'
         visit.save()
         
-        with transaction.atomic():
+        with transaction.atomic():     
             trial = super().create(validated_data)
             
             # If a cost is associated, add it to the bill for this visit
@@ -1266,6 +1279,14 @@ class TrialCreateSerializer(serializers.ModelSerializer):
                     cost=trial.cost,
                     quantity=1,
                 )
+                
+                # Apply trial discount to bill if offered (as percentage)
+                if trial.discount_offered and trial.discount_offered > 0:
+                    # Calculate discount as percentage of total bill amount
+                    discount_percentage = trial.discount_offered / 100
+                    discount_amount = bill.total_amount * discount_percentage
+                    bill.discount_amount = discount_amount
+                    bill.save()
                 
                 # Recalculate bill totals
                 bill.calculate_total()

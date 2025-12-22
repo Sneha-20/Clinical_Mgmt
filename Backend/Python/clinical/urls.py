@@ -15,6 +15,9 @@ from .api_service_queue import ServiceQueueView
 from .api_trials import TrialCreateView, TrialListView
 from .api_trial_devices import TrialDeviceListView
 
+from .test_upload_views import TestUploadListCreateView
+from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
+
 urlpatterns = [
    path('inventory/item/create/', InventoryItemCreateView.as_view(), name='inventory_item_create'),
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
@@ -61,6 +64,15 @@ urlpatterns = [
 
    # Trial devices from inventory
    path('inventory/trial-devices/', TrialDeviceListView.as_view(), name='trial_device_list'),
+
+
+   path('test-uploads/', TestUploadListCreateView.as_view(), name='test-upload-list-create'),
+
+   # Completed tests APIs for audiologists
+   path('completed-tests/', CompletedTestsListView.as_view(), name='completed-tests-list'),
+   path('completed-tests/<int:visit_id>/', CompletedTestDetailView.as_view(), name='completed-test-detail'),
+   path('patient/<int:patient_id>/test-history/', PatientTestHistoryView.as_view(), name='patient-test-history'),
+
 
 
 

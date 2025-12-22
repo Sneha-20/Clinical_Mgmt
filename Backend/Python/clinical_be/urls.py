@@ -24,6 +24,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/accounts/', include('accounts.urls')),
     path('api/clinical/', include('clinical.urls')),
-    # optionally keep simplejwt refresh/verify endpoints:
-    # path('api/token/refresh/', include('rest_framework_simplejwt.urls')),  # optional helper
+   
 ]
