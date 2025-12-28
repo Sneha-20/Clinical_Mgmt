@@ -6,55 +6,54 @@ import { CheckCircle, Clock, AlertCircle } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 
 const BillingDetailDialog = ({
-  open,
+  onClose,
   onOpenChange,
   billing,
   billingDetail,
   onPayNow,
 }) => {
-  if (!billing) return null;
- console.log("billing in dialog",billing)
-  console.log("billing in dialog",billingDetail)
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "paid":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-amber-600" />;
-      case "overdue":
-        return <AlertCircle className="h-4 w-4 text-red-600" />;
-      default:
-        return null;
-    }
-  };
+  // if (!billing) return null;
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "paid":
-        return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-            Paid
-          </Badge>
-        );
-      case "pending":
-        return (
-          <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
-            Pending
-          </Badge>
-        );
-      case "overdue":
-        return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-            Overdue
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
+  // const getStatusIcon = (status) => {
+  //   switch (status) {
+  //     case "paid":
+  //       return <CheckCircle className="h-4 w-4 text-green-600" />;
+  //     case "pending":
+  //       return <Clock className="h-4 w-4 text-amber-600" />;
+  //     case "overdue":
+  //       return <AlertCircle className="h-4 w-4 text-red-600" />;
+  //     default:
+  //       return null;
+  //   }
+  // };
+
+  // const getStatusBadge = (status) => {
+  //   switch (status) {
+  //     case "paid":
+  //       return (
+  //         <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+  //           Paid
+  //         </Badge>
+  //       );
+  //     case "pending":
+  //       return (
+  //         <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">
+  //           Pending
+  //         </Badge>
+  //       );
+  //     case "overdue":
+  //       return (
+  //         <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+  //           Overdue
+  //         </Badge>
+  //       );
+  //     default:
+  //       return null;
+  //   }
+  // };
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange} header="Billing Details">
+    <Modal onClose={onClose} header="Billing Details">
       {/* <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
@@ -62,7 +61,6 @@ const BillingDetailDialog = ({
             {getStatusBadge(billing.status)}
           </DialogTitle>
         </DialogHeader> */}
-         <div>test</div>
         <div className="space-y-4">
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <div className="flex justify-between">

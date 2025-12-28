@@ -19,7 +19,8 @@ export const routes = {
   },
 
    billing:{
-   billingList:"clinical/bill/",
+   paidBillList:"clinical/bill/paid/",
+   dueBillList:"clinical/bill/pending/",
    billingDetail:"clinical/bill/visit/"
   },
   

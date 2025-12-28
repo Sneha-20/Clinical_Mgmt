@@ -3,27 +3,47 @@
 import { routes } from "@/lib/utils/constants/route";
 import apiClient from "../api/client";
 
-export const getTotalBillingList = async (params = {}) => {
+export const getPaidBillList = async (params = {}) => {
   try {
-    const { page , search } = params;
-    // Build query string
+    const { page} = params;
     const queryParams = new URLSearchParams();
     if (page) queryParams.append("page", page.toString());
-    // if (limit) queryParams.append("limit", limit.toString());
-    if (search) queryParams.append("search", search);
     
-    const url = `${routes.billing.billingList}?${queryParams.toString()}`;
+    const url = `${routes.billing.paidBillList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
-    const patientData = {
+    const paidBillData = {
       status: response.status || 200,
       nextPage: response.nextPage,
       previousPage: response.previousPage,
       totalItems: response.totalItems,
       totalPages: response.totalPages,
-      billList:  response?.data || [],
+      paidBillList:  response?.data || [],
     };
     
-    return patientData;
+    return paidBillData;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getDueBillList = async (params = {}) => {
+  try {
+    const { page} = params;
+    const queryParams = new URLSearchParams();
+    if (page) queryParams.append("page", page.toString());
+    
+    const url = `${routes.billing.dueBillList}?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    const dueBillData = {
+      status: response.status || 200,
+      nextPage: response.nextPage,
+      previousPage: response.previousPage,
+      totalItems: response.totalItems,
+      totalPages: response.totalPages,
+      dueBillList:  response?.data || [],
+    };
+    
+    return dueBillData;
   } catch (error) {
     throw error;
   }
