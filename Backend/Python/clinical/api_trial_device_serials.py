@@ -99,7 +99,7 @@ class TrialDeviceInUseListView(generics.ListAPIView):
         """Get serial numbers for trial devices currently in trial status."""
         return InventorySerial.objects.filter(
             inventory_item__use_in_trial=True,
-            status='In Trial Use'
+            status='Trial'
         ).select_related('inventory_item').order_by('-created_at')
     
     def list(self, request, *args, **kwargs):
