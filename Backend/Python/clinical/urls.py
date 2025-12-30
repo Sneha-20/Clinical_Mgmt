@@ -3,7 +3,7 @@
 from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
-                    PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView)
+                    PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView)
 
 from .api_inventory_serial import InventorySerialBulkUploadView,InventorySerialManualCreateView
 from .api_inventory_item_update import InventoryItemUpdateView
@@ -14,10 +14,11 @@ from .api_service_visit_list import ServiceVisitListView
 from .api_service_queue import ServiceQueueView
 from .api_trials import TrialCreateView, TrialListView
 from .api_trial_devices import TrialDeviceListView
-from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySerialView
+from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySerialView, TrialDeviceInUseListView
 
 from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
+
 
 urlpatterns = [
    path('inventory/item/create/', InventoryItemCreateView.as_view(), name='inventory_item_create'),
@@ -72,6 +73,8 @@ urlpatterns = [
    # Product info by serial number
    path('inventory/product-by-serial/<str:serial_number>/', ProductInfoBySerialView.as_view(), name='product_info_by_serial'),
 
+   # Trial devices in use list
+   path('inventory/trial-devices-in-use/', TrialDeviceInUseListView.as_view(), name='trial_devices_in_use'),
 
    path('test-uploads/', TestUploadListCreateView.as_view(), name='test-upload-list-create'),
 
@@ -79,16 +82,6 @@ urlpatterns = [
    path('completed-tests/', CompletedTestsListView.as_view(), name='completed-tests-list'),
    path('completed-tests/<int:visit_id>/', CompletedTestDetailView.as_view(), name='completed-test-detail'),
    path('patient/<int:patient_id>/test-history/', PatientTestHistoryView.as_view(), name='patient-test-history'),
-
-
-
-
-
-
-
-
-
-
+   path('api/inventory/return-trial-device/', TrialDeviceReturnView.as_view(), name='return-trial-device'),
 ]
-
 

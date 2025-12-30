@@ -11,6 +11,12 @@ class TrialCreateView(generics.CreateAPIView):
     serializer_class = TrialCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+
+    def create(self, validated_data):
+        return super().create(validated_data)
+        # add status and message as response 
+        return Response({"status":status.HTTP_201_CREATED,"message":"Trial created successfully."})
+
 class TrialListView(generics.ListAPIView):
     """API endpoint for listing all trial records."""
     queryset = Trial.objects.select_related(

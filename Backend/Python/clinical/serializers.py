@@ -1248,6 +1248,15 @@ class TrialCreateSerializer(serializers.ModelSerializer):
         if device_serial_number:
             if not InventorySerial.objects.filter(serial_number=device_serial_number).exists():
                 raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
+            
+            # Update serial status to 'Trial' when creating trial
+            try:
+                serial = InventorySerial.objects.get(serial_number=device_serial_number)
+                if serial.status == 'In Stock':
+                    serial.status = 'Trial'
+                    serial.save()
+            except InventorySerial.DoesNotExist:
+                raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
 
         # Update the status of Patient visit ( Trial Active )
         visit.status = 'Trial Active'
@@ -1273,7 +1282,7 @@ class TrialCreateSerializer(serializers.ModelSerializer):
 
                 BillItem.objects.create(
                     bill=bill,
-                    item_type='Trial',
+                    item_type='In Trial Use ',
                     trial=trial,
                     description=description,
                     cost=trial.cost,
@@ -1283,7 +1292,8 @@ class TrialCreateSerializer(serializers.ModelSerializer):
                 # Apply trial discount to bill if offered (as percentage)
                 if trial.discount_offered and trial.discount_offered > 0:
                     # Calculate discount as percentage of total bill amount
-                    discount_percentage = trial.discount_offered / 100
+                    from decimal import Decimal
+                    discount_percentage = Decimal(trial.discount_offered) / 100
                     discount_amount = bill.total_amount * discount_percentage
                     bill.discount_amount = discount_amount
                     bill.save()
@@ -1384,3 +1394,10 @@ class ProductInfoBySerialSerializer(serializers.ModelSerializer):
             'expiry_date': item.expiry_date,
             'notes': item.notes,
         }
+
+
+# Return Device Update 
+class TrialDeviceReturnSerializer(serializers.Serializer):
+    serial_number = serializers.CharField(required=True)
+    return_notes = serializers.CharField(required=False, allow_blank=True)
+    condition = serializers.CharField(required=False, allow_blank=True)

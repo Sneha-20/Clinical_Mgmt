@@ -100,7 +100,8 @@ class Trial(models.Model):
     trial_start_date = models.DateField(blank=True, null=True)
     trial_end_date = models.DateField(blank=True, null=True)
     assigned_patient = models.ForeignKey(Patient, on_delete=models.SET_NULL, null=True, blank=True)
-
+    return_notes = models.TextField(blank=True, null=True)
+    device_condition_on_return = models.CharField(max_length=50, blank=True, null=True)  # Condition (Good / Bad)
 
 class TestType(models.Model):
     """

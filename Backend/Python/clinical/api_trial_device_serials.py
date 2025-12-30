@@ -1,9 +1,11 @@
 from rest_framework import generics, permissions
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
 from django.db.models import Count, Q
-from .models import InventoryItem, InventorySerial
+from .models import InventoryItem, InventorySerial, Trial, Patient
 from .serializers import TrialDeviceSerialSerializer, ProductInfoBySerialSerializer
+from clinical_be.utils.pagination import StandardResultsSetPagination
 
 
 class TrialDeviceSerialListView(generics.ListAPIView):
@@ -86,3 +88,61 @@ class ProductInfoBySerialView(generics.RetrieveAPIView):
                 "status": status.HTTP_404_NOT_FOUND,
                 "message": f"Serial number '{serial_number}' not found"
             }, status=status.HTTP_404_NOT_FOUND)
+
+
+class TrialDeviceInUseListView(generics.ListAPIView):
+    """API endpoint for listing trial devices currently in use."""
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        """Get serial numbers for trial devices currently in trial status."""
+        return InventorySerial.objects.filter(
+            inventory_item__use_in_trial=True,
+            status='In Trial Use'
+        ).select_related('inventory_item').order_by('-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        """Return trial devices currently in use with patient assignment info."""
+        queryset = self.get_queryset()
+        
+        devices_in_use = []
+        for serial in queryset:
+            # Get trial information for this serial
+            trial_info = None
+            try:
+                trial = Trial.objects.filter(serial_number=serial.serial_number).first()
+                if trial and trial.assigned_patient:
+                    trial_info = {
+                        'trial_id': trial.id,
+                        'patient_name': trial.assigned_patient.name,
+                        'patient_phone': trial.assigned_patient.phone_primary,
+                        'trial_start_date': trial.trial_start_date,
+                        'trial_end_date': trial.trial_end_date,
+                        'followup_date': trial.followup_date,
+                        'ear_fitted': trial.ear_fitted,
+                    }
+            except:
+                pass
+            
+            device_data = {
+                'serial_number': serial.serial_number,
+                'status': serial.status,
+                # 'created_at': serial.created_at,
+                'product_info': {
+                    'id': serial.inventory_item.id,
+                    'product_name': serial.inventory_item.product_name,
+                    'brand': serial.inventory_item.brand,
+                    'model_type': serial.inventory_item.model_type,
+                    'category': serial.inventory_item.category,
+                },
+                'trial_assignment': trial_info
+            }
+            devices_in_use.append(device_data)
+        
+        return Response({
+            "status": status.HTTP_200_OK,
+            "data": devices_in_use
+        })
+
+

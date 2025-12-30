@@ -18,15 +18,19 @@ from .serializers import (
     AudiologistCaseHistoryCreateSerializer,
     BillDetailSerializer,
     BillListSerializer,
-    PatientVisitWithCaseHistorySerializer
+    PatientVisitWithCaseHistorySerializer,
+    TrialDeviceReturnSerializer
 )
-
-from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload
+from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission, AuditorPermission, SppechTherapistPermission
+from django.db import transaction
+from django.utils import timezone
+
+
 
 class PatientRegistrationView(generics.CreateAPIView):
     ''' Register a new Patient along with an initial visit record '''
@@ -535,6 +539,76 @@ class BillDetailView(generics.RetrieveAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+
+
+# Trial Device Return View
+class TrialDeviceReturnView(APIView):
+    """API endpoint to return a trial device and make it available for another patient."""
+    
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, *args, **kwargs):
+        serializer = TrialDeviceReturnSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {"status": "error", "message": "Invalid data", "errors": serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serial_number = serializer.validated_data['serial_number']
+        return_notes = serializer.validated_data.get('return_notes', '')
+        condition = serializer.validated_data.get('condition', 'Good')
+        
+        try:
+            # Get the serial number record
+            serial = InventorySerial.objects.get(
+                serial_number=serial_number,
+                status='In Trial Use'  # Only allow returning devices that are in trial
+            )
+            
+            # # Get the active trial for this serial
+            trial = Trial.objects.filter(
+                serial_number=serial_number,
+                # trial_end_date__isnull=True  # Only if trial end date is not set
+            ).first()
+            
+           
+                # Update trial end date
+            trial.trial_end_date = timezone.now().date()
+            trial.return_notes = return_notes
+            trial.device_condition_on_return = condition
+            trial.save()
+            
+            # Update serial status back to 'In Stock' to make it available again
+            serial.status = 'In Stock'
+            serial.save()
+            
+            # Update the inventory item's quantity
+            # if serial.inventory_item:
+            #     serial.inventory_item.quantity_in_stock += 1
+            #     serial.inventory_item.save()
+            
+            return Response({
+                    "status": "success",
+                    "message": "Device returned successfully",
+                    # "data": {
+                    #     "serial_number": serial.serial_number,
+                    #     "status": serial.status,
+                    #     "return_date": timezone.now().date()
+                    # }
+                })
+                
+        except InventorySerial.DoesNotExist:
+            return Response(
+                {"status": "error", "message": "Device not found or not in trial"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"status": "error", "message": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 
