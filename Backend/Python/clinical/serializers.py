@@ -1282,7 +1282,7 @@ class TrialCreateSerializer(serializers.ModelSerializer):
 
                 BillItem.objects.create(
                     bill=bill,
-                    item_type='In Trial Use ',
+                    item_type='Trial',
                     trial=trial,
                     description=description,
                     cost=trial.cost,
