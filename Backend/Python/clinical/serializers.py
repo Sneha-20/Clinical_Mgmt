@@ -523,17 +523,12 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
     #     "previous_ha_experience": "...",
     #     "red_flags": "...",
     #     "test_requested": ["pta", "oae"],    // List of test flags performed, sets VisitTestPerformed model fields
-    #     "other_test": "",                    // Optional: text for other test
-    #     "test_report_files": [
-    #         { "file_type": "PTA", "file_path": "path-or-url-1" },
-    #         { "file_type": "OAE", "file_path": "path-or-url-2" }
-    #     ]
+    #     
     # }
     # Usage:
     # - On create, it will
     #   (a) create AudiologistCaseHistory (or update if exists for patient)
     #   (b) create VisitTestPerformed for the visit with test flags from 'test_requested'
-    #   (c) create TestUpload records for the uploaded reports, if provided
     
     Note: Case history is linked to Patient (one per patient), but tests and billing
     are linked to the specific Visit.
@@ -555,22 +550,6 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         help_text="List of test flags performed, e.g., ['pta', 'oae', 'srt']. Valid values: pta, immittance, oae, bera_assr, srt, sds, ucl, free_field"
     )
     
-    # Optional text for other test
-    other_test = serializers.CharField(
-        max_length=255,
-        required=False,
-        allow_blank=True,
-        write_only=True
-    )
-
-    # List of uploaded report files
-    test_report_files = serializers.ListField(
-        child=serializers.DictField(),
-        required=False,
-        write_only=True,
-        help_text="List of {'file_type': str, 'file_path': str} items OR {'file_type': str, 'file': File} items"
-    )
-
     class Meta:
         model = AudiologistCaseHistory
         fields = [
@@ -582,18 +561,15 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             'previous_ha_experience',
             'red_flags',
             # VisitTestPerformed fields
-            'test_requested',  # List of test flags
-            'other_test',
-            # TestUpload helper
-            'test_report_files',
+            'test_requested'  # List of test flags
         ]
 
     def create(self, validated_data):
         """
         1. Create/Update AudiologistCaseHistory (linked to Patient, one per patient)
         2. Create VisitTestPerformed (if any test field is set, linked to Visit)
-        3. Create TestUpload rows for given files
-        4. Create / update Bill and BillItem rows based on tests performed
+        3. Create / update Bill and BillItem rows based on tests performed
+        # 4. Update PatientVisit status to 'test_performed'
         """
         from .models import TestUpload
 
@@ -610,7 +586,6 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
         # Extract test_requested list and convert to boolean fields for VisitTestPerformed
         test_requested = validated_data.pop('test_requested', [])
-        other_test = validated_data.pop('other_test', None)
         
         # Valid test field names (case-insensitive mapping)
         valid_test_fields = {
@@ -644,12 +619,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             if test_key:
                 test_performed_data[test_key] = True
         
-        # Add other_test if provided
-        if other_test:
-            test_performed_data['other_test'] = other_test
-
-        # Extract uploaded report files
-        test_report_files = validated_data.pop('test_report_files', [])
+    
 
         # Map VisitTestPerformed boolean fields -> TestType names
         flag_to_testtype_name = {
@@ -701,30 +671,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                     **test_performed_data
                 )
 
-            # 3. Save uploaded report files in the TestUpload table
-            if test_performed_instance and test_report_files:
-                from .file_utils import upload_file_to_s3
-                
-                for f in test_report_files:
-                    file_type = f.get('file_type')
-                    
-                    # Handle both file_path (URL) and direct file upload
-                    if 'file' in f:
-                        # Direct file upload - upload to S3 first
-                        uploaded_file = f['file']
-                        file_path = upload_file_to_s3(uploaded_file, file_type)
-                    else:
-                        # Use provided file_path (existing URL)
-                        file_path = f.get('file_path')
-                    
-                    if file_type and file_path:
-                        TestUpload.objects.create(
-                            visit=test_performed_instance,
-                            file_type=file_type,
-                            file_path=file_path,
-                        )
-
-            # 4. Billing: create / update Bill and BillItems for each test
+            # 3. Billing: create / update Bill and BillItems for each test
             if test_performed_instance:
                 clinic = getattr(visit, 'clinic', None)
 
@@ -774,6 +721,11 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
                 # Recalculate totals explicitly (BillItem.save also does this, but this is safe)
                 bill.calculate_total()
+
+            # 4. Update PatientVisit status to 'test_performed'
+            if test_performed_instance:
+                visit.status = 'test_performed'
+                visit.save(update_fields=['status'])
 
         return case_history
 

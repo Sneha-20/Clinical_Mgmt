@@ -13,58 +13,74 @@ class CompletedTestsListView(APIView):
     def get(self, request):
         try:
             # Get all visits with completed tests (case history + test performed)
+            # Use select_related and prefetch_related to optimize queries
             completed_visits = PatientVisit.objects.filter(
                 models.Q(patient__case_history__isnull=False) &
                 models.Q(visittestperformed__isnull=False)
+            ).select_related(
+                'patient',
+                'patient__case_history'
+            ).prefetch_related(
+                'visittestperformed_set',
+                'visittestperformed_set__testupload_set'
             ).distinct().order_by('-created_at')
             
             # Apply pagination
             paginator = self.pagination_class()
             page = paginator.paginate_queryset(completed_visits, request)
             
+            # Pre-fetch all test performed data and test uploads in one query
+            visit_ids = [visit.id for visit in page]
+            test_performed_map = {}
+            test_files_count_map = {}
+            
+            if visit_ids:
+                test_performed_queryset = VisitTestPerformed.objects.filter(
+                    visit_id__in=visit_ids
+                ).prefetch_related('testupload_set')
+                
+                for tp in test_performed_queryset:
+                    test_performed_map[tp.visit_id] = tp
+                    test_files_count_map[tp.visit_id] = tp.testupload_set.count()
+            
+           
             simple_list = []
             
             for visit in page:
-                # Get case history
-                case_history = AudiologistCaseHistory.objects.filter(patient=visit.patient).first()
+                # Get test performed from pre-fetched map
+                test_performed = test_performed_map.get(visit.id)
                 
-                # Get test performed
-                test_performed = VisitTestPerformed.objects.filter(visit=visit).first()
-                
-                # Get test files count
-                test_files_count = TestUpload.objects.filter(visit=test_performed).count() if test_performed else 0
-                
-                # Build test types summary
+                # Build test types summary efficiently
                 test_types = []
                 if test_performed:
-                    if test_performed.pta: test_types.append("PTA")
-                    if test_performed.immittance: test_types.append("Immittance")
-                    if test_performed.oae: test_types.append("OAE")
-                    if test_performed.bera_assr: test_types.append("BERA/ASSR")
-                    if test_performed.srt: test_types.append("SRT")
-                    if test_performed.sds: test_types.append("SDS")
-                    if test_performed.ucl: test_types.append("UCL")
-                    if test_performed.free_field: test_types.append("Free Field")
-                    if test_performed.other_test: test_types.append(test_performed.other_test)
+                    # Use list comprehension for better performance
+                    test_mapping = [
+                        (test_performed.pta, "PTA"),
+                        (test_performed.immittance, "Immittance"),
+                        (test_performed.oae, "OAE"),
+                        (test_performed.bera_assr, "BERA/ASSR"),
+                        (test_performed.srt, "SRT"),
+                        (test_performed.sds, "SDS"),
+                        (test_performed.ucl, "UCL"),
+                        (test_performed.free_field, "Free Field")
+                    ]
+                    
+                    test_types = [name for flag, name in test_mapping if flag]
+                    
+                    if test_performed.other_test:
+                        test_types.append(test_performed.other_test)
                 
-                # Count total visits for this patient
-                total_visits = PatientVisit.objects.filter(patient=visit.patient).count()
                 
                 simple_list.append({
                     'visit_id': visit.id,
                     'patient_id': visit.patient.id,
                     'patient_name': visit.patient.name,
                     'patient_phone': visit.patient.phone_primary,
-                    'visit_date': visit.created_at,
                     'appointment_date': visit.appointment_date,
-                    # 'visit_type': visit.visit_type,
-                    'test_types': test_types,
-                    'test_count': len(test_types),
-                    # 'files_count': test_files_count,
-                    'total_patient_visits': total_visits,
-                    'is_repeat_visit': total_visits > 1,
-                    # 'case_history_complete': case_history is not None,
-                    # 'files_uploaded': test_files_count > 0
+                    'visit_type': visit.visit_type,
+                    'present_complaint': visit.present_complaint,
+                    'test_performed': test_types,
+                    'total_test_performed': len(test_types),
                 })
             
             return paginator.get_paginated_response(simple_list)
@@ -220,9 +236,16 @@ class PatientTestHistoryView(APIView):
     def get(self, request, patient_id):
         try:
             # Get all visits for this patient with tests
+            # Use select_related and prefetch_related to optimize queries
             patient_visits = PatientVisit.objects.filter(
                 patient_id=patient_id,
                 visittestperformed__isnull=False
+            ).select_related(
+                'patient',
+                'patient__case_history'
+            ).prefetch_related(
+                'visittestperformed_set',
+                'visittestperformed_set__testupload_set'
             ).distinct().order_by('-created_at')
             
             if not patient_visits.exists():
@@ -232,53 +255,63 @@ class PatientTestHistoryView(APIView):
                     'data': []
                 }, status=status.HTTP_404_NOT_FOUND)
             
+            # Pre-fetch case history once
+            case_history = AudiologistCaseHistory.objects.filter(
+                patient_id=patient_id
+            ).first()
+            
             patient_history = []
             
             for visit in patient_visits:
-                # Get case history
-                case_history = AudiologistCaseHistory.objects.filter(patient=visit.patient).first()
+                # Get test performed from pre-fetched data
+                test_performed = visit.visittestperformed_set.first()
                 
-                # Get test performed
-                test_performed = VisitTestPerformed.objects.filter(visit=visit).first()
+                # Get test files from pre-fetched data
+                test_files = list(test_performed.testupload_set.all()) if test_performed else []
                 
-                # Get test files
-                test_files = TestUpload.objects.filter(visit=test_performed) if test_performed else []
-                
-                # Build test types list
+                # Build test types list efficiently
                 test_types = []
                 if test_performed:
-                    if test_performed.pta: test_types.append("PTA")
-                    if test_performed.immittance: test_types.append("Immittance")
-                    if test_performed.oae: test_types.append("OAE")
-                    if test_performed.bera_assr: test_types.append("BERA/ASSR")
-                    if test_performed.srt: test_types.append("SRT")
-                    if test_performed.sds: test_types.append("SDS")
-                    if test_performed.ucl: test_types.append("UCL")
-                    if test_performed.free_field: test_types.append("Free Field")
-                    if test_performed.other_test: test_types.append(test_performed.other_test)
+                    # Use list comprehension for better performance
+                    test_mapping = [
+                        (test_performed.pta, "PTA"),
+                        (test_performed.immittance, "Immittance"),
+                        (test_performed.oae, "OAE"),
+                        (test_performed.bera_assr, "BERA/ASSR"),
+                        (test_performed.srt, "SRT"),
+                        (test_performed.sds, "SDS"),
+                        (test_performed.ucl, "UCL"),
+                        (test_performed.free_field, "Free Field")
+                    ]
+                    
+                    test_types = [name for flag, name in test_mapping if flag]
+                    
+                    if test_performed.other_test:
+                        test_types.append(test_performed.other_test)
                 
                 patient_history.append({
                     'visit_id': visit.id,
-                    # 'visit_date': visit.created_at,
+                    'patient_name': visit.patient.name,
+                    'patient_phone': visit.patient.phone_primary,
                     'appointment_date': visit.appointment_date,
                     'visit_type': visit.visit_type,
+                    'present_complaint': visit.present_complaint,
                     'status': visit.status,
-                    'test_types': test_types,
-                    'test_count': len(test_types),
-                    'files_count': len(test_files),
-                    'files': [
+                    'test_performed': test_types,
+                    'total_test_peformed': len(test_types),
+                    'total_test_result': len(test_files),
+                    'test_results_files': [
                         {
-                            'file_type': file.file_type,
-                            'file_url': file.file_path,
-                            # 'created_at': file.created_at
+                            'test_type': file.file_type,
+                            'report_url': file.file_path,
                         } for file in test_files
                     ],
                     'case_history_summary': {
-                        'has_medical_history': bool(case_history.medical_history if case_history else ''),
-                        'has_family_history': bool(case_history.family_history if case_history else ''),
-                        'has_noise_exposure': bool(case_history.noise_exposure if case_history else ''),
-                        'has_previous_ha': bool(case_history.previous_ha_experience if case_history else ''),
-                        'has_red_flags': bool(case_history.red_flags if case_history else '')
+                        'has_medical_history': case_history.medical_history if case_history else None,
+                        'has_family_history': case_history.family_history if case_history else None,
+                        'has_noise_exposure': case_history.noise_exposure if case_history else None,
+                        'has_previous_ha': case_history.previous_ha_experience if case_history else None,
+                        'has_red_flags': case_history.red_flags if case_history else None
                     } if case_history else None
                 })
             
