@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from celery.schedules import crontab
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -185,14 +186,6 @@ AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazo
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/media/'
 
-from celery.schedules import crontab
-
-CELERY_BEAT_SCHEDULE = {
-    'update-followup-status': {
-        'task': 'clinical.tasks.update_followup_status',
-        'schedule': crontab(hour=8, minute=0),  # Daily at 8 AM
-    },
-}
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -224,5 +217,21 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'sneha.developer20@gmail.com'
 EMAIL_HOST_PASSWORD = 'nubb pjuh ttwr wgqz'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kolkata'
+
+# Celery beat schedule for periodic tasks
+CELERY_BEAT_SCHEDULE = {
+    'update-followup-status': {
+        'task': 'clinical.tasks.update_followup_status',
+        'schedule': crontab(hour=0, minute=0),  # Run daily at midnight
+    },
+}
 
 
