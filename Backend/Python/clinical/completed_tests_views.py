@@ -101,8 +101,8 @@ class CompletedTestDetailView(APIView):
             # Get the specific visit
             visit = PatientVisit.objects.get(id=visit_id)
             
-            # Get case history
-            case_history = AudiologistCaseHistory.objects.filter(patient=visit.patient).first()
+            # # Get case history
+            # case_history = AudiologistCaseHistory.objects.filter(patient=visit.patient).first()
             
             # Get test performed
             test_performed = VisitTestPerformed.objects.filter(visit=visit).first()
@@ -151,22 +151,22 @@ class CompletedTestDetailView(APIView):
                 })
             
             # Get all visits for this patient (for context)
-            all_patient_visits = PatientVisit.objects.filter(patient=visit.patient).order_by('-created_at')
-            patient_visit_history = []
+            # all_patient_visits = PatientVisit.objects.filter(patient=visit.patient).order_by('-created_at')
+            # patient_visit_history = []
             
-            for patient_visit in all_patient_visits:
-                patient_test_performed = VisitTestPerformed.objects.filter(visit=patient_visit).first()
-                patient_files_count = TestUpload.objects.filter(visit=patient_test_performed).count() if patient_test_performed else 0
+            # for patient_visit in all_patient_visits:
+            #     patient_test_performed = VisitTestPerformed.objects.filter(visit=patient_visit).first()
+            #     patient_files_count = TestUpload.objects.filter(visit=patient_test_performed).count() if patient_test_performed else 0
                 
-                patient_visit_history.append({
-                    'visit_id': patient_visit.id,
-                    # 'visit_date': patient_visit.created_at,
-                    'appointment_date': patient_visit.appointment_date,
-                    'visit_type': patient_visit.visit_type,
-                    'status': patient_visit.status,
-                    'files_count': patient_files_count,
-                    'is_current_visit': patient_visit.id == visit.id
-                })
+            #     patient_visit_history.append({
+            #         'visit_id': patient_visit.id,
+            #         # 'visit_date': patient_visit.created_at,
+            #         'appointment_date': patient_visit.appointment_date,
+            #         'visit_type': patient_visit.visit_type,
+            #         'status': patient_visit.status,
+            #         'files_count': patient_files_count,
+            #         'is_current_visit': patient_visit.id == visit.id
+            #     })
             
             detailed_data = {
                 'visit_info': {
@@ -174,6 +174,7 @@ class CompletedTestDetailView(APIView):
                     # 'visit_date': visit.created_at,
                     'appointment_date': visit.appointment_date,
                     'visit_type': visit.visit_type,
+                    'present_complaint':visit.present_complaint,
                     'status': visit.status,
                     'service_type': visit.service_type
                 },
@@ -184,29 +185,29 @@ class CompletedTestDetailView(APIView):
                     'patient_email': visit.patient.email,
                     'patient_age': visit.patient.age,
                     'patient_gender': visit.patient.gender,
-                    'total_visits': all_patient_visits.count()
+                    # 'total_visits': all_patient_visits.count()
                 },
-                'case_history': {
-                    'medical_history': case_history.medical_history if case_history else None,
-                    'family_history': case_history.family_history if case_history else None,
-                    'noise_exposure': case_history.noise_exposure if case_history else None,
-                    'previous_ha_experience': case_history.previous_ha_experience if case_history else None,
-                    'red_flags': case_history.red_flags if case_history else None,
-                    # 'created_at': case_history.created_at if case_history else None,
-                    # 'updated_at': case_history.updated_at if case_history else None
-                } if case_history else None,
+                # 'case_history': {
+                #     'medical_history': case_history.medical_history if case_history else None,
+                #     'family_history': case_history.family_history if case_history else None,
+                #     'noise_exposure': case_history.noise_exposure if case_history else None,
+                #     'previous_ha_experience': case_history.previous_ha_experience if case_history else None,
+                #     'red_flags': case_history.red_flags if case_history else None,
+                #     # 'created_at': case_history.created_at if case_history else None,
+                #     # 'updated_at': case_history.updated_at if case_history else None
+                # } if case_history else None,
                 'test_performed': {
                     # 'test_details': test_details,
                     'test_requested': test_types,
                     'test_count': len(test_types),
                     # 'created_at': test_performed.created_at
                 },
-                'test_files': {
-                    'files': files_details,
+                'test_reports': {
+                    'reports': files_details,
                     'files_count': len(files_details),
-                    'has_files': len(files_details) > 0
+                    # 'has_files': len(files_details) > 0
                 },
-                'patient_visit_history': patient_visit_history
+                # 'patient_visit_history': patient_visit_history
             }
             
             return Response({

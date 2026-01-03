@@ -612,3 +612,114 @@ class TrialDeviceReturnView(APIView):
 
 
 
+# List of test result (TestUpload) for a visit ID 
+class TestResultListView(APIView):
+    """List all test results (TestUpload) for a specific visit"""
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, visit_id):
+        try:
+            # Validate that the visit exists
+            if not PatientVisit.objects.filter(id=visit_id).exists():
+                return Response({
+                    'status': status.HTTP_404_NOT_FOUND,
+                    'message': 'Visit not found',
+                    'data': []
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get test performed for this visit
+            test_performed = VisitTestPerformed.objects.filter(visit_id=visit_id).first()
+            
+            if not test_performed:
+                return Response({
+                    'status': status.HTTP_404_NOT_FOUND,
+                    'message': 'No test performed found for this visit',
+                    'data': []
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get all test uploads for this test performed
+            test_results = TestUpload.objects.filter(visit=test_performed).order_by('-created_at')
+            
+            # Serialize the results
+            result_data = []
+            for test_file in test_results:
+                result_data.append({
+                    'id': test_file.id,
+                    'file_type': test_file.file_type,
+                    # 'file_path': test_file.file_path,
+                    'file_url': test_file.file_path,  # For frontend convenience
+                    'created_at': test_file.created_at,
+                    # 'uploaded_by': test_file.uploaded_by.username if test_file.uploaded_by else None
+                })
+            
+            return Response({
+                'status': status.HTTP_200_OK,
+                # 'message': 'Test results retrieved successfully',
+                # 'visit_id': visit_id,
+                'total_files': len(result_data),
+                'data': result_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error retrieving test results: {str(e)}',
+                'data': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+# Delete the Testupload file
+class TestUploadDeleteView(APIView):
+    """Delete a specific test upload file"""
+    permission_classes = [IsAuthenticated, AuditorPermission]
+    
+    def delete(self, request, file_id):
+        try:
+            # Get the test upload file
+            test_file = TestUpload.objects.get(id=file_id)
+            
+            # Delete the file from S3
+            if test_file.file_path:
+                try:
+                    import boto3
+                    from django.conf import settings
+                    from urllib.parse import urlparse
+                    
+                    # Parse the S3 URL to get bucket and key
+                    parsed_url = urlparse(test_file.file_path)
+                    bucket_name = parsed_url.netloc.split('.')[0]
+                    file_key = parsed_url.path.lstrip('/')
+                    
+                    # Initialize S3 client
+                    s3_client = boto3.client(
+                        's3',
+                        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                        region_name=settings.AWS_S3_REGION_NAME
+                    )
+                    
+                    # Delete the file from S3
+                    s3_client.delete_object(Bucket=bucket_name, Key=file_key)
+                    
+                except Exception as e:
+                    # Log the error but continue with database deletion
+                    print(f"Warning: Could not delete file from S3 {test_file.file_path}: {e}")
+            
+            # Delete the database record
+            test_file.delete()
+            
+            return Response({
+                'status': status.HTTP_200_OK,
+                'message': 'Test upload file deleted successfully'
+            }, status=status.HTTP_200_OK)
+            
+        except TestUpload.DoesNotExist:
+            return Response({
+                'status': status.HTTP_404_NOT_FOUND,
+                'message': 'Test upload file not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error deleting test upload file: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 

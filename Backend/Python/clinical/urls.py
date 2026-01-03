@@ -3,7 +3,8 @@
 from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
-                    PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView)
+                    PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
+                    TestResultListView,TestUploadDeleteView)
 
 from .api_inventory_serial import InventorySerialBulkUploadView,InventorySerialManualCreateView
 from .api_inventory_item_update import InventoryItemUpdateView
@@ -83,5 +84,9 @@ urlpatterns = [
    path('completed-tests/<int:visit_id>/', CompletedTestDetailView.as_view(), name='completed-test-detail'),
    path('patient/<int:patient_id>/test-history/', PatientTestHistoryView.as_view(), name='patient-test-history'),
    path('api/inventory/return-trial-device/', TrialDeviceReturnView.as_view(), name='return-trial-device'),
+
+
+   path('test-results/<int:visit_id>/', TestResultListView.as_view(), name='test-result-list'),
+   path('test-upload/<int:file_id>/delete/', TestUploadDeleteView.as_view(), name='test-upload-delete'),
 ]
 
