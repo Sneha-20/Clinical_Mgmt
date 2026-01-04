@@ -28,3 +28,13 @@ export const addCaseHistory = async (caseHistoryData) => {
     throw err?.response?.data || "registration failed"
    }
 }
+
+export const addTestFile = async (file) => {
+   try{
+     const response = await apiClient.postMultipart(routes.audiologist.uploadFile, file);
+     const caseHistoryResponse = response?.data?.data || response?.data || response;
+     return caseHistoryResponse
+   }catch(err){
+    throw err?.response?.data || "registration failed"
+   }
+}

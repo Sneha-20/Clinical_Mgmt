@@ -75,51 +75,30 @@ html, body {
 .react-datepicker-popper {
   @apply w-[295px];
 }
-
 .react-datepicker-wrapper,
 .react-datepicker,
 .react-datepicker__month-container {
   @apply w-full;
 }
-
-/* --- Main Datepicker Styling --- */
 .react-datepicker {
   @apply font-sans border-none rounded-xl shadow-lg overflow-hidden !important;
-  /* Ensure main body background is white */
   background-color: white !important;
 }
 
 /* --- Header Section (Light Blue Background) --- */
 .react-datepicker__header {
-  /* Use tailwind color or custom hex. Image looks like #D0E8F2 */
   @apply !bg-sidebar border-none !pt-0;
-  /* Optional: For exact color match uncomment line below */
-  /* background-color: #D0E8F2 !important; */
 }
-
-/* The Month/Year Title (e.g., "March 2012") */
 h2.react-datepicker__current-month {
   @apply mb-2 text-blue-900 font-bold text-lg !important;
 }
-
-/* Styling the Dropdown Selectors (if enabled in your component) */
 .react-datepicker__header select {
     @apply bg-white border border-blue-900 rounded px-2 py-1 text-blue-900 font-bold mx-1 outline-none cursor-pointer;
 }
-
-/* Navigation Arrows Color */
 .react-datepicker__navigation-icon::before {
-   /* Makes the arrow icons dark blue */
    border-color: theme('colors.blue.900') !important;
 }
 
-
-/* --- Body Section --- */
-/* .react-datepicker__month {
-    @apply m-0 p-2;
-} */
-
-/* Row Layouts (Kept and refined from your code) */
 .react-datepicker__week,
 .react-datepicker__day-names {
   @apply flex justify-between;
@@ -129,37 +108,32 @@ h2.react-datepicker__current-month {
   @apply px-2;
 }
 
-/* --- Day Names (Su, Mo, Tu...) --- */
 .react-datepicker__day-name {
   @apply text-blue-900 font-bold w-10 h-10 flex items-center justify-center !important;
 }
 
-/* --- Calendar Days --- */
 .react-datepicker__day {
-  /* Default day style: Dark blue text, rounded circle shape */
   @apply text-blue-900 w-8 h-8 flex items-center justify-center rounded-full transition-colors font-medium  !important;
 }
 
-/* Hover state for standard days */
 .react-datepicker__day:hover {
    @apply bg-secondary text-white !important;
 }
 
-/* Days outside current month (Light Gray text) */
 .react-datepicker__day--outside-month {
    @apply text-gray-300 !important;
 }
 
-/* --- Selected Day (The Blue Circle) --- */
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
-  /* The medium blue circle background */
   @apply !bg-secondary text-white font-bold !important;
-  /* Optional: For exact color match uncomment line below (#3498DB) */
-  /* background-color: #3498DB !important; */
+
 }
 
-/* "Today" styling - ensure it doesn't conflict if not selected */
 .react-datepicker__day--today:not(.react-datepicker__day--selected) {
     @apply font-bold text-blue-900 bg-transparent border-none !important;
+}
+
+.react-datepicker__day.react-datepicker__day--disabled{
+  @apply opacity-55 cursor-not-allowed;
 }

@@ -8,7 +8,9 @@ import React, { useEffect, useState } from "react";
 export default function SchedulAppoinment({
   onClose,
   setShowRegistrationForm,
-  setShowSelctedPatientId,   // ✅ Added correctly
+  setShowVisitForm,
+  setShowSelctedPatientId,
+  isModalOpen, // ✅ Added correctly
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -24,9 +26,22 @@ export default function SchedulAppoinment({
     };
     searchPatientsList();
   }, [searchTerm]);
+      console.log("searchTerm",searchTerm)
+
+  const handleSelectPatient = (patientId) => {
+    console.log("patientId",patientId)
+    setShowSelctedPatientId(patientId);
+    setShowVisitForm(true);
+    onClose();
+    setSearchTerm("")
+  };
 
   return (
-    <Modal header="Schedule Appointment" onClose={onClose}>
+    <Modal
+      header="Schedule Appointment"
+      onClose={onClose}
+      isModalOpen={isModalOpen}
+    >
       <div className="flex sm:flex-row flex-col gap-5">
         {/* LEFT SIDE — EXISTING PATIENT */}
         <div className="flex flex-col gap-3">
@@ -47,12 +62,9 @@ export default function SchedulAppoinment({
               <ul className="max-h-40 overflow-y-auto border border-slate-200 rounded-md p-2">
                 {searchResults.map((patient) => (
                   <li
-                    key={patient.visit}
+                    key={patient.id}
                     className="py-1 border-b last:border-0 cursor-pointer hover:bg-slate-100"
-                    onClick={() => {
-                      setShowSelctedPatientId(patient.id);   // PASS patient id
-                      onClose();                      // close schedule modal
-                    }}
+                    onClick={() => handleSelectPatient(patient.id)}
                   >
                     {patient.name} - {patient.phone_primary}
                   </li>
@@ -83,7 +95,7 @@ export default function SchedulAppoinment({
             className="gap-2 text-sm w-full sm:w-auto"
             onClick={() => {
               setShowRegistrationForm(true); // open registration
-              onClose();                     // close schedule modal
+              onClose(); // close schedule modal
             }}
           >
             <Plus className="w-4 h-4" />

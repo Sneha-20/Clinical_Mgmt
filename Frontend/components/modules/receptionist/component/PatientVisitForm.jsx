@@ -4,19 +4,29 @@ import { Input } from "@/components/ui/input";
 import Modal from "@/components/ui/Modal";
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { visitPatientSchema } from "@/lib/utils/schema";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   visitTypeOptions,
   testRequestedOptions,
   complaintOptions,
 } from "@/lib/utils/constants/staticValue";
+import { showToast } from "@/components/ui/toast";
 
 export default function PatientVisitForm({
   onClose,
   onSubmit,
   showSelctedPatientId,
-  doctorList
+  doctorList,
+  isModalOpen
 }) {
+  useEffect(() => {
+  if (showSelctedPatientId) {
+    setFormData((prev) => ({
+      ...prev,
+      patient: showSelctedPatientId,
+    }));
+  }
+}, [showSelctedPatientId]);
   const serviceOption = [
     { label: "Clinic", value: "clinic" },
     { label: "Home", value: "home" },
@@ -27,7 +37,7 @@ export default function PatientVisitForm({
   }));
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    patient: showSelctedPatientId || "",
+    patient: showSelctedPatientId,
     service_type: "",
     appointment_date: "",
     visit_details: [
@@ -40,11 +50,10 @@ export default function PatientVisitForm({
       },
     ],
   });
-
+  console.log("ttttttttt",formData)
+  
   const updateField = useCallback(
     (name, value) => {
-      console.log("Updating formdata:", formData);  
-      console.log("Updating field:", name, value);
       setFormData((prev) => ({ ...prev, [name]: value }));
       if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
     },
@@ -75,7 +84,7 @@ export default function PatientVisitForm({
         {
           visit_type: "",
           present_complaint: "",
-          assigned_to: "",
+          seen_by: "",
           test_requested: [],
           notes: "",
         },
@@ -104,8 +113,8 @@ export default function PatientVisitForm({
   };
 
   return (
-    <Modal onClose={onClose} header="Patient Visit Form">
-      <form onSubmit={handleSubmit} className="space-y-6">
+    <Modal header="Patient Visit Form" isModalOpen={isModalOpen} onClose={onClose} className="">
+      <form onSubmit={handleSubmit} className="space-y-6 relative">
         <div>
           <h3 className="font-semibold text-primary mb-3">Service Type</h3>
           {/* RADIO BUTTONS FOR REFERRAL TYPE */}
@@ -138,7 +147,7 @@ export default function PatientVisitForm({
             name="appointment_date"
             value={formData.appointment_date}
             onChange={(e) => updateField(e.target.name, e.target.value)}
-            error={errors.visit_details?.appointment_date}
+            error={errors.appointment_date}
           />
         </div>
 
@@ -234,31 +243,8 @@ export default function PatientVisitForm({
         >
           + Add More Visit
         </Button>
-
-        {/* ACTION BUTTONS */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-
-          <Button type="submit">Register Patient</Button>
-        </div>
+        <Button type="submit" className="absolute bottom-[-60px] left-[85px]">Register Patient</Button>
       </form>
     </Modal>
-    //     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-    //   <Card className="w-full max-w-2xl max-h-[95vh] overflow-y-auto">
-    //     <CardHeader className="flex flex-row justify-between items-center">
-    //       <CardTitle className="text-lg">New Patient Registration</CardTitle>
-
-    //       <Button variant="ghost" size="icon" onClick={onClose}>
-    //         <X className="w-4 h-4" />
-    //       </Button>
-    //     </CardHeader>
-
-    //     <CardContent>
-
-    //     </CardContent>
-    //   </Card>
-    // </div>
   );
 }

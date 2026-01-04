@@ -16,44 +16,36 @@ import DropDown from "@/components/ui/dropdown";
 import { serviceOption } from "@/lib/utils/constants/staticValue";
 
 export default function ReceptionistDashboard() {
-  /** -----------------------------
-   *  MODAL STATES
-   * ------------------------------*/
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [showSelctedPatientId, setShowSelctedPatientId] = useState(null);
   const [showVisitForm, setShowVisitForm] = useState(false);
   const [showScheduleAppointment, setShowScheduleAppointment] = useState(false);
+  console.log("showSelctedPatientIdttttt",showSelctedPatientId)
 
-  /** -----------------------------
-   *  USE HOOK (Handles Search, Tabs, Pagination)
-   * ------------------------------*/
+  console.log("showVisitForm",showVisitForm)
+
   const {
     activeTab,
-    setActiveTab,
     searchTerm,
-    setSearchTerm,
-
     patients,
     todayPatients,
     doctorList,
     loadingTotal,
     loadingToday,
-
     pagination,
+    serviceType,
+
+    setActiveTab,
+    setSearchTerm,
     goToNextPage,
     goToPreviousPage,
-
     handleAddPatient,
     handleAddVisit,
     handleViewProfile,
-
-    serviceType,
     setServiceType,
   } = usePatientData();
 
-  /** -----------------------------
-   *  HANDLERS FOR FORMS
-   * ------------------------------*/
+ 
   const onAddPatientSubmit = async (data) => {
     try {
       await handleAddPatient(data);
@@ -71,31 +63,23 @@ export default function ReceptionistDashboard() {
       console.error(err);
     } finally {
       setShowSelctedPatientId(null);
-      setShowVisitForm(false);
+      setShowVisitForm(false)
     }
   };
-
-  /** -----------------------------
-   *  RETURN JSX
-   * ------------------------------*/
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
       <DashboardHeader onAddVisit={() => setShowScheduleAppointment(true)} />
-
-      {/* Stats */}
       <StatsSection totalPatientsCount={pagination.totalItems || 0} />
 
-      {/* -----------------------------
-          MODALS
-      ------------------------------*/}
-      {showScheduleAppointment && (
+      {/* {showScheduleAppointment && ( */}
         <SchedulAppoinment
           onClose={() => setShowScheduleAppointment(false)}
           setShowRegistrationForm={setShowRegistrationForm}
+          setShowVisitForm={setShowVisitForm}
           setShowSelctedPatientId={setShowSelctedPatientId}
+          isModalOpen={showScheduleAppointment}
         />
-      )}
+      
 
       {showRegistrationForm && (
         <PatientRegistrationForm
@@ -105,18 +89,16 @@ export default function ReceptionistDashboard() {
         />
       )}
 
-      {showSelctedPatientId && (
+      {/* {showSelctedPatientId && ( */}
         <PatientVisitForm
           showSelctedPatientId={showSelctedPatientId}
+          isModalOpen={showVisitForm}
           doctorList={doctorList}
-          onClose={() => setShowSelctedPatientId(null)}
+          onClose={() => setShowVisitForm(false)}
           onSubmit={onAddVisitSubmit}
         />
-      )}
+      {/* )} */}
 
-      {/* -----------------------------
-          SEARCH + TAB LISTS
-      ------------------------------*/}
       <div className="space-y-2 bg-card text-card-foreground flex flex-col gap-2 rounded-xl border p-6 shadow-sm">
         <div className="flex items-start justify-between mb-2">
           <div>

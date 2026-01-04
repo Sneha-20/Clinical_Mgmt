@@ -5,9 +5,9 @@ import { getApiBaseURL, validateApiConfig } from "./utils/config";
 const initialBaseURL = validateApiConfig();
 
 // Log the base URL being used (only in development)
-if (process.env.NODE_ENV === "development") {
-  console.log("🔧 Axios configured with initial base URL:", initialBaseURL);
-}
+// if (process.env.NODE_ENV === "development") {
+//   console.log("🔧 Axios configured with initial base URL:", initialBaseURL);
+// }
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -48,15 +48,15 @@ if (typeof window !== "undefined") {
       }
       
       // Log request details in development
-      if (process.env.NODE_ENV === "development") {
-        console.log("📤 Axios Request:", {
-          method: config.method?.toUpperCase(),
-          url: config.url,
-          baseURL: config.baseURL,
-          fullURL: `${config.baseURL}${config.url}`,
-          hasToken: !!token,
-        });
-      }
+      // if (process.env.NODE_ENV === "development") {
+      //   console.log("📤 Axios Request:", {
+      //     method: config.method?.toUpperCase(),
+      //     url: config.url,
+      //     baseURL: config.baseURL,
+      //     fullURL: `${config.baseURL}${config.url}`,
+      //     hasToken: !!token,
+      //   });
+      // }
       
       return config;
     },

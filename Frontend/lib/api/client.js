@@ -41,7 +41,7 @@ export const apiClient = {
         api.defaults.baseURL = expectedBaseURL;
       }
       
-      // The interceptor will also check and update, but we do it here too for safety
+      //The interceptor will also check and update, but we do it here too for safety
       const response = await api.post(url, data, {
         ...config,
         baseURL: expectedBaseURL, // Explicitly set baseURL in config
@@ -51,6 +51,29 @@ export const apiClient = {
       throw error;
     }
   },
+
+  postMultipart: async (url, data, config = {}) => {
+  try {
+    const expectedBaseURL = getApiBaseURL();
+    if (api.defaults.baseURL !== expectedBaseURL) {
+      api.defaults.baseURL = expectedBaseURL;
+    }
+
+    const response = await api.post(url, data, {
+      ...config,
+      baseURL: expectedBaseURL,
+      headers: {
+        // 🔥 override JSON header
+        "Content-Type": "multipart/form-data",
+        ...(config.headers || {}),
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+},
 
   /**
    * Make a PUT request

@@ -15,10 +15,23 @@ import {
   testRequestedOptions,
 } from "@/lib/utils/constants/staticValue";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
+import Modal from "@/components/ui/Modal";
 
 export default function CaseHistoryForm({ patientId }) {
-  const { patientsCaseHistory, fetchPatientFormData, registerCasehistory } =
-    useCaseHistory();
+  const {
+    patientsCaseHistory,
+    fileName,
+    file,
+    testType,
+    isModalOpen,
+    setIsModalOpen,
+    setTestType,
+    setFile,
+    setFileName,
+    fetchPatientFormData,
+    registerCasehistory,
+    handleFileSubmit,
+  } = useCaseHistory();
   // const parseTests = (testString = "") =>
   // testString
   //   .split(",")
@@ -72,9 +85,9 @@ export default function CaseHistoryForm({ patientId }) {
   //   });
   // };
 
-  const handleFileUpload = (field, file) => {
-    setUploads({ ...uploads, [field]: file });
-  };
+  // const handleFileUpload = (field, file) => {
+  //   setUploads({ ...uploads, [field]: file });
+  // };
 
   // const handleSubmit = (e) => {
   //   e.preventDefault();
@@ -83,6 +96,7 @@ export default function CaseHistoryForm({ patientId }) {
   useEffect(() => {
     console.log("Formik errors:", formik.errors);
   }, [formik.errors]);
+
   return (
     <div>
       <Card className="w-full my-4">
@@ -183,9 +197,6 @@ export default function CaseHistoryForm({ patientId }) {
                 Medical & Family History
               </h3>
               <div className="space-y-3 sm:space-y-4">
-                <label className="block text-xs sm:text-sm font-medium mb-1.5">
-                  Medical History
-                </label>
                 <TextArea
                   label="Medical History"
                   name="medical_history"
@@ -257,7 +268,7 @@ export default function CaseHistoryForm({ patientId }) {
               </div>
 
               {/* Test Values */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <Input
                   label="SRT (dB)"
                   name="srtValue"
@@ -282,29 +293,16 @@ export default function CaseHistoryForm({ patientId }) {
                   onBlur={formik.handleBlur}
                   error={formik.touched.uclValue && formik.errors.uclValue}
                 />
-              </div>
+              </div> */}
             </div>
 
-            {/* File Uploads */}
-            <div>
-              <h3 className="font-semibold text-primary mb-4 text-sm sm:text-base">
-                Upload Test Results
-              </h3>
-              <div className="space-y-2 sm:space-y-3">
-                <FileUploadField
-                  label="Audiogram (Image/PDF)"
-                  onFileChange={(file) => handleFileUpload("audiogram", file)}
-                />
-                <FileUploadField
-                  label="Tympanometry Result"
-                  onFileChange={(file) => handleFileUpload("tympResult", file)}
-                />
-                <FileUploadField
-                  label="BERA/ASSR File"
-                  onFileChange={(file) => handleFileUpload("beraFile", file)}
-                />
-              </div>
-            </div>
+            <button
+              type="button"
+              className="text-blue-700 underline hover:no-underline pb-[2px]"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Upload Test Report
+            </button>
 
             {/* Submit */}
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end pt-4 border-t border-border">
@@ -315,13 +313,35 @@ export default function CaseHistoryForm({ patientId }) {
           </form>
         </CardContent>
       </Card>
+      <Modal
+        header="Upload Test Results"
+        onClose={() => setIsModalOpen(false)}
+        isModalOpen={isModalOpen}
+        onSubmit={handleFileSubmit}
+      >
+        <>
+          <DropDown
+            label="Select Test Type"
+            name="testType" // 👈 IMPORTANT
+            options={testRequestedOptions}
+            value={testType}
+            onChange={(name, value) => {
+              if (name === "testType") setTestType(value);
+            }}
+          />
+          <FileUploadField
+            fileName={fileName}
+            setFileName={setFileName}
+            label="Select Test Report"
+            onFileChange={(file) => setFile(file)}
+          />
+        </>
+      </Modal>
     </div>
   );
 }
 
-function FileUploadField({ label, onFileChange }) {
-  const [fileName, setFileName] = useState(null);
-
+function FileUploadField({ fileName, setFileName, label, onFileChange }) {
   return (
     <div className="border-2 border-dashed border-border rounded-lg p-3 sm:p-4 text-center hover:bg-muted/50 cursor-pointer transition-colors">
       <input

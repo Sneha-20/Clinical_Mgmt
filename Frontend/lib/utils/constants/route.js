@@ -14,8 +14,10 @@ export const routes = {
 
   audiologist:{
    appointmentList:"clinical/audiologits/queue/",
+   completedTestList:"clinical/completed-tests/",
    patientCaseHistory:"clinical/patient/visit/",
-   registerCaseHistory: "clinical/audiologist/test/perform/"
+   registerCaseHistory: "clinical/audiologist/test/perform/",
+   uploadFile: "clinical/test-uploads/"
   },
 
    billing:{

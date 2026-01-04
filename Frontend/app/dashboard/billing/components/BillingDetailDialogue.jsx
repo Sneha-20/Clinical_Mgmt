@@ -11,6 +11,7 @@ const BillingDetailDialog = ({
   billing,
   billingDetail,
   onPayNow,
+  openModal
 }) => {
   // if (!billing) return null;
 
@@ -53,7 +54,7 @@ const BillingDetailDialog = ({
   // };
 
   return (
-    <Modal onClose={onClose} header="Billing Details">
+    <Modal onClose={onClose} header="Billing Details" isModalOpen={openModal}>
       {/* <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
@@ -156,9 +157,9 @@ const BillingDetailDialog = ({
             </div>
           </div>
         </div>
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
+        {/* <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close
-          </Button>
+          </Button> */}
         {/* <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Close

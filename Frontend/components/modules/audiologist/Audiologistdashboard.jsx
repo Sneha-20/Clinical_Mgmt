@@ -8,36 +8,37 @@ import useAudiologist from '@/lib/hooks/useAudiologist'
 import AppoinmentListCard from './components/AppoinmentListCard'
 
 export default function AudiologistDashboard() {
-  const {handleViewPatient,appoinementList} = useAudiologist()
+  const {handleViewPatient,appoinementList,completedTests} = useAudiologist()
+  // console.log("ttttt",completeTestList)
 
-  console.log("appoinementList",appoinementList)
+  // console.log("appoinementList",appoinementList)
   const [queue, setQueue] = useState([
     { id: 1, name: 'Rajesh Kumar', complaint: 'Hearing problem', testsRequired: ['PTA', 'Tympanometry'], referral: 'Doctor' },
     { id: 2, name: 'Priya Singh', complaint: 'Follow-up Trial', testsRequired: ['Free Field'], referral: 'Self' },
     { id: 3, name: 'Vijay Reddy', complaint: 'Hearing Testing', testsRequired: ['BERA', 'OAE'], referral: 'Self' },
   ])
 
-  const [completedTests] = useState([
-    { id: 1, name: 'Amit Patel', test: 'Pure Tone Audiometry', time: '10:30 AM', result: 'Mild Hearing Loss' },
-    { id: 2, name: 'Neha Sharma', test: 'Tympanometry', time: '10:15 AM', result: 'Normal' },
-  ])
+  // const [completedTests] = useState([
+  //   { id: 1, name: 'Amit Patel', test: 'Pure Tone Audiometry', time: '10:30 AM', result: 'Mild Hearing Loss' },
+  //   { id: 2, name: 'Neha Sharma', test: 'Tympanometry', time: '10:15 AM', result: 'Normal' },
+  // ])
 
-  const [showCaseHistory, setShowCaseHistory] = useState(false)
-  const [selectedPatient, setSelectedPatient] = useState(null)
+  // const [showCaseHistory, setShowCaseHistory] = useState(false)
+  // const [selectedPatient, setSelectedPatient] = useState(null)
 
-  const handleStartTest = (patientName) => {
-    setSelectedPatient(patientName)
-    setShowCaseHistory(true)
-  }
+  // const handleStartTest = (patientName) => {
+  //   setSelectedPatient(patientName)
+  //   setShowCaseHistory(true)
+  // }
 
-  const handleCaseHistorySubmit = (data) => {
-    console.log('Case history submitted:', data)
-    setShowCaseHistory(false)
-    if (selectedPatient) {
-      setQueue(queue.filter(p => p.name !== selectedPatient))
-    }
-    setSelectedPatient(null)
-  }
+  // const handleCaseHistorySubmit = (data) => {
+  //   console.log('Case history submitted:', data)
+  //   setShowCaseHistory(false)
+  //   if (selectedPatient) {
+  //     setQueue(queue.filter(p => p.name !== selectedPatient))
+  //   }
+  //   setSelectedPatient(null)
+  // }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -102,12 +103,12 @@ export default function AudiologistDashboard() {
             {completedTests.map((item) => (
               <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg">
                 <div>
-                  <h4 className="font-semibold text-sm sm:text-base">{item.name}</h4>
-                  <p className="text-xs sm:text-sm text-slate-600">{item.test}</p>
+                  <h4 className="font-semibold text-sm sm:text-base">{item.patient_name}</h4>
+                  <p className="text-xs sm:text-sm text-slate-600">{item.visit_type}</p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <p className="text-xs sm:text-sm font-medium">{item.result}</p>
-                  <p className="text-xs text-slate-600">{item.time}</p>
+                  <p className="text-xs sm:text-sm font-medium">{item.present_complaint}</p>
+                  {/* <p className="text-xs text-slate-600">{item.time}</p> */}
                 </div>
               </div>
             ))}

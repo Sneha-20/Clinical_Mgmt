@@ -8,8 +8,11 @@ import { Search } from "lucide-react";
 import useBilling from "@/lib/hooks/useBilling";
 import BillingTable from "./Billingtable";
 import BillingDetailDialog from "./BillingDetailDialogue";
+import { useState } from "react";
 
 export default function BillingList() {
+
+  const [dueBillingModal,setDueBillingModal]= useState(false)
   const {
     // searchQuery,
     // setSearchQuery,
@@ -127,15 +130,16 @@ export default function BillingList() {
           />
         </CardContent>
       </Card>
-      {selectedBilling && (
+      {/* {selectedBilling && ( */}
         <BillingDetailDialog
           onClose={() => setSelectedBilling(null)}
           billingDetail={billingDetail}
+          openModal={selectedBilling}
           // onOpenChange={setDialogOpen}
           // billing={selectedBilling}
           // onPayNow={handlePayNow}
         />
-      )}
+      {/* )} */}
     </div>
   );
 }

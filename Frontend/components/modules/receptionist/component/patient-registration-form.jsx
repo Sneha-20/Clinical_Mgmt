@@ -11,6 +11,7 @@ import CommonCheckbox from "@/components/ui/CommonCheckbox";
 import CommonRadio from "@/components/ui/CommonRadio";
 import { patientSchema } from "@/lib/utils/schema";
 import { showToast } from "@/components/ui/toast";
+import { format } from "date-fns";
 
 import {
   genderOptions,
@@ -29,10 +30,7 @@ export default function PatientRegistrationForm({
     value: d.id,
   }));
 
-  const doctorOption = [
-    { label: "Receptionist", value: 0 },
-    ...doctors,
-  ];
+  const doctorOption = [{ label: "Receptionist", value: 0 }, ...doctors];
 
   const referalTypeOptions = [
     { label: "Self", value: "Self" },
@@ -146,11 +144,9 @@ export default function PatientRegistrationForm({
                     formik.values.dob ? new Date(formik.values.dob) : null
                   }
                   onChange={(date) =>
-                    formik.setFieldValue(
-                      "dob",
-                      date?.toISOString().split("T")[0]
-                    )
+                    formik.setFieldValue("dob", format(date, "yyyy-MM-dd"))
                   }
+                  maxDate={new Date()} 
                   error={formik.touched.dob && formik.errors.dob}
                 />
 
@@ -224,9 +220,10 @@ export default function PatientRegistrationForm({
                   onChange={(date) =>
                     formik.setFieldValue(
                       "appointment_date",
-                      date?.toISOString().split("T")[0]
+                      format(date, "yyyy-MM-dd")
                     )
                   }
+                  minDate={new Date()}
                   error={
                     formik.touched.appointment_date &&
                     formik.errors.appointment_date

@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
 
-export default function Modal({ onClose, header, onSubmit, children }) {
+export default function Modal({ onClose, header, onSubmit, children,isModalOpen}) {
+  if (!isModalOpen) return null;
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <Card className="w-full max-w-2xl max-h-[95vh] overflow-y-auto">
@@ -16,13 +17,19 @@ export default function Modal({ onClose, header, onSubmit, children }) {
         </CardHeader>
 
         <CardContent>{children}</CardContent>
-        {/* <div className="p-6 pt-0">
+        <div className="p-6 pt-0">
           {onClose && (
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
           )}
-        </div> */}
+
+           {onSubmit && (
+            <Button  onClick={onSubmit} className="ml-2">
+              Submit
+            </Button>
+           )} 
+        </div>
       </Card>
     </div>
   );
