@@ -19,6 +19,7 @@ import re
 from datetime import timedelta
 from accounts.models import User
 from accounts.serializers import RoleSimpleSerializer
+from rest_framework import status
 
 
 class PatientAllVisitSerializer(serializers.ModelSerializer):
@@ -660,12 +661,20 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                         setattr(case_history, key, validated_data[key])
                 case_history.save(update_fields=fields_to_update)
 
-            # 2. Create VisitTestPerformed only if something meaningful is set
+            # 2. Create or update VisitTestPerformed only if something meaningful is set
             # Check if any boolean test field is True, or if other_test is provided
             boolean_test_fields = ['pta', 'immittance', 'oae', 'bera_assr', 'srt', 'sds', 'ucl', 'free_field']
             has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields) or bool(test_performed_data.get('other_test'))
             test_performed_instance = None
             if has_any_test:
+                # Check if VisitTestPerformed already exists for this visit
+                if VisitTestPerformed.objects.filter(visit=visit).exists():
+
+                    raise serializers.ValidationError({
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "error": "Test record already exists for this visit"
+                    })
+                
                 test_performed_instance = VisitTestPerformed.objects.create(
                     visit=visit,  # Use the extracted visit, not case_history.visit
                     **test_performed_data
