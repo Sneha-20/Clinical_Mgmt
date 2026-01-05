@@ -277,16 +277,16 @@ class DashboardStatsView(APIView):
                 appointment_date=today, clinic=clinic
             ).count()
             pending_tests = PatientVisit.objects.filter(
-                status='Test pending', clinic=clinic
+                status='Pending for Service', clinic=clinic
             ).count()
             followup_visits = PatientVisit.objects.filter(
-                visit_type='Follow-up', clinic=clinic
+                status='Follow up', clinic=clinic
             ).count()
 
             data = {
                 "total_patients": total_patients,
                 "todays_visits": todays_visits,
-                "pending_visits": pending_tests,
+                "pending_services": pending_tests,
                 "followup_visits": followup_visits
             }
 

@@ -733,7 +733,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
             # 4. Update PatientVisit status to 'test_performed'
             if test_performed_instance:
-                visit.status = 'test_performed'
+                visit.status = 'Test Performed'
                 visit.save(update_fields=['status'])
 
         return case_history
