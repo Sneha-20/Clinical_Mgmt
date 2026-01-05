@@ -8,7 +8,7 @@ const buttonVariants = {
   outline: 'border-2 border-secondary text-secondary hover:bg-secondary hover:text-white',
   secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
   ghost: 'hover:bg-gray-100 text-gray-700',
-  link: 'text-teal-600 underline hover:text-teal-700'
+  link: 'text-secondary-foreground underline hover:no-underline'
 }
 
 const sizes = {

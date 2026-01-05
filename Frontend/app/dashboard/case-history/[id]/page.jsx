@@ -3,7 +3,6 @@ import React from 'react'
 
 export default function page({params}) {
   const { id } = params;
-  console.log("iddd",id)
   
   return (
     <div>

@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X, Upload, MessageSquare, Stethoscope, User } from "lucide-react";
+import {
+  X,
+  Upload,
+  MessageSquare,
+  Stethoscope,
+  User,
+  FileText,
+} from "lucide-react";
 import useCaseHistory from "@/lib/hooks/useCaseHistory";
 import { useFormik } from "formik";
 import { CaseHistorySchema } from "@/lib/utils/schema";
@@ -24,6 +31,8 @@ export default function CaseHistoryForm({ patientId }) {
     file,
     testType,
     isModalOpen,
+    testFileList,
+    handleDeleteReport,
     setIsModalOpen,
     setTestType,
     setFile,
@@ -32,11 +41,10 @@ export default function CaseHistoryForm({ patientId }) {
     registerCasehistory,
     handleFileSubmit,
   } = useCaseHistory();
-  // const parseTests = (testString = "") =>
-  // testString
-  //   .split(",")
-  //   .map((t) => t.trim())
-  //   .filter(Boolean);
+
+  const[deleteFileModal,setDeleteFileModal]=useState(false)
+  const[selectedFileId,setSelectedFileId]=useState(null)
+  console.log("selectedFileId",selectedFileId)
 
   useEffect(() => {
     if (patientId) {
@@ -295,14 +303,47 @@ export default function CaseHistoryForm({ patientId }) {
                 />
               </div> */}
             </div>
-
-            <button
-              type="button"
-              className="text-blue-700 underline hover:no-underline pb-[2px]"
-              onClick={() => setIsModalOpen(true)}
-            >
-              Upload Test Report
-            </button>
+            <div>
+              {testFileList.length > 0 && (
+                <div className="flex flex-wrap gap-4 mb-3">
+                  {testFileList.map((fileName, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 bg-sidebar px-3 py-2 rounded-lg border border-border relative"
+                    >
+                      <FileText className="h-4 w-4 text-primary" />
+                      <a
+                        href={fileName.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-secondary-foreground"
+                      >
+                        {fileName.file_type.toUpperCase()}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => {
+                  setSelectedFileId(fileName.id);
+                  setDeleteFileModal(true);
+                }}
+                        className="ml-1 p-0.5 rounded-full hover:bg-destructive/10 transition-colors absolute -right-2 -top-2"
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="link"
+                // className="underline hover:no-underline pb-[2px] bg-white text-secondary-foreground"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <Upload className="h-4 w-4 mr-1" />
+                Upload Test Report
+              </Button>
+            </div>
 
             {/* Submit */}
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end pt-4 border-t border-border">
@@ -335,6 +376,24 @@ export default function CaseHistoryForm({ patientId }) {
             label="Select Test Report"
             onFileChange={(file) => setFile(file)}
           />
+        </>
+      </Modal>
+
+       <Modal
+         header="Delete test report"
+  onClose={() => {
+    setDeleteFileModal(false);
+    setSelectedFileId(null);
+  }}
+  isModalOpen={deleteFileModal}
+  onSubmit={() => {
+    handleDeleteReport(selectedFileId);
+    setDeleteFileModal(false);
+    setSelectedFileId(null);
+  }}
+      >
+        <>
+         Do you want to delete this report
         </>
       </Modal>
     </div>

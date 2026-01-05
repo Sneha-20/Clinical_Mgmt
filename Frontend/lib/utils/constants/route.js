@@ -17,7 +17,9 @@ export const routes = {
    completedTestList:"clinical/completed-tests/",
    patientCaseHistory:"clinical/patient/visit/",
    registerCaseHistory: "clinical/audiologist/test/perform/",
-   uploadFile: "clinical/test-uploads/"
+   uploadFile: "clinical/test-uploads/",
+   getTestFile: "clinical/test-results/",
+   deleteTestFile: "clinical/test-upload/"
   },
 
    billing:{

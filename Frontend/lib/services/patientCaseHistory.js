@@ -35,6 +35,26 @@ export const addTestFile = async (file) => {
      const caseHistoryResponse = response?.data?.data || response?.data || response;
      return caseHistoryResponse
    }catch(err){
-    throw err?.response?.data || "registration failed"
+    throw err?.response?.data || "failed to add test report"
+   }
+}
+
+export const getAllTestFile = async (visitId) => {
+   try{
+     const response = await apiClient.get(`${routes.audiologist.getTestFile}${visitId}/`);
+     const testFileList = response?.data?.data || response?.data || response;
+     return testFileList;
+   }catch(err){
+    throw err?.response?.data || "Failed to fetch test report list"
+   }
+}
+
+export const deleteTestReport = async (fileId) => {
+   try{
+     const response = await apiClient.delete(`${routes.audiologist.deleteTestFile}${fileId}/delete/`);
+     const deleteResponse = response?.data?.data || response?.data || response;
+     return deleteResponse;
+   }catch(err){
+    throw err?.response?.data || "Failed to fetch test report list"
    }
 }
