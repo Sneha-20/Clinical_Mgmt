@@ -230,7 +230,8 @@ CELERY_TIMEZONE = 'Asia/Kolkata'
 CELERY_BEAT_SCHEDULE = {
     'update-followup-status': {
         'task': 'clinical.tasks.update_followup_status',
-        'schedule': crontab(hour=0, minute=5),  # Run daily after 5 minutes
+        # 'schedule': crontab(hour=0, minute=5),  # Run daily after 5 minutes
+        'schedule': crontab(minute='*/5'),  # Runs every 5 minutes
     },
 }
 
