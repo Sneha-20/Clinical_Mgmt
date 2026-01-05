@@ -136,7 +136,7 @@ export default function ReceptionistDashboard() {
                 page={pagination.currentPage}
                 totalPages={pagination.totalPages}
                 onNext={goToNextPage}
-                onPrevious={goToPreviousPage}
+                onPrev={goToPreviousPage}
               />
             </>
           }
@@ -152,7 +152,7 @@ export default function ReceptionistDashboard() {
                 page={pagination.currentPage}
                 totalPages={pagination.totalPages}
                 onNext={goToNextPage}
-                onPrevious={goToPreviousPage}
+                onPrev={goToPreviousPage}
               />
             </>
           }
