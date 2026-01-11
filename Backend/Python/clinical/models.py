@@ -102,6 +102,16 @@ class Trial(models.Model):
     assigned_patient = models.ForeignKey(Patient, on_delete=models.SET_NULL, null=True, blank=True)
     return_notes = models.TextField(blank=True, null=True)
     device_condition_on_return = models.CharField(max_length=50, blank=True, null=True)  # Condition (Good / Bad)
+    
+    # Trial completion decision fields
+    TRIAL_DECISION_CHOICES = [
+        ('BOOK', 'Book Device'),
+        ('NOT_BOOKED', 'Need Time - Not Booked'),
+    ]
+    trial_decision = models.CharField(max_length=20, choices=TRIAL_DECISION_CHOICES, blank=True, null=True, help_text="Patient decision after trial completion")
+    trial_completed_at = models.DateTimeField(null=True, blank=True, help_text="When trial was completed and decision made")
+    booked_device_inventory = models.ForeignKey('InventoryItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='booked_trials', help_text="Device booked by patient after trial")
+    booked_device_serial = models.ForeignKey('InventorySerial', on_delete=models.SET_NULL, null=True, blank=True, related_name='booked_trials', help_text="Serial number of booked device")
 
 class TestType(models.Model):
     """
@@ -129,6 +139,14 @@ class Bill(models.Model):
     Main bill model linked to a PatientVisit.
     Aggregates all costs from tests and trials.
     """
+
+    PAYMENT_METHODS = [
+        ('CASH', 'Cash'),
+        ('UPI', 'UPI / QR Scan'),
+        ('CARD', 'Card'),
+        ('PENDING', 'Not Paid Yet'),
+    ]
+
     visit = models.OneToOneField(PatientVisit, on_delete=models.CASCADE, related_name='bill', help_text="One bill per visit")
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
     bill_number = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text="Auto-generated bill number")
@@ -144,6 +162,9 @@ class Bill(models.Model):
         ],
         default='Pending'
     )
+    payment_method = models.CharField(max_length=10, choices=PAYMENT_METHODS, default='PENDING')
+    transaction_id = models.CharField(max_length=100, blank=True, null=True, help_text="Reference for UPI")
+    paid_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -199,6 +220,7 @@ class BillItem(models.Model):
     ITEM_TYPE_CHOICES = [
         ('Test', 'Test'),
         ('Trial', 'Trial'),
+        ('Purchase', 'Purchase'),
         ('Service', 'Service'),
     ]
 

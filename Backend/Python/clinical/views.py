@@ -19,7 +19,8 @@ from .serializers import (
     BillDetailSerializer,
     BillListSerializer,
     PatientVisitWithCaseHistorySerializer,
-    TrialDeviceReturnSerializer
+    TrialDeviceReturnSerializer,
+    TrialCompletionSerializer
 )
 from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial
 from accounts.models import User
@@ -29,6 +30,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission, AuditorPermission, SppechTherapistPermission
 from django.db import transaction
 from django.utils import timezone
+from django.shortcuts import redirect, get_object_or_404
 
 
 
@@ -611,7 +613,6 @@ class TrialDeviceReturnView(APIView):
             )
 
 
-
 # List of test result (TestUpload) for a visit ID 
 class TestResultListView(APIView):
     """List all test results (TestUpload) for a specific visit"""
@@ -723,3 +724,62 @@ class TestUploadDeleteView(APIView):
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error deleting test upload file: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+class MarkAsPaidView(APIView):
+    """
+    Mark a bill as paid with payment details.
+    
+    POST /api/clinical/mark-bill-paid/<bill_id>/
+    
+    Payload:
+    {
+        "payment_method": "UPI",
+        "transaction_id": "TXN123456"
+    }
+    """
+    permission_classes = [IsAuthenticated, ReceptionistPermission]
+    
+    def post(self, request, bill_id):
+        # Get bill for the current clinic
+        clinic = getattr(request.user, 'clinic', None)
+        bill = get_object_or_404(Bill, id=bill_id, clinic=clinic)
+        
+        # Validate bill is not already paid
+        if bill.payment_status == 'Paid':
+            return Response({
+                'status': status.HTTP_400_BAD_REQUEST,
+                'message': 'Bill is already marked as paid'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        payment_method = request.data.get('payment_method')
+        transaction_id = request.data.get('transaction_id', '')
+        payment_status = request.data.get('payment_status', 'Paid')
+        notes = request.data.get('notes', '')
+
+        # Validate payment method
+        valid_methods = [choice[0] for choice in Bill.PAYMENT_METHODS]
+        if payment_method not in valid_methods:
+            return Response({
+                'status': status.HTTP_400_BAD_REQUEST,
+                'error': f'Invalid payment method. Valid methods: {", ".join(valid_methods)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate required fields for UPI payments
+        if payment_method == 'UPI' and not transaction_id:
+            return Response({
+                'status': status.HTTP_400_BAD_REQUEST,
+                'error': 'Transaction ID is required for UPI payments'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Update bill payment details
+        bill.payment_method = payment_method
+        bill.transaction_id = transaction_id
+        bill.payment_status = payment_status
+        bill.paid_at = timezone.now()
+        bill.notes = notes
+        bill.save()
+        
+        return Response({
+            'status': status.HTTP_200_OK,
+            'message': 'Bill marked as paid successfully'
+        }, status=status.HTTP_200_OK)

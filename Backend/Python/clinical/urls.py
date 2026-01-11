@@ -4,7 +4,7 @@ from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
                     PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
-                    TestResultListView,TestUploadDeleteView)
+                    TestResultListView,TestUploadDeleteView,MarkAsPaidView)
 
 from .api_inventory_item_update import InventoryItemUpdateView
 from .api_inventory_dropdowns import InventoryDropdownsView
@@ -18,6 +18,7 @@ from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySe
 
 from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
+from .trial_completion_view import TrialCompletionView
 
 
 urlpatterns = [
@@ -61,6 +62,7 @@ urlpatterns = [
    # Trial endpoints
    path('trials/create/', TrialCreateView.as_view(), name='trial_create'),
    path('trials/', TrialListView.as_view(), name='trial_list'),
+   path('trials/<int:trial_id>/complete/', TrialCompletionView.as_view(), name='trial_complete'),
 
    # Trial devices from inventory
    path('inventory/trial-devices/', TrialDeviceListView.as_view(), name='trial_device_list'),
@@ -85,5 +87,7 @@ urlpatterns = [
 
    path('test-results/<int:visit_id>/', TestResultListView.as_view(), name='test-result-list'),
    path('test-upload/<int:file_id>/delete/', TestUploadDeleteView.as_view(), name='test-upload-delete'),
+
+   path('mark-bill-paid/<int:bill_id>/', MarkAsPaidView.as_view(), name='mark-bill-paid'),
 ]
 

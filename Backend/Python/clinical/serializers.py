@@ -156,6 +156,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         current_user = request.user if request else None
         # For this example, we assume the logged-in user belongs to a clinic.
         current_clinic = getattr(request.user, 'clinic', None)
+        print(current_clinic)
 
         # C. Atomic Transaction
         with transaction.atomic():
@@ -765,6 +766,19 @@ class BillListSerializer(serializers.ModelSerializer):
             'visit_id',
             'visit_date',
         ]
+    
+    def to_representation(self, instance):
+        """Override to conditionally include payment fields"""
+        data = super().to_representation(instance)
+        
+        # Only add payment fields if bill is paid or partially paid
+        if instance.payment_status in ['Paid', 'Partially Paid']:
+            data['payment_method'] = instance.payment_method
+            data['transaction_id'] = instance.transaction_id
+            data['paid_at'] = instance.paid_at
+        
+        return data
+
 
 
 class BillItemSerializer(serializers.ModelSerializer):
@@ -1306,3 +1320,90 @@ class TrialDeviceReturnSerializer(serializers.Serializer):
     serial_number = serializers.CharField(required=True)
     return_notes = serializers.CharField(required=False, allow_blank=True)
     condition = serializers.CharField(required=False, allow_blank=True)
+
+
+# Trial Completion Serializer
+class TrialCompletionSerializer(serializers.Serializer):
+    """
+    Serializer for completing a trial and handling patient's device booking decision.
+    
+    Expected payload:
+    {
+        "trial_decision": "BOOK" | "NOT_BOOKED",
+        "booked_device_inventory": 123,  // Required only if trial_decision is "BOOK"
+        "booked_device_serial": "SN12345",  // Required only if device is serialized
+        "completion_notes": "Patient satisfied with trial experience"
+    }
+    """
+    trial_decision = serializers.ChoiceField(
+        choices=[('BOOK', 'Book Device'), ('NOT_BOOKED', 'Need Time - Not Booked')],
+        required=True,
+        help_text="Patient decision after trial completion"
+    )
+    
+    booked_device_inventory = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="Inventory item ID of device to book (required only if decision is BOOK)"
+    )
+    
+    booked_device_serial = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        help_text="Serial number of device to book (required only for serialized items)"
+    )
+    
+    completion_notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Notes about trial completion and patient decision"
+    )
+    
+    def validate(self, data):
+        trial_decision = data.get('trial_decision')
+        
+        if trial_decision == 'BOOK':
+            if not data.get('booked_device_inventory'):
+                raise serializers.ValidationError({
+                    'booked_device_inventory': 'Device inventory is required when booking a device'
+                })
+            
+            # Validate that the inventory item exists
+            try:
+                from .models import InventoryItem
+                inventory_item = InventoryItem.objects.get(id=data['booked_device_inventory'])
+                
+                # Check if it's a serialized item and serial number is provided
+                if inventory_item.stock_type == 'Serialized' and not data.get('booked_device_serial'):
+                    raise serializers.ValidationError({
+                        'booked_device_serial': 'Serial number is required for serialized devices'
+                    })
+                
+                # For serialized items, validate the serial number exists and is in stock
+                if inventory_item.stock_type == 'Serialized' and data.get('booked_device_serial'):
+                    try:
+                        from .models import InventorySerial
+                        serial = InventorySerial.objects.get(
+                            serial_number=data['booked_device_serial'],
+                            inventory_item=inventory_item,
+                            status='In Stock'
+                        )
+                        data['validated_serial'] = serial
+                    except InventorySerial.DoesNotExist:
+                        raise serializers.ValidationError({
+                            'booked_device_serial': 'Serial number not found or not available in stock'
+                        })
+                
+                # Check stock availability for non-serialized items
+                if inventory_item.stock_type == 'Non-Serialized' and inventory_item.quantity_in_stock <= 0:
+                    raise serializers.ValidationError({
+                        'booked_device_inventory': 'Device is out of stock'
+                    })
+                    
+            except InventoryItem.DoesNotExist:
+                raise serializers.ValidationError({
+                    'booked_device_inventory': 'Invalid inventory item'
+                })
+        
+        return data
