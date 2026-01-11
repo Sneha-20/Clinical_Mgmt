@@ -156,7 +156,6 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         current_user = request.user if request else None
         # For this example, we assume the logged-in user belongs to a clinic.
         current_clinic = getattr(request.user, 'clinic', None)
-        print(current_clinic)
 
         # C. Atomic Transaction
         with transaction.atomic():
