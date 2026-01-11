@@ -6,10 +6,9 @@ from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailVi
                     PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
                     TestResultListView,TestUploadDeleteView)
 
-from .api_inventory_serial import InventorySerialBulkUploadView,InventorySerialManualCreateView
 from .api_inventory_item_update import InventoryItemUpdateView
 from .api_inventory_dropdowns import InventoryDropdownsView
-from .api_inventory_item_list import InventoryItemListView
+from .api_inventory_item_list import InventoryItemListView, InventorySerialListView
 from .api_inventory_item_create import InventoryItemCreateView
 from .api_service_visit_list import ServiceVisitListView
 from .api_service_queue import ServiceQueueView
@@ -23,6 +22,9 @@ from .completed_tests_views import CompletedTestsListView, CompletedTestDetailVi
 
 urlpatterns = [
    path('inventory/item/create/', InventoryItemCreateView.as_view(), name='inventory_item_create'),
+   path('inventory/items/', InventoryItemListView.as_view(), name='inventory_item_list'),
+   path('inventory/serial/list/', InventorySerialListView.as_view(), name='inventory_serial_list'),
+
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
    path('patient/<int:id>/', PatientDetailView.as_view(), name='patient_detail'), # Retrieve patient details
    
@@ -46,10 +48,6 @@ urlpatterns = [
    path('bill/pending/', BillPendingListView.as_view(), name='bill_list'), # List bills with patient info and status
    path('bill/visit/<int:visit_id>/', BillDetailView.as_view(), name='bill_detail'), # Get bill details by visit ID
 
-   # # InventorySerial bulk upload endpoint
-   # path('inventory-serial/bulk-upload/', InventorySerialBulkUploadView.as_view(), name='inventory_serial_bulk_upload'),
-   # path('inventory-serial/manual-create/', InventorySerialManualCreateView.as_view(), name='inventory_serial_manual_create'),
-
    #  # InventoryItem update endpoint
    path('inventory-item/<int:pk>/update/', InventoryItemUpdateView.as_view(), name='inventory_item_update'),
 
@@ -57,7 +55,6 @@ urlpatterns = [
    path('inventory/dropdowns/', InventoryDropdownsView.as_view(), name='inventory_dropdowns'),
 
    # Inventory item list endpoint
-   path('inventory/items/', InventoryItemListView.as_view(), name='inventory_item_list'),
    path('service-visits/', ServiceVisitListView.as_view(), name='service_visit_list'),
    path('service-queue/', ServiceQueueView.as_view(), name='service_queue'),
 

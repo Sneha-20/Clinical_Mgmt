@@ -879,69 +879,11 @@ class BillDetailSerializer(serializers.ModelSerializer):
 
 
 
-class InventorySerialSerializer(serializers.ModelSerializer):
-    '''
-    # It should acceept multiple serial numbers for same inventory item in one go.
-#     Instead of inventory_item id, it should accept product_name, brand, model_type, category to identify the inventory item.
-#       Example
-#     {
-#         "product_name": "Glucometer X200",
-#         "brand": "HealthTech",
-#         "model_type": "X200",
-#         "category": "Diagnostic",
-#         "serial_numbers": ["SN001", "SN002", "SN003"]
-#     } '''
-
-    product_name = serializers.CharField(write_only=True, help_text="Product Name of the Inventory Item")
-    brand = serializers.CharField(write_only=True, help_text="Brand of the Inventory Item")
-    model_type = serializers.CharField(write_only=True, help_text="Model Type of the Inventory Item")
-    category = serializers.CharField(write_only=True, help_text="Category of the Inventory Item")
-    serial_numbers = serializers.ListField(
-        child=serializers.CharField(),
-        write_only=True,
-        help_text="List of serial numbers to create"
-    )
-
+class InventorySerialDetailSerializer(serializers.ModelSerializer):
+    """Serializer for detailed inventory serial information."""
     class Meta:
         model = InventorySerial
-        fields = [
-            'product_name',
-            'brand',    
-            'model_type',
-            'category',
-            'serial_numbers',
-        ]
-
-    def create(self, validated_data):
-        product_name = validated_data.get('product_name')
-        brand = validated_data.get('brand')
-        model_type = validated_data.get('model_type')
-        category = validated_data.get('category')
-        serial_numbers = validated_data.get('serial_numbers', [])
-
-        created_serials = []
-
-        with transaction.atomic():
-            inventory_item, created = InventoryItem.objects.get(
-                product_name=product_name,
-                brand=brand,
-                model_type=model_type,
-                category=category,
-                defaults={'quantity_in_stock': 0}
-
-            )
-            for sn in serial_numbers:
-                serial_instance = InventorySerial.objects.create(
-                    inventory_item=inventory_item,
-                    serial_number=sn,
-                    status='IN_STOCK'  # Default status
-                )
-                created_serials.append(serial_instance)
-
-            # Update the quantity_in_stock on InventoryItem
-            inventory_item.update_quantity_from_serials()
-
-        return created_serials
+        fields = ['id', 'serial_number', 'status', 'created_at']
     
 
 class InventoryUpdateItemSerializer(serializers.ModelSerializer):
@@ -1164,7 +1106,7 @@ class TrialCreateSerializer(serializers.ModelSerializer):
     ```json
     {
         "visit": 1,
-        "device_inventory_id": 5,
+        # "device_inventory_id": 5,
         "serial_number": "SN-TRIAL-001",
         "receiver_size": "M",
         "ear_fitted": "Right",
@@ -1214,7 +1156,7 @@ class TrialCreateSerializer(serializers.ModelSerializer):
             try:
                 serial = InventorySerial.objects.get(serial_number=device_serial_number)
                 if serial.status == 'In Stock':
-                    serial.status = 'Trial'
+                    serial.status = 'Use in Trial'
                     serial.save()
             except InventorySerial.DoesNotExist:
                 raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
@@ -1222,6 +1164,8 @@ class TrialCreateSerializer(serializers.ModelSerializer):
         # Update the status of Patient visit ( Trial Active )
         visit.status = 'Trial Active'
         visit.save()
+
+        validated_data['device_inventory_id'] = serial.inventory_item
         
         with transaction.atomic():     
             trial = super().create(validated_data)

@@ -4,6 +4,8 @@ from rest_framework.filters import SearchFilter
 from .models import Trial
 from .serializers import TrialCreateSerializer, TrialListSerializer
 from clinical_be.utils.pagination import StandardResultsSetPagination
+from rest_framework.response import Response
+from rest_framework import status
 
 class TrialCreateView(generics.CreateAPIView):
     """API endpoint for creating a new trial record."""
@@ -13,7 +15,7 @@ class TrialCreateView(generics.CreateAPIView):
 
 
     def create(self, validated_data):
-        return super().create(validated_data)
+        super().create(validated_data)
         # add status and message as response 
         return Response({"status":status.HTTP_201_CREATED,"message":"Trial created successfully."})
 

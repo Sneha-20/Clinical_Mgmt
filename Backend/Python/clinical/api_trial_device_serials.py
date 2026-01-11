@@ -13,10 +13,18 @@ class TrialDeviceSerialListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get_queryset(self):
-        """Get serial numbers for trial devices with available count > 0."""
+        """Get serial numbers for trial devices with available count > 0 and not used in trials."""
+        # Get serial numbers that are already used in trials
+        used_serial_numbers = Trial.objects.filter(
+            serial_number__isnull=False
+        ).values_list('serial_number', flat=True)
+        
+        # Filter available devices excluding those used in trials
         return InventorySerial.objects.filter(
             inventory_item__use_in_trial=True,
             status='In Stock'
+        ).exclude(
+            serial_number__in=used_serial_numbers
         ).values('serial_number')
     
     def list(self, request, *args, **kwargs):
@@ -99,7 +107,7 @@ class TrialDeviceInUseListView(generics.ListAPIView):
         """Get serial numbers for trial devices currently in trial status."""
         return InventorySerial.objects.filter(
             inventory_item__use_in_trial=True,
-            status='Trial'
+            status='Use in Trial'
         ).select_related('inventory_item').order_by('-created_at')
     
     def list(self, request, *args, **kwargs):

@@ -564,7 +564,7 @@ class TrialDeviceReturnView(APIView):
             # Get the serial number record
             serial = InventorySerial.objects.get(
                 serial_number=serial_number,
-                status='In Trial Use'  # Only allow returning devices that are in trial
+                status='Use in Trial'  # Only allow returning devices that are in trial
             )
             
             # # Get the active trial for this serial
