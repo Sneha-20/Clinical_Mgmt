@@ -107,12 +107,9 @@ class TrialCompletionView(APIView):
 
                     if next_followup:
                         # Update visit status to indicate patient needs time
-                        trial.visit.status = 'Follow-up Required'
+                        trial.visit.status = 'Book Follow-up Required'
                         trial.followup_date = timezone.now() + timedelta(days=next_followup)
                         trial.save()
-                    else:
-                        # Update visit status to indicate patient needs time
-                        trial.visit.status = 'Follow-up Required'
                 
                 trial.visit.save()
                 
