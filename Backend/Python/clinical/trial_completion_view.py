@@ -6,6 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 from .models import Trial, InventoryItem, InventorySerial, PatientPurchase, Bill, BillItem
 from .serializers import TrialCompletionSerializer
+from datetime import timedelta
 
 
 class TrialCompletionView(APIView):
@@ -28,6 +29,7 @@ class TrialCompletionView(APIView):
             
             trial_decision = serializer.validated_data['trial_decision']
             completion_notes = serializer.validated_data.get('completion_notes', '')
+            next_followup = serializer.validated_data.get('next_followup', 1)
             
             with transaction.atomic():
                 # Update trial completion details
@@ -102,8 +104,15 @@ class TrialCompletionView(APIView):
                     trial.visit.status = 'Device Booked'
                     
                 else:  # NOT_BOOKED
-                    # Update visit status to indicate patient needs time
-                    trial.visit.status = 'Follow-up Required'
+
+                    if next_followup:
+                        # Update visit status to indicate patient needs time
+                        trial.visit.status = 'Follow-up Required'
+                        trial.followup_date = timezone.now() + timedelta(days=next_followup)
+                        trial.save()
+                    else:
+                        # Update visit status to indicate patient needs time
+                        trial.visit.status = 'Follow-up Required'
                 
                 trial.visit.save()
                 
