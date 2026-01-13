@@ -22,7 +22,7 @@ from .serializers import (
     TrialDeviceReturnSerializer,
     TrialCompletionSerializer
 )
-from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial
+from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -783,3 +783,54 @@ class MarkAsPaidView(APIView):
             'status': status.HTTP_200_OK,
             'message': 'Bill marked as paid successfully'
         }, status=status.HTTP_200_OK)
+
+
+
+# API For Inventory item whose category is Hearing aids and use_in_trial is False 
+class DeviceBookingDropdownView(APIView):
+    """
+    API to get dropdown values for device booking.
+    Returns inventory items (Hearing aids, use_in_trial=False) and their available serials.
+    """
+    
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get inventory items for booking (Hearing aids, not for trial)
+            inventory_items = InventoryItem.objects.filter(
+                category='Hearing Aid',
+                use_in_trial=False
+            ).order_by('product_name')
+            
+            # Prepare dropdown data
+            dropdown_data = []
+            for item in inventory_items:
+                item_data = {
+                    'id': item.id,
+                    'product_name': item.product_name,
+                    'brand': item.brand if item.brand else '',
+                    'model_type': item.model_type,
+                    'stock_type': item.stock_type,
+                    'quantity_in_stock': item.quantity_in_stock,
+                    'unit_price': float(item.unit_price) if item.unit_price else 0,
+                }
+
+                dropdown_data.append(item_data)
+            
+            return Response({
+                'status': status.HTTP_200_OK,
+                'data': dropdown_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error fetching device booking options: {str(e)}',
+                'data': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+
+

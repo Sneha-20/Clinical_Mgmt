@@ -170,7 +170,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             # 2. Create one PatientVisit per item in visits_data
             for visit_data in visits_data:
                 visit_type = visit_data.get('visit_type')
-                if visit_type in ['TGA / Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+                if visit_type in ['Troubleshooting General Adjustment','TGA']:
                     status_value = 'Pending for Service'
                 else:
                     status_value = 'Test pending'
@@ -1231,6 +1231,7 @@ class TrialListSerializer(serializers.ModelSerializer):
     device_model = serializers.CharField(source='device_inventory_id.model_type', read_only=True)
     assigned_patient = serializers.CharField(source='assigned_patient.name', read_only=True)
     assigned_patient_phone = serializers.CharField(source='assigned_patient.phone_primary', read_only=True)
+    status = serializers.CharField(source='visit.status', read_only=True)
 
     class Meta:
         model = Trial
@@ -1248,6 +1249,7 @@ class TrialListSerializer(serializers.ModelSerializer):
             'assigned_patient',
             'assigned_patient_phone',
             'patient_response',
+            'status'
         ]
 
 

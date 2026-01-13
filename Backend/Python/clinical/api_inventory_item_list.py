@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import InventoryItem, InventorySerial
 from .serializers import InventoryItemSerializer, InventorySerialDetailSerializer
-from clinical_be.utils.permission import IsClinicAdmin
+from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission
 
 class InventoryItemListView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClinicAdmin]
@@ -16,7 +16,7 @@ class InventoryItemListView(APIView):
 
 # Get the InventorySerial info for a product ( inventoryItem)
 class InventorySerialListView(APIView):
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | AuditorPermission ]
 
     def get(self, request, format=None):
         inventory_item = request.query_params.get('inventory_item')

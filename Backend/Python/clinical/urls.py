@@ -4,14 +4,12 @@ from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
                     PatientVisitDetailView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
-                    TestResultListView,TestUploadDeleteView,MarkAsPaidView)
+                    TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView)
 
 from .api_inventory_item_update import InventoryItemUpdateView
 from .api_inventory_dropdowns import InventoryDropdownsView
 from .api_inventory_item_list import InventoryItemListView, InventorySerialListView
 from .api_inventory_item_create import InventoryItemCreateView
-from .api_service_visit_list import ServiceVisitListView
-from .api_service_queue import ServiceQueueView
 from .api_trials import TrialCreateView, TrialListView
 from .api_trial_devices import TrialDeviceListView
 from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySerialView, TrialDeviceInUseListView
@@ -19,6 +17,8 @@ from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySe
 from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
 from .trial_completion_view import TrialCompletionView
+from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitCreateView,ServiceTypeListView
+
 
 
 urlpatterns = [
@@ -55,10 +55,6 @@ urlpatterns = [
    # Inventory dropdowns endpoint
    path('inventory/dropdowns/', InventoryDropdownsView.as_view(), name='inventory_dropdowns'),
 
-   # Inventory item list endpoint
-   path('service-visits/', ServiceVisitListView.as_view(), name='service_visit_list'),
-   path('service-queue/', ServiceQueueView.as_view(), name='service_queue'),
-
    # Trial endpoints
    path('trials/create/', TrialCreateView.as_view(), name='trial_create'),
    path('trials/', TrialListView.as_view(), name='trial_list'),
@@ -89,5 +85,14 @@ urlpatterns = [
    path('test-upload/<int:file_id>/delete/', TestUploadDeleteView.as_view(), name='test-upload-delete'),
 
    path('mark-bill-paid/<int:bill_id>/', MarkAsPaidView.as_view(), name='mark-bill-paid'),
-]
 
+   path('device-booking/inventory/',DeviceBookingDropdownView.as_view()),
+
+   # Service queue endpoints
+   path('service/queue/', CustomerNeedService.as_view(), name='service_queue'),
+   path('patient/<int:patient_id>/device-purchases/', DeviceNeedService.as_view(), name='patient_device_purchases'),
+   
+   # Service visit endpoints
+   path('service/visit/create/', ServiceVisitCreateView.as_view(), name='service_visit_create'),
+   path('service/types/', ServiceTypeListView.as_view(), name='service_types'),
+]
