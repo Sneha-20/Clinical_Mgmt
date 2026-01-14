@@ -519,12 +519,12 @@ class BillDetailView(generics.RetrieveAPIView):
             raise NotFound("Visit not found")
 
         # Get or create bill for this visit
-        bill, created = Bill.objects.get_or_create(
-            visit=visit,
-            defaults={
-                'clinic': visit.clinic,
-                'created_by': self.request.user,
-            }
+        bill = Bill.objects.get(
+            visit=visit
+            # defaults={
+            #     'clinic': visit.clinic,
+            #     'created_by': self.request.user,
+            # }
         )
 
         # Ensure bill number is generated

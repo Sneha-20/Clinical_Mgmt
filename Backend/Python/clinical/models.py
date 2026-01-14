@@ -222,10 +222,11 @@ class BillItem(models.Model):
         ('Trial', 'Trial'),
         ('Purchase', 'Purchase'),
         ('Service', 'Service'),
+        ('Part Used in Service', 'Part Used in Service'),
     ]
 
     bill = models.ForeignKey(Bill, on_delete=models.CASCADE, related_name='bill_items')
-    item_type = models.CharField(max_length=10, choices=ITEM_TYPE_CHOICES, help_text="Type of item: Test / Trial / Service")
+    item_type = models.CharField(max_length=50, choices=ITEM_TYPE_CHOICES, help_text="Type of item: Test / Trial / Service")
     test_type = models.ForeignKey(
         TestType,
         on_delete=models.SET_NULL,
@@ -488,7 +489,8 @@ class ServiceVisit(models.Model):
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPE_CHOICES)
 
     complaint = models.TextField()
-    action_taken = models.TextField()
+    action_taken = models.TextField() 
+    action_taken_on = models.DateTimeField(auto_now_add=True)
 
     warranty_applicable = models.BooleanField(default=False)
     charges_collected = models.DecimalField(max_digits=10, decimal_places=2, default=0)
