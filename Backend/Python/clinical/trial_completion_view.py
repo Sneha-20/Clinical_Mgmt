@@ -29,7 +29,7 @@ class TrialCompletionView(APIView):
             
             trial_decision = serializer.validated_data['trial_decision']
             completion_notes = serializer.validated_data.get('completion_notes', '')
-            next_followup = serializer.validated_data.get('next_followup', 1)
+            followup_days = serializer.validated_data.get('followup_days', 3)
             
             with transaction.atomic():
                 # Update trial completion details
@@ -38,9 +38,9 @@ class TrialCompletionView(APIView):
                 trial.return_notes = completion_notes
                 trial.save()
                 
-                # Update visit status based on decision
+                # Handle different decision scenarios
                 if trial_decision == 'BOOK':
-                    # Handle device booking
+                    # Scenario 1: Patient wants to book a new device
                     booked_inventory_id = serializer.validated_data['booked_device_inventory']
                     booked_serial = serializer.validated_data.get('validated_serial')
                     
@@ -103,25 +103,43 @@ class TrialCompletionView(APIView):
                     # Update visit status
                     trial.visit.status = 'Device Booked'
                     
-                else:  # NOT_BOOKED
-
-                    if next_followup:
-                        # Update visit status to indicate patient needs time
-                        trial.visit.status = 'Book Follow-up Required'
-                        trial.followup_date = timezone.now() + timedelta(days=next_followup)
-                        trial.save()
+                elif trial_decision == 'FOLLOWUP':
+                    # Scenario 2: Patient needs time (2-3 days) for decision - followup
+                    trial.visit.status = 'Book Follow-up Required'
+                    trial.followup_date = timezone.now() + timedelta(days=followup_days)
+                    trial.save()
+                    
+                elif trial_decision == 'DECLINE':
+                    # Scenario 3: Patient doesn't need new device anymore
+                    trial.visit.status = 'Trial Completed - No Device'
+                    # No followup needed, trial is complete
+                    trial.save()
                 
                 trial.visit.save()
                 
+                # Prepare response data
+                # response_data = {
+                #     "trial_id": trial.id,
+                #     "decision": trial.trial_decision,
+                #     "decision_display": trial.get_trial_decision_display(),
+                #     "completed_at": trial.trial_completed_at,
+                #     "booked_device": trial.booked_device_inventory.product_name if trial.booked_device_inventory else None,
+                #     "followup_date": trial.followup_date if trial_decision == 'FOLLOWUP' else None,
+                #     "visit_status": trial.visit.status
+                # }
+                
+                # Add decision-specific messages
+                if trial_decision == 'BOOK':
+                    message = f"Trial completed successfully. Device booked: {trial.booked_device_inventory.product_name if trial.booked_device_inventory else 'N/A'}"
+                elif trial_decision == 'FOLLOWUP':
+                    message = f"Trial completed successfully. Follow-up scheduled in {followup_days} days."
+                elif trial_decision == 'DECLINE':
+                    message = "Trial completed successfully. Patient declined device booking."
+                
                 return Response({
                     "status": "success",
-                    "message": f"Trial completed successfully. Decision: {trial.get_trial_decision_display()}",
-                    "data": {
-                        "trial_id": trial.id,
-                        "decision": trial.trial_decision,
-                        "completed_at": trial.trial_completed_at,
-                        "booked_device": trial.booked_device_inventory.product_name if trial.booked_device_inventory else None
-                    }
+                    "message": message,
+                    # "data": response_data
                 })
                 
         except Trial.DoesNotExist:

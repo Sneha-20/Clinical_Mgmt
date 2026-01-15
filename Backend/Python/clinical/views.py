@@ -559,8 +559,8 @@ class TrialDeviceReturnView(APIView):
             )
         
         serial_number = serializer.validated_data['serial_number']
-        return_notes = serializer.validated_data.get('return_notes', '')
-        condition = serializer.validated_data.get('condition', 'Good')
+        device_condition_on_return = serializer.validated_data.get('device_condition_on_return', '')
+        # condition = serializer.validated_data.get('condition', 'Good')
         
         try:
             # Get the serial number record
@@ -578,8 +578,8 @@ class TrialDeviceReturnView(APIView):
            
                 # Update trial end date
             trial.trial_end_date = timezone.now().date()
-            trial.return_notes = return_notes
-            trial.device_condition_on_return = condition
+            trial.device_condition_on_return = device_condition_on_return
+            # trial.device_condition_on_return = condition
             trial.save()
             
             # Update serial status back to 'In Stock' to make it available again

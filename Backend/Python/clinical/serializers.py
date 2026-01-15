@@ -1231,7 +1231,9 @@ class TrialListSerializer(serializers.ModelSerializer):
     device_model = serializers.CharField(source='device_inventory_id.model_type', read_only=True)
     assigned_patient = serializers.CharField(source='assigned_patient.name', read_only=True)
     assigned_patient_phone = serializers.CharField(source='assigned_patient.phone_primary', read_only=True)
-    status = serializers.CharField(source='visit.status', read_only=True)
+    # status = serializers.CharField(source='visit.status', read_only=True)
+    completion_notes = serializers.CharField(source='return_notes', read_only=True)
+
 
     class Meta:
         model = Trial
@@ -1249,7 +1251,9 @@ class TrialListSerializer(serializers.ModelSerializer):
             'assigned_patient',
             'assigned_patient_phone',
             'patient_response',
-            'status'
+            'trial_decision',
+            'completion_notes',
+            'device_condition_on_return'
         ]
 
 
@@ -1319,9 +1323,7 @@ class ProductInfoBySerialSerializer(serializers.ModelSerializer):
 # Return Device Update 
 class TrialDeviceReturnSerializer(serializers.Serializer):
     serial_number = serializers.CharField(required=True)
-    return_notes = serializers.CharField(required=False, allow_blank=True)
-    condition = serializers.CharField(required=False, allow_blank=True)
-
+    device_condition_on_return = serializers.CharField(required=False, allow_blank=True)
 
 # Trial Completion Serializer
 class TrialCompletionSerializer(serializers.Serializer):
@@ -1337,7 +1339,7 @@ class TrialCompletionSerializer(serializers.Serializer):
     }
     """
     trial_decision = serializers.ChoiceField(
-        choices=[('BOOK', 'Book Device'), ('NOT_BOOKED', 'Need Time - Not Booked')],
+        choices=[('BOOK', 'Book Device'), ('FOLLOWUP', 'Need Time - Not Booked'), ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
     )
