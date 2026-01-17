@@ -4,7 +4,7 @@ from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
-                    TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView)
+                    TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView)
 
 from .api_inventory_item_update import InventoryItemUpdateView
 from .api_inventory_dropdowns import InventoryDropdownsView
@@ -99,4 +99,6 @@ urlpatterns = [
    path('service/visit/list/', ServiceVisitList.as_view(), name='service_visit_list'),
    path('service/visit/<int:service_id>/', ServiceDetailView.as_view(), name='service_detail'),
    path('service/types/', ServiceTypeListView.as_view(), name='service_types'),
+
+   path('device-booking/serial/<int:inventory_item_id>/',DeviceBookingSerialView.as_view()),
 ]

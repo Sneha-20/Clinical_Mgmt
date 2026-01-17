@@ -809,25 +809,45 @@ class MarkAsPaidView(APIView):
 
 
 # API For Inventory item whose category is Hearing aids and use_in_trial is False 
-class DeviceBookingDropdownView(APIView):
+class DeviceBookingDropdownView(generics.ListAPIView):
     """
     API to get dropdown values for device booking.
     Returns inventory items (Hearing aids, use_in_trial=False) and their available serials.
+    Supports search by brand and product_name.
     """
     
     permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['product_name', 'brand']
+
+    def get_queryset(self):
+        """
+        Get inventory items for booking (Hearing aids, not for trial)
+        Apply search filter if provided
+        """
+        queryset = InventoryItem.objects.filter(
+            category='Hearing Aid',
+            use_in_trial=False
+        )
+        
+        # Apply search filter from query parameters
+        search_term = self.request.query_params.get('search', None)
+        if search_term:
+            queryset = queryset.filter(
+                models.Q(product_name__icontains=search_term) |
+                models.Q(brand__icontains=search_term) 
+            )
+        
+        return queryset.order_by('product_name')
     
     def get(self, request, *args, **kwargs):
         try:
             # Get inventory items for booking (Hearing aids, not for trial)
-            inventory_items = InventoryItem.objects.filter(
-                category='Hearing Aid',
-                use_in_trial=False
-            ).order_by('product_name')
+            queryset = self.get_queryset()
             
             # Prepare dropdown data
             dropdown_data = []
-            for item in inventory_items:
+            for item in queryset:
                 item_data = {
                     'id': item.id,
                     'product_name': item.product_name,
@@ -851,6 +871,39 @@ class DeviceBookingDropdownView(APIView):
                 'message': f'Error fetching device booking options: {str(e)}',
                 'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Get serial number of inventory item by inventory item id which are in stock 
+class DeviceBookingSerialView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['serial_number']
+    
+    def get_queryset(self):
+        inventory_item_id = self.kwargs['inventory_item_id']
+        return InventorySerial.objects.filter(inventory_item_id=inventory_item_id, status='In Stock')
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get serial numbers for the specific inventory item
+            queryset = self.filter_queryset(self.get_queryset())
+            
+            # Extract only serial numbers
+            serial_numbers = [serial.serial_number for serial in queryset]
+            
+            return Response({
+                'status': status.HTTP_200_OK,
+                'data': serial_numbers
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error fetching serial numbers: {str(e)}',
+                'data': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
 
