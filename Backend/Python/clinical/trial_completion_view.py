@@ -107,9 +107,11 @@ class TrialCompletionView(APIView):
                     
                 elif trial_decision == 'FOLLOWUP':
                     # Scenario 2: Patient needs time (2-3 days) for decision - followup
-                    trial.visit.status = 'Follow up'
-                    trial.visit.status_note = 'Followup required for booking device decision'
-                    trial.followup_date = timezone.now() + timedelta(days=followup_days)
+                    trial.visit.status = 'Trial Active'
+                    trial.extended_trial = True
+                    trial.visit.status_note = 'Trial extended for booking device decision'
+                    trial.trial_end_date = timezone.now() + timedelta(days=followup_days)
+                    trial.followup_date = timezone.now() + timedelta(days=followup_days + 1)
                     trial.save()
                     
                 elif trial_decision == 'DECLINE':

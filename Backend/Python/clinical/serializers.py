@@ -261,6 +261,22 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             return None
         return obj.seen_by.name
 
+    def __init__(self, *args, **kwargs):
+        # Check if this serializer is being used by PatientVisitFollowupView
+        self.show_contacted_fields = kwargs.pop('show_contacted_fields', False)
+        super().__init__(*args, **kwargs)
+
+    def get_fields(self):
+        fields = super().get_fields()
+        
+        # Only show contact fields when used by PatientVisitFollowupView
+        if self.show_contacted_fields:
+            fields['contacted'] = serializers.BooleanField(read_only=True)
+            fields['contacted_by'] = serializers.IntegerField(read_only=True, source='contacted_by.id')
+            fields['contacted_by_name'] = serializers.CharField(read_only=True,source='contacted_by.name')
+        
+        return fields
+
     class Meta:
         model = PatientVisit
         fields = [
@@ -270,11 +286,11 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             'seen_by',
             'appointment_date',
             'status',
-            'status_note',  # Added status_note field
+            'status_note',
             'patient_id',
             'patient_name',
             'patient_phone'
-        ]
+        ] 
 
 
 class PatientUpdateSerializer(serializers.ModelSerializer):
@@ -1407,7 +1423,8 @@ class TrialListSerializer(serializers.ModelSerializer):
             'patient_response',
             'trial_decision',
             'completion_notes',
-            'device_condition_on_return'
+            'device_condition_on_return',
+            'extended_trial'
         ]
 
 

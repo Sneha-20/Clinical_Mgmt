@@ -31,6 +31,8 @@ class PatientVisit(models.Model):
     # created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50,null=True)  #  ( Test Pending / Trial active/ Booked / Follow-up)
     status_note = models.TextField(blank=True, null=True)
+    contacted = models.BooleanField(default=False)  # Track if patient has been contacted for follow-up
+    contacted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='contacted_visits')  # Who contacted the patient
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -103,7 +105,7 @@ class Trial(models.Model):
     assigned_patient = models.ForeignKey(Patient, on_delete=models.SET_NULL, null=True, blank=True)
     return_notes = models.TextField(blank=True, null=True)
     device_condition_on_return = models.CharField(max_length=50, blank=True, null=True)  # Condition (Good / Bad)
-    
+    extended_trial = models.BooleanField(default=False)
     # Trial completion decision fields
     TRIAL_DECISION_CHOICES = [
         ('TRIAL_ACTIVE', 'Trial Active'),

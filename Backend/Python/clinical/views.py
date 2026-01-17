@@ -916,7 +916,7 @@ class PatientVisitFollowupView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['patient__name']
-    # filterset_fields = ['status', 'appointment_date']
+    filterset_fields = ['contacted']
     
     def get_queryset(self):
         """
@@ -941,14 +941,79 @@ class PatientVisitFollowupView(generics.ListAPIView):
         page = self.paginate_queryset(queryset)
         
         if page is not None:
-            serializer = PatientVisitSerializer(page, many=True)
+            # Pass show_contacted_fields=True to include contact fields
+            serializer = PatientVisitSerializer(page, many=True, show_contacted_fields=True)
             return self.get_paginated_response(serializer.data)
         
-        serializer = PatientVisitSerializer(queryset, many=True)
+        # Pass show_contacted_fields=True to include contact fields
+        serializer = PatientVisitSerializer(queryset, many=True, show_contacted_fields=True)
         return Response({
             "status": 200,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+
+
+# Mark patient as contacted for follow-up
+class MarkPatientContactedView(APIView):
+    """
+    API to mark a patient as contacted for follow-up.
+    
+    POST /api/clinical/patient-visits/<visit_id>/mark-contacted/
+    
+    Payload:
+    {
+        "contacted": true,
+        "contact_note": "Patient confirmed appointment for tomorrow"
+    }
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, visit_id):
+        try:
+            # Get the visit
+            visit = get_object_or_404(PatientVisit, id=visit_id)
+            
+            # Check if user has access to this visit (clinic-based)
+            clinic = getattr(request.user, 'clinic', None)
+            if clinic and visit.clinic != clinic:
+                return Response({
+                    'status': status.HTTP_403_FORBIDDEN,
+                    'message': 'You do not have permission to access this visit'
+                }, status=status.HTTP_403_FORBIDDEN)
+            
+            # Get contact data from request
+            contacted = request.data.get('contacted', True)
+            contact_note = request.data.get('contact_note', '')
+            
+            # Update visit with contact information
+            visit.contacted = contacted
+            visit.contacted_by = request.user if contacted else None
+            
+            # Update status note if contact note provided
+            if contact_note:
+                if visit.status_note:
+                    visit.status_note = f"{contact_note}"
+                else:
+                    visit.status_note = contact_note
+            
+            visit.save(update_fields=['contacted', 'contacted_by', 'status_note'])
+            
+            return Response({
+                'status': status.HTTP_200_OK,
+                'message': 'Patient contact status updated successfully',
+                'data': {
+                    'visit_id': visit.id,
+                    'contacted': visit.contacted,
+                    'contacted_by': visit.contacted_by.name if visit.contacted_by else None,
+                    'status_note': visit.status_note
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error updating contact status: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
