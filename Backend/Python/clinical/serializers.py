@@ -12,6 +12,7 @@ from .models import (
     ServiceVisit,
     PatientPurchase,
     Trial,
+    TestUpload
 )
 from rest_framework import serializers
 from django.db import transaction
@@ -396,11 +397,158 @@ class VisitTestPerformedSerializer(serializers.ModelSerializer):
         model = VisitTestPerformed
         fields = '__all__'
 
+class TestUploadSerializer(serializers.ModelSerializer):
+    file_url = serializers.CharField(source='file_path', read_only=True)
+    
+    class Meta:
+        model = TestUpload
+        fields = ['id', 'file_type', 'file_url', 'created_at']
+
 class TrialSerializer(serializers.ModelSerializer):
+    device_details = serializers.SerializerMethodField()
+    
+    def get_device_details(self, obj):
+        if obj.device_inventory_id:
+            return {
+                'id': obj.device_inventory_id.id,
+                'brand': obj.device_inventory_id.brand,
+                'model_type': obj.device_inventory_id.model_type,
+                'category': obj.device_inventory_id.category
+            }
+        return None
+    
     class Meta:
         model = Trial
         fields = '__all__'
         read_only_fields = ['clinic']
+
+
+# Comprehensive Visit Details Serializer with Tests and Trials
+class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
+    """Comprehensive serializer for patient visit details including tests performed and trials"""
+    
+    # Patient information
+    # patient_id = serializers.IntegerField(source='patient.id', read_only=True)
+    # patient_name = serializers.CharField(source='patient.name', read_only=True)
+    # patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    # patient_email = serializers.EmailField(source='patient.email', read_only=True)
+    # patient_age = serializers.IntegerField(source='patient.age', read_only=True)
+    # patient_gender = serializers.CharField(source='patient.gender', read_only=True)
+    # patient_address = serializers.CharField(source='patient.address', read_only=True)
+    # patient_city = serializers.CharField(source='patient.city', read_only=True)
+    
+    # Seen by doctor information
+    seen_by_name = serializers.CharField(source='seen_by.name', read_only=True)
+    
+    # Case history
+    case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
+    
+    # Conditional data based on visit type
+    tests_performed = serializers.SerializerMethodField()
+    test_uploads = serializers.SerializerMethodField()
+    trials = serializers.SerializerMethodField()
+    service_visit = serializers.SerializerMethodField()
+    
+    # Bill information
+    bill_details = serializers.SerializerMethodField()
+    
+    def get_tests_performed(self, obj):
+        """Get tests performed for this visit (only for test-related visits)"""
+        if obj.visit_type not in ['TGA', 'Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+            test_performed = VisitTestPerformed.objects.filter(visit=obj).first()
+            if test_performed:
+                return VisitTestPerformedSerializer(test_performed).data
+        return None
+    
+    def get_test_uploads(self, obj):
+        """Get all test upload files for this visit (only for test-related visits)"""
+        if obj.visit_type not in ['TGA', 'Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+            test_performed = VisitTestPerformed.objects.filter(visit=obj).first()
+            if test_performed:
+                uploads = TestUpload.objects.filter(visit=test_performed).order_by('-created_at')
+                return TestUploadSerializer(uploads, many=True).data
+        return []
+    
+    def get_trials(self, obj):
+        """Get all trials for this visit (only for test-related visits)"""
+        if obj.visit_type not in ['TGA', 'Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+            trials = Trial.objects.filter(visit=obj).order_by('-created_at')
+            return TrialSerializer(trials, many=True).data
+        return []
+    
+    def get_service_visit(self, obj):
+        """Get service visit details for TGA and service-related visits"""
+        if obj.visit_type in ['TGA', 'Machine Check', 'Battery Purchase', 'Tip / Dome Change']:
+            try:
+                service_visit = ServiceVisit.objects.get(visit=obj)
+                return {
+                    'id': service_visit.id,
+                    'service_type': service_visit.service_type,
+                    'status': service_visit.status,
+                    'complaint': service_visit.complaint,
+                    'action_taken': service_visit.action_taken,
+                    'action_taken_on': service_visit.action_taken_on,
+                    'warranty_applicable': service_visit.warranty_applicable,
+                    'charges_collected': service_visit.charges_collected,
+                    'rtc_date': service_visit.rtc_date,
+                    'device': {
+                        'id': service_visit.device.id,
+                        'inventory_item': service_visit.device.inventory_item.product_name if service_visit.device.inventory_item else None,
+                        'purchased_at': service_visit.device.purchased_at
+                    } if service_visit.device else None,
+                    'parts_used': [
+                        {
+                            'id': part.id,
+                            'inventory_item': part.inventory_item.product_name,
+                            'quantity': part.quantity
+                        } for part in service_visit.parts_used.all()
+                    ]
+                }
+            except ServiceVisit.DoesNotExist:
+                return None
+        return None
+    
+    def get_bill_details(self, obj):
+        """Get bill details for this visit"""
+        try:
+            bill = Bill.objects.get(visit=obj)
+            return {
+                'bill_id': bill.id,
+                'bill_number': bill.bill_number,
+                'total_amount': bill.total_amount,
+                'discount_amount': bill.discount_amount,
+                'final_amount': bill.final_amount,
+                'payment_status': bill.payment_status,
+                'payment_method': bill.payment_method if bill.payment_status in ['Paid', 'Partially Paid'] else None,
+                'created_at': bill.created_at
+            }
+        except Bill.DoesNotExist:
+            return None
+    
+    def to_representation(self, instance):
+        """Convert test_requested string to list"""
+        data = super().to_representation(instance)
+        stored_value = instance.test_requested or ""
+        data["test_requested"] = (
+            stored_value.split(",") if stored_value else []
+        )
+        return data
+    
+    class Meta:
+        model = PatientVisit
+        fields = [
+            'id', 'visit_type', 'service_type', 'present_complaint', 'test_requested',
+            'notes', 'status', 'appointment_date',
+            # # Patient information
+            # 'patient_id', 'patient_name', 'patient_phone', 'patient_email', 
+            # 'patient_age', 'patient_gender', 'patient_address', 'patient_city',
+            # Doctor information
+            'seen_by_name',
+            # Clinical data (conditional based on visit type)
+            'case_history', 'tests_performed', 'test_uploads', 'trials', 'service_visit',
+            # Billing
+            'bill_details'
+        ]
 
 
 class AudiologistQueueSerializer(serializers.ModelSerializer):

@@ -20,7 +20,8 @@ from .serializers import (
     BillListSerializer,
     PatientVisitWithCaseHistorySerializer,
     TrialDeviceReturnSerializer,
-    TrialCompletionSerializer
+    TrialCompletionSerializer,
+    PatientVisitFullDetailsSerializer
 )
 from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem
 from accounts.models import User
@@ -363,6 +364,27 @@ class PatientVisitDetailView(generics.RetrieveAPIView):
     serializer_class = PatientVisitWithCaseHistorySerializer
     permission_classes = [IsAuthenticated,AuditorPermission]
     lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+
+# Get Full Visit Details with Tests and Trials
+class PatientVisitFullDetailsView(generics.RetrieveAPIView):
+    """
+    Retrieve comprehensive details of a Patient Visit by Visit ID including:
+    - Patient information
+    - Case history
+    - Tests performed and uploaded files
+    - Trials associated with the visit
+    - Bill details
+    """
+    queryset = PatientVisit.objects.all()
+    serializer_class = PatientVisitFullDetailsSerializer
+    permission_classes = [IsAuthenticated, AuditorPermission | ReceptionistPermission]
+    lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/full/
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
