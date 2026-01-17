@@ -102,16 +102,20 @@ class TrialCompletionView(APIView):
                     
                     # Update visit status
                     trial.visit.status = 'Device Booked'
+                    trial.visit.status_note = 'Trial completed , Device booked'
+                    trial.visit.save()
                     
                 elif trial_decision == 'FOLLOWUP':
                     # Scenario 2: Patient needs time (2-3 days) for decision - followup
-                    trial.visit.status = 'Book Follow-up Required'
+                    trial.visit.status = 'Follow up'
+                    trial.visit.status_note = 'Followup required for booking device decision'
                     trial.followup_date = timezone.now() + timedelta(days=followup_days)
                     trial.save()
                     
                 elif trial_decision == 'DECLINE':
                     # Scenario 3: Patient doesn't need new device anymore
                     trial.visit.status = 'Trial Completed - No Device'
+                    trial.visit.status_note = 'Trial completed , Device not booked'
                     # No followup needed, trial is complete
                     trial.save()
                 

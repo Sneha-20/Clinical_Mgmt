@@ -173,8 +173,10 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                 visit_type = visit_data.get('visit_type')
                 if visit_type in ['Troubleshooting General Adjustment','TGA']:
                     status_value = 'Pending for Service'
+                    status_note = 'Waiting for service to be completed'
                 else:
                     status_value = 'Test pending'
+                    status_note = 'Waiting for audiologist availability'
 
                 # Map seen_by (User instance) and test_requested (list -> CSV string)
                 
@@ -189,6 +191,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                     patient=patient,
                     clinic=patient.clinic,  # Inherit clinic from patient
                     status=status_value,
+                    status_note=status_note,
                     service_type=service_type or None,
                     appointment_date=appointment_date,
                     seen_by=seen_by_user,
@@ -267,11 +270,12 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             'seen_by',
             'appointment_date',
             'status',
+            'status_note',  # Added status_note field
             'patient_id',
             'patient_name',
             'patient_phone'
         ]
-        
+
 
 class PatientUpdateSerializer(serializers.ModelSerializer):
     # latest visit details
@@ -538,7 +542,7 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
         model = PatientVisit
         fields = [
             'id', 'visit_type', 'service_type', 'present_complaint', 'test_requested',
-            'notes', 'status', 'appointment_date',
+            'notes', 'status', 'status_note', 'appointment_date',
             # # Patient information
             # 'patient_id', 'patient_name', 'patient_phone', 'patient_email', 
             # 'patient_age', 'patient_gender', 'patient_address', 'patient_city',
@@ -882,7 +886,8 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             # 4. Update PatientVisit status to 'test_performed'
             if test_performed_instance:
                 visit.status = 'Test Performed'
-                visit.save(update_fields=['status'])
+                visit.status_note = 'Test Performed by Audiologist'
+                visit.save(update_fields=['status', 'status_note'])
 
         return case_history
 
@@ -1324,6 +1329,7 @@ class TrialCreateSerializer(serializers.ModelSerializer):
 
         # Update the status of Patient visit ( Trial Active )
         visit.status = 'Trial Active'
+        visit.status_note = 'Trial is in progress'
         visit.save()
 
         validated_data['device_inventory_id'] = serial.inventory_item

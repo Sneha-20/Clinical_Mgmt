@@ -905,7 +905,50 @@ class DeviceBookingSerialView(generics.ListAPIView):
 
 
 
-
+# Get the patient visit for status followup required
+class PatientVisitFollowupView(generics.ListAPIView):
+    """
+    API to get patient visits that require follow-up.
+    Returns visits with status 'Follow up' or 'Book Follow-up Required'.
+    Supports search by patient name and pagination.
+    """
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['patient__name']
+    # filterset_fields = ['status', 'appointment_date']
+    
+    def get_queryset(self):
+        """
+        Get patient visits that need follow-up
+        Filter by clinic for multi-tenant support
+        """
+        clinic = getattr(self.request.user, 'clinic', None)
+        queryset = PatientVisit.objects.filter(
+            status__in=['Follow up']
+        )
+        
+        if clinic:
+            queryset = queryset.filter(clinic=clinic)
+            
+        return queryset.order_by('-appointment_date', '-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Override list method to provide custom response format
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = PatientVisitSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = PatientVisitSerializer(queryset, many=True)
+        return Response({
+            "status": 200,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 

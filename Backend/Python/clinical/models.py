@@ -30,6 +30,7 @@ class PatientVisit(models.Model):
     notes = models.TextField(blank=True, null=True)
     # created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50,null=True)  #  ( Test Pending / Trial active/ Booked / Follow-up)
+    status_note = models.TextField(blank=True, null=True)
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
