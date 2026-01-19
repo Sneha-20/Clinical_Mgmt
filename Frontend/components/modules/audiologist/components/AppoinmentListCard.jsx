@@ -7,9 +7,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import Pagination from "@/components/ui/Pagination";
 
-export default function AppoinmentListCard({ appoinementList,handleViewPatient }) {
-  console.log("appoinementListtt", appoinementList);
+export default function AppoinmentListCard({
+  appoinementList,
+  handleViewPatient,
+  onPrev,
+  onNext,
+  totalPages,
+  page,
+}) {
   return (
     <div>
       <Card>
@@ -38,21 +45,30 @@ export default function AppoinmentListCard({ appoinementList,handleViewPatient }
                   </p>
                   <div className="flex gap-2 mt-2 flex-wrap">
                     {/* {patient.test_requested.map((test) => ( */}
-                      <span
-                        // key={test}
-                        className="text-xs px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full"
-                      >
-                        {patient.test_requested}
-                      </span>
+                    <span
+                      // key={test}
+                      className="text-xs px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full"
+                    >
+                      {patient.test_requested}
+                    </span>
                     {/* ))} */}
                   </div>
                 </div>
-                <Button className="gap-2 text-sm w-full sm:w-auto" onClick={() => handleViewPatient(patient.visit_id)}>
+                <Button
+                  className="gap-2 text-sm w-full sm:w-auto"
+                  onClick={() => handleViewPatient(patient.visit_id)}
+                >
                   Start Test
                 </Button>
               </div>
             ))}
           </div>
+           <Pagination
+          page={page}
+          totalPages={totalPages}
+          onNext={onNext}
+          onPrev={onPrev}
+          />
         </CardContent>
       </Card>
     </div>

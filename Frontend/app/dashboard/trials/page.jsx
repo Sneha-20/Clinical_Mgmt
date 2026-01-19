@@ -1,7 +1,6 @@
-'use client'
+import TrialList from "@/components/modules/audiologist/TrialList";
 
-import TrialManagement from '@/components/modules/audiologist/trial-management'
 
 export default function TrialsPage() {
-  return <TrialManagement />
+  return <TrialList />
 }

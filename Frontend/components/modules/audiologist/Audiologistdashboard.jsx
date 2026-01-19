@@ -1,22 +1,58 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Users, Clock, CheckCircle } from 'lucide-react'
-import useAudiologist from '@/lib/hooks/useAudiologist'
-import AppoinmentListCard from './components/AppoinmentListCard'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Users, Clock, CheckCircle } from "lucide-react";
+import useAudiologist from "@/lib/hooks/useAudiologist";
+import AppoinmentListCard from "./components/AppoinmentListCard";
+import Pagination from "@/components/ui/Pagination";
 
 export default function AudiologistDashboard() {
-  const {handleViewPatient,appoinementList,completedTests} = useAudiologist()
-  // console.log("ttttt",completeTestList)
+  const {
+    handleViewPatient,
+    showVisitDeteail,
+    prendingTestPage,
+    appoinementList,
+    completedTests,
+    totalPendingTest,
+    completedtestPage,
+    totalCompletedTest,
+    prevCompletedtest,
+    nextCompletedTest,
+    prevPendingtest,
+    nextPendingtest,
+  } = useAudiologist();
 
-  // console.log("appoinementList",appoinementList)
   const [queue, setQueue] = useState([
-    { id: 1, name: 'Rajesh Kumar', complaint: 'Hearing problem', testsRequired: ['PTA', 'Tympanometry'], referral: 'Doctor' },
-    { id: 2, name: 'Priya Singh', complaint: 'Follow-up Trial', testsRequired: ['Free Field'], referral: 'Self' },
-    { id: 3, name: 'Vijay Reddy', complaint: 'Hearing Testing', testsRequired: ['BERA', 'OAE'], referral: 'Self' },
-  ])
+    {
+      id: 1,
+      name: "Rajesh Kumar",
+      complaint: "Hearing problem",
+      testsRequired: ["PTA", "Tympanometry"],
+      referral: "Doctor",
+    },
+    {
+      id: 2,
+      name: "Priya Singh",
+      complaint: "Follow-up Trial",
+      testsRequired: ["Free Field"],
+      referral: "Self",
+    },
+    {
+      id: 3,
+      name: "Vijay Reddy",
+      complaint: "Hearing Testing",
+      testsRequired: ["BERA", "OAE"],
+      referral: "Self",
+    },
+  ]);
 
   // const [completedTests] = useState([
   //   { id: 1, name: 'Amit Patel', test: 'Pure Tone Audiometry', time: '10:30 AM', result: 'Mild Hearing Loss' },
@@ -43,8 +79,12 @@ export default function AudiologistDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-teal-600">Audiologist Dashboard</h1>
-        <p className="text-xs sm:text-sm text-slate-600 mt-1">Manage patient queue and audiological tests</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-primaryText">
+          Audiologist Dashboard
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-600 mt-1">
+          Manage patient queue and audiological tests
+        </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -55,7 +95,9 @@ export default function AudiologistDashboard() {
                 <Users className="w-5 sm:w-6 h-5 sm:h-6 text-blue-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-slate-600 text-xs sm:text-sm">Patients in Queue</p>
+                <p className="text-slate-600 text-xs sm:text-sm">
+                  Patients in Queue
+                </p>
                 <p className="text-xl sm:text-2xl font-bold">{queue.length}</p>
               </div>
             </div>
@@ -69,8 +111,12 @@ export default function AudiologistDashboard() {
                 <CheckCircle className="w-5 sm:w-6 h-5 sm:h-6 text-green-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-slate-600 text-xs sm:text-sm">Tests Completed</p>
-                <p className="text-xl sm:text-2xl font-bold">{completedTests.length}</p>
+                <p className="text-slate-600 text-xs sm:text-sm">
+                  Tests Completed
+                </p>
+                <p className="text-xl sm:text-2xl font-bold">
+                  {completedTests.length}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -83,7 +129,9 @@ export default function AudiologistDashboard() {
                 <Clock className="w-5 sm:w-6 h-5 sm:h-6 text-purple-600" />
               </div>
               <div className="min-w-0">
-                <p className="text-slate-600 text-xs sm:text-sm">Avg Test Time</p>
+                <p className="text-slate-600 text-xs sm:text-sm">
+                  Avg Test Time
+                </p>
                 <p className="text-xl sm:text-2xl font-bold">18 min</p>
               </div>
             </div>
@@ -91,30 +139,55 @@ export default function AudiologistDashboard() {
         </Card>
       </div>
 
-      <AppoinmentListCard appoinementList={appoinementList} handleViewPatient={handleViewPatient}/>
+      <AppoinmentListCard
+        appoinementList={appoinementList}
+        handleViewPatient={handleViewPatient}
+        page={prendingTestPage}
+        totalPages={totalPendingTest}
+        onNext={nextPendingtest}
+        onPrev={prevPendingtest} 
+      />
 
       <Card>
         <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-lg sm:text-xl">Tests Completed Today</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Recent audiological assessments</CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Tests Completed</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            Recent audiological assessments
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2 sm:space-y-3">
             {completedTests.map((item) => (
-              <div key={item.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg">
+              <div
+                key={item.visit_id}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer"
+                onClick={() => showVisitDeteail(item.visit_id)}
+              >
                 <div>
-                  <h4 className="font-semibold text-sm sm:text-base">{item.patient_name}</h4>
-                  <p className="text-xs sm:text-sm text-slate-600">{item.visit_type}</p>
+                  <h4 className="font-semibold text-sm sm:text-base">
+                    {item.patient_name}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    {item.visit_type}
+                  </p>
                 </div>
                 <div className="text-left sm:text-right">
-                  <p className="text-xs sm:text-sm font-medium">{item.present_complaint}</p>
+                  <p className="text-xs sm:text-sm font-medium">
+                    {item.present_complaint}
+                  </p>
                   {/* <p className="text-xs text-slate-600">{item.time}</p> */}
                 </div>
               </div>
             ))}
           </div>
+          <Pagination
+            page={completedtestPage}
+            totalPages={totalCompletedTest}
+            onNext={nextCompletedTest}
+            onPrev={prevCompletedtest}
+          />
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

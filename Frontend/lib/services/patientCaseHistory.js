@@ -29,6 +29,16 @@ export const addCaseHistory = async (caseHistoryData) => {
    }
 }
 
+export const addTrialForm = async (trialFormData) => {
+   try{
+     const response = await apiClient.post(routes.audiologist.registerTrialForm, trialFormData);
+     const trialFormrResponse = response?.data?.data || response?.data || response;
+     return trialFormrResponse
+   }catch(err){
+    throw err?.response?.data || "registration failed"
+   }
+}
+
 export const addTestFile = async (file) => {
    try{
      const response = await apiClient.postMultipart(routes.audiologist.uploadFile, file);
@@ -58,3 +68,35 @@ export const deleteTestReport = async (fileId) => {
     throw err?.response?.data || "Failed to fetch test report list"
    }
 }
+
+// export const getTrialDevice = async ({}) => {
+//   try {
+//    const url = `${routes.audiologist.trialDeviceList}`;
+//     const response = await apiClient.get(url);
+//     // Handle nested response structure
+//     const trialDeviceList = response?.data || response;
+//     return trialDeviceList;
+//   } catch (error) {
+//     console.error("❌ failed to fetch trial device list", {
+//       status: error?.response?.status,
+//       message: error?.message,
+//     });
+//     throw error;
+//   }
+// };
+export const getTrialDevice = async ({ serial_number = "" }) => {
+  try {
+    const query = serial_number
+      ? `?serial_number=${encodeURIComponent(serial_number)}`
+      : "";
+
+    const url = `${routes.audiologist.trialDeviceList}${query}`;
+
+    const response = await apiClient.get(url);
+    return response?.data || [];
+  } catch (error) {
+    console.error("❌ failed to fetch trial device list", error);
+    throw error;
+  }
+};
+

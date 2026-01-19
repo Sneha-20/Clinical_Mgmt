@@ -5,9 +5,11 @@ import { showToast } from "@/components/ui/toast";
 import {
   addCaseHistory,
   addTestFile,
+  addTrialForm,
   deleteTestReport,
   getAllTestFile,
   getpatientHistoryById,
+  getTrialDevice,
 } from "../services/patientCaseHistory";
 
 export default function useCaseHistory() {
@@ -20,13 +22,15 @@ export default function useCaseHistory() {
   const [fileName, setFileName] = useState(null);
   const [testFileList, setTestFileList] = useState([]);
   const [visitId, setVisitId] = useState(null);
+  const [trialDeviceList, setTrialDeviceList] = useState([]);
+   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchPatientFormData = async (patientId) => {
-    if (!patientId) return;
-    setVisitId(patientId);
+  const fetchPatientFormData = async (id) => {
+    if (!id) return;
+    setVisitId(id);
     dispatch(startLoading());
     try {
-      const res = await getpatientHistoryById(patientId);
+      const res = await getpatientHistoryById(id);
       setPatientCaseHistory(res);
     } catch (err) {
       showToast({ type: "error", message: "Failed to fetch patient history" });
@@ -34,6 +38,45 @@ export default function useCaseHistory() {
       dispatch(stopLoading());
     }
   };
+
+  
+const fetchTrialDeviceList = async ({ search }) => {
+  try {
+    const res = await getTrialDevice({ serial_number: search });
+    setTrialDeviceList(res);
+  } catch (err) {
+    showToast({
+      type: "error",
+      message: "Failed to fetch trial device list",
+    });
+  }
+};
+
+
+useEffect(() => {
+  if (searchTerm?.length > 0) {
+    fetchTrialDeviceList({ search: searchTerm });
+  }
+}, [searchTerm]);
+
+  const registerTrialForm = async (data) => {
+    dispatch(startLoading());
+    try {
+      await addTrialForm(data);
+      showToast({
+        type: "success",
+        message: data.status || "Trial added Successful",
+      });
+      dispatch(stopLoading());
+    } catch (err) {
+      showToast({
+        type: "error",
+        message: err?.error || "Failed to add trial",
+      });
+      dispatch(stopLoading());
+    }
+  };
+
 
   const registerCasehistory = async (data) => {
     dispatch(startLoading());
@@ -52,6 +95,8 @@ export default function useCaseHistory() {
       dispatch(stopLoading());
     }
   };
+
+  
 
   const handleFileSubmit = async () => {
     if (!file || !testType) {
@@ -74,9 +119,9 @@ export default function useCaseHistory() {
       });
 
       // Reset
-      // setFile(null);
-      // setFileName(null);
-      // setTestType(null);
+      setFile(null);
+      setFileName(null);
+      setTestType(null);
       setIsModalOpen(false);
       fetchTestFile();
     } catch (err) {
@@ -88,6 +133,8 @@ export default function useCaseHistory() {
       dispatch(stopLoading());
     }
   };
+  
+  
 
   const fetchTestFile = async () => {
     try {
@@ -126,6 +173,10 @@ export default function useCaseHistory() {
     testType,
     isModalOpen,
     testFileList,
+    trialDeviceList,
+    searchTerm,
+    setSearchTerm,
+    // handleSubmitTest,
     handleDeleteReport,
     setIsModalOpen,
     setTestType,
@@ -134,5 +185,6 @@ export default function useCaseHistory() {
     setFileName,
     fetchPatientFormData,
     registerCasehistory,
+    registerTrialForm,
   };
 }

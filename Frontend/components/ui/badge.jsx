@@ -6,7 +6,7 @@ export default function CommonBadge({ status, title }) {
 
   switch (status) {
     case "Completed":
-      badgeClass += " border-green-500 bg-green-100 text-green-700";
+      badgeClass += " border-green-500 bg-green-100 text-green-700 max-w-max";
       break;
 
     case "In Progress":
@@ -21,9 +21,13 @@ export default function CommonBadge({ status, title }) {
       badgeClass += " border-red-500 bg-red-100 text-red-700";
       break;
 
+    case "bgBadge":
+      badgeClass += " bg-teal-700 text-white";
+      break;
+
     default:
       // ✅ Default when status is NOT passed
-      badgeClass += " border-blue-500 bg-blue-50 text-blue-700";
+      badgeClass += " border-primary bg-blue-50 text-primary max-w-max";
   }
 
   return (

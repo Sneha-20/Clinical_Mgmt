@@ -13,10 +13,13 @@ export default function DropDown({
   error,
   className = "",
   name = "",
+
+  // 🆕 OPTIONAL (safe)
+  isDisabled = false,
+  formatOptionLabel,
 }) {
   return (
     <div className={`flex flex-col gap-1 w-full mb-4 ${className}`}>
-      {/* Label */}
       {label && (
         <label className="text-sm font-medium text-gray-700 mb-1">
           {label}
@@ -24,12 +27,13 @@ export default function DropDown({
         </label>
       )}
 
-      {/* React Select */}
       <Select
         name={name}
         value={options.find((opt) => opt.value === value) || null}
         options={options}
         placeholder={placeholder}
+        isDisabled={isDisabled}
+        formatOptionLabel={formatOptionLabel}
         onChange={(selected) => onChange?.(name, selected?.value)}
         onBlur={() => onBlur?.(name)}
         styles={{
@@ -59,7 +63,6 @@ export default function DropDown({
         }}
       />
 
-      {/* Error */}
       {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );

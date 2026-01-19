@@ -2,14 +2,13 @@ import { useEffect, useState } from "react";
 import { getPatientById, getVisitById } from "../services/patientProfile";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
 import { useDispatch } from "react-redux";
-import { useRouter } from "next/navigation";
 
 export default function usePatientProfile(patientId) {
-  const router = useRouter();
 
   const dispatch = useDispatch();
   const [patient, setPatient] = useState();
   const [patientVisit, setPatientVisit] = useState();
+  
   const fetchPatientData = async (id) => {
     if (!id) return;
     dispatch(startLoading());
@@ -41,14 +40,10 @@ export default function usePatientProfile(patientId) {
     fetchPatientVisit(patientId);
   }, [patientId]);
 
-  const onBack = () => {
-    router.back();
-  };
   return {
     patient,
     patientVisit,
 
-    onBack,
     fetchPatientData,
   };
 }

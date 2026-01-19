@@ -26,27 +26,15 @@ import {
 } from "lucide-react";
 import usePatientProfile from "@/lib/hooks/usePatientProfile";
 import CommonBadge from "@/components/ui/badge";
+import Backbutton from "@/components/ui/Backbutton";
 
 export default function PatientProfile({ patientId }) {
-  const { patient, patientVisit, onBack } = usePatientProfile(patientId);
-  console.log("patientData", patientVisit);
-  console.log("patientId", patientId);
-  const status = "In Progress";
-
-
+  const { patient, patientVisit } = usePatientProfile(patientId);
   return (
     // <p>{patient?.name}</p>
     <div className="space-y-4 sm:space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="w-8 h-8 sm:w-10 sm:h-10"
-        >
-          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-        </Button>
+        <Backbutton />
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold text-primaryText">
             {patient?.name}

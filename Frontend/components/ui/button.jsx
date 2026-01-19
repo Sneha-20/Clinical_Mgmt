@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils/tailwindutils'
 const buttonVariants = {
   default: 'bg-secondary text-white hover:bg-secondary-foreground active:bg-teal-800',
   destructive: 'bg-red-600 text-white hover:bg-red-700',
+  success: 'text-white bg-green-600 hover:bg-green-700',
+  extend: 'text-white bg-yellow-500 hover:bg-yellow-600',
   outline: 'border-2 border-secondary text-secondary hover:bg-secondary hover:text-white',
   secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
   ghost: 'hover:bg-gray-100 text-gray-700',

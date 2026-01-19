@@ -91,3 +91,36 @@ export const CaseHistorySchema = Yup.object({
   uclValue: Yup.number().nullable(),
 })
 
+
+export const trialGivenSchema = Yup.object({
+  serial_number: Yup.string().required("Serial number is required"),
+  receiver_size: Yup.string().required("Receiver size is required"),
+  ear_fitted: Yup.string().required("Ear fitted is required"),
+  dome_type: Yup.string().required("Dome type is required"),
+
+  srt_before: Yup.string().required("SRT before is required"),
+  sds_before: Yup.string().required("SDS before is required"),
+  ucl_before: Yup.string().required("UCL before is required"),
+
+  gain_settings: Yup.string().required("Gain settings required"),
+  patient_response: Yup.string().required("Patient response required"),
+  counselling_notes: Yup.string().required("Counselling notes required"),
+
+  cost: Yup.number()
+    .typeError("Cost must be a number")
+    .required("Cost is required"),
+
+  discount_offered: Yup.number()
+    .typeError("Discount must be a number")
+    .max(100, "Discount cannot exceed 100"),
+
+  trial_start_date: Yup.date().required("Start date required"),
+  trial_end_date: Yup.date()
+    .min(
+      Yup.ref("trial_start_date"),
+      "End date must be after start date"
+    )
+    .required("End date required"),
+});
+
+
