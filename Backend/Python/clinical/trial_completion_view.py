@@ -105,7 +105,7 @@ class TrialCompletionView(APIView):
                     trial.visit.status_note = 'Trial completed , Device booked'
                     trial.visit.save()
                     
-                elif trial_decision == 'FOLLOWUP':
+                elif trial_decision == 'TRIAL ACTIVE':
                     # Scenario 2: Patient needs time (2-3 days) for decision - followup
                     trial.visit.status = 'Trial Active'
                     trial.extended_trial = True
@@ -137,7 +137,7 @@ class TrialCompletionView(APIView):
                 # Add decision-specific messages
                 if trial_decision == 'BOOK':
                     message = f"Trial completed successfully. Device booked: {trial.booked_device_inventory.product_name if trial.booked_device_inventory else 'N/A'}"
-                elif trial_decision == 'FOLLOWUP':
+                elif trial_decision == 'TRIAL ACTIVE':
                     message = f"Trial completed successfully. Follow-up scheduled in {followup_days} days."
                 elif trial_decision == 'DECLINE':
                     message = "Trial completed successfully. Patient declined device booking."

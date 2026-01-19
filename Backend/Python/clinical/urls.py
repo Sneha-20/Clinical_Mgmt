@@ -6,7 +6,7 @@ from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailVi
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
                     TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,MarkPatientContactedView)
 
-from .api_inventory_item_update import InventoryItemUpdateView
+from .api_inventory_item_update import InventoryItemUpdateView,InventorySerialNumberCreateView
 from .api_inventory_dropdowns import InventoryDropdownsView
 from .api_inventory_item_list import InventoryItemListView, InventorySerialListView
 from .api_inventory_item_create import InventoryItemCreateView
@@ -18,6 +18,9 @@ from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
 from .trial_completion_view import TrialCompletionView
 from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView
+
+from .admin_services import (AdminDailyStatusView, AdminInventoryStatusView, AdminRevenueReportsView, 
+                            AdminStaffPerformanceView, AdminPatientMasterSearchView,ClinicListView)
 
 
 
@@ -103,4 +106,16 @@ urlpatterns = [
    path('device-booking/serial/<int:inventory_item_id>/',DeviceBookingSerialView.as_view()),
    path('patient-visits/followup',PatientVisitFollowupView.as_view()),
    path('patient-visits/<int:visit_id>/mark-contacted/',MarkPatientContactedView.as_view()),
+
+   # Admin Dashboard APIs
+   path('admin/daily-status/', AdminDailyStatusView.as_view(), name='admin_daily_status'),
+   path('admin/inventory-status/', AdminInventoryStatusView.as_view(), name='admin_inventory_status'),
+   path('admin/revenue-reports/', AdminRevenueReportsView.as_view(), name='admin_revenue_reports'),
+   path('admin/staff-performance/', AdminStaffPerformanceView.as_view(), name='admin_staff_performance'),
+   path('admin/patient-search/', AdminPatientMasterSearchView.as_view(), name='admin_patient_search'),
+   path('admin/clinics/', ClinicListView.as_view(), name='admin_clinics'),
+
+   path('inventory/serial-number/create/', InventorySerialNumberCreateView.as_view(), name='inventory_serial_number_create'),
+
+
 ]

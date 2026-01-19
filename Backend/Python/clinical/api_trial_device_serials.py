@@ -12,20 +12,32 @@ class TrialDeviceSerialListView(generics.ListAPIView):
     """API endpoint for listing serial numbers of trial devices with count > 0."""
     permission_classes = [permissions.IsAuthenticated]
     
+    
     def get_queryset(self):
         """Get serial numbers for trial devices with available count > 0 and not used in trials."""
         # Get serial numbers that are already used in trials
         used_serial_numbers = Trial.objects.filter(
             serial_number__isnull=False
         ).values_list('serial_number', flat=True)
+
+        # Get search parameter from query params
+        search_serial = self.request.query_params.get('serial_number', None)
         
         # Filter available devices excluding those used in trials
-        return InventorySerial.objects.filter(
+        queryset = InventorySerial.objects.filter(
             inventory_item__use_in_trial=True,
             status='In Stock'
         ).exclude(
             serial_number__in=used_serial_numbers
-        ).values('serial_number')
+        )
+        
+        # Apply search filter if serial_number parameter is provided
+        if search_serial:
+            queryset = queryset.filter(
+                serial_number__icontains=search_serial
+            )
+        
+        return queryset.values('serial_number')
     
     def list(self, request, *args, **kwargs):
         """Return serial numbers grouped by device with counts."""

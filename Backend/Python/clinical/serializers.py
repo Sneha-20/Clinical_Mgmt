@@ -1510,7 +1510,7 @@ class TrialCompletionSerializer(serializers.Serializer):
     }
     """
     trial_decision = serializers.ChoiceField(
-        choices=[('BOOK', 'Book Device'), ('FOLLOWUP', 'Need Time - Not Booked'), ('DECLINE', 'Decline Device Booking')],
+        choices=[('BOOK', 'Book Device'), ('TRIAL ACTIVE', 'Need Time - Not Booked'), ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
     )
