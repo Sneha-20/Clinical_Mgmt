@@ -8,7 +8,6 @@ import TodayList from "./component/TodayList";
 import TotalList from "./component/TotalList";
 import SearchBox from "./component/SearchBox";
 import usePatientData from "@/lib/hooks/usePatientData";
-import useStatsData from "@/lib/hooks/useStatsData";
 import SchedulAppoinment from "./component/SchedulAppoinment";
 import PatientRegistrationForm from "./component/patient-registration-form";
 import PatientVisitForm from "./component/PatientVisitForm";
@@ -21,9 +20,6 @@ export default function ReceptionistDashboard() {
   const [showSelctedPatientId, setShowSelctedPatientId] = useState(null);
   const [showVisitForm, setShowVisitForm] = useState(false);
   const [showScheduleAppointment, setShowScheduleAppointment] = useState(false);
-  console.log("showSelctedPatientIdttttt",showSelctedPatientId)
-
-  console.log("showVisitForm",showVisitForm)
 
   const {
     activeTab,
@@ -36,6 +32,7 @@ export default function ReceptionistDashboard() {
     pagination,
     serviceType,
     visitStatus,
+    stats,
     
 
     setActiveTab,
@@ -47,14 +44,8 @@ export default function ReceptionistDashboard() {
     handleViewProfile,
     setServiceType,
     setVisitStatus,
-    // loading: statsLoading ,
-    stats  
   } = usePatientData();
 
-
-  console.log("STSTAAA", stats);
-
- 
   const onAddPatientSubmit = async (data) => {
     try {
       await handleAddPatient(data);

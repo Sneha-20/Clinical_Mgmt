@@ -19,6 +19,7 @@ export const visitStatusOptions = [
   { label: "Trial Completed - No Device", value: "Trial Completed - No Device" },
   { label: "Follow up", value: "Follow up" },
   { label: "Pending for Service", value: "Pending for Service" },
+  { label: "All", value: "All" },
 
 ];
 

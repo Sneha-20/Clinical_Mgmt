@@ -107,13 +107,11 @@ export default function usePatientData() {
   // FETCH TOTAL PATIENTS
   // ------------------------------------------
   const fetchTotalPatients = useCallback(
-    async ({ page = 1, search = "",service="" } = {}) => {
+    async ({ page = 1, search = "",service="",status="" } = {}) => {
       setLoadingTotal(true);
       try {
-        const res = await getPatientList({ page, search, service });
-
+        const res = await getPatientList({ page, search, service, status });
         setPatients(mapPatients(res.patients || []));
-
         setPagination((prev) => ({
           ...prev,
           total: {
@@ -135,10 +133,10 @@ export default function usePatientData() {
   // FETCH TODAY PATIENTS
   // ------------------------------------------
   const fetchTodayPatients = useCallback(
-    async ({ page = "", search = "", service= "" } = {}) => {
+    async ({ page = "", search = "", service= "",status="" } = {}) => {
       setLoadingToday(true);
       try {
-        const res = await getTodayPatientList({ page, search, service });
+        const res = await getTodayPatientList({ page, search, service, status });
 
         setTodayPatients(mapPatients(res.patients || []));
 
@@ -158,7 +156,6 @@ export default function usePatientData() {
     },
     [mapPatients]
   );
-
   // ------------------------------------------
   // LOAD ON MOUNT
   // ------------------------------------------
@@ -171,34 +168,24 @@ export default function usePatientData() {
   // TAB SWITCH
   // ------------------------------------------
 useEffect(() => {
-  console.log("serviceType",serviceType)
   if (!serviceType) return;
-
   if (activeTab === "today") {
-    fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType });
+    fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus });
   } else {
-    fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType });
+    fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus });
   }
-}, [serviceType,activeTab]);
+}, [serviceType,activeTab,visitStatus]);
 
   // ------------------------------------------
   // SEARCH
   // ------------------------------------------
   useEffect(() => {
     if (activeTab === "today") {
-      fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType });
+      fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus});
     } else {
-      fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType});
+      fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus});
     }
   }, [searchTerm]);
-
-  // useEffect(() => {
-  //   if (serviceType === "today") {
-  //     fetchTodayPatients({ page: 1, search: searchTerm });
-  //   } else {
-  //     fetchTotalPatients({ page: 1, search: searchTerm });
-  //   }
-  // }, [searchTerm]);
 
   // ------------------------------------------
   // PAGINATION
@@ -280,8 +267,6 @@ useEffect(() => {
     router.push(`${userprofile}/${id}`);
   };
 
-  
-
   return {
     serviceType,
     setServiceType,
@@ -303,6 +288,7 @@ useEffect(() => {
     loadingTotal,
 
     pagination: pagination[activeTab],
+    stats,
 
     goToNextPage,
     goToPreviousPage,
@@ -310,7 +296,6 @@ useEffect(() => {
     handleAddPatient,
     handleAddVisit,
     handleViewProfile,
-    stats,
     refetch: fetchStats,
   };
 }
