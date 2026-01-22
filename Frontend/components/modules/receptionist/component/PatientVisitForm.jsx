@@ -197,40 +197,44 @@ export default function PatientVisitForm({
             />
 
             {/* Tests Required */}
-            <div className="mt-4">
-              <label className="font-medium text-sm text-gray-700">
-                Tests Required (Tick)
-              </label>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                {testRequestedOptions.map((test) => (
-                  <label
-                    key={test.value}
-                    className="flex items-center gap-2 text-sm"
-                  >
-                    <input
-                      type="checkbox"
-                      value={test.value}
-                      checked={visit.test_requested.includes(test.value)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-
-                        let updated = [...visit.test_requested];
-
-                        if (updated.includes(value)) {
-                          updated = updated.filter((t) => t !== value);
-                        } else {
-                          updated.push(value);
-                        }
-
-                        updateVisitDetails(index, "test_requested", updated);
-                      }}
-                    />
-                    {test.label}
+            {visit.visit_type !== "TGA" && (
+              <>
+                <div className="mt-4">
+                  <label className="font-medium text-sm text-gray-700">
+                    Tests Required (Tick)
                   </label>
-                ))}
-              </div>
-            </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  {testRequestedOptions.map((test) => (
+                    <label
+                      key={test.value}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        value={test.value}
+                        checked={visit.test_requested.includes(test.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+
+                          let updated = [...visit.test_requested];
+
+                          if (updated.includes(value)) {
+                            updated = updated.filter((t) => t !== value);
+                          } else {
+                            updated.push(value);
+                          }
+
+                          updateVisitDetails(index, "test_requested", updated);
+                        }}
+                      />
+                      {test.label}
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         ))}
 

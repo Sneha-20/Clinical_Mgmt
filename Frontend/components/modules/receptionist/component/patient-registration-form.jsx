@@ -323,6 +323,7 @@ export default function PatientRegistrationForm({
                     formik.setFieldValue(`visit_details.${index}.seen_by`, v)
                   }
                 />
+                
 
                 <textarea
                   className="w-full border rounded p-2 mt-2"
@@ -335,27 +336,38 @@ export default function PatientRegistrationForm({
                   }
                 />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                  {testRequestedOptions.map((test) => (
-                    <CommonCheckbox
-                      key={test.value}
-                      label={test.label}
-                      value={test.value}
-                      checked={visit.test_requested.includes(test.value)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const updated = visit.test_requested.includes(value)
-                          ? visit.test_requested.filter((t) => t !== value)
-                          : [...visit.test_requested, value];
+                {/* Tests Required */}
+                {visit.visit_type !== "TGA" && (
+                  <>
+                    <div className="mt-4">
+                      <label className="font-medium text-sm text-gray-700">
+                        Tests Required (Tick)
+                      </label>
+                    </div>
 
-                        formik.setFieldValue(
-                          `visit_details.${index}.test_requested`,
-                          updated
-                        );
-                      }}
-                    />
-                  ))}
-                </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      {testRequestedOptions.map((test) => (
+                        <CommonCheckbox
+                          key={test.value}
+                          label={test.label}
+                          value={test.value}
+                          checked={visit.test_requested.includes(test.value)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const updated = visit.test_requested.includes(value)
+                              ? visit.test_requested.filter((t) => t !== value)
+                              : [...visit.test_requested, value];
+
+                            formik.setFieldValue(
+                              `visit_details.${index}.test_requested`,
+                              updated
+                            );
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
 

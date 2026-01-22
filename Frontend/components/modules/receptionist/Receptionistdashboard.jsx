@@ -8,7 +8,6 @@ import TodayList from "./component/TodayList";
 import TotalList from "./component/TotalList";
 import SearchBox from "./component/SearchBox";
 import usePatientData from "@/lib/hooks/usePatientData";
-import useStatsData from "@/lib/hooks/useStatsData";
 import SchedulAppoinment from "./component/SchedulAppoinment";
 import PatientRegistrationForm from "./component/patient-registration-form";
 import PatientVisitForm from "./component/PatientVisitForm";
