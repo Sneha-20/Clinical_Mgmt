@@ -1,3 +1,5 @@
+import ReceptionistDashboard from "@/components/modules/receptionist/Receptionistdashboard";
+
 export const routes = {
   // auth
   register: "/accounts/register/",
@@ -11,6 +13,7 @@ export const routes = {
   searchPatient: "/clinical/patient/flat-list/",
   doctorList: "/clinical/doctor/flat-list/",
   patientProfile: "/clinical/patient/",
+  receptionistDashboard:"clinical/dashboard/stats/",
 
   audiologist:{
    appointmentList:"clinical/audiologits/queue/",

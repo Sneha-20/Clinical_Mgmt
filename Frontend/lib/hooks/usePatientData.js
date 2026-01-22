@@ -12,6 +12,7 @@ import { routes } from "@/lib/utils/constants/route";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
 import { showToast } from "@/components/ui/toast";
 import { useDispatch } from "react-redux";
+import { getDashboardStats } from "@/lib/services/dashboard";
 
 export default function usePatientData() {
    const dispatch = useDispatch();
@@ -19,9 +20,19 @@ export default function usePatientData() {
 
   const userprofile = routes.pages.userptofile;
 
+
+  // Stats
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    todayVisits: 0,
+    pendingTests: 0,
+    followUps: 0,
+  });
+
   // Active tab
   const [activeTab, setActiveTab] = useState("today");
   const [serviceType, setServiceType] = useState("All");
+  const [visitStatus, setVisitStatus] = useState("All");
 
   // Search
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +52,29 @@ export default function usePatientData() {
     total: { currentPage: 1, totalPages: 1, totalItems: 0 },
   });
 
+    const fetchStats = async () => {
+      try {
+        const data = await getDashboardStats();
+        console.log("Stats data:", data);
+        setStats({
+          totalPatients: data.total_patients || 0,
+          todayVisits: data.todays_visits || 0,
+          pendingServices: data.pending_services || 0,
+          followUpVisits: data.followup_visits || 0,
+        });
+  
+  
+      } catch (err) {
+        console.error("Stats fetch error:", err);
+        // setError(err.message || "Failed to fetch statistics");
+      }
+    };
+
+    useEffect(() => {
+    fetchStats();
+  }, []);
+
+    
   // MAP
   const mapPatients = useCallback(
     (list = []) =>
@@ -252,6 +286,9 @@ useEffect(() => {
     serviceType,
     setServiceType,
 
+    visitStatus,
+    setVisitStatus,
+
     activeTab,
     setActiveTab,
 
@@ -273,5 +310,7 @@ useEffect(() => {
     handleAddPatient,
     handleAddVisit,
     handleViewProfile,
+    stats,
+    refetch: fetchStats,
   };
 }

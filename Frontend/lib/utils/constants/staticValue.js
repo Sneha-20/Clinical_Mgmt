@@ -10,6 +10,18 @@ export const serviceOption = [
   { label: "All", value: "All" },
 ];
 
+
+export const visitStatusOptions = [
+  { label: "Test pending", value: "Test pending" },
+  { label: "Test Performed", value: "Test Performed" },
+  { label: "Trial Active", value: "Trial Active" },
+  { label: "Device Booked", value: "Device Booked" },
+  { label: "Trial Completed - No Device", value: "Trial Completed - No Device" },
+  { label: "Follow up", value: "Follow up" },
+  { label: "Pending for Service", value: "Pending for Service" },
+
+];
+
 export const complaintOptions = [
   { label: "Hearing problem", value: "Hearing" },
   { label: "Speech delay", value: "Speech" },

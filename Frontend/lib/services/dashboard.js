@@ -183,3 +183,22 @@ export const searchPatient = async (searchTerm) => {
   }
 };
 
+/**
+ * Get dashboard statistics
+ * @returns {Promise<Object>} Dashboard statistics data
+ */
+export const getDashboardStats = async () => {
+  try {
+    const url = routes.receptionistDashboard;
+    const response = await apiClient.get(url);
+    
+    return response?.data || {};
+  } catch (error) {
+    console.error("❌ Dashboard stats fetch failed:", {
+      status: error?.response?.status,
+      message: error?.message,
+    });
+    throw error;
+  }
+};
+

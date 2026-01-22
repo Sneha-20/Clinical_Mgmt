@@ -13,13 +13,35 @@ function StatCard({ label, value, color }) {
   );
 }
 
-export default function StatsSection({ totalPatientsCount = 0 }) {
+export default function StatsSection({ 
+  totalPatientsCount = 0,
+  todayVisits = 0,
+  pendingTests = 0,
+  followUps = 0,
+  loading = false
+}) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-      <StatCard label="Total Patients" value={totalPatientsCount} color="bg-blue-100" />
-      <StatCard label="Today's Visits" value="—" color="bg-green-100" />
-      <StatCard label="Pending Tests" value="—" color="bg-yellow-100" />
-      <StatCard label="Follow-ups" value="—" color="bg-purple-100" />
+      <StatCard 
+        label="Total Patients" 
+        value={loading ? "..." : totalPatientsCount} 
+        color="bg-blue-100" 
+      />
+      <StatCard 
+        label="Today's Visits" 
+        value={loading ? "..." : todayVisits} 
+        color="bg-green-100" 
+      />
+      <StatCard 
+        label="Pending Services" 
+        value={loading ? "..." : pendingTests} 
+        color="bg-yellow-100" 
+      />
+      <StatCard 
+        label="Follow-ups" 
+        value={loading ? "..." : followUps} 
+        color="bg-purple-100" 
+      />
     </div>
   );
 }

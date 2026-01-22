@@ -8,12 +8,13 @@ import TodayList from "./component/TodayList";
 import TotalList from "./component/TotalList";
 import SearchBox from "./component/SearchBox";
 import usePatientData from "@/lib/hooks/usePatientData";
+import useStatsData from "@/lib/hooks/useStatsData";
 import SchedulAppoinment from "./component/SchedulAppoinment";
 import PatientRegistrationForm from "./component/patient-registration-form";
 import PatientVisitForm from "./component/PatientVisitForm";
 import Pagination from "@/components/ui/Pagination";
 import DropDown from "@/components/ui/dropdown";
-import { serviceOption } from "@/lib/utils/constants/staticValue";
+import { serviceOption , visitStatusOptions} from "@/lib/utils/constants/staticValue";
 
 export default function ReceptionistDashboard() {
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
@@ -34,6 +35,8 @@ export default function ReceptionistDashboard() {
     loadingToday,
     pagination,
     serviceType,
+    visitStatus,
+    
 
     setActiveTab,
     setSearchTerm,
@@ -43,7 +46,13 @@ export default function ReceptionistDashboard() {
     handleAddVisit,
     handleViewProfile,
     setServiceType,
+    setVisitStatus,
+    // loading: statsLoading ,
+    stats  
   } = usePatientData();
+
+
+  console.log("STSTAAA", stats);
 
  
   const onAddPatientSubmit = async (data) => {
@@ -69,7 +78,13 @@ export default function ReceptionistDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <DashboardHeader onAddVisit={() => setShowScheduleAppointment(true)} />
-      <StatsSection totalPatientsCount={pagination.totalItems || 0} />
+      <StatsSection 
+        totalPatientsCount={stats.totalPatients || 0}
+        todayVisits={stats.todayVisits}
+        pendingTests={stats.pendingServices}
+        followUps={stats.followUpVisits}
+        // loading={statsLoading}
+      />
 
       {/* {showScheduleAppointment && ( */}
         <SchedulAppoinment
@@ -117,6 +132,13 @@ export default function ReceptionistDashboard() {
             value={serviceType}
             name="serviceType"
             onChange={(name, value) => setServiceType(value)}
+          />
+
+          <DropDown
+            options={visitStatusOptions}
+            value={visitStatus}
+            name="visitStatus"
+            onChange={(name, value) => setVisitStatus(value)}
           />
         </div>
 
