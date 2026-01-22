@@ -354,7 +354,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
         with transaction.atomic():
             for visit_data in visits_data:
                 visit_type = visit_data.get('visit_type')
-                if visit_type in ['Battery Purchase', 'Tip / Dome Change']:
+                if visit_type in ['Battery Purchase', 'Tip / Dome Change', 'TGA']:
                     status_value = 'Pending for Service'
                 else:
                     status_value = 'Test pending'
@@ -1510,7 +1510,7 @@ class TrialCompletionSerializer(serializers.Serializer):
     }
     """
     trial_decision = serializers.ChoiceField(
-        choices=[('BOOK', 'Book Device'), ('TRIAL ACTIVE', 'Need Time - Not Booked'), ('DECLINE', 'Decline Device Booking')],
+        choices=[('BOOK', 'Book Device'), ('TRIAL', 'Need Time - Not Booked'), ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
     )
