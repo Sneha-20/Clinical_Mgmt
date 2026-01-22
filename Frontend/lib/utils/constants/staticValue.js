@@ -50,7 +50,7 @@ export const testRequestedOptions = [
 export const visitTypeOptions = [
   { label: "New Test", value: "New Test" },
   { label: "Follow-up", value: "Follow-up" },
-  { label: "TGA / Machine Check", value: "TGA / Machine Check" },
+  { label: "TGA / Machine Check", value: "TGA" },
   { label: "Tip / Dome Change", value: "Tip / Dome Change" },
   // { label: "Machine cleaning", value: "machine_cleaning" },
   { label: "Hearing Aid Trial", value: "Hearing Aid Trial" },
