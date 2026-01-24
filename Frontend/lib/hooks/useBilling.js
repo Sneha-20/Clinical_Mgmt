@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
 import { showToast } from "@/components/ui/toast";
@@ -13,8 +13,6 @@ export default function useBilling() {
   const [paidBillList, setPaidBillList] = useState([]);
   const [dueBillList, setDueBillList] = useState([]);
   const [billingDetail, setBillingDetail] = useState({});
-  // const [loading, setLoading] = useState(false);
-  // const [searchQuery, setSearchQuery] = useState("");
   const [selectedBilling, setSelectedBilling] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -98,66 +96,13 @@ export default function useBilling() {
        console.log("test4")
   };
 
-  /* ---------------- FILTERED DATA ---------------- */
-  // const duePayments = useMemo(
-  //   () => billingData.filter((b) => b.payment_status !== "Paid"),
-  //   [billingData]
-  // );
-
-  // const paidPayments = useMemo(
-  //   () => billingData.filter((b) => b.payment_status === "Paid"),
-  //   [billingData]
-  // );
-
-  /* ---------------- STATS ---------------- */
-  // const totalDue = useMemo(
-  //   () => duePayments.reduce((sum, b) => sum + b.balance_due, 0),
-  //   [duePayments]
-  // );
-
-  // const totalCollected = useMemo(
-  //   () => paidPayments.reduce((sum, b) => sum + b.total_amount, 0),
-  //   [paidPayments]
-  // );
-
-
-  // const handlePayNow = (id) => {
-  //   setBillingData((prev) =>
-  //     prev.map((b) =>
-  //       b.id === id
-  //         ? {
-  //             ...b,
-  //             status: "paid",
-  //             amount_paid: b.total_amount,
-  //             balance_due: 0,
-  //           }
-  //         : b
-  //     )
-  //   );
-
-  //   setDialogOpen(false);
-
-  //   showToast({ type: "success", message: "Payment Successfull" });
-  // };
-
   return {
-    // loading,
-    // searchQuery,
-    // setSearchQuery,
-    // setDialogOpen,
-    // selectedBilling,
     billingDetail,
     dialogOpen,
     paidBillList,
     dueBillList,
     selectedBilling,
-    
-    // duePayments,
-    // paidPayments,
-    
-    // totalDue,
-    // totalCollected,
-      paidPage,
+    paidPage,
     duePage,
     paidTotalPages,
     dueTotalPages,

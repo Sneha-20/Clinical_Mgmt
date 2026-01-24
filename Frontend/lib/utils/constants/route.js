@@ -44,6 +44,7 @@ export const routes = {
     userptofile: "/dashboard/userprofile",
     patientCaseHistory: "/dashboard/case-history",
     patientVisitdetail: "/dashboard/patient/visit-details",
+    followUpList: "/dashboard/receptionist/followup-list",
     signup: "/signup",
     login: "/login",
     home: "/",

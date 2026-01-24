@@ -33,8 +33,6 @@ export default function ReceptionistDashboard() {
     serviceType,
     visitStatus,
     stats,
-    
-
     setActiveTab,
     setSearchTerm,
     goToNextPage,
@@ -67,6 +65,7 @@ export default function ReceptionistDashboard() {
     }
   };
   return (
+    <>
     <div className="space-y-4 sm:space-y-6">
       <DashboardHeader onAddVisit={() => setShowScheduleAppointment(true)} />
       <StatsSection 
@@ -74,37 +73,7 @@ export default function ReceptionistDashboard() {
         todayVisits={stats.todayVisits}
         pendingTests={stats.pendingServices}
         followUps={stats.followUpVisits}
-        // loading={statsLoading}
       />
-
-      {/* {showScheduleAppointment && ( */}
-        <SchedulAppoinment
-          onClose={() => setShowScheduleAppointment(false)}
-          setShowRegistrationForm={setShowRegistrationForm}
-          setShowVisitForm={setShowVisitForm}
-          setShowSelctedPatientId={setShowSelctedPatientId}
-          isModalOpen={showScheduleAppointment}
-        />
-      
-
-      {showRegistrationForm && (
-        <PatientRegistrationForm
-          onClose={() => setShowRegistrationForm(false)}
-          onSubmit={onAddPatientSubmit}
-          doctorList={doctorList}
-        />
-      )}
-
-      {/* {showSelctedPatientId && ( */}
-        <PatientVisitForm
-          showSelctedPatientId={showSelctedPatientId}
-          isModalOpen={showVisitForm}
-          doctorList={doctorList}
-          onClose={() => setShowVisitForm(false)}
-          onSubmit={onAddVisitSubmit}
-        />
-      {/* )} */}
-
       <div className="space-y-2 bg-card text-card-foreground flex flex-col gap-2 rounded-xl border p-6 shadow-sm">
         <div className="flex items-start justify-between mb-2">
           <div>
@@ -172,5 +141,29 @@ export default function ReceptionistDashboard() {
         />
       </div>
     </div>
+      <SchedulAppoinment
+          onClose={() => setShowScheduleAppointment(false)}
+          setShowRegistrationForm={setShowRegistrationForm}
+          setShowVisitForm={setShowVisitForm}
+          setShowSelctedPatientId={setShowSelctedPatientId}
+          isModalOpen={showScheduleAppointment}
+        />
+
+      {showRegistrationForm && (
+        <PatientRegistrationForm
+          onClose={() => setShowRegistrationForm(false)}
+          onSubmit={onAddPatientSubmit}
+          doctorList={doctorList}
+        />
+      )}
+
+        <PatientVisitForm
+          showSelctedPatientId={showSelctedPatientId}
+          isModalOpen={showVisitForm}
+          doctorList={doctorList}
+          onClose={() => setShowVisitForm(false)}
+          onSubmit={onAddVisitSubmit}
+        />
+    </>
   );
 }
