@@ -243,10 +243,10 @@ class ServiceVisitUpdateView(APIView):
                             BillItem.objects.create(
                                 bill=bill,
                                 item_type='Part Used in Service',
-                            description=f"{inventory_item.product_name} (Qty: {part_data['quantity']})",
-                            cost=inventory_item.unit_price * part_data['quantity'],
-                            quantity=part_data['quantity'],
-                        )
+                                description=f"{inventory_item.product_name} (Qty: {part_data['quantity']})",
+                                cost=inventory_item.unit_price * part_data['quantity'],
+                                quantity=part_data['quantity'],
+                            )
                     
                     # Calculate bill total
                     bill.calculate_total()
