@@ -12,7 +12,6 @@ export default function SidebarNav({ role, onItemClick }) {
   const navItems = {
     Reception: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
-      // { icon: '📝', label: 'New Patient', href: '/dashboard/patients' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
       { icon: '👁️', label: 'Trials', href: '/dashboard/trials' },
@@ -77,6 +76,7 @@ export default function SidebarNav({ role, onItemClick }) {
             <button
               key={item.href}
               onClick={() => {
+                console.log("itemref",item.href)
                 router.push(item.href);
                 onItemClick?.();
               }}

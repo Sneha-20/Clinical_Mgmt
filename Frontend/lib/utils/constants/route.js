@@ -50,6 +50,6 @@ export const routes = {
     home: "/",
   },
 };
-export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.patientCaseHistory];
+export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList];
 
 export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.home];

@@ -5,7 +5,7 @@ import { routes } from "@/lib/utils/constants/route";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-function StatCard({ label, value, color,url }) {
+function StatCard({ label, value, color,url="" }) {
    const router = useRouter()
  
   return (
@@ -15,7 +15,7 @@ function StatCard({ label, value, color,url }) {
         <p className="text-slate-600 text-xs sm:text-sm">{label}</p>
         <p className="text-xl sm:text-2xl font-bold">{value}</p>
         <div className="flex items-center">
-        <Button variant="link" onClick={router.push(url)}  className="text-red-600 pr-1 pl-0 hover:pr-[6px]">View All List</Button>
+        <Button variant="link" onClick={() => router.push(url)}  className="text-red-600 pr-1 pl-0 hover:pr-[6px]">View All List</Button>
         <ArrowRight width={18} color="red"/>
         </div>
       </CardContent>
