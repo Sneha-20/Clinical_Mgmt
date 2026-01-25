@@ -1,28 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DropDown from "@/components/ui/dropdown";
 import Modal from "@/components/ui/Modal";
-import { createTgaService } from "@/lib/services/dashboard";
+import { 
+  getPatientServiceList, 
+  getServiceTypes, 
+  getPatientDevicePurchases,
+  createTgaServiceRequest 
+} from "@/lib/services/dashboard";
 import { showToast } from "@/components/ui/toast";
-import { tgaServiceTypeOptions } from "@/lib/utils/constants/staticValue";
+import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 
 export default function ServiceRequestForm({ onClose, onSuccess }) {
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const [patients, setPatients] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [devicePurchases, setDevicePurchases] = useState([]);
+  
   const [formData, setFormData] = useState({
-    patient_name: "",
-    patient_phone: "",
-    patient_email: "",
+    patient_id: "",
     service_type: "",
-    machine_model: "",
-    serial_number: "",
-    issue_description: "",
-    urgency_level: "normal",
-    preferred_date: "",
-    notes: "",
+    device_serial_need_service: "",
+    complaint: "",
+    // warranty_applicable: false,
   });
+
+  // Fetch dropdown data
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      dispatch(startLoading());
+      try {
+        const [patientsData, serviceTypesData] = await Promise.all([
+          getPatientServiceList(),
+          getServiceTypes(),
+        ]);
+        
+        setPatients(patientsData || []);
+        setServiceTypes(serviceTypesData || []);
+      } catch (error) {
+        console.error("Failed to fetch dropdown data:", error);
+        showToast({
+          type: "error",
+          message: "Failed to load dropdown data",
+        });
+      } finally {
+        dispatch(stopLoading());
+      }
+    };
+
+    fetchDropdownData();
+  }, [dispatch]);
+
+  // Fetch device purchases when patient is selected
+  useEffect(() => {
+    if (formData.patient_id) {
+      const fetchDevicePurchases = async () => {
+        try {
+          const devices = await getPatientDevicePurchases(formData.patient_id);
+          setDevicePurchases(devices || []);
+        } catch (error) {
+          console.error("Failed to fetch device purchases:", error);
+          setDevicePurchases([]);
+        }
+      };
+
+      fetchDevicePurchases();
+    } else {
+      setDevicePurchases([]);
+    }
+  }, [formData.patient_id]);
 
   const updateField = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -30,10 +80,10 @@ export default function ServiceRequestForm({ onClose, onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    dispatch(startLoading());
 
     try {
-      await createTgaService(formData);
+      await createTgaServiceRequest(formData);
       showToast({
         type: "success",
         message: "Service request created successfully!",
@@ -45,99 +95,70 @@ export default function ServiceRequestForm({ onClose, onSuccess }) {
         message: error?.message || "Failed to create service request",
       });
     } finally {
-      setLoading(false);
+      dispatch(stopLoading());
     }
   };
 
+  console.log("formData", formData);
+
+  // Format dropdown options
+  const patientOptions = patients.map((patient) => ({
+    label: `${patient.patient_name} - (${patient.phone || patient.phone_primary})`,
+    value: patient.id || patient.patient_id,
+  }));
+
+  const serviceTypeOptions = serviceTypes.map((type) => ({
+    label: type.label || type,
+    value: type.value || type,
+  }));
+
+  const deviceOptions = devicePurchases.map((device) => ({
+    label: `${device.product_name} - SN: ${device.serial_number}`,
+    value: device.serial_number,
+  }));
+
   return (
-    <Modal header="Create Service Request" isModalOpen={true} onClose={onClose}>
+    <Modal header="Create Service Request" isModalOpen={true} onClose={onClose} showButton={false}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            label="Patient Name"
-            value={formData.patient_name}
-            onChange={(e) => updateField("patient_name", e.target.value)}
+          <DropDown
+            label="Patient"
+            options={patientOptions}
+            value={formData.patient_id}
+            onChange={(name, value) => updateField("patient_id", value)}
             required
-          />
-          
-          <Input
-            label="Patient Phone"
-            value={formData.patient_phone}
-            onChange={(e) => updateField("patient_phone", e.target.value)}
-            required
-          />
-          
-          <Input
-            label="Patient Email"
-            type="email"
-            value={formData.patient_email}
-            onChange={(e) => updateField("patient_email", e.target.value)}
           />
           
           <DropDown
             label="Service Type"
-            options={tgaServiceTypeOptions}
+            options={serviceTypeOptions}
             value={formData.service_type}
             onChange={(name, value) => updateField("service_type", value)}
             required
           />
           
-          <Input
-            label="Machine Model"
-            value={formData.machine_model}
-            onChange={(e) => updateField("machine_model", e.target.value)}
-            required
-          />
-          
-          <Input
-            label="Serial Number"
-            value={formData.serial_number}
-            onChange={(e) => updateField("serial_number", e.target.value)}
-          />
-          
           <DropDown
-            label="Urgency Level"
-            options={[
-              { label: "Normal", value: "normal" },
-              { label: "High", value: "high" },
-              { label: "Urgent", value: "urgent" },
-            ]}
-            value={formData.urgency_level}
-            onChange={(name, value) => updateField("urgency_level", value)}
-          />
-          
-          <Input
-            label="Preferred Date"
-            type="date"
-            value={formData.preferred_date}
-            onChange={(e) => updateField("preferred_date", e.target.value)}
+            label="Device Serial Number"
+            options={deviceOptions}
+            value={formData.device_serial_need_service}
+            onChange={(name, value) => updateField("device_serial_need_service", value)}
+            disabled={!formData.patient_id}
+            placeholder={formData.patient_id ? "Select device" : "Select patient first"}
+            required
           />
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Issue Description
+            Complaint
           </label>
           <textarea
             className="w-full border border-gray-300 rounded-md p-2"
             rows={4}
-            value={formData.issue_description}
-            onChange={(e) => updateField("issue_description", e.target.value)}
-            placeholder="Describe the issue or service required..."
+            value={formData.complaint}
+            onChange={(e) => updateField("complaint", e.target.value)}
+            placeholder="Describe the issue or complaint..."
             required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Additional Notes
-          </label>
-          <textarea
-            className="w-full border border-gray-300 rounded-md p-2"
-            rows={3}
-            value={formData.notes}
-            onChange={(e) => updateField("notes", e.target.value)}
-            placeholder="Any additional information..."
           />
         </div>
 
@@ -146,12 +167,11 @@ export default function ServiceRequestForm({ onClose, onSuccess }) {
             type="button"
             variant="outline"
             onClick={onClose}
-            disabled={loading}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Request"}
+          <Button type="submit">
+            Create Request
           </Button>
         </div>
       </form>

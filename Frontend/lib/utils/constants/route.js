@@ -20,7 +20,13 @@ export const routes = {
   // TGA Services
   tgaServiceList: "clinical/service/visit/list",
   tgaServiceDetails: "clinical/service/visit/",
-  tgaServiceUpdate: "/api/clinical/service/visit/",
+  tgaServiceUpdate: "clinical/service/visit/",
+  tgaServiceCreate: "clinical/service/visit/create/",
+  
+  // Service Request Dropdown Routes
+  patientServiceList: "clinical/patient/service-list/",
+  serviceTypes: "clinical/service/types/",
+  patientDevicePurchases: "clinical/patient",
 
   audiologist:{
    appointmentList:"clinical/audiologits/queue/",
@@ -55,8 +61,9 @@ export const routes = {
     signup: "/signup",
     login: "/login",
     home: "/",
+    servicepage:"/dashboard/tga-service"
   },
 };
-export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList];
+export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
 
 export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.home];
