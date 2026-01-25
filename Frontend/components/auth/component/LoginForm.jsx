@@ -10,6 +10,7 @@ import { staticText } from "@/lib/utils/constants/staticOption";
 import { Button } from "@/components/ui/button";
 import DropDown from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
+import CommonCheckbox from "@/components/ui/CommonCheckbox";
 import { showToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +22,7 @@ export default function LoginForm({ onLogin }) {
     email: "",
     password: "",
     clinicId: null,
+    isAdmin: false,
   });
 
   const [error, setError] = useState({});
@@ -38,16 +40,25 @@ export default function LoginForm({ onLogin }) {
 
   const handleChange = useCallback(
     (e) => {
-      const { name, value } = e.target;
+      const { name, value, type, checked } = e.target;
       setUserData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: type === "checkbox" ? checked : value,
+        // Clear clinicId when isAdmin is checked
+        ...(name === "isAdmin" && checked ? { clinicId: null } : {}),
       }));
 
       if (error[name]) {
         setError((prev) => ({
           ...prev,
           [name]: "",
+        }));
+      }
+      // Clear clinicId error when isAdmin is checked
+      if (name === "isAdmin" && checked && error.clinicId) {
+        setError((prev) => ({
+          ...prev,
+          clinicId: "",
         }));
       }
     },
@@ -64,6 +75,27 @@ export default function LoginForm({ onLogin }) {
     [error]
   );
 
+  const handleCheckboxChange = useCallback(
+    (e) => {
+      const checked = e.target.checked;
+      setUserData((prev) => ({
+        ...prev,
+        isAdmin: checked,
+        // Clear clinicId when isAdmin is checked
+        ...(checked ? { clinicId: null } : {}),
+      }));
+
+      // Clear clinicId error when isAdmin is checked
+      if (checked && error.clinicId) {
+        setError((prev) => ({
+          ...prev,
+          clinicId: "",
+        }));
+      }
+    },
+    [error]
+  );
+
   const handleLogin = useCallback(
     async (e) => {
       e.preventDefault();
@@ -74,7 +106,17 @@ export default function LoginForm({ onLogin }) {
       }
 
       try {
-        await loginSchema.validate(userData, { abortEarly: false });
+        // Create validation data - exclude clinicId if isAdmin is true
+        const validationData = userData.isAdmin
+          ? { email: userData.email, password: userData.password }
+          : userData;
+        
+        // Create a custom schema for validation
+        const customSchema = userData.isAdmin
+          ? loginSchema.omit(["clinicId"])
+          : loginSchema;
+        
+        await customSchema.validate(validationData, { abortEarly: false });
         setError({});
         
         // Set submitting state
@@ -85,7 +127,7 @@ export default function LoginForm({ onLogin }) {
         const payload = {
           email: userData.email,
           password: userData.password,
-          clinic_id: userData.clinicId,
+          ...(userData.isAdmin ? {} : { clinic_id: userData.clinicId }),
         };
 
         const res = await login(payload);
@@ -144,15 +186,28 @@ export default function LoginForm({ onLogin }) {
             error={error.password}
           />
         </div>
-        <DropDown
-          label="Clinic Name"
-          name="clinicId"
-          options={clinicOptions}
-          value={userData.clinicId}
-          onChange={updateField}
-          placeholder="Select clinic"
-          error={error.clinicId}
-        />
+        
+        <div>
+          <CommonCheckbox
+            id="isAdmin"
+            label="Is Admin"
+            checked={userData.isAdmin}
+            onChange={handleCheckboxChange}
+            value={userData.isAdmin}
+          />
+        </div>
+
+        {!userData.isAdmin && (
+          <DropDown
+            label="Clinic Name"
+            name="clinicId"
+            options={clinicOptions}
+            value={userData.clinicId}
+            onChange={updateField}
+            placeholder="Select clinic"
+            error={error.clinicId}
+          />
+        )}
 
         <Button 
           type="submit" 
