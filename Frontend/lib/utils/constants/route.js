@@ -53,8 +53,9 @@ export const routes = {
     signup: "/signup",
     login: "/login",
     home: "/",
+    servicepage:"/dashboard/tga-service"
   },
 };
-export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList];
+export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
 
 export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.home];
