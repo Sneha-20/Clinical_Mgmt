@@ -406,7 +406,7 @@ class InventoryItem(models.Model):
         ordering = ['category', 'brand', 'model_type']
 
     def __str__(self):
-        return f"{self.item_id} - {self.brand} {self.model_type}"
+        return f"{self.id} - {self.brand} {self.model_type}"
 
     @property
     def is_expired(self):
