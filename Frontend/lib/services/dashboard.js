@@ -207,10 +207,11 @@ export const getDashboardStats = async () => {
  */
 export const getTgaServiceList = async (params = {}) => {
   try {
-    const { page = 1, search = "" } = params;
+    const { page = 1, search = "", status = "" } = params;
     const queryParams = new URLSearchParams();
     queryParams.append("page", page.toString());
     if (search) queryParams.append("search", search);
+    if (status) queryParams.append("status", status);
     
     const url = `${routes.tgaServiceList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -259,6 +260,62 @@ export const updateTgaService = async (serviceId, serviceData) => {
   } catch (error) {
     console.error("❌ TGA service update failed:", error);
     throw error?.response?.data || error;
+  }
+};
+
+/**
+ * Get patient list for service requests
+ */
+export const getPatientServiceList = async () => {
+  try {
+    const url = `${routes.patientServiceList}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Patient service list fetch error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get service types
+ */
+export const getServiceTypes = async () => {
+  try {
+    const url = `${routes.serviceTypes}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Service types fetch error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get device purchases for a patient
+ */
+export const getPatientDevicePurchases = async (patientId) => {
+  try {
+    const url = `${routes.patientDevicePurchases}/${patientId}/device-purchases/`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Patient device purchases fetch error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Create TGA service request
+ */
+export const createTgaServiceRequest = async (serviceData) => {
+  try {
+    const url = `${routes.tgaServiceCreate}`;
+    const response = await apiClient.post(url, serviceData);
+    return response.data;
+  } catch (error) {
+    console.error("TGA service request creation error:", error);
+    throw error;
   }
 };
 

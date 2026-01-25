@@ -6,49 +6,73 @@ import { showToast } from "@/components/ui/toast";
 import Pagination from "@/components/ui/Pagination";
 
 export default function ServiceList({ onViewDetails, onServiceUpdated }) {
-  const [services, setServices] = useState([]);
+  const [pendingServices, setPendingServices] = useState([]);
+  const [completedServices, setCompletedServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState({
+  const [activeTab, setActiveTab] = useState("pending");
+
+  const [pendingPagination, setPendingPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
   });
 
-  const fetchServices = useCallback(async (page = 1, search = "") => {
+  const [completedPagination, setCompletedPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+  });
+
+  const fetchServices = useCallback(async (status, page = 1, search = "") => {
     setLoading(true);
     try {
-      const response = await getTgaServiceList({ page, search });
-      setServices(response.data || []);
-      setPagination({
-        currentPage: page,
-        totalPages: response.totalPages || 1,
-        totalItems: response.totalItems || 0,
-      });
+      const response = await getTgaServiceList({ page, search, status });
+      const services = response.data || [];
+
+      if (status === "Pending") {
+        setPendingServices(services);
+        setPendingPagination({
+          currentPage: page,
+          totalPages: response.totalPages || 1,
+          totalItems: response.totalItems || 0,
+        });
+      } else {
+        setCompletedServices(services);
+        setCompletedPagination({
+          currentPage: page,
+          totalPages: response.totalPages || 1,
+          totalItems: response.totalItems || 0,
+        });
+      }
     } catch (error) {
       showToast({
         type: "error",
-        message: "Failed to fetch service list",
+        message: `Failed to fetch ${status.toLowerCase()} service list`,
       });
-      console.error("Service list fetch error:", error);
+      console.error(`${status} service list fetch error:`, error);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
+    fetchServices("Pending", 1, searchTerm);
+    fetchServices("Completed", 1, searchTerm);
+  }, [fetchServices, searchTerm]);
 
   const handleSearch = (e) => {
     const search = e.target.value;
     setSearchTerm(search);
-    fetchServices(1, search);
   };
 
-  const handlePageChange = (page) => {
-    fetchServices(page, searchTerm);
+  const handlePageChange = (page, status) => {
+    fetchServices(status, page, searchTerm);
   };
+
+  const currentServices = activeTab === "pending" ? pendingServices : completedServices;
+  const currentPagination = activeTab === "pending" ? pendingPagination : completedPagination;
+  const currentStatus = activeTab === "pending" ? "Pending" : "Completed";
 
   return (
     <div className="space-y-4">
@@ -63,9 +87,32 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div className="text-sm text-gray-600">
-          Total: {pagination.totalItems} services
-        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "pending"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Pending Services ({pendingPagination.totalItems})
+          </button>
+          <button
+            onClick={() => setActiveTab("completed")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "completed"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Completed Services ({completedPagination.totalItems})
+          </button>
+        </nav>
       </div>
 
       {/* Services Table */}
@@ -74,9 +121,9 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Request ID
-                </th>
+                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Patient Info
                 </th>
@@ -86,9 +133,6 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Complaint
                 </th>
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Urgency
-                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
@@ -103,22 +147,22 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
-              ) : services.length === 0 ? (
+              ) : currentServices.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
-                    No service requests found
+                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                    No {currentStatus.toLowerCase()} services found
                   </td>
                 </tr>
               ) : (
-                services.map((service) => (
+                currentServices.map((service) => (
                   <tr key={service.service_id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{service.service_id}
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {service.patient_name}
@@ -126,22 +170,28 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
                       <div className="text-sm text-gray-500">{service.phone_primary}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {service.service_type?.replace(/_/g, " ").toUpperCase()}
+                      {service.service_type}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{service.complaint}</div>
-                      {/* <div className="text-sm text-gray-500">SN: {service.serial_number}</div> */}
                     </td>
-                    {/* <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getUrgencyColor(service.urgency_level)}`}>
-                        {service.urgency_level?.toUpperCase()}
-                      </span>
-                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{service.status}</div>
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        service.status === "Completed"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {service.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(service.action_taken_on).toLocaleDateString()}
+                      {service.action_taken ? (
+                        <div className="max-w-xs truncate" title={service.action_taken}>
+                          {service.action_taken}
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">Not yet</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <button
@@ -160,12 +210,12 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
       </div>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {currentPagination.totalPages > 1 && (
         <Pagination
-          page={pagination.currentPage}
-          totalPages={pagination.totalPages}
-          onNext={() => handlePageChange(pagination.currentPage + 1)}
-          onPrev={() => handlePageChange(pagination.currentPage - 1)}
+          page={currentPagination.currentPage}
+          totalPages={currentPagination.totalPages}
+          onNext={() => handlePageChange(currentPagination.currentPage + 1, currentStatus)}
+          onPrev={() => handlePageChange(currentPagination.currentPage - 1, currentStatus)}
         />
       )}
     </div>

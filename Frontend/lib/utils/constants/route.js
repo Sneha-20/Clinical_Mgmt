@@ -18,7 +18,13 @@ export const routes = {
   // TGA Services
   tgaServiceList: "clinical/service/visit/list",
   tgaServiceDetails: "clinical/service/visit/",
-  tgaServiceUpdate: "/api/clinical/service/visit/",
+  tgaServiceUpdate: "clinical/service/visit/",
+  tgaServiceCreate: "clinical/service/visit/create/",
+  
+  // Service Request Dropdown Routes
+  patientServiceList: "clinical/patient/service-list/",
+  serviceTypes: "clinical/service/types/",
+  patientDevicePurchases: "clinical/patient",
 
   audiologist:{
    appointmentList:"clinical/audiologits/queue/",

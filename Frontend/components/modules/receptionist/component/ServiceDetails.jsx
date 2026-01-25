@@ -27,6 +27,7 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
     setLoading(true);
     try {
       const data = await getTgaServiceDetails(serviceId);
+      console.log("Service details:", data);
       setService(data);
       setFormData({
         action_taken: data.action_taken || "",
@@ -133,11 +134,11 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
             ← Back to List
           </Button>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            {/* <h2 className="text-xl font-semibold text-gray-900">
               Service Request #{service.service_id}
-            </h2>
+            </h2> */}
             <p className="text-gray-600">
-              Created on {new Date(service.created_at).toLocaleDateString()}
+              Created on {new Date(service.action_taken_on).toLocaleDateString()}
             </p>
           </div>
         </div>
