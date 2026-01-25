@@ -12,6 +12,8 @@ export default function SidebarNav({ role, onItemClick }) {
   const navItems = {
     Reception: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
+      // { icon: '📝', label: 'New Patient', href: '/dashboard/patients' },
+      { icon: '🔧', label: 'TGA Service', href: '/dashboard/tga-service' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
       { icon: '👁️', label: 'Trials', href: '/dashboard/trials' },

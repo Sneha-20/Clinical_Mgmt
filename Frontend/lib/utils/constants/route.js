@@ -14,6 +14,11 @@ export const routes = {
   doctorList: "/clinical/doctor/flat-list/",
   patientProfile: "/clinical/patient/",
   receptionistDashboard:"clinical/dashboard/stats/",
+  
+  // TGA Services
+  tgaServiceList: "clinical/service/visit/list",
+  tgaServiceDetails: "clinical/service/visit/",
+  tgaServiceUpdate: "/api/clinical/service/visit/",
 
   audiologist:{
    appointmentList:"clinical/audiologits/queue/",

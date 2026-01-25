@@ -200,3 +200,65 @@ export const getDashboardStats = async () => {
   }
 };
 
+/**
+ * Get TGA service list
+ * @param {Object} params - Query parameters
+ * @returns {Promise<Object>} TGA service list with pagination
+ */
+export const getTgaServiceList = async (params = {}) => {
+  try {
+    const { page = 1, search = "" } = params;
+    const queryParams = new URLSearchParams();
+    queryParams.append("page", page.toString());
+    if (search) queryParams.append("search", search);
+    
+    const url = `${routes.tgaServiceList}?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    
+    return {
+      status: response.status || 200,
+      data: response?.data || [],
+      totalItems: response.totalItems,
+      totalPages: response.totalPages,
+      nextPage: response.nextPage,
+      previousPage: response.previousPage,
+    };
+  } catch (error) {
+    console.error("❌ TGA service list fetch failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get TGA service details
+ * @param {number} serviceId - Service ID
+ * @returns {Promise<Object>} Service details
+ */
+export const getTgaServiceDetails = async (serviceId) => {
+  try {
+    const url = `${routes.tgaServiceDetails}${serviceId}`;
+    const response = await apiClient.get(url);
+    return response?.data || response;
+  } catch (error) {
+    console.error("❌ TGA service details fetch failed:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update TGA service
+ * @param {number} serviceId - Service ID
+ * @param {Object} serviceData - Updated service data
+ * @returns {Promise<Object>} Updated service data
+ */
+export const updateTgaService = async (serviceId, serviceData) => {
+  try {
+    const url = `${routes.tgaServiceUpdate}${serviceId}/update/`;
+    const response = await apiClient.put(url, serviceData);
+    return response?.data || response;
+  } catch (error) {
+    console.error("❌ TGA service update failed:", error);
+    throw error?.response?.data || error;
+  }
+};
+

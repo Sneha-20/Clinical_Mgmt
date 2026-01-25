@@ -60,8 +60,23 @@ export const visitTypeOptions = [
   { label: "Speech Therapy Follow-up", value: "Speech Therapy Follow-up" },
 ];
 
-export const previousHearingAidsOptions =[
-   { label: "No", value: "no" },
+export const previousHearingAidsOptions = [
+  { label: "No", value: "no" },
   { label: "Yes - Currently Using", value: "yes-current" },
   { label: "Yes - Used in Past", value: "yes-past" },
-]
+];
+
+export const tgaServiceStatusOptions = [
+  { label: "Pending", value: "pending" },
+  { label: "In Progress", value: "in_progress" },
+  { label: "Completed", value: "completed" },
+  { label: "Cancelled", value: "cancelled" },
+];
+
+export const tgaServiceTypeOptions = [
+  { label: "Machine Check", value: "machine_check" },
+  { label: "TGA Assessment", value: "tga_assessment" },
+  { label: "Calibration", value: "calibration" },
+  { label: "Repair", value: "repair" },
+  { label: "Maintenance", value: "maintenance" },
+];
