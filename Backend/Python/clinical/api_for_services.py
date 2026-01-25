@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db import transaction
 from .models import PatientVisit, Patient, InventorySerial, PatientPurchase, ServiceVisit
 from django.utils import timezone
+from clinical_be.utils.pagination import StandardResultsSetPagination
 
 
 class CustomerNeedService(APIView):
@@ -64,7 +65,6 @@ class DeviceNeedService(APIView):
     """
     
     permission_classes = [IsAuthenticated]
-    
     def get(self, request, patient_id, *args, **kwargs):
         try:
             # Validate patient exists
@@ -88,9 +88,19 @@ class DeviceNeedService(APIView):
                 'visit'
             ).order_by('-purchased_at')
             
+            # Get serial numbers that are already in service for this patient
+            service_serials = ServiceVisit.objects.filter(
+                visit__patient=patient,
+                device_serial__isnull=False
+            ).values_list('device_serial__serial_number', flat=True)
+            
             # Prepare purchase data
             purchases_data = []
             for purchase in purchases:
+                # Skip if this device is already in service
+                if purchase.inventory_serial and purchase.inventory_serial.serial_number in service_serials:
+                    continue
+                    
                 purchase_data = {
                     'inventory_item_id': purchase.inventory_item.id,
                     'product_name': purchase.inventory_item.product_name,
@@ -402,9 +412,13 @@ class ServiceVisitList(APIView):
             # if date_to:
             #     service_visits = service_visits.filter(created_at__date__lte=date_to)
             
+            # Apply pagination
+            paginator = StandardResultsSetPagination()
+            paginated_queryset = paginator.paginate_queryset(service_visits, request)
+            
             # Prepare service visit data
             service_data = []
-            for service in service_visits:
+            for service in paginated_queryset:
                 # Get parts used for this service
                 # parts_used = []
                 # for part in service.parts_used.all():
@@ -443,11 +457,7 @@ class ServiceVisitList(APIView):
                 }
                 service_data.append(service_record)
             
-            return Response({
-                'status': status.HTTP_200_OK,
-                'message': f'Found {len(service_data)} service visits',
-                'data': service_data
-            }, status=status.HTTP_200_OK)
+            return paginator.get_paginated_response(service_data)
             
         except Exception as e:
             return Response({

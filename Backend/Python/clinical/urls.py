@@ -93,7 +93,7 @@ urlpatterns = [
    path('device-booking/inventory/',DeviceBookingDropdownView.as_view()),
 
    # Service queue endpoints
-   path('service/queue/', CustomerNeedService.as_view(), name='service_queue'),
+   path('patient/service-list/', CustomerNeedService.as_view(), name='service_queue'),
    path('patient/<int:patient_id>/device-purchases/', DeviceNeedService.as_view(), name='patient_device_purchases'),
    
    # Service visit endpoints
