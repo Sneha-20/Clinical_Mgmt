@@ -5,9 +5,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.db import transaction
-from .models import PatientVisit, Patient, InventorySerial, PatientPurchase, ServiceVisit
+from .models import PatientVisit, Patient, InventorySerial, PatientPurchase, ServiceVisit, InventoryItem
 from django.utils import timezone
 from clinical_be.utils.pagination import StandardResultsSetPagination
+from django.db.models import Q
+
 
 
 class CustomerNeedService(APIView):
@@ -26,6 +28,13 @@ class CustomerNeedService(APIView):
                 status='Pending for Service',
                 clinic=getattr(request.user, 'clinic', None)
             ).select_related('patient').order_by('patient_id', '-created_at')
+
+            search_query = request.query_params.get('search', None)
+            if search_query:
+                service_visits = service_visits.filter(
+                    Q(patient__name__icontains=search_query) |
+                    Q(patient__phone_primary__icontains=search_query)
+                )
             
             # Get unique patients (latest visit per patient)
             unique_patients = {}
@@ -77,7 +86,8 @@ class DeviceNeedService(APIView):
                     'message': 'Patient not found',
                     'data': []
                 }, status=status.HTTP_404_NOT_FOUND)
-            
+
+    
             # Get all purchases for this patient
             purchases = PatientPurchase.objects.filter(
                 patient=patient,
@@ -553,6 +563,56 @@ class ServiceDetailView(APIView):
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error fetching service visit details: {str(e)}',
                 'data': {}
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Parts Used Dropdown API
+class PartsUsedListView(APIView):
+    """
+    API to list all inventory items for parts used dropdown.
+    Returns inventory items with product name, brand, model, and price.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get search parameter from query params
+            search_query = request.query_params.get('search', None)
+            
+            # Start with base queryset
+            inventory_items = InventoryItem.objects.all().order_by('product_name')
+            
+            # Apply search filter if provided
+            if search_query:
+                inventory_items = inventory_items.filter(
+                    product_name__icontains=search_query
+                )
+            
+            # Prepare inventory item data
+            parts_data = []
+            for item in inventory_items:
+                part_data = {
+                    'inventory_item_id': item.id,
+                    'product_name': item.product_name,
+                    'brand': item.brand,
+                    'model_type': item.model_type,
+                    'unit_price': float(item.unit_price) if item.unit_price else 0,
+                    # 'quantity_in_stock': item.quantity_in_stock or 0,
+                    # 'category': item.category if hasattr(item, 'category') else None
+                }
+                parts_data.append(part_data)
+            
+            return Response({
+                'status': status.HTTP_200_OK,
+                'message': f'Found {len(parts_data)} inventory items',
+                'data': parts_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error fetching inventory items: {str(e)}',
+                'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

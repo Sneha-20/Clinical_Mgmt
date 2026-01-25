@@ -17,7 +17,7 @@ from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySe
 from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
 from .trial_completion_view import TrialCompletionView
-from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView
+from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView,PartsUsedListView
 
 from .admin_services import (AdminDailyStatusView, AdminInventoryStatusView, AdminRevenueReportsView, 
                             AdminStaffPerformanceView, AdminPatientMasterSearchView,ClinicListView)
@@ -102,6 +102,7 @@ urlpatterns = [
    path('service/visit/list/', ServiceVisitList.as_view(), name='service_visit_list'),
    path('service/visit/<int:service_id>/', ServiceDetailView.as_view(), name='service_detail'),
    path('service/types/', ServiceTypeListView.as_view(), name='service_types'),
+   path('service/parts-used/', PartsUsedListView.as_view(), name='parts_used_list'),
 
    path('device-booking/serial/<int:inventory_item_id>/',DeviceBookingSerialView.as_view()),
    path('patient-visits/followup',PatientVisitFollowupView.as_view()),
