@@ -20,7 +20,7 @@ from .trial_completion_view import TrialCompletionView
 from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView,PartsUsedListView
 
 from .admin_services import (AdminDailyStatusView, AdminInventoryStatusView, AdminRevenueReportsView, 
-                            AdminStaffPerformanceView, AdminPatientMasterSearchView,ClinicListView,CategoryListView)
+                            AdminStaffPerformanceView, AdminPatientMasterSearchView,ClinicListView)
 
 
 
@@ -115,7 +115,6 @@ urlpatterns = [
    path('admin/staff-performance/', AdminStaffPerformanceView.as_view(), name='admin_staff_performance'),
    path('admin/patient-search/', AdminPatientMasterSearchView.as_view(), name='admin_patient_search'),
    path('admin/clinics/', ClinicListView.as_view(), name='admin_clinics'),
-   path('admin/categories/', CategoryListView.as_view(), name='admin_categories'),
    path('inventory/serial-number/create/', InventorySerialNumberCreateView.as_view(), name='inventory_serial_number_create'),
 
 

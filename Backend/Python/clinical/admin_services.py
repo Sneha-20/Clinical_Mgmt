@@ -25,32 +25,6 @@ class ClinicListView(APIView):
             return JsonResponse({'status': status.HTTP_500_INTERNAL_SERVER_ERROR, 'message': str(e)}, status=500)
 
 
-class CategoryListView(APIView):
-    """
-    API to list all inventory categories.
-    Returns available categories for inventory items.
-    """
-    permission_classes = [IsAuthenticated, IsClinicAdmin]
-    
-    def get(self, request):
-        try:
-            from .models import CATEGORY_CHOICES
-            
-            categories = [
-                {'value': choice[0], 'label': choice[1]} 
-                for choice in CATEGORY_CHOICES
-            ]
-            
-            return JsonResponse({
-                'status': status.HTTP_200_OK, 
-                'data': categories
-            })
-        except Exception as e:
-            return JsonResponse({
-                'status': status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                'message': str(e)
-            }, status=500)
-
 class AdminDailyStatusView(APIView):
     """
     Daily Clinic Status Dashboard

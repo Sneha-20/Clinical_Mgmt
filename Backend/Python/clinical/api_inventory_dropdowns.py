@@ -2,7 +2,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .models import InventoryItem
+from .models import InventoryItem, CATEGORY_CHOICES
 
 class InventoryDropdownsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -12,9 +12,8 @@ class InventoryDropdownsView(APIView):
         brand = request.query_params.get('brand')
         # No params: return all categories
         if not category and not brand:
-            categories = InventoryItem.objects.values_list('category', flat=True).distinct()
-            unique_categories = sorted(set(categories))
-            return Response({'categories': unique_categories}, status=status.HTTP_200_OK)
+            categories = list(CATEGORY_CHOICES)  # Use the imported CATEGORY_CHOICES directly
+            return Response({'categories': [cat[1] for cat in categories]}, status=status.HTTP_200_OK)
         # category only: return brands for that category
         if category and not brand:
             brands = InventoryItem.objects.filter(category=category).values_list('brand', flat=True).distinct()

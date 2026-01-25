@@ -51,8 +51,9 @@ class InventoryItemUpdateView(APIView):
 # api to create new serial number device for inventory item 
 class InventorySerialNumberCreateView(APIView):
     """
-    API endpoint to create a new serial number device for an inventory item.
-    Accepts POST with inventory_item_id, serial_number, and other device details.
+    API endpoint to add inventory items (both serialized and non-serialized).
+    For serialized items: accepts serial_numbers array
+    For non-serialized items: accepts quantity_in_stock
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -60,18 +61,10 @@ class InventorySerialNumberCreateView(APIView):
         try:
             inventory_item_id = request.data.get('inventory_item_id')
             serial_numbers = request.data.get('serial_numbers')
+            quantity_in_stock = request.data.get('quantity_in_stock')
             
             if not inventory_item_id:
                 return Response({'status': 400, 'error': 'Inventory item ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            if not serial_numbers:
-                return Response({'status': 400, 'error': 'Serial numbers are required'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Handle both single string and list of serial numbers
-            if isinstance(serial_numbers, str):
-                serial_numbers = [serial_numbers]
-            elif not isinstance(serial_numbers, list):
-                return Response({'status': 400, 'error': 'Serial numbers must be a string or list'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Check if inventory item exists
             try:
@@ -79,44 +72,81 @@ class InventorySerialNumberCreateView(APIView):
             except InventoryItem.DoesNotExist:
                 return Response({'status': 404, 'error': 'Inventory item not found'}, status=status.HTTP_404_NOT_FOUND)
             
-            # Check for duplicate serial numbers
-            existing_serials = InventorySerial.objects.filter(
-                serial_number__in=[sn.strip() for sn in serial_numbers if sn.strip()]
-            ).values_list('serial_number', flat=True)
-            
-            if existing_serials:
-                return Response({
-                    'status': 400, 
-                    'error': f'Duplicate serial numbers found: {", ".join(existing_serials)}'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Create serial number devices for each serial number
-            created_serials = []
-            for serial_number in serial_numbers:
-                if not serial_number.strip():
-                    continue  # Skip empty serial numbers
+            # Handle serialized items
+            if inventory_item.stock_type == 'Serialized':
+                if not serial_numbers:
+                    return Response({'status': 400, 'error': 'Serial numbers are required for serialized items'}, status=status.HTTP_400_BAD_REQUEST)
                 
-                # Create serial number device with "In stock" status
-                serial_device = InventorySerial.objects.create(
-                    inventory_item=inventory_item,
-                    serial_number=serial_number.strip(),
-                    status='In Stock'
-                )
-                created_serials.append(serial_number.strip())
+                # Handle both single string and list of serial numbers
+                if isinstance(serial_numbers, str):
+                    serial_numbers = [serial_numbers]
+                elif not isinstance(serial_numbers, list):
+                    return Response({'status': 400, 'error': 'Serial numbers must be a string or list'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Check for duplicate serial numbers
+                existing_serials = InventorySerial.objects.filter(
+                    serial_number__in=[sn.strip() for sn in serial_numbers if sn.strip()]
+                ).values_list('serial_number', flat=True)
+                
+                if existing_serials:
+                    return Response({
+                        'status': 400, 
+                        'error': f'Duplicate serial numbers found: {", ".join(existing_serials)}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Create serial number devices for each serial number
+                created_serials = []
+                for serial_number in serial_numbers:
+                    if not serial_number.strip():
+                        continue  # Skip empty serial numbers
+                    
+                    # Create serial number device with "In Stock" status
+                    serial_device = InventorySerial.objects.create(
+                        inventory_item=inventory_item,
+                        serial_number=serial_number.strip(),
+                        status='In Stock'
+                    )
+                    created_serials.append(serial_number.strip())
+                
+                if not created_serials:
+                    return Response({'status': 400, 'error': 'No valid serial numbers provided'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Update inventory item quantity_in_stock
+                inventory_item.quantity_in_stock += len(created_serials)
+                inventory_item.save()
+                
+                return Response({
+                    'status': 201, 
+                    'message': f'{len(created_serials)} serial number devices created successfully and stock quantity updated',
+                    'created_serials': created_serials,
+                    'new_stock_quantity': inventory_item.quantity_in_stock
+                }, status=status.HTTP_201_CREATED)
             
-            if not created_serials:
-                return Response({'status': 400, 'error': 'No valid serial numbers provided'}, status=status.HTTP_400_BAD_REQUEST)
+            # Handle non-serialized items
+            elif inventory_item.stock_type == 'Non-Serialized':
+                if quantity_in_stock is None:
+                    return Response({'status': 400, 'error': 'Quantity in stock is required for non-serialized items'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                try:
+                    quantity_to_add = int(quantity_in_stock)
+                    if quantity_to_add <= 0:
+                        return Response({'status': 400, 'error': 'Quantity must be a positive number'}, status=status.HTTP_400_BAD_REQUEST)
+                except (ValueError, TypeError):
+                    return Response({'status': 400, 'error': 'Invalid quantity format'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Update inventory item quantity
+                inventory_item.quantity_in_stock += quantity_to_add
+                inventory_item.save()
+                
+                return Response({
+                    'status': 201, 
+                    'message': f'{quantity_to_add} items added to stock successfully',
+                    'quantity_added': quantity_to_add,
+                    'new_stock_quantity': inventory_item.quantity_in_stock
+                }, status=status.HTTP_201_CREATED)
             
-            # Update inventory item quantity_in_stock
-            inventory_item.quantity_in_stock += len(created_serials)
-            inventory_item.save()
-            
-            return Response({
-                'status': 201, 
-                'message': f'{len(created_serials)} serial number devices created successfully and stock quantity updated',
-                'created_serials': created_serials,
-                'new_stock_quantity': inventory_item.quantity_in_stock
-            }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'status': 400, 'error': 'Invalid stock type for inventory item'}, status=status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
             return Response({'status': 500, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
