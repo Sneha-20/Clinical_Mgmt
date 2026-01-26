@@ -6,24 +6,19 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X } from "lucide-react";
 import SidebarNav from "@/components/sidebar/sidebar-nav";
 import { logoutAction } from "@/lib/services/auth";
-import { useDispatch } from "react-redux";
-import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 import CommonLoader from "@/components/ui/CommonLoader";
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState("");
   const router = useRouter();
-  const dispatch = useDispatch();
   useEffect(() => {
-    dispatch(startLoading());
     const role = localStorage.getItem("userRole");
     if (!role) {
       router.push("/");
     } else {
       setUserRole(role);
     }
-    dispatch(stopLoading());
   }, [router]);
 
   const handleLogout = () => {

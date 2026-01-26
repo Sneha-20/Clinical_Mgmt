@@ -15,7 +15,16 @@ function StatCard({ label, value, color,url="" }) {
         <p className="text-slate-600 text-xs sm:text-sm">{label}</p>
         <p className="text-xl sm:text-2xl font-bold">{value}</p>
         <div className="flex items-center">
-        <Button variant="link" onClick={() => router.push(url)}  className="text-red-600 pr-1 pl-0 hover:pr-[6px]">View All List</Button>
+        <Button
+          variant="link"
+          onMouseEnter={() => {
+            if (url) router.prefetch(url);
+          }}
+          onClick={() => url && router.push(url)}
+          className="text-red-600 pr-1 pl-0 hover:pr-[6px]"
+        >
+          View All List
+        </Button>
         <ArrowRight width={18} color="red"/>
         </div>
       </CardContent>
@@ -30,7 +39,7 @@ export default function StatsSection({
   followUps = 0,
   loading = false
 }) {
-  const userprofile = routes.pages.followUpList;
+  const followupList = routes.pages.followUpList;
   const servicepage = routes.pages.servicepage;
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -54,7 +63,7 @@ export default function StatsSection({
         label="Follow-ups" 
         value={loading ? "..." : followUps} 
         color="bg-purple-100" 
-        url={userprofile}
+        url={followupList}
       />
     </div>
   );

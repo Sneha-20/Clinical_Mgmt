@@ -1,8 +1,12 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { routes } from "@/lib/utils/constants/route";
 
 export default function AppointmentList({ loading, filteredPatients = [], onViewProfile, isToday }) {
+  const router = useRouter();
+
   return (
     <div className="h-auto min-h-[284px]">
       {loading ? (
@@ -41,7 +45,15 @@ export default function AppointmentList({ loading, filteredPatients = [], onView
                   </td>
 
                   <td className="py-2 px-3 text-center">
-                    <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => onViewProfile && onViewProfile(p.id)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1 text-xs"
+                      onMouseEnter={() => {
+                        if (p?.id) router.prefetch(`${routes.pages.userptofile}/${p.id}`);
+                      }}
+                      onClick={() => onViewProfile && onViewProfile(p.id)}
+                    >
                       <Eye className="w-3 h-3" />
                       <span className="hidden sm:inline">View</span>
                     </Button>

@@ -5,6 +5,10 @@ import Modal from "@/components/ui/Modal";
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { visitPatientSchema } from "@/lib/utils/schema";
 import { useCallback, useEffect, useState } from "react";
+import CommonDatePicker from "@/components/ui/CommonDatePicker";
+import CommonCheckbox from "@/components/ui/CommonCheckbox";
+import CommonRadio from "@/components/ui/CommonRadio";
+import { format } from "date-fns";
 import {
   visitTypeOptions,
   testRequestedOptions,
@@ -19,6 +23,20 @@ export default function PatientVisitForm({
   doctorList,
   isModalOpen
 }) {
+  const initialVisitDetails = {
+    visit_type: "",
+    present_complaint: "",
+    seen_by: "",
+    test_requested: [],
+    notes: "",
+  };
+
+  const getInitialFormState = (patientId) => ({
+    patient: patientId || null,
+    service_type: "clinic",
+    appointment_date: "",
+    visit_details: [initialVisitDetails],
+  });
   useEffect(() => {
   if (showSelctedPatientId) {
     setFormData((prev) => ({
@@ -36,21 +54,8 @@ export default function PatientVisitForm({
     value: doctor.id,
   }));
   const [errors, setErrors] = useState({});
-  const [formData, setFormData] = useState({
-    patient: showSelctedPatientId,
-    service_type: "",
-    appointment_date: "",
-    visit_details: [
-      {
-        visit_type: "",
-        present_complaint: "",
-        seen_by: "",
-        test_requested: [],
-        notes: "",
-      },
-    ],
-  });
-  console.log("ttttttttt",formData)
+  const [formData, setFormData] = useState(getInitialFormState(showSelctedPatientId));
+  
   
   const updateField = useCallback(
     (name, value) => {
@@ -93,12 +98,15 @@ export default function PatientVisitForm({
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting form with data:", formData);
     try {
       await visitPatientSchema.validate(formData, { abortEarly: false });
       setErrors({});
 
-      if (onSubmit) onSubmit(formData);
+      if (onSubmit) await onSubmit(formData);
+
+      // Reset form to initial state after successful submit
+      setFormData(getInitialFormState(showSelctedPatientId));
+      setErrors({});
     } catch (error) {
       console.log("Validation errors:", extractYupErrors(error));
       if (error.name === "ValidationError") {
@@ -113,43 +121,33 @@ export default function PatientVisitForm({
   };
 
   return (
-    <Modal header="Patient Visit Form" isModalOpen={isModalOpen} onClose={onClose} className="">
-      <form onSubmit={handleSubmit} className="space-y-6 relative">
+    <Modal header="Patient Visit Form" isModalOpen={isModalOpen} onClose={onClose} showButton={false} ClassName="">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <h3 className="font-semibold text-primary mb-3">Service Type</h3>
-          {/* RADIO BUTTONS FOR REFERRAL TYPE */}
           <div className="flex gap-6">
             {serviceOption.map((item) => (
-              <label
+              <CommonRadio
                 key={item.value}
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <input
-                  type="radio"
-                  name="service_type"
-                  value={item.value}
-                  checked={formData.service_type === item.value}
-                  onChange={(e) => updateField(e.target.name, e.target.value)}
-                  className="w-4 h-4"
-                />
-                <span>{item.label}</span>
-              </label>
+                label={item.label}
+                value={item.value}
+                name="service_type"
+                checked={formData.service_type === item.value}
+                onChange={() => updateField("service_type", item.value)}
+              />
             ))}
-            {errors?.service_type && (
-              <p className="text-red-500 text-sm mt-1">{errors.service_type}</p>
-            )}
           </div>
+          {errors?.service_type && (
+            <p className="text-red-500 text-sm mt-1">{errors.service_type}</p>
+          )}
         </div>
-        <div className="mt-4">
-          <Input
-            label="Appointment Date"
-            type="date"
-            name="appointment_date"
-            value={formData.appointment_date}
-            onChange={(e) => updateField(e.target.name, e.target.value)}
-            error={errors.appointment_date}
-          />
-        </div>
+        <CommonDatePicker
+          label="Appointment Date"
+          selectedDate={formData.appointment_date ? new Date(formData.appointment_date) : null}
+          onChange={(date) => updateField("appointment_date", format(date, "yyyy-MM-dd"))}
+          minDate={new Date()}
+          error={errors.appointment_date}
+        />
 
         {/* ---------------- VISIT DETAILS (MULTIPLE) ---------------- */}
         {formData.visit_details.map((visit, index) => (
@@ -158,14 +156,14 @@ export default function PatientVisitForm({
               Visit Details {index + 1}
             </h3>
 
-            <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DropDown
                 label="Purpose of Visit"
                 name="visit_type"
                 options={visitTypeOptions}
                 value={visit.visit_type}
                 onChange={(n, v) => updateVisitDetails(index, "visit_type", v)}
-                error={errors.visit_type}
+                error={errors?.visit_details?.[index]?.visit_type}
               />
               <DropDown
                 label="Assigned To"
@@ -173,7 +171,7 @@ export default function PatientVisitForm({
                 options={doctors}
                 value={visit.seen_by}
                 onChange={(n, v) => updateVisitDetails(index, "seen_by", v)}
-                error={errors.seen_by}
+                error={errors?.visit_details?.[index]?.seen_by}
               />
             </div>
 
@@ -187,17 +185,20 @@ export default function PatientVisitForm({
               }
             />
 
-            <textarea
-              className="w-full border rounded p-2 mt-2"
-              placeholder="Notes about complaint"
-              value={visit.notes}
-              onChange={(e) =>
-                updateVisitDetails(index, "notes", e.target.value)
-              }
-            />
+            <div className="mt-2">
+              <label className="text-sm font-medium mb-1 block">Notes</label>
+              <textarea
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="Notes about complaint"
+                value={visit.notes}
+                onChange={(e) => updateVisitDetails(index, "notes", e.target.value)}
+                rows={3}
+              />
+            </div>
 
             {/* Tests Required */}
-            {visit.visit_type !== "TGA" && (
+            {(visit.visit_type === "New Test" ||
+              visit.visit_type === "Hearing Aid Trial") && (
               <>
                 <div className="mt-4">
                   <label className="font-medium text-sm text-gray-700">
@@ -207,30 +208,19 @@ export default function PatientVisitForm({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   {testRequestedOptions.map((test) => (
-                    <label
+                    <CommonCheckbox
                       key={test.value}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        value={test.value}
-                        checked={visit.test_requested.includes(test.value)}
-                        onChange={(e) => {
-                          const value = e.target.value;
-
-                          let updated = [...visit.test_requested];
-
-                          if (updated.includes(value)) {
-                            updated = updated.filter((t) => t !== value);
-                          } else {
-                            updated.push(value);
-                          }
-
-                          updateVisitDetails(index, "test_requested", updated);
-                        }}
-                      />
-                      {test.label}
-                    </label>
+                      label={test.label}
+                      value={test.value}
+                      checked={visit.test_requested.includes(test.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        const updated = visit.test_requested.includes(value)
+                          ? visit.test_requested.filter((t) => t !== value)
+                          : [...visit.test_requested, value];
+                        updateVisitDetails(index, "test_requested", updated);
+                      }}
+                    />
                   ))}
                 </div>
               </>
@@ -247,7 +237,17 @@ export default function PatientVisitForm({
         >
           + Add More Visit
         </Button>
-        <Button type="submit" className="absolute bottom-[-60px] left-[85px]">Register Patient</Button>
+        {Object.keys(errors).length > 0 && (
+          <p className="text-red-500 text-sm mb-2 font-medium">
+            Please fill all required fields correctly.
+          </p>
+        )}
+        <div className="flex justify-end gap-3 pt-4">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit">Register Patient</Button>
+        </div>
       </form>
     </Modal>
   );
