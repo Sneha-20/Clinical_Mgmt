@@ -21,6 +21,7 @@ export default function BillingList() {
     prevDuePage,
     setSelectedBilling,
     fetchBillingById,
+    markAsPaid,
   } = useBilling();
  
   return (
@@ -64,6 +65,7 @@ export default function BillingList() {
           onClose={() => setSelectedBilling(null)}
           billingDetail={billingDetail}
           openModal={selectedBilling}
+          markAsPaid={markAsPaid}
         />
     </div>
   );

@@ -6,6 +6,7 @@ import {
   getBillById,
   getDueBillList,
   getPaidBillList,
+  markBillAsPaid,
 } from "../services/billing";
 
 export default function useBilling() {
@@ -24,11 +25,11 @@ export default function useBilling() {
 
   /* ---------------- FETCH DATA ---------------- */
   useEffect(() => {
-    fetchPaidBillingList();
+    fetchPaidBillingList({ page: paidPage });
   }, [paidPage]);
 
     useEffect(() => {
-    fetchDueBillingList();
+    fetchDueBillingList({ page: duePage });
   }, [duePage]);
 
   const fetchPaidBillingList = async ({ page = 1, search = "" } = {}) => {     
@@ -76,6 +77,29 @@ export default function useBilling() {
     }
   };
 
+  const markAsPaid = async (billId) => {
+    try {
+      dispatch(startLoading());
+      const paymentData = {
+        payment_status: "Paid",
+        payment_method: "UPI",
+        transaction_id: "UPI-9909099900",
+        notes: "FULLY AMOUNT PAID"
+      };
+      await markBillAsPaid(billId, paymentData);
+      showToast({ type: "success", message: "Bill marked as paid successfully" });
+      // Refresh both lists
+      fetchPaidBillingList({ page: paidPage });
+      fetchDueBillingList({ page: duePage });
+      setSelectedBilling(null); // Close the dialog
+    } catch (error) {
+      console.log("error", error);
+      showToast({ type: "error", message: "Failed to mark bill as paid" });
+    } finally {
+      dispatch(stopLoading());
+    }
+  };
+
   const nextPaidPage = () => {
     if (paidPage < paidTotalPages) setPaidPage((p) => p + 1);
     console.log("test1")
@@ -117,6 +141,7 @@ export default function useBilling() {
     
     setSelectedBilling,
     fetchBillingById,
+    markAsPaid,
     // handlePayNow,
   };
 }

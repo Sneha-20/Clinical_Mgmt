@@ -11,7 +11,8 @@ const BillingDetailDialog = ({
   billing,
   billingDetail,
   onPayNow,
-  openModal
+  openModal,
+  markAsPaid
 }) => {
   // if (!billing) return null;
 
@@ -74,11 +75,11 @@ const BillingDetailDialog = ({
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Phone</span>
-              <span className="text-sm font-medium">{billingDetail.phone}</span>
+              <span className="text-sm font-medium">{billingDetail.patient_phone}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Visit Date</span>
-              <span className="text-sm font-medium">{billingDetail.visit_date}</span>
+              <span className="text-sm font-medium">{new Date(billingDetail.visit_date).toLocaleDateString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-sm text-muted-foreground">Visit Type</span>
@@ -118,60 +119,42 @@ const BillingDetailDialog = ({
               <span>₹{billingDetail.subtotal}</span>
             </div>
 
-            {billingDetail.discount > 0 && (
+            {billingDetail.discount_amount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Discount</span>
-                <span className="text-green-600">-₹{billingDetail.discount}</span>
+                <span className="text-green-600">-₹{billingDetail.discount_amount}</span>
               </div>
             )}
-
-            {billingDetail.tax > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax</span>
-                <span>₹{billingDetail.tax}</span>
-              </div>
-            )}
-
 
             <div className="flex justify-between font-semibold">
               <span>Total Amount</span>
-              <span>₹{billingDetail.total_amount}</span>
+              <span>₹{billingDetail.final_amount}</span>
             </div>
 
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Amount Paid</span>
-              <span className="text-green-600">₹{billingDetail.amount_paid}</span>
+              <span className="text-green-600">₹{billingDetail.payment_status === 'Paid' ? billingDetail.final_amount : 0}</span>
             </div>
 
             <div className="flex justify-between font-semibold text-lg">
               <span>Balance Due</span>
               <span
                 className={
-                  billingDetail.balance_due > 0
-                    ? "text-red-600"
-                    : "text-green-600"
+                  billingDetail.payment_status === 'Paid' ? "text-green-600" : "text-red-600"
                 }
               >
-                ₹{billingDetail.balance_due}
+                ₹{billingDetail.payment_status === 'Paid' ? 0 : billingDetail.final_amount}
               </span>
             </div>
           </div>
         </div>
-        {/* <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button> */}
-        {/* <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
-
-          {billing.status !== "paid" && (
-            <Button onClick={() => onPayNow(billing.id)}>
-              Pay ₹{billing.balance_due}
+        {billingDetail.payment_status !== 'Paid' && (
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => markAsPaid(billingDetail.id)}>
+              Mark as Paid
             </Button>
-          )}
-        </DialogFooter>
-      </DialogContent> */}
+          </div>
+        )}
     </Modal>
   );
 };

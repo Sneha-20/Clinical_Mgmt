@@ -67,3 +67,13 @@ export const getBillById = async (visitId) => {
     throw error;
   }
 };
+
+export const markBillAsPaid = async (billId, paymentData) => {
+  try {
+    const url = `${routes.billing.markBillPaid}${billId}/`;
+    const response = await apiClient.post(url, paymentData);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
