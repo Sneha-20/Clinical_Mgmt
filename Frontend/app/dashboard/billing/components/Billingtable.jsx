@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import { useRouter } from "next/navigation";
 //  import {
 //   AlertCircle,
 //   CheckCircle,
@@ -17,12 +18,12 @@ import {
 export default function BillingTable({
   data,
   showPay,
-  fetchBillingById,
   page,
   totalPages,
   onNext,
   onPrev,
 }) {
+  const router = useRouter();
   //     const StatusBadge = ({ status }) => {
   //   if (status === "Paid")
   //     return (
@@ -70,7 +71,7 @@ export default function BillingTable({
               </TableCell>
 
               <TableCell className="text-right">
-                <Button size="sm" onClick={() => fetchBillingById(b.visit_id)}>
+                <Button size="sm" onClick={() => router.push(`/dashboard/billing/${b.visit_id}`)}>
                   {showPay ? "Pay Now" : "View"}
                 </Button>
               </TableCell>

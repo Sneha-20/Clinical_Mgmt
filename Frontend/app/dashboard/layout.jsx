@@ -40,13 +40,13 @@ export default function DashboardLayout({ children }) {
       <aside
         className={`${
           sidebarOpen ? "w-64" : "w-0"
-        } lg:w-64 bg-sidebar border-r border-slate-200 transition-all duration-300 flex flex-col fixed lg:static h-full z-50 lg:z-auto overflow-hidden`}
+        } lg:w-64 bg-sidebar border-r border-slate-200 transition-all duration-300 flex flex-col fixed lg:static h-full z-50 lg:z-auto overflow-hidden print:hidden`}
       >
         <SidebarNav role={userRole} onItemClick={() => setSidebarOpen(false)} />
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden w-full">
-        <div className="h-14 lg:h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-6 gap-2 flex-shrink-0">
+        <div className="h-14 lg:h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 lg:px-6 gap-2 flex-shrink-0 print:hidden">
           <Button
             variant="ghost"
             size="icon"

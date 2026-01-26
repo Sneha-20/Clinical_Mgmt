@@ -2,12 +2,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import useBilling from "@/lib/hooks/useBilling";
 import BillingTable from "./Billingtable";
-import BillingDetailDialog from "./BillingDetailDialogue";
 
 export default function BillingList() {
   const {
-    selectedBilling,
-    billingDetail,
     paidBillList,
     dueBillList,
     paidPage,
@@ -19,9 +16,6 @@ export default function BillingList() {
     prevPaidPage,
     nextDuePage,
     prevDuePage,
-    setSelectedBilling,
-    fetchBillingById,
-    markAsPaid,
   } = useBilling();
  
   return (
@@ -40,7 +34,6 @@ export default function BillingList() {
             totalPages={dueTotalPages}
             onNext={nextDuePage}
             onPrev={prevDuePage}
-            fetchBillingById={fetchBillingById}
             showPay
           />
         </CardContent>
@@ -57,16 +50,9 @@ export default function BillingList() {
             totalPages={paidTotalPages}
             onNext={nextPaidPage}
             onPrev={prevPaidPage}
-            fetchBillingById={fetchBillingById}
           />
         </CardContent>
       </Card>
-        <BillingDetailDialog
-          onClose={() => setSelectedBilling(null)}
-          billingDetail={billingDetail}
-          openModal={selectedBilling}
-          markAsPaid={markAsPaid}
-        />
     </div>
   );
 }
