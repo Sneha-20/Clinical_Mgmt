@@ -1,0 +1,80 @@
+"use client";
+
+import { routes } from "@/lib/utils/constants/route";
+import apiClient from "../api/client";
+
+/**
+ * Get inventory dropdown options (categories, brands, models)
+ * @param {Object} params - Query parameters
+ * @param {string} params.category - Category name (optional)
+ * @param {string} params.brand - Brand name (optional)
+ * @returns {Promise<Object>} Response with dropdown options
+ */
+export const getInventoryDropdowns = async (params = {}) => {
+  try {
+    const { category, brand } = params;
+    const queryParams = new URLSearchParams();
+    if (category) queryParams.append("category", category);
+    if (brand) queryParams.append("brand", brand);
+    
+    const url = `${routes.inventoryDropdowns}?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Create a new inventory item
+ * @param {Object} data - Inventory item data
+ * @returns {Promise<Object>} Response from the API
+ */
+export const createInventoryItem = async (data) => {
+  try {
+    const url = routes.inventoryItemCreate;
+    const response = await apiClient.post(url, data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Get list of inventory items
+ * @param {Object} params - Query parameters (pagination, filters, etc.)
+ * @returns {Promise<Object>} Response with inventory items list
+ */
+export const getInventoryItems = async (params = {}) => {
+  try {
+    const { page = 1 } = params;
+    const queryParams = new URLSearchParams();
+    if (page) queryParams.append("page", page.toString());
+    
+    const url = `${routes.inventoryItems}?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    return {
+      items: response?.data || [],
+      totalPages: response?.totalPages || 1,
+      currentPage: response?.currentPage || page,
+      totalItems: response?.totalItems || 0,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Add stock to inventory item (serialized or non-serialized)
+ * @param {Object} data - Stock data
+ * @returns {Promise<Object>} Response from the API
+ */
+export const addInventoryStock = async (data) => {
+  try {
+    const url = routes.inventorySerialNumberCreate;
+    const response = await apiClient.post(url, data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};

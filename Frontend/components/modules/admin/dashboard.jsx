@@ -71,28 +71,6 @@ export default function AdminDashboard() {
         />
       </div>
 
-      <Card>
-        <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-lg sm:text-xl">Sales & Performance Trend</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Monthly sales, trials, and bookings</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="w-full h-64 sm:h-80 md:h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={salesData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="sales" stroke="#0ea5e9" strokeWidth={2} />
-                <Line type="monotone" dataKey="trials" stroke="#10b981" strokeWidth={2} />
-                <Line type="monotone" dataKey="bookings" stroke="#3b82f6" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>

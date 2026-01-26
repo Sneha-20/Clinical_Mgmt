@@ -28,6 +28,12 @@ export const routes = {
   serviceTypes: "clinical/service/types/",
   patientDevicePurchases: "clinical/patient",
 
+  // Inventory Routes
+  inventoryDropdowns: "clinical/inventory/dropdowns/",
+  inventoryItemCreate: "clinical/inventory/item/create/",
+  inventoryItems: "clinical/inventory/items/",
+  inventorySerialNumberCreate: "clinical/inventory/serial-number/create/",
+
   audiologist:{
    appointmentList:"clinical/audiologits/queue/",
    completedTestList:"clinical/completed-tests/",

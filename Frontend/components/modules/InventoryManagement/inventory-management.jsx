@@ -3,68 +3,69 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Plus, AlertTriangle, TrendingDown } from 'lucide-react'
+import useInventory from '@/lib/hooks/useInventory'
+import AddProductModal from './AddProductModal'
+import AddStockModal from './AddStockModal'
+import Pagination from '@/components/ui/Pagination'
 
 export default function InventoryManagement() {
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [inventory, setInventory] = useState([
-    {
-      id: 1,
-      name: 'Hearing Aids - Premium',
-      category: 'Hearing Aids',
-      currentStock: 15,
-      minimumStock: 20,
-      purchased: 30,
-      sold: 15,
-      unit: 'units',
-      lastUpdated: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Domes (Size S)',
-      category: 'Accessories',
-      currentStock: 8,
-      minimumStock: 30,
-      purchased: 50,
-      sold: 42,
-      unit: 'pack',
-      lastUpdated: '2024-01-14'
-    },
-    {
-      id: 3,
-      name: 'Batteries - 312',
-      category: 'Batteries',
-      currentStock: 5,
-      minimumStock: 50,
-      purchased: 100,
-      sold: 95,
-      unit: 'pack',
-      lastUpdated: '2024-01-13'
-    },
-    {
-      id: 4,
-      name: 'Receivers',
-      category: 'Accessories',
-      currentStock: 28,
-      minimumStock: 15,
-      purchased: 40,
-      sold: 12,
-      unit: 'units',
-      lastUpdated: '2024-01-12'
-    },
-  ])
+  const [showAddProductModal, setShowAddProductModal] = useState(false)
+  const [showAddStockModal, setShowAddStockModal] = useState(false)
+  const [selectedItem, setSelectedItem] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const lowStockItems = inventory.filter(item => item.currentStock < item.minimumStock)
-  const criticalItems = inventory.filter(item => item.currentStock === 0)
+  const {
+    inventoryItems,
+    pagination,
+    categories,
+    brands,
+    models,
+    fetchBrands,
+    fetchModels,
+    createItem,
+    addStock,
+    fetchInventoryItems,
+  } = useInventory()
 
-  const handleAddStock = (id, quantity) => {
-    setInventory(inventory.map(item =>
-      item.id === id
-        ? { ...item, currentStock: item.currentStock + quantity, purchased: item.purchased + quantity }
-        : item
-    ))
+  const handleAddProduct = async (productData) => {
+    setIsSubmitting(true)
+    const success = await createItem(productData)
+    if (success) {
+      setShowAddProductModal(false)
+    }
+    setIsSubmitting(false)
   }
+
+  const handleAddStockClick = (item) => {
+    setSelectedItem(item)
+    setShowAddStockModal(true)
+  }
+
+  const handleAddStock = async (stockData) => {
+    setIsSubmitting(true)
+    const success = await addStock(stockData)
+    if (success) {
+      setShowAddStockModal(false)
+      setSelectedItem(null)
+    }
+    setIsSubmitting(false)
+  }
+
+  const handleNextPage = () => {
+    if (pagination.currentPage < pagination.totalPages) {
+      fetchInventoryItems(pagination.currentPage + 1)
+    }
+  }
+
+  const handlePrevPage = () => {
+    if (pagination.currentPage > 1) {
+      fetchInventoryItems(pagination.currentPage - 1)
+    }
+  }
+
+  const lowStockItems = inventoryItems.filter(item => item.quantity_in_stock < 10)
+  const criticalItems = inventoryItems.filter(item => item.quantity_in_stock === 0)
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -74,9 +75,9 @@ export default function InventoryManagement() {
           <h2 className="text-2xl sm:text-3xl font-bold text-primary">Inventory Management</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">Track stock levels and manage transactions</p>
         </div>
-        <Button onClick={() => setShowAddForm(true)} className="gap-2 w-full sm:w-auto">
+        <Button onClick={() => setShowAddProductModal(true)} className="gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" />
-          Add Stock
+          Add Product
         </Button>
       </div>
 
@@ -112,55 +113,88 @@ export default function InventoryManagement() {
       <Card>
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-lg sm:text-xl">Inventory Items</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">Current stock status and transaction history</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Current stock status and product information</CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto -mx-3 sm:mx-0">
-          <table className="w-full text-xs sm:text-sm min-w-max sm:min-w-0">
-            <thead className="border-b border-border">
-              <tr className="text-muted-foreground">
-                <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-medium">Item Name</th>
-                <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Current Stock</th>
-                <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Min. Level</th>
-                <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Purchased</th>
-                <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Sold</th>
-                <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Status</th>
-                <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventory.map((item) => {
-                const status = item.currentStock === 0 ? 'critical' : item.currentStock < item.minimumStock ? 'low' : 'good'
-                return (
-                  <tr key={item.id} className="border-b border-border hover:bg-muted/50">
-                    <td className="py-2 sm:py-3 px-2 sm:px-3">
-                      <div>
-                        <p className="font-medium text-xs sm:text-sm">{item.name}</p>
-                        <p className="text-xs text-muted-foreground">{item.category}</p>
-                      </div>
-                    </td>
-                    <td className="text-center py-2 sm:py-3 px-2 sm:px-3 font-semibold">{item.currentStock}</td>
-                    <td className="text-center py-2 sm:py-3 px-2 sm:px-3">{item.minimumStock}</td>
-                    <td className="text-center py-2 sm:py-3 px-2 sm:px-3 text-accent">{item.purchased}</td>
-                    <td className="text-center py-2 sm:py-3 px-2 sm:px-3 text-destructive">{item.sold}</td>
-                    <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
-                        status === 'good' ? 'bg-green-100 text-green-600' :
-                        status === 'low' ? 'bg-yellow-100 text-yellow-600' :
-                        'bg-red-100 text-red-600'
-                      }`}>
-                        {status === 'good' ? 'Good' : status === 'low' ? 'Low' : 'Critical'}
-                      </span>
-                    </td>
-                    <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
-                      <Button variant="outline" size="sm" onClick={() => handleAddStock(item.id, 10)} className="text-xs">
-                        Add +10
-                      </Button>
-                    </td>
+          {inventoryItems.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">No inventory items found</div>
+          ) : (
+            <>
+              <table className="w-full text-xs sm:text-sm min-w-max sm:min-w-0">
+                <thead className="border-b border-border bg-slate-100">
+                  <tr className="text-muted-foreground">
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-medium">Product Name</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-medium hidden md:table-cell">Category</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-medium hidden lg:table-cell">Brand</th>
+                    <th className="text-left py-2 sm:py-3 px-2 sm:px-3 font-medium hidden lg:table-cell">Model</th>
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Stock</th>
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Stock Type</th>
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium hidden md:table-cell">Unit Price</th>
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Status</th>
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">Action</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {inventoryItems.map((item) => {
+                    const status = item.quantity_in_stock === 0 ? 'critical' : item.quantity_in_stock < 10 ? 'low' : 'good'
+                    return (
+                      <tr key={item.id} className="border-b border-border hover:bg-muted/50">
+                        <td className="py-2 sm:py-3 px-2 sm:px-3">
+                          <div>
+                            <p className="font-medium text-xs sm:text-sm">{item.product_name}</p>
+                            {item.description && (
+                              <p className="text-xs text-muted-foreground truncate max-w-xs">{item.description}</p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden md:table-cell">{item.category}</td>
+                        <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">{item.brand}</td>
+                        <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">{item.model_type}</td>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3 font-semibold">{item.quantity_in_stock || 0}</td>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
+                          <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-600">
+                            {item.stock_type}
+                          </span>
+                        </td>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3 hidden md:table-cell">
+                          ₹{parseFloat(item.unit_price || 0).toFixed(2)}
+                        </td>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
+                            status === 'good' ? 'bg-green-100 text-green-600' :
+                            status === 'low' ? 'bg-yellow-100 text-yellow-600' :
+                            'bg-red-100 text-red-600'
+                          }`}>
+                            {status === 'good' ? 'Good' : status === 'low' ? 'Low' : 'Critical'}
+                          </span>
+                        </td>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleAddStockClick(item)} 
+                            className="text-xs"
+                          >
+                            Add Stock
+                          </Button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              {pagination.totalPages > 1 && (
+                <div className="mt-4">
+                  <Pagination
+                    page={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    onNext={handleNextPage}
+                    onPrev={handlePrevPage}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -169,22 +203,48 @@ export default function InventoryManagement() {
         <Card className="border-0">
           <CardContent className="pt-4 sm:pt-6">
             <p className="text-muted-foreground text-xs">Total Items</p>
-            <p className="text-2xl font-bold mt-2">{inventory.length}</p>
+            <p className="text-2xl font-bold mt-2">{pagination.totalItems || inventoryItems.length}</p>
           </CardContent>
         </Card>
         <Card className="border-0">
           <CardContent className="pt-4 sm:pt-6">
             <p className="text-muted-foreground text-xs">Total Units in Stock</p>
-            <p className="text-2xl font-bold mt-2">{inventory.reduce((sum, item) => sum + item.currentStock, 0)}</p>
+            <p className="text-2xl font-bold mt-2">
+              {inventoryItems.reduce((sum, item) => sum + (item.quantity_in_stock || 0), 0)}
+            </p>
           </CardContent>
         </Card>
         <Card className="border-0">
           <CardContent className="pt-4 sm:pt-6">
-            <p className="text-muted-foreground text-xs">Total Sold</p>
-            <p className="text-2xl font-bold text-accent mt-2">{inventory.reduce((sum, item) => sum + item.sold, 0)}</p>
+            <p className="text-muted-foreground text-xs">Low Stock Items</p>
+            <p className="text-2xl font-bold text-yellow-600 mt-2">{lowStockItems.length}</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Modals */}
+      <AddProductModal
+        isOpen={showAddProductModal}
+        onClose={() => setShowAddProductModal(false)}
+        onSubmit={handleAddProduct}
+        categories={categories}
+        brands={brands}
+        models={models}
+        onCategoryChange={fetchBrands}
+        onBrandChange={fetchModels}
+        loading={isSubmitting}
+      />
+
+      <AddStockModal
+        isOpen={showAddStockModal}
+        onClose={() => {
+          setShowAddStockModal(false)
+          setSelectedItem(null)
+        }}
+        onSubmit={handleAddStock}
+        item={selectedItem}
+        loading={isSubmitting}
+      />
     </div>
   )
 }
