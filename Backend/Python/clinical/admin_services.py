@@ -9,13 +9,13 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncYear
 from accounts.models import User, Clinic
 from .models import Patient, PatientVisit, Trial, Bill, BillItem, InventoryItem, InventorySerial, ServiceVisit, TestType, PatientPurchase
 import json
-from clinical_be.utils.permission import IsClinicAdmin
+from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission
 from rest_framework import status
 
 
 # List API for clinic 
 class ClinicListView(APIView):
-    permission_classes = [IsAuthenticated,IsClinicAdmin]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
     
     def get(self, request):
         try:
@@ -30,7 +30,7 @@ class AdminDailyStatusView(APIView):
     Daily Clinic Status Dashboard
     Provides overview of today's activities across all clinics
     """
-    permission_classes = [IsAuthenticated,IsClinicAdmin]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
     
     def get(self, request):
         try:
@@ -71,7 +71,7 @@ class AdminDailyStatusView(APIView):
             # 5. TGAs today
             tgas_today = ServiceVisit.objects.filter(
                 created_at__date=today,
-                service_type='TGA'
+                visit__visit_type__in = ['Troubleshooting General Adjustment','TGA']
             ).values('visit__patient__name', 'visit__clinic__name', 'status', 'complaint')
             
             # 6. No-shows today (patients with appointments who didn't show up)
@@ -126,7 +126,7 @@ class AdminInventoryStatusView(APIView):
     Inventory Status Dashboard
     Shows current inventory levels across all categories
     """
-    permission_classes = [IsAuthenticated,IsClinicAdmin]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
     
     def get(self, request):
         try:
@@ -210,7 +210,7 @@ class AdminRevenueReportsView(APIView):
     Revenue Reports Dashboard
     Provides comprehensive revenue analytics
     """
-    permission_classes = [IsAuthenticated,IsClinicAdmin]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
     
     def get(self, request):
         try:
@@ -313,7 +313,7 @@ class AdminStaffPerformanceView(APIView):
     Staff Performance Dashboard
     Tracks various performance metrics for staff members
     """
-    permission_classes = [IsAuthenticated,IsClinicAdmin]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
     
     def get(self, request):
         try:
@@ -456,7 +456,7 @@ class AdminPatientMasterSearchView(APIView):
     Advanced Patient Search
     Comprehensive search functionality across multiple criteria
     """
-    permission_classes = [IsAuthenticated,IsClinicAdmin]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
     pagination_class = PageNumberPagination
 
     # search payload parameters
