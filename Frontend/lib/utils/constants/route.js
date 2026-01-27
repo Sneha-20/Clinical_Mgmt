@@ -55,7 +55,7 @@ export const routes = {
    paidBillList:"clinical/bill/paid/",
    dueBillList:"clinical/bill/pending/",
    billingDetail:"clinical/bill/visit/",
-   markBillPaid:"api/clinical/mark-bill-paid/"
+   markBillPaid:"clinical/mark-bill-paid/"
   },
   
   // pages
