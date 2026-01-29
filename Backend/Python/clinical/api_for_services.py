@@ -232,7 +232,7 @@ class ServiceVisitUpdateView(APIView):
                     bill, created = Bill.objects.get_or_create(
                         visit=service_visit.visit,
                         defaults={
-                            # 'clinic': service_visit.clinic,
+                            'clinic': service_visit.visit.clinic,
                             'created_by': request.user,
                         }
                     )
