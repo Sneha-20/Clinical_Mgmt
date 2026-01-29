@@ -42,7 +42,7 @@ class AdminDailyStatusView(APIView):
             if clinic_id:
                 visit_filter['clinic_id'] = clinic_id
             
-            # 1. Patients today
+            # 1.unique Patients today
             patients_today = PatientVisit.objects.filter(**visit_filter).values('patient__name', 'patient__phone_primary', 'clinic__name', 'visit_type', 'created_at').order_by('-created_at')
             
             # 2. New tests today
@@ -98,17 +98,218 @@ class AdminDailyStatusView(APIView):
                         'active_trials': trials_today.filter(trial_decision='TRIAL_ACTIVE').count(),
                         'bookings': bookings_today.count(),
                         'tgas': tgas_today.count(),
-                        'followup_pending': followup_pending.count()
+                        'followup_pending': followup_pending.count(),
+                        'total_trials': trials_today.count()
                     },
-                    'patients_today': list(patients_today),
+                    'patients': list(patients_today),
                     'new_tests': list(new_tests),
-                    'trials_today': list(trials_today),
-                    'bookings_today': list(bookings_today),
-                    'tgas_today': list(tgas_today),
+                    'trials': list(trials_today),
+                    'bookings': list(bookings_today),
+                    'tgas': list(tgas_today),
                     'followup_pending': list(followup_pending)
                 }
             })
             
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+class AdminClinicReportView(APIView):
+    """
+    Clinic Report Dashboard
+    Provides comprehensive clinic data for a date range (similar to AdminDailyStatusView)
+    """
+    permission_classes = [IsAuthenticated, IsClinicAdmin | ReceptionistPermission]
+    
+    def get(self, request):
+        try:
+            # Get date range parameters
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            clinic_id = request.GET.get('clinic_id')  # Optional: filter by specific clinic
+            
+            # Set default date range if not provided (last 2 days)
+            if not start_date:
+                start_date = (timezone.now().date() - timedelta(days=2)).strftime('%Y-%m-%d')
+            if not end_date:
+                end_date = timezone.now().date().strftime('%Y-%m-%d')
+            
+            # Parse dates
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            
+            # Base queryset with optional clinic filter
+            visit_filter = {
+                'created_at__date__gte': start_date,
+                'created_at__date__lte': end_date
+            }
+            if clinic_id:
+                visit_filter['clinic_id'] = clinic_id
+            
+            # 1. Patients in date range
+            patients_data = PatientVisit.objects.filter(**visit_filter).values(
+                'patient__name', 'patient__phone_primary', 'clinic__name', 'visit_type', 'created_at'
+            ).order_by('-created_at')
+            
+            # 2. New tests in date range
+            if clinic_id:
+                new_tests = PatientVisit.objects.filter(
+                    clinic_id=clinic_id,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date,
+                    test_requested__isnull=False
+                ).exclude(test_requested='').values('patient__name', 'test_requested', 'clinic__name', 'seen_by__name')
+            else:
+                new_tests = PatientVisit.objects.filter(
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date,
+                    test_requested__isnull=False
+                ).exclude(test_requested='').values('patient__name', 'test_requested', 'clinic__name', 'seen_by__name')
+            
+            # 3. Trials in date range
+            if clinic_id:
+                trials_data = Trial.objects.filter(
+                    visit__clinic_id=clinic_id,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date
+                ).values(
+                    'assigned_patient__name', 'device_inventory_id__brand', 'device_inventory_id__model_type',
+                    'visit__clinic__name', 'trial_decision', 'followup_date', 'created_at'
+                )
+            else:
+                trials_data = Trial.objects.filter(
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date
+                ).values(
+                    'assigned_patient__name', 'device_inventory_id__brand', 'device_inventory_id__model_type',
+                    'visit__clinic__name', 'trial_decision', 'followup_date', 'created_at'
+                )
+            
+            # 4. Bookings in date range (completed trials that resulted in booking)
+            if clinic_id:
+                bookings_data = Trial.objects.filter(
+                    visit__clinic_id=clinic_id,
+                    trial_completed_at__date__gte=start_date,
+                    trial_completed_at__date__lte=end_date,
+                    trial_decision='BOOK'
+                ).values(
+                    'assigned_patient__name', 'booked_device_inventory__brand', 'booked_device_inventory__model_type',
+                    'visit__clinic__name', 'cost', 'trial_completed_at'
+                )
+            else:
+                bookings_data = Trial.objects.filter(
+                    trial_completed_at__date__gte=start_date,
+                    trial_completed_at__date__lte=end_date,
+                    trial_decision='BOOK'
+                ).values(
+                    'assigned_patient__name', 'booked_device_inventory__brand', 'booked_device_inventory__model_type',
+                    'visit__clinic__name', 'cost', 'trial_completed_at'
+                )
+            
+            # 5. TGAs in date range
+            if clinic_id:
+                tgas_data = ServiceVisit.objects.filter(
+                    visit__clinic_id=clinic_id,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date,
+                    visit__visit_type__in = ['Troubleshooting General Adjustment','TGA']
+                ).values('visit__patient__name', 'visit__clinic__name', 'status', 'complaint', 'created_at')
+            else:
+                tgas_data = ServiceVisit.objects.filter(
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date,
+                    visit__visit_type__in = ['Troubleshooting General Adjustment','TGA']
+                ).values('visit__patient__name', 'visit__clinic__name', 'status', 'complaint', 'created_at')
+            
+            # 6. Follow-up pending in date range
+            if clinic_id:
+                followup_data = PatientVisit.objects.filter(
+                    clinic_id=clinic_id,
+                    status='Follow-up',
+                    appointment_date__gte=start_date,
+                    appointment_date__lte=end_date,
+                    contacted=False
+                ).values(
+                    'patient__name', 'patient__phone_primary', 'clinic__name', 
+                    'appointment_date', 'created_at'
+                ).order_by('appointment_date')
+            else:
+                followup_data = PatientVisit.objects.filter(
+                    status='Follow-up',
+                    appointment_date__gte=start_date,
+                    appointment_date__lte=end_date,
+                    contacted=False
+                ).values(
+                    'patient__name', 'patient__phone_primary', 'clinic__name', 
+                    'appointment_date', 'created_at'
+                ).order_by('appointment_date')
+            
+            # 7. Revenue data for the period
+            if clinic_id:
+                revenue_data = Bill.objects.filter(
+                    clinic_id=clinic_id,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date,
+                    payment_status='Paid'
+                ).aggregate(
+                    total_revenue=Sum('final_amount'),
+                    total_bills=Count('id'),
+                    avg_bill_amount=Avg('final_amount')
+                )
+            else:
+                revenue_data = Bill.objects.filter(
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date,
+                    payment_status='Paid'
+                ).aggregate(
+                    total_revenue=Sum('final_amount'),
+                    total_bills=Count('id'),
+                    avg_bill_amount=Avg('final_amount')
+                )
+            
+            # Convert None values to 0
+            revenue_data = {
+                'total_revenue': float(revenue_data['total_revenue'] or 0),
+                'total_bills': revenue_data['total_bills'] or 0,
+                'avg_bill_amount': float(revenue_data['avg_bill_amount'] or 0)
+            }
+            
+            # Prepare response data
+            patients_list = list(patients_data) if patients_data.exists() else []
+            new_tests_list = list(new_tests) if new_tests.exists() else []
+            trials_list = list(trials_data) if trials_data.exists() else []
+            bookings_list = list(bookings_data) if bookings_data.exists() else []
+            tgas_list = list(tgas_data) if tgas_data.exists() else []
+            followup_list = list(followup_data) if followup_data.exists() else []
+            
+            # Create summary counts
+            summary = {
+                'total_patients': len(patients_list),
+                'new_tests': len(new_tests_list),
+                'active_trials': len([t for t in trials_list if t.get('trial_decision') == 'TRIAL_ACTIVE']),
+                'completed_trials': len([t for t in trials_list if t.get('trial_decision') == 'TRIAL_COMPLETED']),
+                'bookings': len(bookings_list),
+                'tgas': len(tgas_list),
+                'followup_pending': len(followup_list),
+                'total_trials': len(trials_list),
+                # 'trial_to_booking_ratio': (len(bookings_list) / len(trials_list) * 100) if len(trials_list) > 0 else 0
+            }
+            
+            return JsonResponse({
+                'status': 'success',
+                'data': {
+                    'date': f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}",
+                    'summary': summary,
+                    'patients': patients_list,
+                    'new_tests': new_tests_list,
+                    'trials': trials_list,
+                    'bookings': bookings_list,
+                    'tgas': tgas_list,
+                    'followup_pending': followup_list
+                }
+            })
+            
+        except ValueError as e:
+            return JsonResponse({'status': 'error', 'message': 'Invalid date format. Use YYYY-MM-DD format.'}, status=400)
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
