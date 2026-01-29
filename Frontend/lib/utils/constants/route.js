@@ -27,6 +27,7 @@ export const routes = {
   patientServiceList: "clinical/patient/service-list/",
   serviceTypes: "clinical/service/types/",
   patientDevicePurchases: "clinical/patient",
+  partsUsed: "clinical/service/parts-used/",
 
   // Inventory Routes
   inventoryDropdowns: "clinical/inventory/dropdowns/",

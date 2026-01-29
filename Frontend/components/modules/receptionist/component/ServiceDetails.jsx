@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DropDown from "@/components/ui/dropdown";
-import { getTgaServiceDetails, updateTgaService } from "@/lib/services/dashboard";
+import { getTgaServiceDetails, updateTgaService, getPartsUsed } from "@/lib/services/dashboard";
 import { showToast } from "@/components/ui/toast";
 import { tgaServiceStatusOptions } from "@/lib/utils/constants/staticValue";
+import { routes } from "@/lib/utils/constants/route";
 
 export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) {
   const [service, setService] = useState(null);
@@ -18,9 +19,11 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
     charges_collect_for_service: "",
     rtc_date: "",
   });
+  const [partsOptions, setPartsOptions] = useState([]);
 
   useEffect(() => {
     fetchServiceDetails();
+    fetchPartsOptions();
   }, [serviceId]);
 
   const fetchServiceDetails = async () => {
@@ -43,6 +46,19 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
       console.error("Service details fetch error:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPartsOptions = async () => {
+    try {
+      const data = await getPartsUsed();
+      setPartsOptions(data);
+    } catch (error) {
+      showToast({
+        type: "error",
+        message: "Failed to fetch parts options",
+      });
+      console.error("Parts options fetch error:", error);
     }
   };
 
@@ -322,13 +338,20 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
               <div className="space-y-3">
                 {formData.parts_used.map((part, index) => (
                   <div key={index} className="flex items-center space-x-3">
-                    <Input
-                      type="number"
-                      placeholder="Inventory Item ID"
+                    <select
+                      className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                       value={part.inventory_item_id}
-                      onChange={(e) => updatePart(index, "inventory_item_id", e.target.value)}
-                      className="flex-1"
-                    />
+                      onChange={(e) =>
+                        updatePart(index, "inventory_item_id", e.target.value)
+                      }
+                    >
+                      <option value="">Select a part</option>
+                      {partsOptions.map((option) => (
+                        <option key={option.inventory_item_id} value={option.inventory_item_id}>
+                          {option.product_name} - {option.brand} ({option.model_type}) - ₹{option.unit_price}
+                        </option>
+                      ))}
+                    </select>
                     <Input
                       type="number"
                       placeholder="Quantity"

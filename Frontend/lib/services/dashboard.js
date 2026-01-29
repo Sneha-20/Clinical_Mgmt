@@ -255,7 +255,7 @@ export const getTgaServiceDetails = async (serviceId) => {
 export const updateTgaService = async (serviceId, serviceData) => {
   try {
     const url = `${routes.tgaServiceUpdate}${serviceId}/update/`;
-    const response = await apiClient.put(url, serviceData);
+    const response = await apiClient.post(url, serviceData);
     return response?.data || response;
   } catch (error) {
     console.error("❌ TGA service update failed:", error);
@@ -315,6 +315,22 @@ export const createTgaServiceRequest = async (serviceData) => {
     return response.data;
   } catch (error) {
     console.error("TGA service request creation error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get parts used in a service
+ * @param {number} serviceId - Service ID
+ * @returns {Promise<Object>} Parts used in the service
+ */
+export const getPartsUsed = async () => {
+  try {
+    const url = `${routes.partsUsed}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Parts used fetch error:", error);
     throw error;
   }
 };
