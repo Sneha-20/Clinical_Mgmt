@@ -47,12 +47,13 @@ class AdminDailyStatusView(APIView):
             
             # 2. New tests today
             new_tests = PatientVisit.objects.filter(
-                **visit_filter,
+                clinic_id=clinic_id,
                 test_requested__isnull=False
             ).exclude(test_requested='').values('patient__name', 'test_requested', 'clinic__name', 'seen_by__name')
             
             # 3. Trials today
             trials_today = Trial.objects.filter(
+                visit__clinic_id=clinic_id,
                 created_at__date=today
             ).values(
                 'assigned_patient__name', 'device_inventory_id__brand', 'device_inventory_id__model_type',
@@ -61,6 +62,7 @@ class AdminDailyStatusView(APIView):
             
             # 4. Bookings today (completed trials that resulted in booking)
             bookings_today = Trial.objects.filter(
+                visit__clinic_id=clinic_id,
                 trial_completed_at__date=today,
                 trial_decision='BOOK'
             ).values(
@@ -70,7 +72,7 @@ class AdminDailyStatusView(APIView):
             
             # 5. TGAs today
             tgas_today = ServiceVisit.objects.filter(
-                created_at__date=today,
+                visit__clinic_id=clinic_id,
                 visit__visit_type__in = ['Troubleshooting General Adjustment','TGA']
             ).values('visit__patient__name', 'visit__clinic__name', 'status', 'complaint')
             
