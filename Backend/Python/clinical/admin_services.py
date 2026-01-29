@@ -74,13 +74,7 @@ class AdminDailyStatusView(APIView):
                 visit__visit_type__in = ['Troubleshooting General Adjustment','TGA']
             ).values('visit__patient__name', 'visit__clinic__name', 'status', 'complaint')
             
-            # 6. No-shows today (patients with appointments who didn't show up)
-            # Assuming no-shows are visits marked as such or appointments missed
-            no_shows_today = PatientVisit.objects.filter(
-                appointment_date=today,
-                contacted=False,
-                status__in=['Pending', 'Follow-up']
-            ).values('patient__name', 'patient__phone_primary', 'clinic__name', 'appointment_date')
+            
             
             # 7. Follow-up pending list
             followup_pending = PatientVisit.objects.filter(
@@ -99,7 +93,6 @@ class AdminDailyStatusView(APIView):
                 'active_trials': trials_today.filter(trial_decision='TRIAL_ACTIVE').count(),
                 'bookings': bookings_today.count(),
                 'tgas': tgas_today.count(),
-                'no_shows': no_shows_today.count(),
                 'followup_pending': followup_pending.count()
             }
             
@@ -113,7 +106,6 @@ class AdminDailyStatusView(APIView):
                     'trials_today': list(trials_today),
                     'bookings_today': list(bookings_today),
                     'tgas_today': list(tgas_today),
-                    'no_shows_today': list(no_shows_today),
                     'followup_pending': list(followup_pending)
                 }
             })
@@ -148,7 +140,7 @@ class AdminInventoryStatusView(APIView):
                 items = inventory_items.filter(category=category)
                 
                 # Calculate totals for this category
-                total_quantity = items.aggregate(total=Sum('quantity_in_stock'))['total'] or 0
+                total_quantity_of_category = items.aggregate(total=Sum('quantity_in_stock'))['total'] or 0
                 
                 # Get items with low stock
                 low_stock_items = items.filter(
@@ -165,41 +157,139 @@ class AdminInventoryStatusView(APIView):
                 # ).values('product_name', 'brand', 'model_type', 'expiry_date', 'quantity_in_stock')
                 
                 inventory_by_category[category] = {
-                    'total_quantity': int(total_quantity),
+                    'total_quantity_of_category': int(total_quantity_of_category),
                     'low_stock_items': list(low_stock_items),
                     # 'expired_items': list(expired_items),
                     # 'near_expiry_items': list(near_expiry_items),
-                    'total_items': items.count()
+                    'total_items_of_category': items.count()
                 }
             
             # Serialized items status
             serialized_items = InventoryItem.objects.filter(stock_type='Serialized')
-            serialized_status = {}
+            # serialized_status = {}
             
-            for item in serialized_items:
-                serial_counts = item.serials.values('status').annotate(count=Count('id'))
-                serialized_status[f"{item.brand} {item.model_type}"] = {
-                    'in_stock': item.serials.filter(status='In Stock').count(),
-                    'in_trial': item.serials.filter(status='Trial').count(),
-                    'sold': item.serials.filter(status='Sold').count(),
-                    'in_service': item.serials.filter(status='Service').count(),
-                    'lost': item.serials.filter(status='Lost').count(),
-                    'total': item.serials.count()
-                }
+            # for item in serialized_items:
+            #     serial_counts = item.serials.values('status').annotate(count=Count('id'))
+            #     serialized_status[f"{item.brand} {item.model_type}"] = {
+            #         'in_stock': item.serials.filter(status='In Stock').count(),
+            #         'in_trial': item.serials.filter(status='Trial').count(),
+            #         'sold': item.serials.filter(status='Sold').count(),
+            #         'in_service': item.serials.filter(status='Service').count(),
+            #         'lost': item.serials.filter(status='Lost').count(),
+            #         'total': item.serials.count()
+            #     }
+            
+            # Low stock alerts
+            low_stock_alerts = inventory_items.filter(
+                quantity_in_stock__lte=F('reorder_level')
+            ).values(
+                'id', 'product_name', 'brand', 'model_type', 'category',
+                'quantity_in_stock', 'reorder_level', 'stock_type'
+            ).order_by('quantity_in_stock')
+            
+            # Fast moving items (based on recent purchases and trials)
+            # Get items with high movement in last 30 days
+            thirty_days_ago = timezone.now() - timedelta(days=30)
+            
+            # Items sold frequently
+            fast_moving_purchases = PatientPurchase.objects.filter(
+                purchased_at__gte=thirty_days_ago
+            ).values('inventory_item_id').annotate(
+                movement_count=Count('id'),
+                total_quantity=Sum('quantity')
+            ).order_by('-movement_count')[:20]
+            
+            # Items used in trials frequently
+            fast_moving_trials = Trial.objects.filter(
+                created_at__gte=thirty_days_ago
+            ).values('device_inventory_id').annotate(
+                movement_count=Count('id')
+            ).order_by('-movement_count')[:20]
+            
+            # Combine fast moving items
+            fast_moving_items = []
+            fast_moving_item_ids = set()
+            
+            for item in fast_moving_purchases:
+                item_id = item['inventory_item_id']
+                if item_id not in fast_moving_item_ids:
+                    fast_moving_item_ids.add(item_id)
+                    try:
+                        inventory_item = InventoryItem.objects.get(id=item_id)
+                        fast_moving_items.append({
+                            'id': inventory_item.id,
+                            'product_name': inventory_item.product_name,
+                            'brand': inventory_item.brand,
+                            'model_type': inventory_item.model_type,
+                            'category': inventory_item.category,
+                            'movement_type': 'Sales',
+                            'movement_count': item['movement_count'],
+                            'total_quantity': item['total_quantity'],
+                            'current_stock': inventory_item.quantity_in_stock
+                        })
+                    except InventoryItem.DoesNotExist:
+                        continue
+            
+            for item in fast_moving_trials:
+                item_id = item['device_inventory_id']
+                if item_id not in fast_moving_item_ids and item_id:
+                    try:
+                        inventory_item = InventoryItem.objects.get(id=item_id)
+                        fast_moving_items.append({
+                            'id': inventory_item.id,
+                            'product_name': inventory_item.product_name,
+                            'brand': inventory_item.brand,
+                            'model_type': inventory_item.model_type,
+                            'category': inventory_item.category,
+                            'movement_type': 'Trials',
+                            'movement_count': item['movement_count'],
+                            'total_quantity': item['movement_count'],
+                            'current_stock': inventory_item.quantity_in_stock
+                        })
+                    except InventoryItem.DoesNotExist:
+                        continue
+            
+            # Sort by movement count
+            fast_moving_items.sort(key=lambda x: x['movement_count'], reverse=True)
+            
+            # Trial devices in use
+            trial_devices_in_use = Trial.objects.filter(
+                trial_decision='TRIAL_ACTIVE'
+            ).select_related('device_inventory_id', 'visit__patient').values(
+                'id', 'trial_start_date', 'trial_end_date', 'serial_number',
+                'device_inventory_id__id', 'device_inventory_id__product_name',
+                'device_inventory_id__brand', 'device_inventory_id__model_type',
+                'visit__patient__name', 'visit__patient__phone_primary'
+            ).order_by('trial_end_date')
+            
+            # # Lost devices
+            # lost_devices = InventorySerial.objects.filter(
+            #     status='Lost'
+            # ).select_related('inventory_item').values(
+            #     'id', 'serial_number', 'status',
+            #     'inventory_item__id', 'inventory_item__product_name',
+            #     'inventory_item__brand', 'inventory_item__model_type',
+            #     'updated_at'
+            # ).order_by('-updated_at')
             
             # Summary statistics
             summary = {
                 'total_categories': len(categories),
-                'total_low_stock_items': sum(len(cat['low_stock_items']) for cat in inventory_by_category.values()),
-                # 'total_expired_items': sum(len(cat['expired_items']) for cat in inventory_by_category.values()),
-                # 'total_near_expiry_items': sum(len(cat['near_expiry_items']) for cat in inventory_by_category.values())
+                'low_stock_alerts_count': low_stock_alerts.count(),
+                'fast_moving_items_count': len(fast_moving_items),
+                'trial_devices_in_use_count': trial_devices_in_use.count(),
+                # 'lost_devices_count': lost_devices.count()
             }
             
             return JsonResponse({
                 'status': 'success',
                 'summary': summary,
+                'low_stock_alerts': list(low_stock_alerts),
+                'fast_moving_items': fast_moving_items,
+                'trial_devices_in_use': list(trial_devices_in_use),
+                # 'lost_devices': list(lost_devices),
                 'inventory_by_category': inventory_by_category,
-                'serialized_items_status': serialized_status
+                # 'serialized_items_status': serialized_status
             })
             
         except Exception as e:
@@ -465,7 +555,7 @@ class AdminPatientMasterSearchView(APIView):
     # serial_number: string
     # visit_type: string
     # city: string
-    # last_visit_days: string
+    # last_visit: string
     # followup_pending: boolean
 
     # example
@@ -475,7 +565,7 @@ class AdminPatientMasterSearchView(APIView):
     #     "serial_number": "1234567890",
     #     "visit_type": "Follow-up",
     #     "city": "Bangalore",
-    #     "last_visit_days": "30",
+    #     "last_visit": "30",
     #     "followup_pending": "true"
     # }
 
@@ -487,7 +577,7 @@ class AdminPatientMasterSearchView(APIView):
             serial_number = request.GET.get('serial_number', '').strip()
             visit_type = request.GET.get('visit_type', '').strip()
             city = request.GET.get('city', '').strip()
-            last_visit_days = request.GET.get('last_visit_days', '').strip()
+            last_visit_days = request.GET.get('last_visit', '').strip()
             followup_pending = request.GET.get('followup_pending', '').lower() == 'true'
             
             # Start with optimized patient query
@@ -555,7 +645,7 @@ class AdminPatientMasterSearchView(APIView):
                 'visits__seen_by',
                 'purchases',
                 'visits__bill'
-            ).order_by('-updated_at')
+            ).order_by('-created_at')
             
             # Batch fetch related data to avoid N+1 queries
             patient_ids = list(patients.values_list('id', flat=True))
@@ -627,12 +717,11 @@ class AdminPatientMasterSearchView(APIView):
                         'clinic': latest_visit.clinic.name if latest_visit and latest_visit.clinic else None
                     },
                     'latest_trial': {
-                        'device': f"{latest_trial.device_inventory_id.brand} {latest_trial.device_inventory_id.model_type}" if latest_trial and latest_trial.device_inventory_id else None,
+                        'device_name': latest_trial.device_inventory_id.product_name if latest_trial and latest_trial.device_inventory_id else None,
                         'status': latest_trial.trial_decision if latest_trial else None,
                         'date': latest_trial.created_at.strftime('%Y-%m-%d') if latest_trial else None
                     }
                 }
-                
                 patients_data.append(patient_data)
 
             # Apply pagination
