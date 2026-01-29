@@ -22,11 +22,13 @@ class CustomerNeedService(APIView):
     
     def get(self, request, *args, **kwargs):
         try:
-            # Get patient visits with status 'Pending for Service'
+            # Get patient visits with status 'Pending for Service' that don't have service visits yet
             # Use values to get unique patients with their latest visit
             service_visits = PatientVisit.objects.filter(
                 status='Pending for Service',
                 clinic=getattr(request.user, 'clinic', None)
+            ).exclude(
+                id__in=ServiceVisit.objects.values_list('visit_id', flat=True)
             ).select_related('patient').order_by('patient_id', '-created_at')
 
             search_query = request.query_params.get('search', None)
@@ -54,7 +56,6 @@ class CustomerNeedService(APIView):
             
             return Response({
                 'status': status.HTTP_200_OK,
-                # 'message': f'Found {len(patients_data)} patients pending for service',
                 'data': patients_data
             }, status=status.HTTP_200_OK)
             
@@ -98,6 +99,13 @@ class DeviceNeedService(APIView):
                 'visit'
             ).order_by('-purchased_at')
             
+            # Get all devices that already have service visits created
+            serviced_devices = ServiceVisit.objects.filter(
+                visit__patient=patient
+            ).values_list('device_id', flat=True)
+
+            print(serviced_devices)
+            
             # Get serial numbers that are already in service for this patient
             service_serials = ServiceVisit.objects.filter(
                 visit__patient=patient,
@@ -107,7 +115,11 @@ class DeviceNeedService(APIView):
             # Prepare purchase data
             purchases_data = []
             for purchase in purchases:
-                # Skip if this device is already in service
+                # Skip if this device already has a service visit created
+                if purchase.id in serviced_devices:
+                    continue
+                    
+                # Skip if this device serial is already in service
                 if purchase.inventory_serial and purchase.inventory_serial.serial_number in service_serials:
                     continue
                     
