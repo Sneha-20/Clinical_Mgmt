@@ -16,6 +16,7 @@ class Command(BaseCommand):
         )
         
         for trial in trials_ending_today:
+            trial.trial_decision = 'Follow up'
             trial.visit.status = 'Follow up'
             trial.visit.status_note = 'Trial ended, Follow up needed'
             trial.visit.save()
