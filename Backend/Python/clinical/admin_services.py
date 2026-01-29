@@ -86,21 +86,18 @@ class AdminDailyStatusView(APIView):
                 'appointment_date', 'created_at'
             ).order_by('appointment_date')
             
-            # Summary counts
-            summary = {
-                'total_patients': patients_today.count(),
-                'new_tests': new_tests.count(),
-                'active_trials': trials_today.filter(trial_decision='TRIAL_ACTIVE').count(),
-                'bookings': bookings_today.count(),
-                'tgas': tgas_today.count(),
-                'followup_pending': followup_pending.count()
-            }
-            
             return JsonResponse({
                 'status': 'success',
-                'date': today.strftime('%Y-%m-%d'),
-                'summary': summary,
                 'data': {
+                    'date': today.strftime('%Y-%m-%d'),
+                    'summary': {
+                        'total_patients': patients_today.count(),
+                        'new_tests': new_tests.count(),
+                        'active_trials': trials_today.filter(trial_decision='TRIAL_ACTIVE').count(),
+                        'bookings': bookings_today.count(),
+                        'tgas': tgas_today.count(),
+                        'followup_pending': followup_pending.count()
+                    },
                     'patients_today': list(patients_today),
                     'new_tests': list(new_tests),
                     'trials_today': list(trials_today),
@@ -272,24 +269,20 @@ class AdminInventoryStatusView(APIView):
             #     'updated_at'
             # ).order_by('-updated_at')
             
-            # Summary statistics
-            summary = {
-                'total_categories': len(categories),
-                'low_stock_alerts_count': low_stock_alerts.count(),
-                'fast_moving_items_count': len(fast_moving_items),
-                'trial_devices_in_use_count': trial_devices_in_use.count(),
-                # 'lost_devices_count': lost_devices.count()
-            }
-            
             return JsonResponse({
                 'status': 'success',
-                'summary': summary,
-                'low_stock_alerts': list(low_stock_alerts),
-                'fast_moving_items': fast_moving_items,
-                'trial_devices_in_use': list(trial_devices_in_use),
-                # 'lost_devices': list(lost_devices),
-                'inventory_by_category': inventory_by_category,
-                # 'serialized_items_status': serialized_status
+                'data': {
+                    'summary': {
+                        'total_categories': len(categories),
+                        'low_stock_alerts_count': low_stock_alerts.count(),
+                        'fast_moving_items_count': len(fast_moving_items),
+                        'trial_devices_in_use_count': trial_devices_in_use.count()
+                    },
+                    'low_stock_alerts': list(low_stock_alerts),
+                    'fast_moving_items': fast_moving_items,
+                    'trial_devices_in_use': list(trial_devices_in_use),
+                    'inventory_by_category': inventory_by_category
+                }
             })
             
         except Exception as e:
