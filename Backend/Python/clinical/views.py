@@ -801,6 +801,11 @@ class MarkAsPaidView(APIView):
         bill.notes = notes
         bill.save()
         
+        # Update the visit status to 'Completed'
+        visit = bill.visit
+        visit.status = 'Completed with payment'
+        visit.save()
+        
         return Response({
             'status': status.HTTP_200_OK,
             'message': 'Bill marked as paid successfully'

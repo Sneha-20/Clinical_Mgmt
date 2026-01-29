@@ -267,6 +267,11 @@ class ServiceVisitUpdateView(APIView):
                         'total_amount': float(bill.total_amount),
                         # 'status': bill.status
                     }
+                    
+                    # Update the visit status to 'Completed'
+                    visit = service_visit.visit
+                    visit.status = 'Service Completed'
+                    visit.save()
                 
                 return Response({
                     'status': status.HTTP_200_OK,
