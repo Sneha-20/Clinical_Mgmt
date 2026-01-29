@@ -11,7 +11,6 @@ from .models import (
     InventoryItem,
     ServiceVisit,
     PatientPurchase,
-    Trial,
     TestUpload
 )
 from rest_framework import serializers
@@ -32,10 +31,50 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
     )
 
     total_bill = serializers.SerializerMethodField()
+    payment_status = serializers.SerializerMethodField()
+    completed_date = serializers.SerializerMethodField()
+    trial_details = serializers.SerializerMethodField()
+
+    def get_payment_status(self, obj):
+        # get the payment status from Bill
+        bills = Bill.objects.filter(visit=obj)
+        if bills.exists() and all(bill.payment_status == 'Paid' or bill.payment_status == 'Partially Paid' for bill in bills):
+            return 'Paid'
+        return 'Pending'
+
+
+    def get_trial_details(self, obj):
+        trial = Trial.objects.filter(visit=obj).first()
+        if not trial:
+            return None
+        
+        return {
+            'start_date': trial.trial_start_date,
+            'end_date': trial.trial_end_date,
+            'extended': trial.extended_trial,
+            'extended_at': trial.trial_completed_at if trial.extended_trial else None,
+            'device': {
+                'id': trial.device_inventory_id.id if trial.device_inventory_id else None,
+                'name': trial.device_inventory_id.product_name if trial.device_inventory_id else None,
+                'serial_number': trial.serial_number
+           
+             }
+        } 
+
 
     def get_total_bill(self, obj):
         from django.db.models import Sum
         return Bill.objects.filter(visit=obj).aggregate(total_amount=Sum('total_amount'))['total_amount'] or 0
+
+    def get_completed_date(self, obj):
+        from django.db.models import Max
+        # Check if all bills for this visit are paid
+        bills = Bill.objects.filter(visit=obj)
+        if bills.exists() and all(bill.payment_status == 'Paid' or bill.payment_status == 'Partially Paid' for bill in bills):
+            # Return the latest payment date
+            latest_payment = bills.aggregate(latest_date=Max('paid_at'))['latest_date']
+            return latest_payment
+        return None
 
     class Meta:
         model = PatientVisit
@@ -48,7 +87,12 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
             'test_requested',
             'notes',
             'appointment_date',
-            'total_bill'
+            'total_bill',
+            'status', 
+            'status_note',
+            'trial_details',
+            'completed_date',
+            'payment_status'
         ]
 
     def validate_test_requested(self, value):
@@ -67,7 +111,6 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
             stored_value.split(",") if stored_value else []
         )
         return data
-
 
 class PatientVisitRegistrationSerializer(serializers.Serializer):
     """
@@ -206,6 +249,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 class PatientDetailSerializer(serializers.ModelSerializer):
     total_visits = serializers.SerializerMethodField()
     total_bill = serializers.SerializerMethodField()
+    case_history = serializers.SerializerMethodField()
 
     def get_total_bill(self, obj):
         from django.db.models import Sum
@@ -213,12 +257,19 @@ class PatientDetailSerializer(serializers.ModelSerializer):
 
     def get_total_visits(self, obj):
         return PatientVisit.objects.filter(patient=obj).count()
+    
+    def get_case_history(self, obj):
+        try:
+            case_history = AudiologistCaseHistory.objects.get(patient=obj)
+            return AudiologistCaseHistorySerializer(case_history).data
+        except AudiologistCaseHistory.DoesNotExist:
+            return None
 
     class Meta:
         model = Patient
         fields = [
              'name', 'age', 'dob', 'email', 'gender','phone_primary', 'phone_secondary', 'city', 'address',
-            'referral_type', 'referral_doctor', 'total_visits', 'total_bill'
+            'referral_type', 'referral_doctor', 'total_visits', 'total_bill', 'case_history'
         ]               
     
 # Flat List Serializer for dropdowns and search
@@ -1223,27 +1274,27 @@ class ServiceVisitListSerializer(serializers.ModelSerializer):
     patient_phone = serializers.CharField(source='visit.patient.phone_primary', read_only=True)
     device_details = serializers.SerializerMethodField()
     device_serial_number = serializers.CharField(source='device_serial.serial_number', read_only=True, default=None)
+    visit_id = serializers.IntegerField(source='visit.id', read_only=True)
+    service_date = serializers.DateTimeField(source='action_taken_on', read_only=True)
+    # warranty_applicable = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = ServiceVisit
         fields = [
-            'id',
-            'visit',
-            'patient_name',
-            'patient_phone',
-            'status',
-            'service_type',
-            'complaint',
-            'action_taken',
-            'device_details',
-            'device_serial_number',
-            'created_at',
+            'id', 'visit_id', 'patient_name', 'patient_phone', 'status', 'service_type',
+            'complaint', 'action_taken', 'device_details', 'device_serial_number',
+            'service_date'
         ]
     
     def get_device_details(self, obj):
         if obj.device and obj.device.inventory_item:
             item = obj.device.inventory_item
-            return f"{item.brand} {item.model_type} ({item.product_name})"
+            return {
+                'name': item.product_name,
+                'brand': item.brand,
+                'model': item.model_type,
+                'purchase_date': obj.device.purchased_at.date() if obj.device.purchased_at else None
+            }
         return None
 
 
@@ -1253,11 +1304,15 @@ class PatientPurchaseSerializer(serializers.ModelSerializer):
     item_brand = serializers.CharField(source='inventory_item.brand', read_only=True)
     item_model = serializers.CharField(source='inventory_item.model_type', read_only=True)
     serial_number = serializers.CharField(source='inventory_serial.serial_number', read_only=True)
+    patient_name = serializers.CharField(source='patient.name', read_only=True)
+    visit_id = serializers.IntegerField(source='visit.id', read_only=True)
+    purchase_date = serializers.DateTimeField(source='purchased_at', read_only=True)
 
     class Meta:
         model = PatientPurchase
         fields = [
-            'id', 'item_name', 'item_brand', 'item_model', 'serial_number', 'purchased_at'
+            'id', 'patient_name', 'visit_id', 'item_name', 'item_brand', 'item_model', 
+            'serial_number', 'quantity', 'unit_price', 'total_price', 'purchase_date'
         ]
 
 

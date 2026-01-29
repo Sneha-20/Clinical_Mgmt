@@ -115,6 +115,7 @@ class Trial(models.Model):
     ]
     trial_decision = models.CharField(max_length=20, choices=TRIAL_DECISION_CHOICES, blank=True, null=True, help_text="Patient decision after trial completion", default='TRIAL_ACTIVE')
     trial_completed_at = models.DateTimeField(null=True, blank=True, help_text="When trial was completed and decision made")
+    extended_at = models.DateTimeField(null=True, blank=True, help_text="When trial was extended")
     booked_device_inventory = models.ForeignKey('InventoryItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='booked_trials', help_text="Device booked by patient after trial")
     booked_device_serial = models.ForeignKey('InventorySerial', on_delete=models.SET_NULL, null=True, blank=True, related_name='booked_trials', help_text="Serial number of booked device")
 

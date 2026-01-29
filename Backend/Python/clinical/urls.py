@@ -22,6 +22,7 @@ from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisit
 from .admin_services import (AdminDailyStatusView, AdminInventoryStatusView, AdminRevenueReportsView, 
                             AdminStaffPerformanceView, AdminPatientMasterSearchView,ClinicListView)
 
+from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
 
 
 urlpatterns = [
@@ -45,7 +46,7 @@ urlpatterns = [
    path('audiologits/queue/',AudiologistPatientQueueView.as_view(), name='audiologist_queue'), # Audiologist queue 
 
    path('patient/visit/<int:id>/',PatientVisitDetailView.as_view()), # Patient visit details by visit ID 
-   path('patient/visit/<int:id>/full/',PatientVisitFullDetailsView.as_view()), # Full patient visit details with tests and trials
+   # path('patient/visit/<int:id>/full/',PatientVisitFullDetailsView.as_view()), # Full patient visit details with tests and trials
    path('audiologist/test/perform/',AudiologistCaseHistoryCreateView.as_view()), # PAtient test performed and result uploaded 
    
    # Bill endpoints
@@ -117,5 +118,11 @@ urlpatterns = [
    path('admin/clinics/', ClinicListView.as_view(), name='admin_clinics'),
    path('inventory/serial-number/create/', InventorySerialNumberCreateView.as_view(), name='inventory_serial_number_create'),
 
+
+   # Patient history APIs
+   path('patient/<int:patient_id>/purchases/', PatientPurchaseHistoryView.as_view(), name='patient_purchase_history'),
+   path('patient/<int:patient_id>/service-visits/', PatientServiceVisitHistoryView.as_view(), name='patient_service_visit_history'),
+   # path('patient/purchase/<int:purchase_id>/', PatientPurchaseDetailView.as_view(), name='patient_purchase_detail'),
+   # path('patient/service-visit/<int:service_id>/', PatientServiceVisitDetailView.as_view(), name='patient_service_visit_detail'),
 
 ]

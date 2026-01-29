@@ -110,6 +110,7 @@ class TrialCompletionView(APIView):
                     trial.visit.status = 'Trial Active'
                     trial.extended_trial = True
                     trial.visit.status_note = 'Trial extended for booking device decision'
+                    trial.extended_at = timezone.now()
                     trial.trial_end_date = timezone.now() + timedelta(days=followup_days)
                     trial.followup_date = timezone.now() + timedelta(days=followup_days + 1)
                     trial.save()
