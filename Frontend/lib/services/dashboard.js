@@ -335,3 +335,49 @@ export const getPartsUsed = async () => {
   }
 };
 
+/**
+ * Get all clinics
+ * @returns {Promise<Object>} List of clinics
+ */
+export const getAllClinics = async () => {
+  try {
+    const url = `${routes.adminClinics}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Clinics fetch error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get daily revenue status for a clinic
+ * @param {number} clinicId - Clinic ID
+ * @returns {Promise<Object>} Daily revenue status
+ */
+export const getDailyRevenueStatus = async (clinicId) => {
+  try {
+    const url = `${routes.adminDailyStatus}?clinic_id=${clinicId}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Daily revenue status fetch error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get inventory status
+ * @returns {Promise<Object>} Inventory status
+ */
+export const getInventoryStatus = async () => {
+  try {
+    const url = `${routes.adminInventoryStatus}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Inventory status fetch error:", error);
+    throw error;
+  }
+};
+

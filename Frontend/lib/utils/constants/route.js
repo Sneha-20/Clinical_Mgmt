@@ -16,13 +16,13 @@ export const routes = {
   receptionistDashboard:"clinical/dashboard/stats/",
   followupList: "clinical/patient-visits/followup",
   markContacted: "clinical/patient-visits/",
-  
+
   // TGA Services
   tgaServiceList: "clinical/service/visit/list",
   tgaServiceDetails: "clinical/service/visit/",
   tgaServiceUpdate: "clinical/service/visit/",
   tgaServiceCreate: "clinical/service/visit/create/",
-  
+
   // Service Request Dropdown Routes
   patientServiceList: "clinical/patient/service-list/",
   serviceTypes: "clinical/service/types/",
@@ -71,6 +71,11 @@ export const routes = {
     home: "/",
     servicepage:"/dashboard/tga-service"
   },
+
+  // Admin Routes
+  adminClinics: "clinical/admin/clinics/",
+  adminDailyStatus: "clinical/admin/daily-status/",
+  adminInventoryStatus: "clinical/admin/inventory-status/",
 };
 export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
 
