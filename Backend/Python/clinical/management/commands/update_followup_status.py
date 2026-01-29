@@ -20,6 +20,7 @@ class Command(BaseCommand):
             trial.visit.status = 'Follow up'
             trial.visit.status_note = 'Trial ended, Follow up needed'
             trial.visit.save()
+            trial.save()
             self.stdout.write(
                 self.style.SUCCESS(
                     f'Trial ended for patient {trial.assigned_patient.name} - Status: Decision Pending'
