@@ -353,11 +353,21 @@ export const getAllClinics = async () => {
 /**
  * Get daily revenue status for a clinic
  * @param {number} clinicId - Clinic ID
+ * @param {string} startDate - Start date (optional, format: YYYY-MM-DD)
+ * @param {string} endDate - End date (optional, format: YYYY-MM-DD)
  * @returns {Promise<Object>} Daily revenue status
  */
-export const getDailyRevenueStatus = async (clinicId) => {
+export const getDailyRevenueStatus = async (clinicId, startDate = null, endDate = null) => {
   try {
-    const url = `${routes.adminDailyStatus}?clinic_id=${clinicId}`;
+    let url = `${routes.adminDailyStatus}?clinic_id=${clinicId}`;
+    
+    if (startDate) {
+      url += `&start_date=${startDate}`;
+    }
+    if (endDate) {
+      url += `&end_date=${endDate}`;
+    }
+    
     const response = await apiClient.get(url);
     return response.data;
   } catch (error) {

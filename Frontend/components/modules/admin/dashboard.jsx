@@ -7,12 +7,21 @@ import { getAllClinics, getDailyRevenueStatus, getInventoryStatus } from '@/lib/
 import { useRouter } from "next/navigation";
 
 export default function AdminDashboard() {
-  const router = useRouter();
+  // const router = useRouter();
   const [clinics, setClinics] = useState([])
   const [dailyStatus, setDailyStatus] = useState(null)
-  const [inventoryStatus, setInventoryStatus] = useState([])
-  const [inventorySummary, setInventorySummary] = useState(null)
+  // const [inventoryStatus, setInventoryStatus] = useState([])
+  // const [inventorySummary, setInventorySummary] = useState(null)
   const [selectedClinicId, setSelectedClinicId] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Initialize dates to today
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setStartDate(today);
+    setEndDate(today);
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();
@@ -25,19 +34,16 @@ export default function AdminDashboard() {
 
       if (clinicsData.length > 0) {
         const firstClinicId = clinicsData[0]?.id;
-
-        console.log("First clinic ID:", firstClinicId);
         if (firstClinicId) {
           setSelectedClinicId(firstClinicId);
-          fetchDailyRevenueStatus(firstClinicId);
+          fetchDailyRevenueStatus(firstClinicId, startDate, endDate);
         } else {
           console.error("First clinic ID is undefined");
         }
       }
-
-      const inventoryData = await getInventoryStatus();
-      setInventoryStatus(inventoryData.low_stock_alerts);
-      setInventorySummary(inventoryData.summary);
+      // const inventoryData = await getInventoryStatus();
+      // setInventoryStatus(inventoryData.low_stock_alerts);
+      // setInventorySummary(inventoryData.summary);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     }
@@ -49,28 +55,26 @@ export default function AdminDashboard() {
       return;
     }
     setSelectedClinicId(clinicId);
-    fetchDailyRevenueStatus(clinicId);
+    fetchDailyRevenueStatus(clinicId, startDate, endDate);
   };
 
   useEffect(() => {
-
     console.log("Clinics data changed:", clinics);
     if (clinics.length > 0 && !selectedClinicId) {
       const firstClinicId = clinics[0]?.id;
       if (firstClinicId) {
         setSelectedClinicId(firstClinicId);
-        fetchDailyRevenueStatus(firstClinicId);
+        fetchDailyRevenueStatus(firstClinicId, startDate, endDate);
       } else {
         console.error("First clinic ID is undefined");
       }
     }
   }, [clinics]);
 
-  const fetchDailyRevenueStatus = async (clinicId) => {
-
-    console.log("Fetching daily revenue status for clinic ID:", clinicId);
+  const fetchDailyRevenueStatus = async (clinicId, start_date = null, end_date = null) => {
+    console.log("Fetching daily revenue status for clinic ID:", clinicId, "Start Date:", start_date, "End Date:", end_date);
     try {
-      const dailyStatusData = await getDailyRevenueStatus(clinicId);
+      const dailyStatusData = await getDailyRevenueStatus(clinicId, start_date, end_date);
       console.log("Daily status data fetched:", dailyStatusData);
 
       if (dailyStatusData && dailyStatusData.summary) {
@@ -84,8 +88,17 @@ export default function AdminDashboard() {
     }
   };
 
-  // console.log(inventorySummary)
-  // console.log(inventoryStatus)
+  const handleDateFilter = () => {
+    if (!selectedClinicId) {
+      console.error("Please select a clinic first");
+      return;
+    }
+    if (!startDate || !endDate) {
+      console.error("Please select both start and end dates");
+      return;
+    }
+    fetchDailyRevenueStatus(selectedClinicId, startDate, endDate);
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -108,12 +121,54 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-        {/* Daily Revenue Report */}
+      {/* Date Filter Section */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Filter by Date Range</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+          <div>
+            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              id="startDate"
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              id="endDate"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <button
+              onClick={handleDateFilter}
+              className="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition duration-200 font-medium"
+            >
+              Apply Filter
+            </button>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          Selected Clinic: <span className="font-semibold text-gray-700">{clinics.find(c => c.id === selectedClinicId)?.name || 'None selected'}</span>
+        </p>
+      </div>
 
             {dailyStatus && (
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Clinic Daily Reports</h3>
-          <p className="text-sm text-gray-600 mb-4">Date: {dailyStatus?.date || "N/A"}</p>
+          <p className="text-sm text-gray-600 mb-4">
+            Date Range: <span className="font-semibold">{startDate} to {endDate}</span>
+          </p>
 
           {/* Summary */}
           <div className="grid grid-cols-2 gap-4 mb-6">
@@ -147,10 +202,10 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 gap-6">
             {/* Patients Today */}
             <div className="border border-gray-300 rounded-lg p-4">
-              <h4 className="text-md font-bold text-gray-900 mb-2">Patients Today</h4>
-              {dailyStatus?.patients_today?.length > 0 ? (
+              <h4 className="text-md font-bold text-gray-900 mb-2">Patients List</h4>
+              {dailyStatus?.patients?.length > 0 ? (
                 <ul className="space-y-2">
-                  {dailyStatus?.patients_today?.map((patient, index) => (
+                  {dailyStatus?.patients?.map((patient, index) => (
                     <li key={index} className="border border-gray-200 rounded-lg p-3">
                       <p className="font-semibold text-sm">{patient.patient__name}</p>
                       <p className="text-xs text-gray-600">Phone: {patient.patient__phone_primary}</p>
@@ -186,10 +241,10 @@ export default function AdminDashboard() {
 
             {/* Trials Today */}
             <div className="border border-gray-300 rounded-lg p-4">
-              <h4 className="text-md font-bold text-gray-900 mb-2">Trials Today</h4>
-              {dailyStatus?.trials_today?.length > 0 ? (
+              <h4 className="text-md font-bold text-gray-900 mb-2">Trials List</h4>
+              {dailyStatus?.trials?.length > 0 ? (
                 <ul className="space-y-2">
-                  {dailyStatus?.trials_today?.map((trial, index) => (
+                  {dailyStatus?.trials?.map((trial, index) => (
                     <li key={index} className="border border-gray-200 rounded-lg p-3">
                       <p className="font-semibold text-sm">{trial.assigned_patient__name}</p>
                       <p className="text-xs text-gray-600">Device: {trial.device_inventory_id__brand} {trial.device_inventory_id__model_type}</p>
@@ -206,10 +261,10 @@ export default function AdminDashboard() {
 
             {/* Bookings Today */}
             <div className="border border-gray-300 rounded-lg p-4">
-              <h4 className="text-md font-bold text-gray-900 mb-2">Bookings Today</h4>
-              {dailyStatus?.bookings_today?.length > 0 ? (
+              <h4 className="text-md font-bold text-gray-900 mb-2">Bookings List</h4>
+              {dailyStatus?.bookings?.length > 0 ? (
                 <ul className="space-y-2">
-                  {dailyStatus?.bookings_today?.map((booking, index) => (
+                  {dailyStatus?.bookings?.map((booking, index) => (
                     <li key={index} className="border border-gray-200 rounded-lg p-3">
                       <p className="font-semibold text-sm">{booking.assigned_patient__name}</p>
                       <p className="text-xs text-gray-600">Device: {booking.booked_device_inventory__brand} {booking.booked_device_inventory__model_type}</p>
@@ -227,7 +282,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Inventory Summary */}
-      {inventorySummary && (
+      {/* {inventorySummary && (
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Inventory Summary</h3>
           <div className="grid grid-cols-2 gap-4">
@@ -249,10 +304,10 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Low Stock Alerts */}
-      <div className="bg-white shadow rounded-lg p-6">
+      {/* <div className="bg-white shadow rounded-lg p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Low Stock Alerts</h3>
         <div className="space-y-2">
           {inventoryStatus.map((item) => (
@@ -269,26 +324,26 @@ export default function AdminDashboard() {
             </div>
           ))}
         </div>
-      </div>      
+      </div>       */}
     </div>
   )
 }
 
-function KPICard({ title, value, change, icon, bgColor, textColor }) {
-  return (
-    <Card className="border-0">
-      <CardContent className="pt-3 sm:pt-6">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-slate-600 text-xs">{title}</p>
-            <p className="text-lg sm:text-2xl font-bold mt-1">{value}</p>
-            <p className="text-xs text-slate-600 mt-1">{change}</p>
-          </div>
-          <div className={`${bgColor} p-2 sm:p-3 rounded-lg flex-shrink-0`}>
-            <div className={textColor}>{icon}</div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+// function KPICard({ title, value, change, icon, bgColor, textColor }) {
+//   return (
+//     <Card className="border-0">
+//       <CardContent className="pt-3 sm:pt-6">
+//         <div className="flex items-start justify-between gap-2">
+//           <div className="min-w-0">
+//             <p className="text-slate-600 text-xs">{title}</p>
+//             <p className="text-lg sm:text-2xl font-bold mt-1">{value}</p>
+//             <p className="text-xs text-slate-600 mt-1">{change}</p>
+//           </div>
+//           <div className={`${bgColor} p-2 sm:p-3 rounded-lg flex-shrink-0`}>
+//             <div className={textColor}>{icon}</div>
+//           </div>
+//         </div>
+//       </CardContent>
+//     </Card>
+//   )
+// }

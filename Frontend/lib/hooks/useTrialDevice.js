@@ -31,6 +31,7 @@ export default function () {
   const [serials, setSerials] = useState([]);
   const [completeTrialDialogOpen, setCompleteTrialDialogOpen] = useState(false);
   const [selectedTrial, setSelectedTrial] = useState(null);
+  const [selectedTrialId, setSelectedTrialId] = useState(null);
   const [selectedAction, setSelectedAction] = useState("BOOK");
 const [form, setForm] = useState(INITIAL_BOOK_FORM);
 const [extendForm, setExtendForm] = useState(INITIAL_EXTEND_FORM);
@@ -77,8 +78,10 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
   }, []);
 
     const openDecisionDialog = (trial) => {
+      console.log("Selected Trial:", trial.id);
     setCompleteTrialDialogOpen(true);
     setSelectedTrial(trial);
+    setSelectedTrialId(trial.id);
   };
   const handleCloseDialog = () => {
     setCompleteTrialDialogOpen(false);
@@ -140,8 +143,7 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
   }
  
     try{
-      console.log("papppp",payload)
-      const res = await bookedDeviceForm("23",payload)
+      const res = await bookedDeviceForm(selectedTrialId,payload)
       handleCloseDialog()
     }catch(err){
        handleCloseDialog()
