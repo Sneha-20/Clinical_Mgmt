@@ -41,3 +41,29 @@ export const getVisitById = async (patientId) => {
     throw error;
   }
 };
+
+
+export const getPurchaseHistory = async (patientId) => {
+  try {
+    const url = `${routes.patientProfile}${patientId}/purchases/`;
+    const response = await apiClient.get(url);
+    // response may already be the API body (with keys: status, nextPage, totalPages, data)
+    // Return response as-is so callers can read pagination fields and `data` array.
+    return response;
+  } catch (error) {
+    console.error("Error fetching purchase history:", error);
+    throw error;
+  }
+};
+
+export const getServiceVisits = async (patientId, page = 1) => {
+  try {
+    const url = `${routes.patientProfile}${patientId}/service-visits/`;
+    // attach page param if provided
+    const response = await apiClient.get(url, { params: { page } });
+    return response;
+  } catch (error) {
+    console.error("Error fetching service visits:", error);
+    throw error;
+  }
+};
