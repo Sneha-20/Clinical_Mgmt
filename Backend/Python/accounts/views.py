@@ -5,8 +5,10 @@ from rest_framework import status, generics
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from .models import Clinic , Role, User
-from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer,UserSerializer
+from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer,UserSerializer, DoctorListSerializer, ReceptionistListSerializer
 from django.shortcuts import get_object_or_404
+from clinical_be.utils.pagination import StandardResultsSetPagination
+
 
 def _first_error_message(errors):
     if isinstance(errors, dict):
@@ -104,7 +106,7 @@ class ApproveUserView(APIView):
 
     def post(self, request, user_id):
         # you can check role or is_staff/is_superuser
-        if not (request.user.is_superuser or request.user.is_staff or request.user.role.name == 'admin'):
+        if not (request.user.is_superuser or request.user.is_staff or request.user.role.name == 'Admin'):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=user_id)
@@ -117,7 +119,7 @@ class RejectUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
-        if not (request.user.is_superuser or request.user.is_staff):
+        if not (request.user.is_superuser or request.user.is_staff  or request.user.role.name == 'Admin'):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=user_id)
@@ -133,3 +135,22 @@ class UserListView(generics.ListAPIView):
     """List all users except Admin"""
     queryset = User.objects.exclude(role__name='Admin')
     serializer_class = UserSerializer
+    pagination_class = StandardResultsSetPagination
+
+
+class DoctorListView(generics.ListAPIView):
+    """List all doctors"""
+    serializer_class = DoctorListSerializer
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        return User.objects.filter(role__name='Audiologist')
+
+
+class ReceptionistListView(generics.ListAPIView):
+    """List all receptionists"""
+    serializer_class = ReceptionistListSerializer
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        return User.objects.filter(role__name='Reception')

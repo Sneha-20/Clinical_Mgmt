@@ -127,3 +127,21 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'email', 'name', 'role_name', 'clinic_name', 'phone', 'is_active', 'is_approved')
+
+
+class DoctorListSerializer(serializers.ModelSerializer):
+    """Serializer for listing doctors"""
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'name', 'phone', 'clinic_name', 'is_active', 'is_approved')
+
+
+class ReceptionistListSerializer(serializers.ModelSerializer):
+    """Serializer for listing receptionists"""
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    
+    class Meta:
+        model = User
+        fields = ('id', 'email', 'name', 'phone', 'clinic_name', 'is_active', 'is_approved')

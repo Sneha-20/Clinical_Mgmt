@@ -1156,6 +1156,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'notes',
             'use_in_trial',
             'unit_price',
+            'status'
             # 'is_expired',
             # 'is_near_expiry',
         ]

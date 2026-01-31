@@ -423,6 +423,16 @@ class InventoryItem(models.Model):
             return 0 <= (self.expiry_date - timezone.now().date()).days <= 30
         return False
 
+    @property
+    def status(self):
+        """Return inventory status based on quantity."""
+        if self.quantity_in_stock <= 1:
+            return 'Critical'
+        elif self.quantity_in_stock < 5:
+            return 'Low'
+        else:
+            return 'Good'
+
     def update_quantity_from_serials(self):
         """
         Update quantity_in_stock to match the number of InventorySerials with status 'In Stock'.
