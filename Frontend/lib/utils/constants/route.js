@@ -76,6 +76,10 @@ export const routes = {
   adminClinics: "clinical/admin/clinics/",
   adminDailyStatus: "clinical/admin/clinic-report/",
   adminInventoryStatus: "clinical/admin/inventory-status/",
+
+  // Accounts
+  accountsReceptionists: "accounts/receptionists/",
+  accountsUsers: "accounts/users/",
 };
 export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
 

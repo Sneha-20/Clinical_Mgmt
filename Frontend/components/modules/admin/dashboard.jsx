@@ -1,24 +1,84 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { TrendingUp, Users, DollarSign, AlertTriangle } from 'lucide-react'
-import { getAllClinics, getDailyRevenueStatus, getInventoryStatus } from '@/lib/services/dashboard'
-import { useRouter } from "next/navigation";
-
+import { useState, useEffect } from "react";
+import { getAllClinics, getDailyRevenueStatus } from "@/lib/services/dashboard";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/Table";
+import { Button } from "@/components/ui/button";
+import CommonDatePicker from '@/components/ui/CommonDatePicker'
+import { format } from 'date-fns'
+import {
+  getReceptionists,
+  approveUser,
+  rejectUser,
+} from '@/lib/services/accounts'
+import { useToast } from '@/components/ui/use-toast' 
 export default function AdminDashboard() {
-  // const router = useRouter();
-  const [clinics, setClinics] = useState([])
-  const [dailyStatus, setDailyStatus] = useState(null)
-  // const [inventoryStatus, setInventoryStatus] = useState([])
-  // const [inventorySummary, setInventorySummary] = useState(null)
+  const [clinics, setClinics] = useState([]);
+  const [dailyStatus, setDailyStatus] = useState(null);
   const [selectedClinicId, setSelectedClinicId] = useState(null);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
+  // Receptionists list for admin approval
+  const [receptionists, setReceptionists] = useState([]);
+  const [loadingReceptionists, setLoadingReceptionists] = useState(false);
+  const { toast } = useToast();
+
+  // Which summary card is active: 'patients' | 'new_tests' | 'trials' | 'bookings'
+  const [activeSection, setActiveSection] = useState('patients');
 
   // Initialize dates to today
+
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    // fetch receptionists on mount
+    fetchReceptionists();
+  }, []);
+
+  const fetchReceptionists = async () => {
+    try {
+      setLoadingReceptionists(true);
+      const res = await getReceptionists();
+      setReceptionists(res?.data || []);
+    } catch (error) {
+      console.error("Error fetching receptionists:", error);
+    } finally {
+      setLoadingReceptionists(false);
+    }
+  };
+
+  const handleUpdateStatus = async (id, status) => {
+    try {
+      if (status === "approved") {
+        await approveUser(id);
+      } else if (status === "rejected") {
+        await rejectUser(id);
+      } else {
+        throw new Error("Invalid status");
+      }
+
+      // remove from list on success
+      setReceptionists((prev) => prev.filter((r) => r.id !== id));
+      toast({
+        title: `Receptionist ${status}`,
+        description: `Receptionist has been ${status}.`,
+      });
+    } catch (error) {
+      console.error("Error updating receptionist status:", error);
+      toast({
+        title: "Error",
+        description: "Could not update receptionist status.",
+      });
+    }
+  };
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
     setStartDate(today);
     setEndDate(today);
   }, []);
@@ -41,13 +101,11 @@ export default function AdminDashboard() {
           console.error("First clinic ID is undefined");
         }
       }
-      // const inventoryData = await getInventoryStatus();
-      // setInventoryStatus(inventoryData.low_stock_alerts);
-      // setInventorySummary(inventoryData.summary);
+
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     }
-  }
+  };
 
   const handleClinicClick = (clinicId) => {
     if (!clinicId) {
@@ -71,16 +129,34 @@ export default function AdminDashboard() {
     }
   }, [clinics]);
 
-  const fetchDailyRevenueStatus = async (clinicId, start_date = null, end_date = null) => {
-    console.log("Fetching daily revenue status for clinic ID:", clinicId, "Start Date:", start_date, "End Date:", end_date);
+  const fetchDailyRevenueStatus = async (
+    clinicId,
+    start_date = null,
+    end_date = null,
+  ) => {
+    console.log(
+      "Fetching daily revenue status for clinic ID:",
+      clinicId,
+      "Start Date:",
+      start_date,
+      "End Date:",
+      end_date,
+    );
     try {
-      const dailyStatusData = await getDailyRevenueStatus(clinicId, start_date, end_date);
+      const dailyStatusData = await getDailyRevenueStatus(
+        clinicId,
+        start_date,
+        end_date,
+      );
       console.log("Daily status data fetched:", dailyStatusData);
 
       if (dailyStatusData && dailyStatusData.summary) {
         setDailyStatus(dailyStatusData);
       } else {
-        console.error("Daily status data or summary is undefined", dailyStatusData);
+        console.error(
+          "Daily status data or summary is undefined",
+          dailyStatusData,
+        );
         setDailyStatus(null); // Reset dailyStatus to null if data is invalid
       }
     } catch (error) {
@@ -103,8 +179,12 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-teal-600">Admin Dashboard</h1>
-        <p className="text-xs sm:text-sm text-slate-600 mt-1">Complete clinic overview and analytics</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-teal-600">
+          Admin Dashboard
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-600 mt-1">
+          Complete clinic overview and analytics
+        </p>
       </div>
 
       {/* Clinics List as Cards */}
@@ -112,238 +192,272 @@ export default function AdminDashboard() {
         {clinics.map((clinic) => (
           <div
             key={clinic.id}
-            className="bg-white shadow rounded-lg p-4 cursor-pointer hover:shadow-lg"
+            role="button"
+            aria-selected={selectedClinicId === clinic.id}
+            className={`bg-white rounded-lg p-4 cursor-pointer hover:shadow-lg ${selectedClinicId === clinic.id ? 'border-2 border-teal-600 shadow-lg' : 'shadow'}`}
             onClick={() => handleClinicClick(clinic.id)}
           >
-            <h4 className="text-lg font-semibold text-gray-900">{clinic.name}</h4>
+            <h4 className="text-lg font-semibold text-gray-900">
+              {clinic.name}
+            </h4>
             <p className="text-sm text-gray-600">Location: {clinic.address}</p>
           </div>
         ))}
       </div>
 
-      {/* Date Filter Section */}
+      {/* Pending Staff Registrations */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Filter by Date Range</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-          <div>
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Start Date
-            </label>
-            <input
-              id="startDate"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
-              End Date
-            </label>
-            <input
-              id="endDate"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <button
-              onClick={handleDateFilter}
-              className="w-full px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition duration-200 font-medium"
-            >
-              Apply Filter
-            </button>
-          </div>
-        </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Selected Clinic: <span className="font-semibold text-gray-700">{clinics.find(c => c.id === selectedClinicId)?.name || 'None selected'}</span>
-        </p>
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Pending Staff Registrations
+        </h3>
+        {loadingReceptionists ? (
+          <p className="text-sm text-gray-500">Loading registered staff...</p>
+        ) : receptionists.length > 0 ? (
+          <Table>
+            <TableHeader>
+              <tr>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Clinic</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Actions</TableHead>
+              </tr>
+            </TableHeader>
+            <TableBody>
+              {receptionists.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{r.name}</TableCell>
+                  <TableCell>{r.email}</TableCell>
+                  <TableCell>{r.phone}</TableCell>
+                  <TableCell>{r.clinic_name}</TableCell>
+                  <TableCell>{r.role}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="success"
+                        onClick={() => handleUpdateStatus(r.id, "approved")}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleUpdateStatus(r.id, "rejected")}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
+          <p className="text-sm text-gray-500">
+            No staff registrations pending approval.
+          </p>
+        )}
       </div>
 
-            {dailyStatus && (
+{dailyStatus && (
         <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Clinic Daily Reports</h3>
-          <p className="text-sm text-gray-600 mb-4">
-            Date Range: <span className="font-semibold">{startDate} to {endDate}</span>
-          </p>
-
-          {/* Summary */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Total Patients</p>
-              <p className="text-lg font-bold text-gray-900">{dailyStatus?.summary?.total_patients || <span className='text-gray-500'>No data available</span>}</p>
+          <div className="flex flex-col mb-4">
+          <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900">
+            Clinic Daily Reports
+          </h3>
+            <div className="flex items-end gap-3">
+              <div className="w-44">
+                <CommonDatePicker
+                  // label="Start Date"
+                  selectedDate={startDate ? new Date(startDate) : null}
+                  onChange={(date) => setStartDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                  maxDate={new Date()}
+                />
+              </div>
+              <div className="w-44">
+                <CommonDatePicker
+                  // label="End Date"
+                  selectedDate={endDate ? new Date(endDate) : null}
+                  onChange={(date) => setEndDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                  maxDate={new Date()}
+                />
+              </div>
+              <div>
+                <button onClick={handleDateFilter} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                  Apply Filter
+                </button>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">New Tests</p>
-              <p className="text-lg font-bold text-gray-900">{dailyStatus?.summary?.new_tests || <span className='text-gray-500'>No data available</span>}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Active Trials</p>
-              <p className="text-lg font-bold text-gray-900">{dailyStatus?.summary?.active_trials || <span className='text-gray-500'>No data available</span>}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Bookings</p>
-              <p className="text-lg font-bold text-gray-900">{dailyStatus?.summary?.bookings || <span className='text-gray-500'>No data available</span>}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">TGAs</p>
-              <p className="text-lg font-bold text-gray-900">{dailyStatus?.summary?.tgas || <span className='text-gray-500'>No data available</span>}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Follow-ups Pending</p>
-              <p className="text-lg font-bold text-gray-900">{dailyStatus?.summary?.followup_pending || <span className='text-gray-500'>No data available</span>}</p>
+          </div>
+           <div className="flex gap-3 items-center text-xs text-gray-500">
+              <div>Date Range: <span className="font-semibold">{startDate} to {endDate}</span></div>
+              <div className="mt-1">Selected Clinic: <span className="font-semibold">{clinics.find(c => c.id === selectedClinicId)?.name || 'None selected'}</span></div>
             </div>
           </div>
 
-          {/* Data Sections in 2x2 Grid */}
-          <div className="grid grid-cols-2 gap-6">
-            {/* Patients Today */}
-            <div className="border border-gray-300 rounded-lg p-4">
-              <h4 className="text-md font-bold text-gray-900 mb-2">Patients List</h4>
-              {dailyStatus?.patients?.length > 0 ? (
-                <ul className="space-y-2">
-                  {dailyStatus?.patients?.map((patient, index) => (
-                    <li key={index} className="border border-gray-200 rounded-lg p-3">
-                      <p className="font-semibold text-sm">{patient.patient__name}</p>
-                      <p className="text-xs text-gray-600">Phone: {patient.patient__phone_primary}</p>
-                      <p className="text-xs text-gray-600">Clinic: {patient.clinic__name}</p>
-                      <p className="text-xs text-gray-600">Visit Type: {patient.visit_type}</p>
-                      <p className="text-xs text-gray-600">Created At: {new Date(patient.created_at).toLocaleString()}</p>
-                    </li>
-                  ))}
-                </ul>
+          {/* Summary - clickable KPI cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div
+              onClick={() => setActiveSection('patients')}
+              className={`p-4 rounded-lg cursor-pointer ${activeSection === 'patients' ? 'border-2 border-teal-600 shadow' : 'border border-gray-200'}`}>
+              <p className="text-sm font-medium text-gray-700">Total Patients</p>
+              <p className="text-2xl font-bold text-gray-900">{dailyStatus?.summary?.total_patients ?? 0}</p>
+            </div>
+
+            <div
+              onClick={() => setActiveSection('new_tests')}
+              className={`p-4 rounded-lg cursor-pointer ${activeSection === 'new_tests' ? 'border-2 border-teal-600 shadow' : 'border border-gray-200'}`}>
+              <p className="text-sm font-medium text-gray-700">New Tests</p>
+              <p className="text-2xl font-bold text-gray-900">{dailyStatus?.summary?.new_tests ?? 0}</p>
+            </div>
+
+            <div
+              onClick={() => setActiveSection('trials')}
+              className={`p-4 rounded-lg cursor-pointer ${activeSection === 'trials' ? 'border-2 border-teal-600 shadow' : 'border border-gray-200'}`}>
+              <p className="text-sm font-medium text-gray-700">Active Trials</p>
+              <p className="text-2xl font-bold text-gray-900">{dailyStatus?.summary?.active_trials ?? 0}</p>
+            </div>
+
+            <div
+              onClick={() => setActiveSection('bookings')}
+              className={`p-4 rounded-lg cursor-pointer ${activeSection === 'bookings' ? 'border-2 border-teal-600 shadow' : 'border border-gray-200'}`}>
+              <p className="text-sm font-medium text-gray-700">Bookings</p>
+              <p className="text-2xl font-bold text-gray-900">{dailyStatus?.summary?.bookings ?? 0}</p>
+            </div>
+          </div>
+
+          {/* Detail Table for the active card */}
+          <div className="border border-gray-300 rounded-lg p-4">
+            <h4 className="text-md font-bold text-gray-900 mb-2">
+              {activeSection === 'patients' && 'Patients List'}
+              {activeSection === 'new_tests' && 'New Tests'}
+              {activeSection === 'trials' && 'Trials List'}
+              {activeSection === 'bookings' && 'Bookings List'}
+            </h4>
+
+            {/* Patients Table */}
+            {activeSection === 'patients' && (
+              dailyStatus?.patients?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <tr>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Clinic</TableHead>
+                      <TableHead>Visit Type</TableHead>
+                      <TableHead>Created At</TableHead>
+                    </tr>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyStatus?.patients?.map((patient, idx) => (
+                      <TableRow key={patient.id ?? idx}>
+                        <TableCell>{patient.patient__name}</TableCell>
+                        <TableCell>{patient.patient__phone_primary}</TableCell>
+                        <TableCell>{patient.clinic__name}</TableCell>
+                        <TableCell>{patient.visit_type}</TableCell>
+                        <TableCell>{patient.created_at ? new Date(patient.created_at).toLocaleString() : '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
                 <p className="text-sm text-gray-500">No patients visited today.</p>
-              )}
-            </div>
+              )
+            )}
 
-            {/* New Tests */}
-            <div className="border border-gray-300 rounded-lg p-4">
-              <h4 className="text-md font-bold text-gray-900 mb-2">New Tests</h4>
-              {dailyStatus?.new_tests?.length > 0 ? (
-                <ul className="space-y-2">
-                  {dailyStatus?.new_tests?.map((test, index) => (
-                    <li key={index} className="border border-gray-200 rounded-lg p-3">
-                      <p className="font-semibold text-sm">{test.patient__name}</p>
-                      <p className="text-xs text-gray-600">Test Requested: {test.test_requested}</p>
-                      <p className="text-xs text-gray-600">Clinic: {test.clinic__name}</p>
-                      <p className="text-xs text-gray-600">Seen By: {test.seen_by__name}</p>
-                    </li>
-                  ))}
-                </ul>
+            {/* New Tests Table */}
+            {activeSection === 'new_tests' && (
+              dailyStatus?.new_tests?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <tr>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Test Requested</TableHead>
+                      <TableHead>Clinic</TableHead>
+                      <TableHead>Seen By</TableHead>
+                    </tr>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyStatus?.new_tests?.map((test, idx) => (
+                      <TableRow key={test.id ?? idx}>
+                        <TableCell>{test.patient__name}</TableCell>
+                        <TableCell>{test.test_requested}</TableCell>
+                        <TableCell>{test.clinic__name}</TableCell>
+                        <TableCell>{test.seen_by__name}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
                 <p className="text-sm text-gray-500">No new tests conducted today.</p>
-              )}
-            </div>
+              )
+            )}
 
-            {/* Trials Today */}
-            <div className="border border-gray-300 rounded-lg p-4">
-              <h4 className="text-md font-bold text-gray-900 mb-2">Trials List</h4>
-              {dailyStatus?.trials?.length > 0 ? (
-                <ul className="space-y-2">
-                  {dailyStatus?.trials?.map((trial, index) => (
-                    <li key={index} className="border border-gray-200 rounded-lg p-3">
-                      <p className="font-semibold text-sm">{trial.assigned_patient__name}</p>
-                      <p className="text-xs text-gray-600">Device: {trial.device_inventory_id__brand} {trial.device_inventory_id__model_type}</p>
-                      <p className="text-xs text-gray-600">Clinic: {trial.visit__clinic__name}</p>
-                      <p className="text-xs text-gray-600">Decision: {trial.trial_decision}</p>
-                      <p className="text-xs text-gray-600">Follow-up Date: {trial.followup_date}</p>
-                    </li>
-                  ))}
-                </ul>
+            {/* Trials Table */}
+            {activeSection === 'trials' && (
+              dailyStatus?.trials?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <tr>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Device</TableHead>
+                      <TableHead>Clinic</TableHead>
+                      <TableHead>Decision</TableHead>
+                      <TableHead>Follow-up</TableHead>
+                    </tr>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyStatus?.trials?.map((trial, idx) => (
+                      <TableRow key={trial.id ?? idx}>
+                        <TableCell>{trial.assigned_patient__name}</TableCell>
+                        <TableCell>{`${trial.device_inventory_id__brand ?? ''} ${trial.device_inventory_id__model_type ?? ''}`}</TableCell>
+                        <TableCell>{trial.visit__clinic__name}</TableCell>
+                        <TableCell>{trial.trial_decision}</TableCell>
+                        <TableCell>{trial.followup_date ?? '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
                 <p className="text-sm text-gray-500">No trials conducted today.</p>
-              )}
-            </div>
+              )
+            )}
 
-            {/* Bookings Today */}
-            <div className="border border-gray-300 rounded-lg p-4">
-              <h4 className="text-md font-bold text-gray-900 mb-2">Bookings List</h4>
-              {dailyStatus?.bookings?.length > 0 ? (
-                <ul className="space-y-2">
-                  {dailyStatus?.bookings?.map((booking, index) => (
-                    <li key={index} className="border border-gray-200 rounded-lg p-3">
-                      <p className="font-semibold text-sm">{booking.assigned_patient__name}</p>
-                      <p className="text-xs text-gray-600">Device: {booking.booked_device_inventory__brand} {booking.booked_device_inventory__model_type}</p>
-                      <p className="text-xs text-gray-600">Clinic: {booking.visit__clinic__name}</p>
-                      <p className="text-xs text-gray-600">Cost: ₹{booking.cost}</p>
-                    </li>
-                  ))}
-                </ul>
+            {/* Bookings Table */}
+            {activeSection === 'bookings' && (
+              dailyStatus?.bookings?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <tr>
+                      <TableHead>Patient</TableHead>
+                      <TableHead>Device</TableHead>
+                      <TableHead>Clinic</TableHead>
+                      <TableHead>Cost</TableHead>
+                    </tr>
+                  </TableHeader>
+                  <TableBody>
+                    {dailyStatus?.bookings?.map((booking, idx) => (
+                      <TableRow key={booking.id ?? idx}>
+                        <TableCell>{booking.assigned_patient__name}</TableCell>
+                        <TableCell>{`${booking.booked_device_inventory__brand ?? ''} ${booking.booked_device_inventory__model_type ?? ''}`}</TableCell>
+                        <TableCell>{booking.visit__clinic__name}</TableCell>
+                        <TableCell>{booking.cost ? `₹${booking.cost}` : '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
                 <p className="text-sm text-gray-500">No bookings made today.</p>
-              )}
-            </div>
-          </div>
+              )
+            )}
         </div>
+      </div>
       )}
-
-      {/* Inventory Summary */}
-      {/* {inventorySummary && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Inventory Summary</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Total Categories</p>
-              <p className="text-lg font-bold text-gray-900">{inventorySummary.total_categories}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Low Stock Alerts</p>
-              <p className="text-lg font-bold text-red-600">{inventorySummary.low_stock_alerts_count}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Fast Moving Items</p>
-              <p className="text-lg font-bold text-green-600">{inventorySummary.fast_moving_items_count}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700">Trial Devices in Use</p>
-              <p className="text-lg font-bold text-blue-600">{inventorySummary.trial_devices_in_use_count}</p>
-            </div>
-          </div>
-        </div>
-      )} */}
-
-      {/* Low Stock Alerts */}
-      {/* <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Low Stock Alerts</h3>
-        <div className="space-y-2">
-          {inventoryStatus.map((item) => (
-            <div key={item.id} className="flex items-center justify-between p-2 border border-gray-200 rounded-lg">
-              <div>
-                <p className="font-semibold text-sm">{item.product_name}</p>
-                <p className="text-xs text-gray-600">Brand: {item.brand} | Model: {item.model_type}</p>
-                <p className="text-xs text-gray-600">Category: {item.category}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-bold text-red-600">{item.quantity_in_stock}</p>
-                <p className="text-xs text-gray-600">Reorder Level: {item.reorder_level}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>       */}
     </div>
-  )
+  );
 }
 
-// function KPICard({ title, value, change, icon, bgColor, textColor }) {
-//   return (
-//     <Card className="border-0">
-//       <CardContent className="pt-3 sm:pt-6">
-//         <div className="flex items-start justify-between gap-2">
-//           <div className="min-w-0">
-//             <p className="text-slate-600 text-xs">{title}</p>
-//             <p className="text-lg sm:text-2xl font-bold mt-1">{value}</p>
-//             <p className="text-xs text-slate-600 mt-1">{change}</p>
-//           </div>
-//           <div className={`${bgColor} p-2 sm:p-3 rounded-lg flex-shrink-0`}>
-//             <div className={textColor}>{icon}</div>
-//           </div>
-//         </div>
-//       </CardContent>
-//     </Card>
-//   )
-// }
+
