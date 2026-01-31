@@ -136,7 +136,6 @@ export default function InventoryManagement() {
                 </thead>
                 <tbody>
                   {inventoryItems.map((item) => {
-                    const status = item.quantity_in_stock === 0 ? 'critical' : item.quantity_in_stock < 10 ? 'low' : 'good'
                     return (
                       <tr key={item.id} className="border-b border-border hover:bg-muted/50">
                         <td className="py-2 sm:py-3 px-2 sm:px-3">
@@ -161,11 +160,11 @@ export default function InventoryManagement() {
                         </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
-                            status === 'good' ? 'bg-green-100 text-green-600' :
-                            status === 'low' ? 'bg-yellow-100 text-yellow-600' :
+                            item.status === 'Good' ? 'bg-green-100 text-green-600' :
+                            item.status === 'Low' ? 'bg-yellow-100 text-yellow-600' :
                             'bg-red-100 text-red-600'
                           }`}>
-                            {status === 'good' ? 'Good' : status === 'low' ? 'Low' : 'Critical'}
+                            {item.status === 'Good' ? 'Good' : item.status === 'Low' ? 'Low' : 'Critical'}
                           </span>
                         </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
