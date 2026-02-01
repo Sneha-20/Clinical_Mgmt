@@ -25,9 +25,6 @@ class TokenObtainWithClinicView(APIView):
 
     def post(self, request, *args, **kwargs):
         # check if the user is approved
-        if not request.user.is_approved:
-            return Response({"status": 403, "error": "User is not approved"}, status=status.HTTP_403_FORBIDDEN)
-        
         serializer = TokenWithClinicSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             return Response({
