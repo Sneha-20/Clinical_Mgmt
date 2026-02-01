@@ -20,8 +20,12 @@ class InventoryItemListView(ListAPIView):
         critical_count = sum(1 for item in all_items if item.status.lower() == 'critical')
 
         status_param = request.query_params.get('status')
+        use_in_trial = request.query_params.get('use_in_trial') # true or false
         if status_param:
             items = [item for item in all_items if item.status.lower() == status_param.lower()]
+        if use_in_trial is not None:
+            use_in_trial_bool = use_in_trial.lower() == 'true'
+            items = [item for item in items if item.use_in_trial == use_in_trial_bool]
 
         page = self.paginate_queryset(items)
 
