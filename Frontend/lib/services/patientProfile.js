@@ -24,6 +24,21 @@ export const getPatientById = async (patientId) => {
   }
 };
 
+/**
+ * Update patient partial data
+ * @param {number|string} patientId
+ * @param {Object} data - payload to patch
+ */
+export const updatePatient = async (patientId, data) => {
+  try {
+    const url = `${routes.patientProfile}${patientId}/update/`;
+    const response = await apiClient.patch(url, data);
+    return response;
+  } catch (error) {
+    console.error("❌ Update patient failed:", { patientId, message: error?.message });
+    throw error;
+  }
+};
 export const getVisitById = async (patientId) => {
   try {
     const url = `${routes.patientProfile}${patientId}/visits/`;

@@ -80,3 +80,11 @@ export const tgaServiceTypeOptions = [
   { label: "Repair", value: "repair" },
   { label: "Maintenance", value: "maintenance" },
 ];
+
+
+export const referalTypeOptions = [
+    { label: "Self", value: "Self" },
+    { label: "Doctor", value: "doctor" },
+    { label: "Advertisement", value: "advertisement" },
+    { label: "Other", value: "other" },
+  ];

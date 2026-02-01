@@ -24,12 +24,18 @@ import {
   ClipboardList,
   FileText,
 } from "lucide-react";
+import { Edit } from "lucide-react";
+import Modal from "@/components/ui/Modal";
+import { Input } from "@/components/ui/input";
 import usePatientProfile from "@/lib/hooks/usePatientProfile";
+import { updatePatient } from "@/lib/services/patientProfile";
+import { useToast } from "@/components/ui/use-toast";
 import CommonBadge from "@/components/ui/badge";
 import Backbutton from "@/components/ui/Backbutton";
 import Tabs from "@/components/ui/CommonTab";
 import { getPurchaseHistory } from "@/lib/services/patientProfile";
 import { getServiceVisits } from "@/lib/services/patientProfile";
+import { referalTypeOptions } from "@/lib/utils/constants/staticValue";
 import {
   Table,
   TableBody,
@@ -38,12 +44,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/Table";
+import CommonRadio from "@/components/ui/CommonRadio";
+
 
 export default function PatientProfile({ patientId }) {
-  const { patient, patientVisit } = usePatientProfile(patientId);
+  const { patient, patientVisit, fetchPatientData } = usePatientProfile(patientId);
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [serviceHistory, setServiceHistory] = useState([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    age: "",
+    gender: "",
+    referral_type: "",
+    referral_doctor: "",
+    phone_primary: "",
+    phone_secondary: "",
+    address: "",
+    city: "",
+    case_history: {
+      medical_history: "",
+      family_history: "",
+      noise_exposure: "",
+      previous_ha_experience: "",
+      red_flags: "",
+    },
+  });
+  const { toast } = useToast();
 
 
   useEffect(() => {
@@ -282,6 +309,48 @@ export default function PatientProfile({ patientId }) {
     { label: "Service History", value: "serviceHistory", content: serviceHistoryContent },
   ];
 
+  const openEditModal = () => {
+    setEditForm({
+      name: patient?.name ?? "",
+      age: patient?.age ?? "",
+      gender: patient?.gender ?? "",
+      dob: patient?.dob ?? "",
+      referral_type: patient?.referral_type ?? "",
+      referral_doctor: patient?.referral_doctor ?? "",
+      phone_primary: patient?.phone_primary ?? "",
+      phone_secondary: patient?.phone_secondary ?? "",
+      address: patient?.address ?? "",
+      city: patient?.city ?? ""
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      // Build payload. Flatten case_history to server expected shape if needed
+      const payload = {
+        age: editForm.age,
+        gender: editForm.gender,
+        dob: editForm.dob,
+        referral_type: editForm.referral_type,
+        referral_doctor: editForm.referral_doctor,
+        phone_primary: editForm.phone_primary,
+        phone_secondary: editForm.phone_secondary,
+        address: editForm.address,
+        city: editForm.city,
+        // case_history: editForm.case_history,
+      };
+
+      await updatePatient(patientId, payload);
+      toast({ title: "Updated", description: "Patient information updated." });
+      setIsEditModalOpen(false);
+      fetchPatientData(patientId);
+    } catch (err) {
+      toast({ title: "Update failed", description: err?.message || "Could not update patient." });
+      console.error(err);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
@@ -301,9 +370,12 @@ export default function PatientProfile({ patientId }) {
         {/* Basic Info */}
         <Card>
           <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">
-              Basic Information
-            </CardTitle>
+            <div className="flex items-center justify-between w-full">
+              <CardTitle className="text-base sm:text-lg">Basic Information</CardTitle>
+              <Button variant="ghost" size="icon" onClick={openEditModal}>
+                <Edit className="w-4 h-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             <div>
@@ -342,9 +414,12 @@ export default function PatientProfile({ patientId }) {
         {/* Contact Info */}
         <Card>
           <CardHeader className="pb-3 sm:pb-4">
-            <CardTitle className="text-base sm:text-lg">
-              Contact Information
-            </CardTitle>
+            <div className="flex items-center justify-between w-full">
+              <CardTitle className="text-base sm:text-lg">Contact Information</CardTitle>
+              <Button variant="ghost" size="icon" onClick={openEditModal}>
+                <Edit className="w-4 h-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-2 sm:space-y-3">
             <div className="flex items-start gap-2 sm:gap-3">
@@ -440,6 +515,98 @@ export default function PatientProfile({ patientId }) {
           </Card>
         </div>
       </div>
+
+      <Modal
+        isModalOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        Icon={Edit}
+        header="Edit Patient Information"
+        onSubmit={handleEditSubmit}
+      >
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-medium mb-2">Basic Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+              <Input
+                label="Name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              />
+              <Input
+                label="Date of Birth"
+                type="date"
+                value={editForm.dob}
+                onChange={(e) => setEditForm({ ...editForm, dob: e.target.value })}
+              />
+              <Input
+                label="Age"
+                type="number"
+                value={editForm.age}
+                onChange={(e) => setEditForm({ ...editForm, age: e.target.value })}
+              />
+              <Input
+                label="Gender"
+                value={editForm.gender}
+                onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
+              />
+
+              <div className="col-span-1 sm:col-span-2">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-2">Referral Type</p>
+                <div className="flex gap-6">
+                  {referalTypeOptions.map((item) => (
+                    <CommonRadio
+                      key={item.value}
+                      label={item.label}
+                      value={item.value}
+                      name="referral_type"
+                      checked={editForm.referral_type === item.value}
+                      onChange={() =>
+                        setEditForm({ ...editForm, referral_type: item.value })
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+              {editForm.referral_type === 'doctor' && (
+                <Input
+                  label="Referral Doctor"
+                  value={editForm.referral_doctor}
+                  onChange={(e) => setEditForm({ ...editForm, referral_doctor: e.target.value })}
+                />
+              )}
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-medium mb-2">Contact Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Primary Phone"
+                value={editForm.phone_primary}
+                onChange={(e) => setEditForm({ ...editForm, phone_primary: e.target.value })}
+              />
+              <Input
+                label="Secondary Phone"
+                value={editForm.phone_secondary}
+                onChange={(e) => setEditForm({ ...editForm, phone_secondary: e.target.value })}
+              />
+              <Input
+                label="Address"
+                value={editForm.address}
+                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+              />
+              <Input
+                label="City"
+                value={editForm.city}
+                onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+              />
+            </div>
+          </div>
+
+
+        </div>
+      </Modal>
 
       <Tabs tabs={tabs} defaultTab="visitHistory" />
     </div>
