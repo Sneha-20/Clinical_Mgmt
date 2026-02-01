@@ -13,7 +13,12 @@ class AdminTrialPerformanceAPIView(APIView):
 
     def get(self, request):
         # Filter only staff/audiologists (customize as needed)
-        staff_qs = User.objects.filter(is_active=True, is_approved=True, role__name__in=["Audiologist", "Reception"]).order_by('name')
+
+        role = request.GET.get('role')
+        if role:
+            staff_qs = User.objects.filter(is_active=True, is_approved=True, role__name__in=[role]).order_by('name')
+        else:
+            staff_qs = User.objects.filter(is_active=True, is_approved=True, role__name__in=["Audiologist", "Reception"]).order_by('name')
         results = []
         for staff in staff_qs:
             role = getattr(staff.role, 'name', '').lower()
@@ -30,10 +35,13 @@ class AdminTrialPerformanceAPIView(APIView):
                 total_followups = PatientVisit.objects.filter(seen_by=staff, status='Follow-up').count()
                 completed_followups = PatientVisit.objects.filter(seen_by=staff, status='Follow-up', contacted=True).count()
                 followup_completion = (completed_followups / total_followups * 100) if total_followups > 0 else 0
+                trials_booked = Trial.objects.filter(visit__seen_by=staff, trial_decision='BOOK').count()
+                trial_booking_ratio = (trials_booked / trial_count * 100) if trial_count > 0 else 0
                 staff_result.update({
                     "test_count": test_count,
                     "trial_count": trial_count,
                     "patient_seen": patient_seen,
+                    "trial_booking_ratio": round(trial_booking_ratio, 2),
                     # "followup_completion_percent": round(followup_completion, 2)
                 })
             elif role == 'reception':
