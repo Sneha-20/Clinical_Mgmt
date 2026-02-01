@@ -6,7 +6,7 @@ import { routes } from "@/lib/utils/constants/route";
 export async function getReceptionists(params = {}) {
   try {
     const query = new URLSearchParams(params).toString();
-    const url = query ? `${routes.accountsReceptionists}?${query}` : routes.accountsReceptionists;
+    const url = query ? `${routes.accountsUsers}?${query}` : routes.accountsUsers;
     const data = await apiClient.get(url);
     return data;
   } catch (error) {

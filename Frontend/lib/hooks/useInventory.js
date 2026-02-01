@@ -5,10 +5,12 @@ import {
   createInventoryItem,
   getInventoryItems,
   addInventoryStock,
+  updateInventoryItem,
 } from "@/lib/services/inventory";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
 import { showToast } from "@/components/ui/toast";
+import { set } from "date-fns";
 
 export default function useInventory() {
   const dispatch = useDispatch();
@@ -21,14 +23,23 @@ export default function useInventory() {
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
+  const [lowItemCount, setLowItemCount] = useState(0);
+  const [criticalItemCount, setCriticalItemCount] = useState(0);
+
+  // Current status filter (All | Critical | Low)
+  const [filterStatus, setFilterStatus] = useState("All");
 
   // Fetch inventory items list
   const fetchInventoryItems = useCallback(
-    async (page = 1) => {
+    async (page = 1, statusParam) => {
+      const status = statusParam ?? filterStatus;
       try {
         dispatch(startLoading());
-        const data = await getInventoryItems({ page });
+        const data = await getInventoryItems({ page, status });
+        console.log("Data fetched:", data);
         setInventoryItems(data.items || []);
+        setLowItemCount(data.lowItem || 0);
+        setCriticalItemCount(data.criticalItem || 0);
         setPagination({
           currentPage: data.currentPage || page,
           totalPages: data.totalPages || 1,
@@ -42,7 +53,7 @@ export default function useInventory() {
         dispatch(stopLoading());
       }
     },
-    [dispatch]
+    [dispatch, filterStatus]
   );
 
   // Fetch categories
@@ -87,6 +98,15 @@ export default function useInventory() {
     }
   }, []);
 
+  // Change active filter and fetch items for that status
+  const changeFilter = useCallback(
+    async (status) => {
+      setFilterStatus(status);
+      await fetchInventoryItems(1, status);
+    },
+    [fetchInventoryItems]
+  );
+
   // Create inventory item
   const createItem = useCallback(
     async (itemData) => {
@@ -94,7 +114,7 @@ export default function useInventory() {
         dispatch(startLoading());
         await createInventoryItem(itemData);
         showToast({ type: "success", message: "Inventory item created successfully" });
-        await fetchInventoryItems(pagination.currentPage);
+        await fetchInventoryItems(pagination.currentPage, filterStatus);
         return true;
       } catch (error) {
         console.error("Error creating inventory item:", error);
@@ -107,7 +127,7 @@ export default function useInventory() {
         dispatch(stopLoading());
       }
     },
-    [dispatch, fetchInventoryItems, pagination]
+    [dispatch, fetchInventoryItems, pagination, filterStatus]
   );
 
   // Add stock to inventory item
@@ -117,7 +137,7 @@ export default function useInventory() {
         dispatch(startLoading());
         await addInventoryStock(stockData);
         showToast({ type: "success", message: "Stock added successfully" });
-        await fetchInventoryItems(pagination.currentPage);
+        await fetchInventoryItems(pagination.currentPage, filterStatus);
         return true;
       } catch (error) {
         console.error("Error adding stock:", error);
@@ -130,8 +150,35 @@ export default function useInventory() {
         dispatch(stopLoading());
       }
     },
-    [dispatch, fetchInventoryItems, pagination]
+    [dispatch, fetchInventoryItems, pagination, filterStatus]
   );
+
+  // Update inventory item
+  const updateItem = useCallback(
+    async (itemId, itemData) => {
+      console.log("useInventory.updateItem called", { itemId, itemData });
+      try {
+        dispatch(startLoading());
+        const res = await updateInventoryItem(itemId, itemData);
+        console.log("useInventory.updateItem response", res);
+        showToast({ type: "success", message: "Inventory item updated successfully" });
+        await fetchInventoryItems(pagination.currentPage, filterStatus);
+        return true;
+      } catch (error) {
+        console.error("Error updating inventory item:", error);
+        showToast({
+          type: "error",
+          message: error?.response?.data?.error || "Failed to update inventory item",
+        });
+        return false;
+      } finally {
+        dispatch(stopLoading());
+      }
+    },
+    [dispatch, fetchInventoryItems, pagination, filterStatus]
+  );
+
+
 
   useEffect(() => {
     fetchInventoryItems(1);
@@ -144,11 +191,16 @@ export default function useInventory() {
     categories,
     brands,
     models,
+    filterStatus,
+    criticalItemCount,
+    lowItemCount,
     fetchInventoryItems,
     fetchCategories,
     fetchBrands,
     fetchModels,
     createItem,
     addStock,
+    updateItem,
+    changeFilter,
   };
 }

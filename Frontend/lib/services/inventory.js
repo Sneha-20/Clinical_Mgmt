@@ -47,9 +47,10 @@ export const createInventoryItem = async (data) => {
  */
 export const getInventoryItems = async (params = {}) => {
   try {
-    const { page = 1 } = params;
+    const { page = 1,status } = params;
     const queryParams = new URLSearchParams();
     if (page) queryParams.append("page", page.toString());
+    if (status && status !== "All") queryParams.append("status", status);
     
     const url = `${routes.inventoryItems}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -58,6 +59,8 @@ export const getInventoryItems = async (params = {}) => {
       totalPages: response?.totalPages || 1,
       currentPage: response?.currentPage || page,
       totalItems: response?.totalItems || 0,
+      lowItem: response?.low_count || 0,
+      criticalItem: response?.critical_count || 0,
     };
   } catch (error) {
     throw error;
@@ -73,6 +76,40 @@ export const addInventoryStock = async (data) => {
   try {
     const url = routes.inventorySerialNumberCreate;
     const response = await apiClient.post(url, data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Update an inventory item
+ * @param {number|string} id - Inventory item id
+ * @param {Object} data - Fields to update
+ */
+export const updateInventoryItem = async (id, data) => {
+  try {
+    const url = `clinical/inventory-item/${id}/update/`;
+    const response = await apiClient.put(url, data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+
+/**
+ * Get serial list for an inventory item
+ * @param {Object} params - Query params (inventory_item)
+ */
+export const getInventorySerialList = async (params = {}) => {
+  try {
+    const { inventory_item } = params;
+    const queryParams = new URLSearchParams();
+    if (inventory_item) queryParams.append('inventory_item', inventory_item.toString());
+    const url = `clinical/inventory/serial/list/?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
     return response;
   } catch (error) {
     throw error;

@@ -10,6 +10,8 @@ export default function AddProductModal({
   isOpen,
   onClose,
   onSubmit,
+  initialData = null,
+  isEdit = false,
   categories = [],
   brands = [],
   models = [],
@@ -29,6 +31,32 @@ export default function AddProductModal({
     stock_type: false,
     serial_numbers: "",
   });
+
+  // Prefill when editing
+  useEffect(() => {
+    if (isOpen && isEdit && initialData) {
+      setFormData({
+        category: initialData.category || "",
+        brand: initialData.brand || "",
+        model_type: initialData.model_type || "",
+        product_name: initialData.product_name || "",
+        description: initialData.description || "",
+        location: initialData.location || "",
+        unit_price: initialData.unit_price || "",
+        use_in_trial: initialData.use_in_trial || false,
+        stock_type: initialData.stock_type === "Serialized",
+        serial_numbers: "",
+      });
+
+      // Ensure dropdowns are populated for the current category/brand
+      if (initialData.category) {
+        onCategoryChange?.(initialData.category);
+      }
+      if (initialData.category && initialData.brand) {
+        onBrandChange?.(initialData.category, initialData.brand);
+      }
+    }
+  }, [isOpen, isEdit, initialData, onCategoryChange, onBrandChange]);
 
   const [errors, setErrors] = useState({});
 
@@ -89,6 +117,9 @@ export default function AddProductModal({
     e.preventDefault();
     const newErrors = {};
 
+    // Debug: confirm submit fired and current form state
+    console.log("AddProductModal: handleSubmit called", { isEdit, formData });
+
     if (!formData.category) newErrors.category = "Category is required";
     if (!formData.brand) newErrors.brand = "Brand is required";
     if (!formData.model_type) newErrors.model_type = "Model is required";
@@ -96,12 +127,14 @@ export default function AddProductModal({
     if (!formData.location) newErrors.location = "Location is required";
     if (!formData.unit_price) newErrors.unit_price = "Unit price is required";
 
-    if (formData.stock_type && !formData.serial_numbers) {
+    // Require serial numbers only when creating a serialized product (not when editing)
+    if (formData.stock_type && !isEdit && !formData.serial_numbers) {
       newErrors.serial_numbers = "Serial numbers are required for serialized items";
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      console.log("AddProductModal: validation failed", newErrors);
       return;
     }
 
@@ -118,12 +151,18 @@ export default function AddProductModal({
       use_in_trial: formData.use_in_trial,
     };
 
-    // Add serial numbers if stock type is serialized
-    if (formData.stock_type && formData.serial_numbers) {
+    // Add serial numbers if stock type is serialized and we are creating (not editing)
+    if (!isEdit && formData.stock_type && formData.serial_numbers) {
       payload.serial_numbers = formData.serial_numbers
         .split(",")
         .map((sn) => sn.trim())
         .filter((sn) => sn.length > 0);
+    }
+
+    console.log("AddProductModal: calling onSubmit with payload", payload);
+    if (!onSubmit || typeof onSubmit !== 'function') {
+      console.error('AddProductModal: onSubmit is not a function or undefined', onSubmit);
+      return;
     }
 
     onSubmit(payload);
@@ -148,7 +187,7 @@ export default function AddProductModal({
     <Modal
       isModalOpen={isOpen}
       onClose={onClose}
-      header="Add New Product"
+      header={isEdit ? `Edit Product - ${initialData?.product_name || ""}` : "Add New Product"}
       showButton={false}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -293,7 +332,7 @@ export default function AddProductModal({
           </label>
         </div>
 
-        {formData.stock_type && (
+        {formData.stock_type && !isEdit && (
           <div>
             <label className="text-sm font-medium mb-1 block">
               Serial Numbers (comma-separated) <span className="text-red-500">*</span>
@@ -312,12 +351,18 @@ export default function AddProductModal({
           </div>
         )}
 
+        {formData.stock_type && isEdit && (
+          <div className="p-3 bg-slate-50 rounded-md">
+            <p className="text-sm text-slate-600">Serial numbers are managed via the <strong>Add Stock</strong> modal. Use Add Stock to add serials for serialized products.</p>
+          </div>
+        )}
+
         <div className="flex justify-end gap-3 pt-4">
           <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
           <Button type="submit" disabled={loading}>
-            {loading ? "Creating..." : "Create Product"}
+            {loading ? (isEdit ? "Updating..." : "Creating...") : (isEdit ? "Update Product" : "Create Product")}
           </Button>
         </div>
       </form>

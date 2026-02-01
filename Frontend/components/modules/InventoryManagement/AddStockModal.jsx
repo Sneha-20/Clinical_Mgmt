@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Modal from "@/components/ui/Modal";
+import { getInventorySerialList } from "@/lib/services/inventory";
 
 export default function AddStockModal({
   isOpen,
@@ -16,6 +17,7 @@ export default function AddStockModal({
     quantity_in_stock: "",
   });
   const [errors, setErrors] = useState({});
+  const [serialList, setSerialList] = useState([]);
 
   const isSerialized = item?.stock_type === "Serialized";
 
@@ -26,8 +28,26 @@ export default function AddStockModal({
         quantity_in_stock: "",
       });
       setErrors({});
+      setSerialList([]);
     }
-  }, [isOpen]);
+
+    // Fetch current serials when opening modal for a serialized item
+    const fetchSerials = async () => {
+      if (isOpen && item && item.stock_type === "Serialized") {
+        try {
+          const res = await getInventorySerialList({ inventory_item: item.id });
+          // Response shape may vary; prefer array in res.data or res?.data?.results
+          const list = res?.data || res?.data?.results || [];
+          setSerialList(list);
+        } catch (err) {
+          console.error("Error fetching serials:", err);
+          setSerialList([]);
+        }
+      }
+    };
+
+    fetchSerials();
+  }, [isOpen, item]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -111,6 +131,21 @@ export default function AddStockModal({
             {errors.serial_numbers && (
               <p className="text-red-500 text-xs mt-1">{errors.serial_numbers}</p>
             )}
+
+            <div className="mt-3">
+              <p className="text-sm font-medium">Existing Serials</p>
+              {serialList.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No serials found for this item</p>
+              ) : (
+                <ul className="mt-2 max-h-40 overflow-auto flex items-center">
+                  {serialList.map((s, idx) => (
+                    <li key={idx} className="text-xs bg-slate-50 px-2 py-1 rounded-md">
+                      {s.serial_number ?? s.serial ?? JSON.stringify(s)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         ) : (
           <div>

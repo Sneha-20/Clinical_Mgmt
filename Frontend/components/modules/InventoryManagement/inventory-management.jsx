@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, AlertTriangle, TrendingDown } from 'lucide-react'
+import { Plus, AlertTriangle, TrendingDown, List } from 'lucide-react'
 import useInventory from '@/lib/hooks/useInventory'
 import AddProductModal from './AddProductModal'
 import AddStockModal from './AddStockModal'
@@ -13,7 +13,30 @@ export default function InventoryManagement() {
   const [showAddProductModal, setShowAddProductModal] = useState(false)
   const [showAddStockModal, setShowAddStockModal] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
+  const [selectedProduct, setSelectedProduct] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Handlers for edit
+  const handleEditClick = (product) => {
+    // Log click and ensure modal opens *after* selectedProduct is set so the modal
+    // renders in edit mode and pre-fills reliably.
+    console.log("handleEditClick: selecting product", product)
+    setSelectedProduct(product)
+    setTimeout(() => {
+      setShowAddProductModal(true)
+    }, 0)
+  }
+
+  const handleUpdateProduct = async (productData) => {
+    setIsSubmitting(true)
+    console.log("Updating product with data:", productData)
+    const success = await updateItem(selectedProduct.id, productData)
+    if (success) {
+      setShowAddProductModal(false)
+      setSelectedProduct(null)
+    }
+    setIsSubmitting(false)
+  }
 
   const {
     inventoryItems,
@@ -21,11 +44,17 @@ export default function InventoryManagement() {
     categories,
     brands,
     models,
+    filterStatus,
+    criticalItemCount,
+    lowItemCount,
+    fetchCategories,
     fetchBrands,
     fetchModels,
     createItem,
     addStock,
+    updateItem,
     fetchInventoryItems,
+    changeFilter,
   } = useInventory()
 
   const handleAddProduct = async (productData) => {
@@ -64,8 +93,6 @@ export default function InventoryManagement() {
     }
   }
 
-  const lowStockItems = inventoryItems.filter(item => item.quantity_in_stock < 10)
-  const criticalItems = inventoryItems.filter(item => item.quantity_in_stock === 0)
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -75,39 +102,62 @@ export default function InventoryManagement() {
           <h2 className="text-2xl sm:text-3xl font-bold text-primary">Inventory Management</h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">Track stock levels and manage transactions</p>
         </div>
-        <Button onClick={() => setShowAddProductModal(true)} className="gap-2 w-full sm:w-auto">
+        <Button onClick={() => { setSelectedProduct(null); setShowAddProductModal(true) }} className="gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Add Product
         </Button>
       </div>
 
       {/* Alerts */}
-      {(lowStockItems.length > 0 || criticalItems.length > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          {criticalItems.length > 0 && (
-            <Card className="border-l-4 border-l-red-500 border-0 bg-red-50">
-              <CardContent className="pt-4 sm:pt-6 flex items-center gap-3">
-                <AlertTriangle className="w-5 sm:w-6 h-5 sm:h-6 text-red-500 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-xs sm:text-sm text-red-900">{criticalItems.length} Critical Items</p>
-                  <p className="text-xs text-red-700">Out of stock - order immediately</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          {lowStockItems.length > 0 && (
-            <Card className="border-l-4 border-l-yellow-500 border-0 bg-yellow-50">
-              <CardContent className="pt-4 sm:pt-6 flex items-center gap-3">
-                <TrendingDown className="w-5 sm:w-6 h-5 sm:h-6 text-yellow-500 flex-shrink-0" />
-                <div>
-                  <p className="font-semibold text-xs sm:text-sm text-yellow-900">{lowStockItems.length} Low Stock Items</p>
-                  <p className="text-xs text-yellow-700">Below minimum threshold</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() => changeFilter('All')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') changeFilter('All') }}
+          className={`border-0 cursor-pointer ${filterStatus === 'All' ? 'ring-2 ring-offset-2 ring-sky-200 bg-sky-50' : 'bg-white'}`}
+        >
+          <CardContent className="pt-4 sm:pt-6 flex items-center gap-3">
+            <List className="w-5 sm:w-6 h-5 sm:h-6 text-sky-500 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-xs sm:text-sm text-sky-900">{pagination.totalItems || inventoryItems.length} Items</p>
+              <p className="text-xs text-sky-700">View all inventory items</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() => changeFilter('Critical')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') changeFilter('Critical') }}
+          className={`border-0 cursor-pointer ${filterStatus === 'Critical' ? 'ring-2 ring-offset-2 ring-red-200 border-l-4 border-l-red-500 bg-red-50' : 'bg-red-50'}`}
+        >
+          <CardContent className="pt-4 sm:pt-6 flex items-center gap-3">
+            <AlertTriangle className="w-5 sm:w-6 h-5 sm:h-6 text-red-500 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-xs sm:text-sm text-red-900">{criticalItemCount} Critical Items</p>
+              <p className="text-xs text-red-700">Out of stock - order immediately</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card
+          role="button"
+          tabIndex={0}
+          onClick={() => changeFilter('Low')}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') changeFilter('Low') }}
+          className={`border-0 cursor-pointer ${filterStatus === 'Low' ? 'ring-2 ring-offset-2 ring-yellow-200 border-l-4 border-l-yellow-500 bg-yellow-50' : 'bg-yellow-50'}`}
+        >
+          <CardContent className="pt-4 sm:pt-6 flex items-center gap-3">
+            <TrendingDown className="w-5 sm:w-6 h-5 sm:h-6 text-yellow-500 flex-shrink-0" />
+            <div>
+              <p className="font-semibold text-xs sm:text-sm text-yellow-900">{lowItemCount} Low Stock Items</p>
+              <p className="text-xs text-yellow-700">Below minimum threshold</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Inventory Table */}
       <Card>
@@ -167,7 +217,7 @@ export default function InventoryManagement() {
                             {item.status === 'Good' ? 'Good' : item.status === 'Low' ? 'Low' : 'Critical'}
                           </span>
                         </td>
-                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3 space-x-2">
                           <Button 
                             variant="outline" 
                             size="sm" 
@@ -175,6 +225,14 @@ export default function InventoryManagement() {
                             className="text-xs"
                           >
                             Add Stock
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleEditClick(item)} 
+                            className="text-xs"
+                          >
+                            Edit
                           </Button>
                         </td>
                       </tr>
@@ -197,35 +255,17 @@ export default function InventoryManagement() {
         </CardContent>
       </Card>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-        <Card className="border-0">
-          <CardContent className="pt-4 sm:pt-6">
-            <p className="text-muted-foreground text-xs">Total Items</p>
-            <p className="text-2xl font-bold mt-2">{pagination.totalItems || inventoryItems.length}</p>
-          </CardContent>
-        </Card>
-        <Card className="border-0">
-          <CardContent className="pt-4 sm:pt-6">
-            <p className="text-muted-foreground text-xs">Total Units in Stock</p>
-            <p className="text-2xl font-bold mt-2">
-              {inventoryItems.reduce((sum, item) => sum + (item.quantity_in_stock || 0), 0)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-0">
-          <CardContent className="pt-4 sm:pt-6">
-            <p className="text-muted-foreground text-xs">Low Stock Items</p>
-            <p className="text-2xl font-bold text-yellow-600 mt-2">{lowStockItems.length}</p>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Modals */}
       <AddProductModal
         isOpen={showAddProductModal}
-        onClose={() => setShowAddProductModal(false)}
-        onSubmit={handleAddProduct}
+        onClose={() => {
+          setShowAddProductModal(false)
+          setSelectedProduct(null)
+        }}
+        onSubmit={selectedProduct ? handleUpdateProduct : handleAddProduct}
+        initialData={selectedProduct}
+        isEdit={!!selectedProduct}
         categories={categories}
         brands={brands}
         models={models}
