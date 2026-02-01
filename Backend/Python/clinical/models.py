@@ -1,4 +1,6 @@
 from django.db import models, transaction
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 from accounts.models import User,Clinic
 class Patient(models.Model):
@@ -85,7 +87,7 @@ class TestUpload(models.Model):
 class Trial(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE, null=True)
-    device_inventory_id = models.ForeignKey('InventoryItem', on_delete=models.SET_NULL, null=True, blank=True)
+    device_inventory_id = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True)
     serial_number = models.CharField(max_length=255, blank=True, null=True)
     receiver_size = models.CharField(max_length=255, blank=True, null=True)
     ear_fitted = models.CharField(max_length=50, blank=True, null=True)  # Ear fitted (Right / Left / Both)
@@ -116,8 +118,8 @@ class Trial(models.Model):
     trial_decision = models.CharField(max_length=20, choices=TRIAL_DECISION_CHOICES, blank=True, null=True, help_text="Patient decision after trial completion", default='TRIAL_ACTIVE')
     trial_completed_at = models.DateTimeField(null=True, blank=True, help_text="When trial was completed and decision made")
     extended_at = models.DateTimeField(null=True, blank=True, help_text="When trial was extended")
-    booked_device_inventory = models.ForeignKey('InventoryItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='booked_trials', help_text="Device booked by patient after trial")
-    booked_device_serial = models.ForeignKey('InventorySerial', on_delete=models.SET_NULL, null=True, blank=True, related_name='booked_trials', help_text="Serial number of booked device")
+    booked_device_inventory = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials', help_text="Device booked by patient after trial")
+    booked_device_serial = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials', help_text="Serial number of booked device")
 
 class TestType(models.Model):
     """
@@ -329,7 +331,7 @@ class PatientPurchase(models.Model):
 
     inventory_item = models.ForeignKey(
         'InventoryItem',
-        on_delete=models.PROTECT
+        on_delete=models.CASCADE
     )
 
     inventory_serial = models.ForeignKey(
@@ -523,7 +525,7 @@ class ServicePartUsed(models.Model):
         on_delete=models.CASCADE,
         related_name="parts_used"
     )
-    inventory_item = models.ForeignKey(InventoryItem, on_delete=models.PROTECT)
+    inventory_item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     
 
@@ -576,4 +578,20 @@ class ServicePartUsed(models.Model):
             inv.quantity = inv.quantity + int(self.quantity or 0)
             inv.save(update_fields=["quantity"])
             return super().delete(*args, **kwargs)
+
+
+class DeletedRecordLog(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.CharField(max_length=255)
+    content_object = GenericForeignKey('content_type', 'object_id')
+    model_name = models.CharField(max_length=100)
+    deleted_data = models.JSONField()
+    deleted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    deleted_at = models.DateTimeField(auto_now_add=True)
+    reason = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Deleted Record Log'
+        verbose_name_plural = 'Deleted Record Logs'
+        ordering = ['-deleted_at']
 

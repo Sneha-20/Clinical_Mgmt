@@ -1137,8 +1137,6 @@ class InventoryUpdateItemSerializer(serializers.ModelSerializer):
     
 
 class InventoryItemSerializer(serializers.ModelSerializer):
-    # is_expired = serializers.BooleanField(read_only=True)
-    # is_near_expiry = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = InventoryItem
@@ -1151,14 +1149,10 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'description',
             'stock_type',
             'quantity_in_stock',
-            # 'reorder_level',
-            # 'expiry_date',
             'notes',
             'use_in_trial',
             'unit_price',
             'status'
-            # 'is_expired',
-            # 'is_near_expiry',
         ]
 
 

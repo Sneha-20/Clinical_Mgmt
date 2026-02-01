@@ -5,9 +5,10 @@ from rest_framework import status, generics
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from .models import Clinic , Role, User
-from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer,UserSerializer, DoctorListSerializer, ReceptionistListSerializer
+from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer,UserSerializer
 from django.shortcuts import get_object_or_404
 from clinical_be.utils.pagination import StandardResultsSetPagination
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 def _first_error_message(errors):
@@ -23,6 +24,10 @@ class TokenObtainWithClinicView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
+        # check if the user is approved
+        if not request.user.is_approved:
+            return Response({"status": 403, "error": "User is not approved"}, status=status.HTTP_403_FORBIDDEN)
+        
         serializer = TokenWithClinicSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             return Response({
@@ -57,8 +62,6 @@ class RegisterView(APIView):
         err = _first_error_message(serializer.errors)
         return Response({"status": 400, "error": err}, status=status.HTTP_400_BAD_REQUEST)
         
-
-
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -77,8 +80,7 @@ class ChangePasswordView(APIView):
 
         user.set_password(new_password)
         user.save()
-        return Response({"status": 200, "message": "Password changed successfully"}, status=status.HTTP_200_OK)
-    
+        return Response({"status": 200, "message": "Password changed successfully"}, status=status.HTTP_200_OK) 
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -99,8 +101,6 @@ class ProfileView(APIView):
 
         return Response({"status": 200, "data": user_data}, status=status.HTTP_200_OK)
     
-
-
 class ApproveUserView(APIView):
     permission_classes = [IsAuthenticated]  # restrict to admin users in code below
 
@@ -111,7 +111,6 @@ class ApproveUserView(APIView):
 
         user = get_object_or_404(User, pk=user_id)
         user.is_approved = True
-        user.is_active = True  # allow login
         user.save()
         return Response({"status":status.HTTP_200_OK, 'message':'Approved' }, status=status.HTTP_200_OK)
 
@@ -123,34 +122,51 @@ class RejectUserView(APIView):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=user_id)
-        # either delete or mark as inactive/rejected
-        user.is_approved = False
         user.is_active = False
         user.save()
         return Response({"status":status.HTTP_200_OK, "message":"Rejected" }, status=status.HTTP_200_OK)
 
-
-
-class UserListView(generics.ListAPIView):
-    """List all users except Admin"""
-    queryset = User.objects.exclude(role__name='Admin')
+class PendingUserList(generics.ListAPIView):
+    """List all users pending approval"""
+    queryset = User.objects.filter(is_approved=False)
     serializer_class = UserSerializer
     pagination_class = StandardResultsSetPagination
 
-
-class DoctorListView(generics.ListAPIView):
-    """List all doctors"""
-    serializer_class = DoctorListSerializer
-    pagination_class = StandardResultsSetPagination
-    
     def get_queryset(self):
-        return User.objects.filter(role__name='Audiologist')
+        return User.objects.filter(is_approved=False, is_active=True)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
-class ReceptionistListView(generics.ListAPIView):
-    """List all receptionists"""
-    serializer_class = ReceptionistListSerializer
+class StaffUserList(generics.ListAPIView):
+    """List all users except Admin"""
+    queryset = User.objects.filter(is_approved=True, is_active=True).exclude(role__name='Admin')
+    serializer_class = UserSerializer
     pagination_class = StandardResultsSetPagination
-    
-    def get_queryset(self):
-        return User.objects.filter(role__name='Reception')
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['is_active']
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # get the clinic id from the request
+        clinic_id = request.GET.get('clinic_id')
+        if clinic_id:
+            queryset = queryset.filter(clinic_id=clinic_id)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+class RemoveStaffList(generics.DestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.filter(is_approved=True).exclude(role__name='Admin')
+    serializer_class = UserSerializer
+
+    def delete(self, request, *args, **kwargs):
+        user = self.get_object()
+        user.is_active = False
+        user.is_approved = False
+        user.save(update_fields=["is_active", "is_approved"])
+        return Response({"status": 200, "message": "Staff user soft deleted"}, status=status.HTTP_200_OK)
