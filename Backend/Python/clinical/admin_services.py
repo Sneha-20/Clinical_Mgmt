@@ -194,13 +194,8 @@ class AdminRevenueReportsView(APIView):
                     avg_bill_amount=Avg('final_amount')
                 ).order_by('-total_revenue')
                 
-            elif report_type == 'staff':
+            # elif report_type == 'staff':
                 # Revenue by staff (who created the bills)
-                revenue_data = bills.values('created_by__name').annotate(
-                    total_revenue=Sum('final_amount'),
-                    total_bills=Count('id'),
-                    avg_bill_amount=Avg('final_amount')
-                ).order_by('-total_revenue')
             
                 
             elif report_type == 'category':
@@ -219,6 +214,12 @@ class AdminRevenueReportsView(APIView):
             total_revenue = bills.aggregate(total=Sum('final_amount'))['total'] or 0
             total_bills = bills.count()
             avg_bill_amount = bills.aggregate(avg=Avg('final_amount'))['avg'] or 0
+
+            staff_revenue_data = bills.values('created_by__name').annotate(
+                    total_revenue=Sum('final_amount'),
+                    total_bills=Count('id'),
+                    avg_bill_amount=Avg('final_amount')
+                ).order_by('-total_revenue')
             
             return JsonResponse({
                 'status': 'success',
@@ -227,12 +228,13 @@ class AdminRevenueReportsView(APIView):
                     'start_date': start_date.strftime('%Y-%m-%d'),
                     'end_date': end_date.strftime('%Y-%m-%d')
                 },
-                'summary': {
-                    'total_revenue': float(total_revenue),
-                    'total_bills': total_bills,
-                    'avg_bill_amount': float(avg_bill_amount)
-                },
+                # 'summary': {
+                #     'total_revenue': float(total_revenue),
+                #     'total_bills': total_bills,
+                #     'avg_bill_amount': float(avg_bill_amount)
+                # },
                 'revenue_data': list(revenue_data),
+                'staff_revenue_data': list(staff_revenue_data)
             })
             
         except Exception as e:
