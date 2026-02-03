@@ -263,7 +263,7 @@ class DoctorFlatListView(generics.ListAPIView):
 # Dashboard Tile records count 
 # Total patients , today's visits , pending visits etc can be added here in future
 class DashboardStatsView(APIView):
-    permission_classes = [IsAuthenticated, ReceptionistPermission]
+    permission_classes = [IsAuthenticated, ReceptionistPermission | AuditorPermission]
 
     def get(self, request, *args, **kwargs):
         from django.utils import timezone
@@ -291,6 +291,29 @@ class DashboardStatsView(APIView):
                 "todays_visits": todays_visits,
                 "pending_services": pending_tests,
                 "followup_visits": followup_visits
+            }
+        elif role == 'Audiologist': 
+            # For Audiologist, show only relevant stats
+            pending_tests = PatientVisit.objects.filter(
+                status='Test pending', clinic=clinic, seen_by=request.user
+            ).count()
+           
+            completed_tests = PatientVisit.objects.filter(
+
+                models.Q(patient__case_history__isnull=False) &
+                models.Q(visittestperformed__isnull=False),
+                seen_by=request.user,
+                clinic=request.user.clinic
+            ).count()
+
+            trials_active = Trial.objects.filter(
+                clinic=clinic, visit__seen_by=request.user,trial_decision='TRIAL_ACTIVE'
+            ).count()
+
+            data = {
+                "pending_tests": pending_tests,
+                "completed_tests": completed_tests,
+                "trials_active": trials_active
             }
 
         else:

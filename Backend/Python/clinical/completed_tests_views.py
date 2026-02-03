@@ -16,7 +16,9 @@ class CompletedTestsListView(APIView):
             # Use select_related and prefetch_related to optimize queries
             completed_visits = PatientVisit.objects.filter(
                 models.Q(patient__case_history__isnull=False) &
-                models.Q(visittestperformed__isnull=False)
+                models.Q(visittestperformed__isnull=False),
+                seen_by=request.user,
+                clinic=request.user.clinic
             ).select_related(
                 'patient',
                 'patient__case_history'
