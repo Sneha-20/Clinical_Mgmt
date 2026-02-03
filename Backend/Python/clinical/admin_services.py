@@ -222,21 +222,17 @@ class AdminRevenueReportsView(APIView):
                 ).order_by('-total_revenue')
             
             return JsonResponse({
-                'status': 'success',
-                'report_type': report_type,
-                'date_range': {
-                    'start_date': start_date.strftime('%Y-%m-%d'),
-                    'end_date': end_date.strftime('%Y-%m-%d')
-                },
-                # 'summary': {
-                #     'total_revenue': float(total_revenue),
-                #     'total_bills': total_bills,
-                #     'avg_bill_amount': float(avg_bill_amount)
-                # },
-                'revenue_data': list(revenue_data),
-                'staff_revenue_data': list(staff_revenue_data)
+                'status': status.HTTP_200_OK,
+                'data': {
+                    'report_type': report_type,
+                    'date_range': {
+                        'start_date': start_date.strftime('%Y-%m-%d'),
+                        'end_date': end_date.strftime('%Y-%m-%d')
+                    },
+                    'revenue_data': list(revenue_data),
+                    'staff_revenue_data': list(staff_revenue_data)
+                }
             })
             
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
