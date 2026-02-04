@@ -376,6 +376,23 @@ export const getDailyRevenueStatus = async (clinicId, startDate = null, endDate 
   }
 };
 
+
+export const getRevenueReports = async (clinicId = null, startDate = null, endDate = null) => {
+  try {
+    const queryParams = new URLSearchParams();
+    if (startDate) queryParams.append('start_date', startDate);
+    if (endDate) queryParams.append('end_date', endDate);
+    if (clinicId) queryParams.append('clinic_id', clinicId);
+
+    const url = `${routes.adminRevenueReports}?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Revenue reports fetch error:', error);
+    throw error;
+  }
+};
+
 /**
  * Get inventory status
  * @returns {Promise<Object>} Inventory status
