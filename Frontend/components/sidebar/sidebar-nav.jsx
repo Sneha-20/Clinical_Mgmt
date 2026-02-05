@@ -23,7 +23,7 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
       { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
-      { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
+      // { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
     ],
     Admin: [
       { icon: '📊', label: 'Dashboard', href: '/dashboard' },
@@ -78,7 +78,6 @@ export default function SidebarNav({ role, onItemClick }) {
             <button
               key={item.href}
               onClick={() => {
-                console.log("itemref",item.href)
                 router.push(item.href);
                 onItemClick?.();
               }}

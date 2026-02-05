@@ -62,8 +62,6 @@ export default function AdminDashboard() {
       } else {
         throw new Error("Invalid status");
       }
-
-      // remove from list on success
       setReceptionists((prev) => prev.filter((r) => r.id !== id));
       toast({
         title: `Receptionist ${status}`,
