@@ -3,12 +3,14 @@ from rest_framework.response import Response
 from .models import InventoryItem
 from .serializers import InventoryItemCreateSerializer, InventoryItemSerializer
 from .models import DeletedRecordLog,ContentType
+from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission
+ 
 
 class InventoryItemCreateView(generics.CreateAPIView):
     """Create a new Inventory Item (Serialized or Non-Serialized)."""
     queryset = InventoryItem.objects.all()
     serializer_class = InventoryItemCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

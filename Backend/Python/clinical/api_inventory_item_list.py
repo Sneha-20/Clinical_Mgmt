@@ -3,12 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import InventoryItem, InventorySerial
 from .serializers import InventoryItemSerializer, InventorySerialDetailSerializer
-from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission
+from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from rest_framework.generics import ListAPIView
 
 class InventoryItemListView(ListAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
     pagination_class = StandardResultsSetPagination
 
 

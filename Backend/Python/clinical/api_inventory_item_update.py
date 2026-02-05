@@ -3,13 +3,15 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import InventoryItem,InventorySerial
 from .serializers import InventoryUpdateItemSerializer
+from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission
+
 
 class InventoryItemUpdateView(APIView):
     """
     API endpoint to update InventoryItem by ID.
     Accepts PATCH or PUT with fields to update (e.g., quantity_in_stock, location, expiry_date, etc.)
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission]
 
     def _handle_serializer_errors(self, serializer):
         error_message = "An error occurred."
