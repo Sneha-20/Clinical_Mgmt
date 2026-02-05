@@ -47,7 +47,8 @@ class InventoryItemListView(ListAPIView):
 
 # Get the InventorySerial info for a product ( inventoryItem)
 class InventorySerialListView(ListAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | AuditorPermission ]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | AuditorPermission | 
+                          ReceptionistPermission ]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, format=None):
