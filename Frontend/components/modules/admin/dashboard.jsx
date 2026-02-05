@@ -231,7 +231,7 @@ export default function AdminDashboard() {
                   <TableCell>{r.email}</TableCell>
                   <TableCell>{r.phone}</TableCell>
                   <TableCell>{r.clinic_name}</TableCell>
-                  <TableCell>{r.role}</TableCell>
+                  <TableCell>{r.role_name}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button

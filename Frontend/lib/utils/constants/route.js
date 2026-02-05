@@ -80,7 +80,9 @@ export const routes = {
 
   // Accounts
   accountsReceptionists: "accounts/receptionists/",
-  accountsUsers: "accounts/users/",
+  pendingUser: "accounts/users/pending/",
+  accountsUsers: "accounts/users/"
+  
 };
 export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
 
