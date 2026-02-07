@@ -9,17 +9,11 @@ import {
 } from "@/components/ui/card";
 import Image from "next/image";
 import LoginForm from "./component/LoginForm";
-// import { useRouter } from "next/navigation";
 import { routes } from "@/lib/utils/constants/route";
 import { useRouter } from "next/navigation";
 
 export default function LoginComponent() {
   const router = useRouter();
-  // const handleLogin = (role) => {
-  //   console.log("Logged in as role:", role);
-  //   localStorage.setItem("userRole", role);
-  //   router.push("/dashboard");
-  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-3 sm:p-4">
