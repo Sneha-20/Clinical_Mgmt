@@ -20,8 +20,8 @@ export default function SidebarNav({ role, onItemClick }) {
     ],
     Audiologist: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
-      { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
-      { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
+      // { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
+      // { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
       // { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
     ],
