@@ -43,8 +43,8 @@ export default function SignupComponent() {
   });
 
   const [errors, setErrors] = useState({});
-  // const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // -------------------------------
   // Clinic Options Memoized
@@ -97,8 +97,6 @@ export default function SignupComponent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     dispatch(startLoading());
-    // setSuccess(false);
-
     try {
       await registerSchema.validate(formData, { abortEarly: false });
       setErrors({});
@@ -116,12 +114,8 @@ export default function SignupComponent() {
         type: "success",
         message: res?.message || "Account created successfully!",
       });
-
-      // setSuccess(true);
-
-      setTimeout(() => {
-        handleSignup(formData.role_id);
-      }, 1200);
+      router.push(routes.pages.login)
+      handleSignup(formData.role_id);
     } catch (error) {
       console.log("Error during registration:", error);
       if (error.name === "ValidationError") {
@@ -140,8 +134,6 @@ export default function SignupComponent() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 to-accent/5">
       <div className="w-full max-w-2xl">
-        {/* Header */}
-
         <div
           className="mb-6 text-center"
           onClick={() => router.push(routes.pages.home)}
@@ -204,12 +196,12 @@ export default function SignupComponent() {
 
               {/* Password + Confirm */}
               <div className="grid sm:grid-cols-2 gap-5">
-                <Input
+                <PasswordField
                   label="Password"
                   name="password"
-                  type="password"
                   value={formData.password}
-                  placeholder="••••••••"
+                   showPassword={showPassword}
+                  setShowPassword={setShowPassword}
                   onChange={handleChange}
                   error={errors.password}
                 />
@@ -219,8 +211,8 @@ export default function SignupComponent() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  showPassword={showPassword}
-                  setShowPassword={setShowPassword}
+                  showPassword={showConfirmPassword}
+                  setShowPassword={setShowConfirmPassword}
                   error={errors.confirmPassword}
                 />
               </div>
@@ -273,6 +265,7 @@ function PasswordField({
         {...props}
         type={showPassword ? "text" : "password"}
         className="bg-input text-sm"
+        placeholder="••••••••"
       />
 
       <button
