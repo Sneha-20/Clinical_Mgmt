@@ -19,6 +19,14 @@ class InventoryItemListView(ListAPIView):
             clinic_id = request.query_params.get('clinic_id')
             if clinic_id:
                 items = items.filter(clinic_id=clinic_id)
+        elif request.user.role.name == 'Clinic Manager':
+            # Clinic Managers see items for their clinic, but can also filter by other clinics they manage
+            managed_clinics = request.user.clinic_set.all()
+            items = InventoryItem.objects.filter(clinic__in=managed_clinics).order_by('-id')
+            clinic_id = request.query_params.get('clinic_id')
+            if clinic_id:
+                items = items.filter(clinic_id=clinic_id)
+                
         else:
             # Non-admins only see their clinic's inventory
             items = InventoryItem.objects.filter(clinic=request.user.clinic).order_by('-id')

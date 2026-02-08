@@ -189,3 +189,10 @@ class ManagerClinicListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         return get_user_clinics(user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+
+        

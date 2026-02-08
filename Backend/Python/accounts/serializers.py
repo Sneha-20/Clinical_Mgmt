@@ -8,7 +8,7 @@ import re
 class ClinicSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Clinic
-        fields = ('id', 'name')
+        fields = '__all__'
 
 class RoleSimpleSerializer(serializers.ModelSerializer):
     class Meta:
