@@ -383,12 +383,30 @@ CATEGORY_CHOICES = [
     ('Speech Material', 'Speech Material'),
 ]
 
+class Brand(models.Model):
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class ModelType(models.Model):
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='model_types')
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('brand', 'name')
+
+    def __str__(self):
+        return f"{self.brand.name} {self.name}"
+
+
 class InventoryItem(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
-    brand = models.CharField(max_length=50)  # Brand / Manufacturer
-    model_type = models.CharField(max_length=100)  # Model / Type
+    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)  # Brand
+    model_type = models.ForeignKey(ModelType, on_delete=models.SET_NULL, null=True, blank=True)  # Model / Type
     sku = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
     STOCK_TYPE_CHOICES = [
         ('Serialized', 'Serialized'),
@@ -448,8 +466,8 @@ class InventoryItem(models.Model):
     def save(self, *args, **kwargs):
         if not self.sku and self.brand and self.model_type:
             # Auto-generate SKU: BRAND-MODEL (e.g., PHONAK-P90)
-            clean_brand = "".join(e for e in self.brand if e.isalnum()).upper()
-            clean_model = "".join(e for e in self.model_type if e.isalnum()).upper()
+            clean_brand = "".join(e for e in self.brand.name if e.isalnum()).upper()
+            clean_model = "".join(e for e in self.model_type.name if e.isalnum()).upper()
             self.sku = f"{clean_brand}-{clean_model}"
         super().save(*args, **kwargs)
 

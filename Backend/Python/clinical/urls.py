@@ -4,12 +4,13 @@ from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
-                    TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,MarkPatientContactedView)
+                    TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,
+                    MarkPatientContactedView)
 
 from .api_inventory_item_update import InventoryItemUpdateView,InventorySerialNumberCreateView
 from .api_inventory_dropdowns import InventoryDropdownsView
 from .api_inventory_item_list import InventoryItemListView, InventorySerialListView
-from .api_inventory_item_create import InventoryItemCreateView,InventoryItemDestroyView
+from .api_inventory_item_create import InventoryItemCreateView,InventoryItemDestroyView, BrandListView, BrandCreateView, ModelCreateView, ModelListView
 from .api_trials import TrialCreateView, TrialListView
 from .api_trial_devices import TrialDeviceListView
 from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySerialView, TrialDeviceInUseListView
@@ -17,9 +18,10 @@ from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
 from .trial_completion_view import TrialCompletionView
 from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView,PartsUsedListView
-from .admin_services import (AdminRevenueReportsView,ClinicListView,AdminClinicReportView)
+from .admin_services import (AdminRevenueReportsView,AdminClinicReportView)
 from .admin_staff_performance import AdminTrialPerformanceAPIView
 from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
+from .api_inventory_transfer import InventoryTransferView, InventoryTransferHistoryView,InventoryFlatListView
 
 
 urlpatterns = [
@@ -104,7 +106,6 @@ urlpatterns = [
 
    # Admin Dashboard APIs
    path('admin/revenue-reports/', AdminRevenueReportsView.as_view(), name='admin_revenue_reports'),
-   path('admin/clinics/', ClinicListView.as_view(), name='admin_clinics'),
    path('inventory/serial-number/create/', InventorySerialNumberCreateView.as_view(), name='inventory_serial_number_create'),
    path('admin/clinic-report/', AdminClinicReportView.as_view(), name='admin_clinic_report'),
    path('inventory/item/create/', InventoryItemCreateView.as_view(), name='inventory_item_create'),
@@ -118,5 +119,17 @@ urlpatterns = [
    path('patient/<int:patient_id>/service-visits/', PatientServiceVisitHistoryView.as_view(), name='patient_service_visit_history'),
    # path('patient/purchase/<int:purchase_id>/', PatientPurchaseDetailView.as_view(), name='patient_purchase_detail'),
    # path('patient/service-visit/<int:service_id>/', PatientServiceVisitDetailView.as_view(), name='patient_service_visit_detail'),
+
+   # Inventory Transfer
+   path('inventory/transfer/', InventoryTransferView.as_view(), name='inventory_transfer'),
+   path('inventory/transfer/history/', InventoryTransferHistoryView.as_view(), name='inventory_transfer_history'),
+   path('inventory/flat-list/', InventoryFlatListView.as_view(), name='inventory_flat_list'),
+
+
+   # Brand and Model endpoints
+   path('inventory/brands/', BrandListView.as_view(), name='brand_list'),
+   path('inventory/brands/create/', BrandCreateView.as_view(), name='brand_create'),
+   path('inventory/models/', ModelListView.as_view(), name='model_list'),
+   path('inventory/models/create/', ModelCreateView.as_view(), name='model_create'),
 
 ]

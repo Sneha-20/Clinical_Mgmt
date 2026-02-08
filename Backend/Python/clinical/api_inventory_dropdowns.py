@@ -2,7 +2,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from .models import InventoryItem, CATEGORY_CHOICES
+from .models import InventoryItem, CATEGORY_CHOICES , Brand, ModelType
+from .serializers import InventoryItemSerializer, BrandSerializer, ModelTypeSerializer
 
 class InventoryDropdownsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -16,13 +17,13 @@ class InventoryDropdownsView(APIView):
             return Response({'categories': [cat[1] for cat in categories]}, status=status.HTTP_200_OK)
         # category only: return brands for that category
         if category and not brand:
-            brands = InventoryItem.objects.filter(category=category).values_list('brand', flat=True).distinct()
-            unique_brands = sorted(set(brands))
+            brands = Brand.objects.filter(category=category).distinct()
+            unique_brands = BrandSerializer(brands, many=True).data
             return Response({'brands': unique_brands}, status=status.HTTP_200_OK)
         # category and brand: return models for that category and brand
         if category and brand:
-            models = InventoryItem.objects.filter(category=category, brand=brand).values_list('model_type', flat=True).distinct()
-            unique_models = sorted(set(models))
+            models = ModelType.objects.filter(brand__category=category, brand__name=brand).distinct()
+            unique_models = ModelTypeSerializer(models, many=True).data
             return Response({'models': unique_models}, status=status.HTTP_200_OK)
         # If only brand is provided (should not happen), return error
         return Response({'error': 'Invalid parameters. Provide category or category+brand.'}, status=status.HTTP_400_BAD_REQUEST)

@@ -12,8 +12,13 @@ from .models import (
     ServiceVisit,
     PatientPurchase,
     TestUpload,
-    InventoryTransfer
+    InventoryTransfer, 
+    Brand,  
+    ModelType
+
 )
+
+from accounts.models import Clinic
 from rest_framework import serializers
 from django.db import transaction
 import re
@@ -1137,16 +1142,36 @@ class InventoryUpdateItemSerializer(serializers.ModelSerializer):
         return value
     
 
+
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = ['id', 'name','category']
+
+    
+
+class ModelTypeSerializer(serializers.ModelSerializer):
+    # brand= serializers.CharField(source='brand.id', read_only=True)
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
+
+    class Meta:
+        model = ModelType
+        fields = ['id', 'name', 'brand', 'brand_name']
+
+
+
 class InventoryItemSerializer(serializers.ModelSerializer):
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
+    model_type_name = serializers.CharField(source='model_type.name', read_only=True)
 
     class Meta:
         model = InventoryItem
         fields = [
             'id',
             'category',
-            'product_name',
-            'brand',
-            'model_type',
+            'product_name',    
+            'brand_name',
+            'model_type_name',
             'sku',
             'description',
             'stock_type',
@@ -1246,6 +1271,8 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         serial_numbers = validated_data.pop('serial_numbers', [])
         stock_type = validated_data.get('stock_type')
+        clinic_id = Clinic.objects.filter(is_main_inventory=True).values_list('id', flat=True).first()
+        validated_data['clinic_id'] = clinic_id
 
         with transaction.atomic():
             if stock_type == 'Serialized':
