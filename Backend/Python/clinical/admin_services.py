@@ -31,7 +31,7 @@ class AdminClinicReportView(APIView):
     Clinic Report Dashboard
     Provides comprehensive clinic data for a date range (similar to AdminDailyStatusView)
     """
-    permission_classes = [IsAuthenticated, IsClinicAdmin | ReceptionistPermission]
+    permission_classes = [IsAuthenticated, IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
     
     def get(self, request):
         try:
