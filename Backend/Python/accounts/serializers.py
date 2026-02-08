@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
-from .models import User, Clinic, Role
+from .models import User, Clinic, Role, ClinicManagerAssignment
 import re
 
 class ClinicSimpleSerializer(serializers.ModelSerializer):
@@ -47,9 +47,9 @@ class TokenWithClinicSerializer(serializers.Serializer):
             raise serializers.ValidationError("User account is disabled")
         
         # Admin users do not need to supply clinic_id / clinic membership check
-        is_admin = bool(getattr(user, "role", None) and user.role.name == "Admin")
+        is_admin_or_clinic_manager = bool(getattr(user, "role", None) and user.role.name in ['Admin', 'Clinic Manager'])
 
-        if not is_admin:
+        if not is_admin_or_clinic_manager:
             # For non-admins clinic_id is required and must match user's clinic
             if clinic_id is None:
                 raise serializers.ValidationError({"clinic_id": "clinic_id is required for non-admin users"})
@@ -73,18 +73,22 @@ class TokenWithClinicSerializer(serializers.Serializer):
                 'name': getattr(user, 'name', ''),
                 'role': roles_data,
             },
-            'clinic': clinic_data,
         }
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     role_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
-    clinic_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    # clinic_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
+    clinic_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False
+    )
     clinic = ClinicSimpleSerializer(read_only=True)
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'name', 'clinic', 'clinic_id', 'role_id', 'phone',)
+        fields = ('email', 'password', 'name', 'clinic', 'clinic_id', 'clinic_ids', 'role_id', 'phone',)
 
     def validate_role_id(self, value):
         if value is None:
@@ -99,22 +103,47 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("phone must be exactly 10 digits.")
         return value
     
+    def validate_clinic_ids(self, value):
+        if value:
+            count = Clinic.objects.filter(id__in=value).count()
+            if count != len(set(value)):
+                raise serializers.ValidationError("One or more invalid clinic IDs provided.")
+        return value
 
     def create(self, validated_data):
         role_id = validated_data.pop('role_id', None)
-        clinic_id = validated_data.pop('clinic_id', None)
+        # clinic_id = validated_data.pop('clinic_id', None)
+        clinic_ids = validated_data.pop('clinic_ids', [])
         password = validated_data.pop('password')
         user = User(**validated_data)
-        if clinic_id is not None:
-            # optional: validate clinic exists
-            if not Clinic.objects.filter(id=clinic_id).exists():
-                raise serializers.ValidationError({"clinic_id": "Invalid clinic_id"})
-            user.clinic_id = clinic_id
+        
         if role_id is not None:
             user.role_id = role_id
 
-        user.set_password(password)
-        user.save()
+        # Check if role is Clinic Manager
+        is_manager = False
+        if role_id:
+            try:
+                role_obj = Role.objects.get(id=role_id)
+                if role_obj.name == 'Clinic Manager':
+                    is_manager = True
+            except Role.DoesNotExist:
+                pass
+
+        if is_manager:
+            user.set_password(password)
+            user.save()
+            if clinic_ids:
+                assignments = [ClinicManagerAssignment(manager=user, clinic_id=cid) for cid in clinic_ids]
+                ClinicManagerAssignment.objects.bulk_create(assignments)
+        else:
+            if clinic_ids is not None:
+                clinic_id = clinic_ids[0]
+                if not Clinic.objects.filter(id=clinic_id).exists():
+                    raise serializers.ValidationError({"clinic_id": "Invalid clinic_id"})
+                user.clinic_id = clinic_id
+            user.set_password(password)
+            user.save()
 
         return user
 

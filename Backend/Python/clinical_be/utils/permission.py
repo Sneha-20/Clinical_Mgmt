@@ -4,8 +4,6 @@ from rest_framework.permissions import BasePermission
 
 # If the user is not authenticated, deny access , I wanted the response like { status: 403, error: "Authentication credentials were not provided."}
 
-
-
 class IsClinicAdmin(BasePermission):
     """
     Allows access only to users with 'Clinic Admin' role.
@@ -67,4 +65,19 @@ class SppechTherapistPermission(BasePermission):
             and user.is_authenticated
             and getattr(user, "role", None)
             and user.role.name == "Speech Therapist"
+        )
+    
+class ClinicManagerPermission(BasePermission):
+    """
+    Allows access only to users with 'Clinic Manager' role.
+    """
+    message = {"status": 403, "error": "You do not have permission to perform this action."}
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and getattr(user, "role", None)
+            and user.role.name == "Clinic Manager"
         )

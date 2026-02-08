@@ -9,14 +9,14 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncYear
 from accounts.models import User, Clinic
 from .models import Patient, PatientVisit, Trial, Bill, BillItem, InventoryItem, InventorySerial, ServiceVisit, TestType, PatientPurchase
 import json
-from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission
+from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission, ClinicManagerPermission
 from rest_framework import status
 
 
 
 # List API for clinic 
 class ClinicListView(APIView):
-    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
     
     def get(self, request):
         try:
@@ -156,7 +156,7 @@ class AdminRevenueReportsView(APIView):
     Revenue Reports Dashboard
     Provides comprehensive revenue analytics
     """
-    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission]
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
     
     def get(self, request):
         try:

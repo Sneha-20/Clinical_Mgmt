@@ -5,10 +5,21 @@ from rest_framework import status, generics
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from .models import Clinic , Role, User
-from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer,RegisterSerializer,RoleSimpleSerializer,UserSerializer
+from .serializers import TokenWithClinicSerializer, ClinicSimpleSerializer, RegisterSerializer, RoleSimpleSerializer, UserSerializer
 from django.shortcuts import get_object_or_404
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
+
+
+def get_user_clinics(user):
+    """Helper to get accessible clinics for a user"""
+    if user.role and user.role.name == 'Admin':
+        return Clinic.objects.all()
+    if user.role and user.role.name == 'Clinic Manager':
+        return Clinic.objects.filter(manager_assignments__manager=user)
+    if user.clinic:
+        return Clinic.objects.filter(id=user.clinic.id)
+    return Clinic.objects.none()
 
 
 def _first_error_message(errors):
@@ -39,7 +50,7 @@ class TokenObtainWithClinicView(APIView):
 class ClinicListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = ClinicSimpleSerializer
-    queryset = Clinic.objects.values('id', 'name')
+    queryset = Clinic.objects.values('id', 'name','address','phone')
 
 class RoleListView(generics.ListAPIView):
     permission_classes = [AllowAny]
@@ -58,6 +69,7 @@ class RegisterView(APIView):
 
         err = _first_error_message(serializer.errors)
         return Response({"status": 400, "error": err}, status=status.HTTP_400_BAD_REQUEST)
+
         
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
@@ -103,7 +115,7 @@ class ApproveUserView(APIView):
 
     def post(self, request, user_id):
         # you can check role or is_staff/is_superuser
-        if not (request.user.is_superuser or request.user.is_staff or request.user.role.name == 'Admin'):
+        if not (request.user.is_superuser or request.user.is_staff or request.user.role.name == 'Admin' or request.user.role.name == 'Clinic Manager'):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=user_id)
@@ -115,7 +127,7 @@ class RejectUserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
-        if not (request.user.is_superuser or request.user.is_staff  or request.user.role.name == 'Admin'):
+        if not (request.user.is_superuser or request.user.is_staff  or request.user.role.name == 'Admin' or request.user.role.name == 'Clinic Manager'):
             return Response({"detail": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
 
         user = get_object_or_404(User, pk=user_id)
@@ -130,7 +142,8 @@ class PendingUserList(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return User.objects.filter(is_approved=False, is_active=True)
+        clinics = get_user_clinics(self.request.user)
+        return User.objects.filter(is_approved=False, clinic__in=clinics)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -167,3 +180,12 @@ class RemoveStaffList(generics.DestroyAPIView):
         user.is_approved = False
         user.save(update_fields=["is_active", "is_approved"])
         return Response({"status": 200, "message": "Staff user soft deleted"}, status=status.HTTP_200_OK)
+    
+
+class ManagerClinicListView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ClinicSimpleSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return get_user_clinics(user)

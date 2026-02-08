@@ -2,12 +2,13 @@
 # ...existing code...
 from django.urls import path
 from .views import TokenObtainWithClinicView, ClinicListView, RegisterView,ChangePasswordView,RoleListView,ProfileView
-from .views import ApproveUserView, RejectUserView, StaffUserList,PendingUserList , RemoveStaffList
+from .views import ApproveUserView, RejectUserView, StaffUserList,PendingUserList , RemoveStaffList, ManagerClinicListView
 urlpatterns = [
     path('users/pending/', PendingUserList.as_view(), name='pending_user_list'),
     path('token/', TokenObtainWithClinicView.as_view(), name='token_obtain_with_clinic'),
     path('clinics/', ClinicListView.as_view(), name='clinic_list'),
-        path('roles/', RoleListView.as_view(), name='role_list'),
+    path('clinics/manager/', ManagerClinicListView.as_view(), name='manager_clinic_list'),
+    path('roles/', RoleListView.as_view(), name='role_list'),
     path('register/', RegisterView.as_view(), name='register'),
     path('change-password/', ChangePasswordView.as_view(), name='change_password'),
     path('profile/', ProfileView.as_view(), name='profile'),

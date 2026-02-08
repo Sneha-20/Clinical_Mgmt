@@ -77,3 +77,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class ClinicManagerAssignment(models.Model):
+    manager = models.ForeignKey(User, on_delete=models.CASCADE, related_name='managed_clinics_assignments')
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='manager_assignments')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='clinic_assignments_created')
+
+    class Meta:
+        unique_together = ('manager', 'clinic')
