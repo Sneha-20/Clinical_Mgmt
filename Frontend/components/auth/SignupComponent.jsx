@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
 
 import { staticText } from "@/lib/utils/constants/staticOption";
@@ -25,6 +25,7 @@ import RoleSelection from "../ui/RoleSelection";
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { routes } from "@/lib/utils/constants/route";
 import { useRouter } from "next/navigation";
+import CommonCheckbox from "../ui/CommonCheckbox";
 
 export default function SignupComponent() {
   const dispatch = useDispatch();
@@ -37,7 +38,7 @@ export default function SignupComponent() {
     email: "",
     password: "",
     confirmPassword: "",
-    clinic_id: null,
+    clinic_id: [],
     role_id: "",
     phone: "",
   });
@@ -55,7 +56,7 @@ export default function SignupComponent() {
         label,
         value: id,
       })),
-    []
+    [],
   );
 
   // -------------------------------
@@ -74,7 +75,7 @@ export default function SignupComponent() {
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
     },
-    [errors]
+    [errors],
   );
 
   // -------------------------------
@@ -83,13 +84,49 @@ export default function SignupComponent() {
   const updateField = useCallback(
     (name, value) => {
       setFormData((prev) => ({ ...prev, [name]: value }));
-
       if (errors[name]) {
         setErrors((prev) => ({ ...prev, [name]: "" }));
       }
     },
-    [errors]
+    [errors],
   );
+
+  // Keep clinic selection shape consistent: always store as array in state.
+  const handleClinicDropdown = useCallback(
+    (name, value) => {
+      setFormData((prev) => ({ ...prev, clinic_id: value ? [value] : [] }));
+      if (errors.clinic_id) setErrors((prev) => ({ ...prev, clinic_id: "" }));
+    },
+    [errors],
+  );
+
+  const handleClinicCheckbox = useCallback(
+    (value) => {
+      const parsed = Number(value);
+      setFormData((prev) => {
+        const exists = prev.clinic_id.includes(parsed);
+        return {
+          ...prev,
+          clinic_id: exists
+            ? prev.clinic_id.filter((c) => c !== parsed)
+            : [...prev.clinic_id, parsed],
+        };
+      });
+      if (errors.clinic_id) setErrors((prev) => ({ ...prev, clinic_id: "" }));
+    },
+    [errors],
+  );
+
+  // Reset/shape clinic selection when role changes
+  useEffect(() => {
+    const managerRoleId =
+      (staticText.roleOption.find((r) => r.key === "manager") || {}).id;
+    const isManager = Number(formData.role_id) === Number(managerRoleId);
+    if (!isManager) {
+      // ensure single-select mode: keep only first selection (or empty)
+      setFormData((prev) => ({ ...prev, clinic_id: prev.clinic_id.slice(0, 1) }));
+    }
+  }, [formData.role_id]);
 
   // -------------------------------
   // Submit Handler
@@ -114,7 +151,7 @@ export default function SignupComponent() {
         type: "success",
         message: res?.message || "Account created successfully!",
       });
-      router.push(routes.pages.login)
+      router.push(routes.pages.login);
       handleSignup(formData.role_id);
     } catch (error) {
       console.log("Error during registration:", error);
@@ -172,17 +209,6 @@ export default function SignupComponent() {
                 />
               </div>
 
-              {/* Clinic Dropdown */}
-              <DropDown
-                label="Clinic Name"
-                name="clinic_id"
-                options={clinicOptions}
-                value={formData.clinic_id}
-                onChange={updateField}
-                placeholder="Select clinic"
-                error={errors.clinic_id}
-              />
-
               {/* Email */}
               <Input
                 label="Email"
@@ -200,7 +226,7 @@ export default function SignupComponent() {
                   label="Password"
                   name="password"
                   value={formData.password}
-                   showPassword={showPassword}
+                  showPassword={showPassword}
                   setShowPassword={setShowPassword}
                   onChange={handleChange}
                   error={errors.password}
@@ -224,6 +250,46 @@ export default function SignupComponent() {
                 onSelect={(id) => updateField("role_id", id)}
                 error={errors.role_id}
               />
+              {/* Clinic selection: multiple checkboxes for manager, single dropdown otherwise */}
+              {(() => {
+                const managerRoleId =
+                  (staticText.roleOption.find((r) => r.key === "manager") || {}).id;
+                const isManager = Number(formData.role_id) === Number(managerRoleId);
+
+                if (isManager) {
+                  return (
+                    <div className="grid grid-cols-1 gap-2">
+                      <label className="text-sm font-medium text-gray-700 mb-1">
+                        Clinic(s)
+                      </label>
+                      {clinicOptions.map((clinic) => (
+                        <CommonCheckbox
+                          key={clinic.value}
+                          label={clinic.label}
+                          value={clinic.value}
+                          checked={formData.clinic_id.includes(clinic.value)}
+                          onChange={(e) => handleClinicCheckbox(e.target.value)}
+                        />
+                      ))}
+                      {errors.clinic_id && (
+                        <p className="text-xs text-destructive mt-1">{errors.clinic_id}</p>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <DropDown
+                    label="Clinic Name"
+                    name="clinic_id"
+                    options={clinicOptions}
+                    value={formData.clinic_id[0] || null}
+                    onChange={handleClinicDropdown}
+                    placeholder="Select clinic"
+                    error={errors.clinic_id}
+                  />
+                );
+              })()}
 
               <Button type="submit" className="w-full" size="lg">
                 Create Account

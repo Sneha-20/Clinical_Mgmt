@@ -18,14 +18,14 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
       { icon: '👁️', label: 'Trials', href: '/dashboard/trials' },
     ],
-    Audiologist: [
+    Doctor: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
       // { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
       // { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
       // { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
     ],
-    Admin: [
+    ClinicOwner: [
       { icon: '📊', label: 'Dashboard', href: '/dashboard' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
       { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
@@ -39,7 +39,7 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '👨‍👩‍👧', label: 'Reports', href: '/dashboard/reports' },
     ],
   }
-
+console.log("SidebarNav role:", role);
   const items = navItems[role] || []
 
   return (

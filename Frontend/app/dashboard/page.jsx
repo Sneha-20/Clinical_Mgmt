@@ -20,7 +20,9 @@ export default function Dashboard() {
       role === "Audiologist &  Speech Therapist"
     ) {
       setUserRole("Doctor");
-    } else {
+    } else if (role === "Admin" || role === "Clinic Manager") {
+      setUserRole("ClinicOwner");
+    }else {
       setUserRole(role);
     }
   }, [router]);
@@ -34,7 +36,7 @@ export default function Dashboard() {
         return <ReceptionistDashboard />;
       case "Doctor":
         return <AudiologistDashboard />;
-      case "Admin":
+      case "ClinicOwner":
         return <AdminDashboard />;
       case 'Speech':
         return <div className="text-center py-12"><p className="text-muted-foreground">Speech Therapist Dashboard - Coming Soon</p></div>

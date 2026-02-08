@@ -73,7 +73,7 @@ export const routes = {
   },
 
   // Admin Routes
-  adminClinics: "clinical/admin/clinics/",
+  adminClinics: "accounts/clinics/manager/",
   adminDailyStatus: "clinical/admin/clinic-report/",
   adminRevenueReports: "clinical/admin/revenue-reports/",
   adminInventoryStatus: "clinical/admin/inventory-status/",
