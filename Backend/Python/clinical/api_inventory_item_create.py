@@ -24,6 +24,10 @@ class InventoryItemCreateView(generics.CreateAPIView):
                         break
             return Response({"status": 400, "error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Assign the item to the user's clinic (Admin's clinic acts as Main Inventory)
+        if request.user.clinic:
+            serializer.validated_data['clinic'] = request.user.clinic
+            
         inventory_item = serializer.save()
         
         # Return the created item using the detailed serializer

@@ -6,6 +6,7 @@ class Clinic(models.Model):
     address = models.TextField()
     phone = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_main_inventory = models.BooleanField(default=False, help_text="Designates this clinic as the main inventory source")
 
     def __str__(self):
         return self.name

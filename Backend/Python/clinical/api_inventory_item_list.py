@@ -11,9 +11,18 @@ class InventoryItemListView(ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
     pagination_class = StandardResultsSetPagination
 
-
     def get(self, request, format=None):
-        items = InventoryItem.objects.all().order_by('-id')
+        # Filter items based on user's clinic
+        if request.user.role.name == 'Admin':
+            items = InventoryItem.objects.all().order_by('-id')
+            # Admin can filter by specific clinic_id via query param
+            clinic_id = request.query_params.get('clinic_id')
+            if clinic_id:
+                items = items.filter(clinic_id=clinic_id)
+        else:
+            # Non-admins only see their clinic's inventory
+            items = InventoryItem.objects.filter(clinic=request.user.clinic).order_by('-id')
+
         # Always compute counts on the full unfiltered list
         all_items = list(items)
         low_count = sum(1 for item in all_items if item.status.lower() == 'low')

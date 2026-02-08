@@ -11,7 +11,8 @@ from .models import (
     InventoryItem,
     ServiceVisit,
     PatientPurchase,
-    TestUpload
+    TestUpload,
+    InventoryTransfer
 )
 from rest_framework import serializers
 from django.db import transaction
@@ -1126,7 +1127,7 @@ class InventoryUpdateItemSerializer(serializers.ModelSerializer):
         fields = [
             'category', 'product_name', 'brand', 'model_type', 'description',
             'quantity_in_stock', 'reorder_level', 'location',
-            'notes', 'use_in_trial', 'unit_price'
+            'notes', 'use_in_trial', 'unit_price', 'sku'
         ]
 
     def validate_quantity_in_stock(self, value):
@@ -1146,6 +1147,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'product_name',
             'brand',
             'model_type',
+            'sku',
             'description',
             'stock_type',
             'quantity_in_stock',
@@ -1206,7 +1208,7 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
         fields = [
             'category', 'product_name', 'brand', 'model_type', 'description',
             'stock_type', 'quantity_in_stock', 'reorder_level', 'location',
-            'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers'
+            'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers', 'sku'
         ]
         extra_kwargs = {
             'quantity_in_stock': {'required': False, 'allow_null': True}
@@ -1633,3 +1635,12 @@ class TrialCompletionSerializer(serializers.Serializer):
                 })
         
         return data
+
+class InventoryTransferSerializer(serializers.ModelSerializer):
+    from_clinic_name = serializers.CharField(source='from_clinic.name', read_only=True)
+    to_clinic_name = serializers.CharField(source='to_clinic.name', read_only=True)
+    transferred_by_name = serializers.CharField(source='transferred_by.name', read_only=True)
+
+    class Meta:
+        model = InventoryTransfer
+        fields = '__all__'

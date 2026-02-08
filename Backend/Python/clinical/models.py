@@ -384,11 +384,12 @@ CATEGORY_CHOICES = [
 ]
 
 class InventoryItem(models.Model):
-    # clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE)
+    clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
     brand = models.CharField(max_length=50)  # Brand / Manufacturer
     model_type = models.CharField(max_length=100)  # Model / Type
+    sku = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
     STOCK_TYPE_CHOICES = [
         ('Serialized', 'Serialized'),
         ('Non-Serialized', 'Non-Serialized'),
@@ -402,6 +403,7 @@ class InventoryItem(models.Model):
     notes = models.TextField(blank=True, null=True)
     use_in_trial = models.BooleanField(default=False)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    master_item = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='distributed_copies', help_text="Link to the main inventory item if this is a distributed copy")
 
     class Meta:
         verbose_name = "Inventory Item"
@@ -442,6 +444,14 @@ class InventoryItem(models.Model):
         count = self.serials.filter(status='In Stock').count()
         self.quantity_in_stock = count
         self.save(update_fields=["quantity_in_stock"])
+
+    def save(self, *args, **kwargs):
+        if not self.sku and self.brand and self.model_type:
+            # Auto-generate SKU: BRAND-MODEL (e.g., PHONAK-P90)
+            clean_brand = "".join(e for e in self.brand if e.isalnum()).upper()
+            clean_model = "".join(e for e in self.model_type if e.isalnum()).upper()
+            self.sku = f"{clean_brand}-{clean_model}"
+        super().save(*args, **kwargs)
 
 class InventorySerial(models.Model):
     inventory_item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='serials')
@@ -595,3 +605,19 @@ class DeletedRecordLog(models.Model):
         verbose_name_plural = 'Deleted Record Logs'
         ordering = ['-deleted_at']
 
+class InventoryTransfer(models.Model):
+    """Record of inventory items transferred between clinics"""
+    item_name = models.CharField(max_length=255)
+    category = models.CharField(max_length=50)
+    brand = models.CharField(max_length=50)
+    model = models.CharField(max_length=100)
+    
+    from_clinic = models.ForeignKey(Clinic, related_name='transfers_sent', on_delete=models.SET_NULL, null=True)
+    to_clinic = models.ForeignKey(Clinic, related_name='transfers_received', on_delete=models.SET_NULL, null=True)
+    
+    quantity = models.PositiveIntegerField()
+    serial_numbers = models.JSONField(default=list, blank=True, help_text="List of serial numbers transferred")
+    
+    transferred_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    transferred_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
