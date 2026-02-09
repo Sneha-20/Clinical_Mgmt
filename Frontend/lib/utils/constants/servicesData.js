@@ -2,7 +2,7 @@ export const servicesData = {
   audiology: [
     {
       id: "aud-001",
-      name: "Pure Tone Audiometry",
+      name: "Hearing Evaluation",
       category: "audiology",
       description:
         "Comprehensive hearing assessment to measure the ability to hear sounds at different frequencies and volumes.",
@@ -14,7 +14,7 @@ export const servicesData = {
     },
     {
       id: "aud-002",
-      name: "Tympanometry",
+      name: "Cochlear Implant Evaluation and Programming",
       category: "audiology",
       description:
         "Measures the function of the middle ear and eardrum by introducing a small amount of air pressure.",
@@ -26,7 +26,7 @@ export const servicesData = {
     },
     {
       id: "aud-003",
-      name: "Speech Recognition Test (SRT/SDS)",
+      name: "Hearing Aid Selection and Fitting",
       category: "audiology",
       description:
         "Evaluates the ability to understand and repeat words at comfortable listening levels.",
@@ -38,7 +38,7 @@ export const servicesData = {
     },
     {
       id: "aud-004",
-      name: "Uncomfortable Loudness Level (UCL)",
+      name: "Hearing Aid Adjustments and Maintenance",
       category: "audiology",
       description:
         "Determines the maximum sound level at which sound becomes uncomfortably loud for hearing aid fitting.",
@@ -50,7 +50,7 @@ export const servicesData = {
     },
     {
       id: "aud-005",
-      name: "Free Field Hearing Assessment",
+      name: "Tinnitus Management",
       category: "audiology",
       description:
         "Tests hearing ability in a room without sound-isolating booth using speakers positioned at different angles.",
@@ -62,7 +62,7 @@ export const servicesData = {
     },
     {
       id: "aud-006",
-      name: "BERA / ASSR Testing",
+      name: "Aural Rehabilitation",
       category: "audiology",
       description:
         "Advanced objective hearing tests that measure electrical brain activity in response to sound stimulation.",
@@ -74,7 +74,7 @@ export const servicesData = {
     },
     {
       id: "aud-007",
-      name: "Otoacoustic Emissions (OAE)",
+      name: "Custom Hearing Protection",
       category: "audiology",
       description:
         "Non-invasive test measuring sound waves produced by the inner ear in response to sound stimulation.",

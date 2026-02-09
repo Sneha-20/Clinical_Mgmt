@@ -10,6 +10,7 @@ import { routes } from "@/lib/utils/constants/route";
 export const Header = () => {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -40,36 +41,59 @@ export const Header = () => {
       </div>
 
       <div className="hidden md:flex items-center space-x-8">
-        <nav className="flex space-x-8">
+        <nav className="flex space-x-8 items-center">
           <a
-            href="#home"
+            href="/"
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap"
           >
             Home
           </a>
           <a
-            href="#about"
+            href="/about"
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap"
           >
-            About Us
+            About
+          </a>
+          
+          {/* Services Dropdown */}
+          <div className="relative group">
+            <button className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap flex items-center gap-1">
+              Services
+              <span className="text-xs">▼</span>
+            </button>
+            <div className="absolute left-0 mt-0 w-48 bg-card border border-border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-300 z-50">
+              <a
+                href="/services/audiology"
+                className="block px-4 py-3 text-foreground hover:text-primary hover:bg-muted/50 transition-colors duration-300 first:rounded-t-lg"
+              >
+                🔊 Audiology Services
+              </a>
+              <a
+                href="/services/speech"
+                className="block px-4 py-3 text-foreground hover:text-primary hover:bg-muted/50 transition-colors duration-300 last:rounded-b-lg border-t border-border"
+              >
+                🎤 Speech Therapy
+              </a>
+            </div>
+          </div>
+
+          <a
+            href="/appointment"
+            className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap"
+          >
+            Appointment
           </a>
           <a
-            href="#services"
+            href="/offers"
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap"
           >
-            Services
-          </a>
-          <a
-            href="#team"
-            className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap"
-          >
-            Our Team
+            Offers
           </a>
           <a
             href="#contact"
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap"
           >
-            Contact Us
+            Contact
           </a>
         </nav>
         <Button
@@ -83,39 +107,71 @@ export const Header = () => {
       {isMenuOpen && (
         <nav className="md:hidden flex flex-col space-y-3 w-full mt-4 pb-4 border-t border-border pt-4">
           <a
-            href="#home"
+            href="/"
             onClick={closeMenu}
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
           >
             Home
           </a>
           <a
-            href="#about"
+            href="/about"
             onClick={closeMenu}
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
           >
-            About Us
+            About
+          </a>
+          
+          {/* Mobile Services Dropdown */}
+          <div>
+            <button
+              onClick={() => setIsServicesDropdownOpen(!isServicesDropdownOpen)}
+              className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50 w-full text-left flex items-center justify-between"
+            >
+              Services
+              <span className={`text-xs transition-transform ${isServicesDropdownOpen ? "rotate-180" : ""}`}>
+                ▼
+              </span>
+            </button>
+            {isServicesDropdownOpen && (
+              <div className="ml-4 mt-2 space-y-2 border-l-2 border-primary pl-4">
+                <a
+                  href="/services/audiology"
+                  onClick={closeMenu}
+                  className="text-foreground hover:text-primary transition-colors duration-300 font-medium block px-2 py-2 rounded-md hover:bg-muted/50"
+                >
+                  🔊 Audiology Services
+                </a>
+                <a
+                  href="/services/speech"
+                  onClick={closeMenu}
+                  className="text-foreground hover:text-primary transition-colors duration-300 font-medium block px-2 py-2 rounded-md hover:bg-muted/50"
+                >
+                  🎤 Speech Therapy
+                </a>
+              </div>
+            )}
+          </div>
+
+          <a
+            href="/appointment"
+            onClick={closeMenu}
+            className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
+          >
+            Appointment
           </a>
           <a
-            href="#services"
+            href="/offers"
             onClick={closeMenu}
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
           >
-            Services
-          </a>
-          <a
-            href="#team"
-            onClick={closeMenu}
-            className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
-          >
-            Our Team
+            Offers
           </a>
           <a
             href="#contact"
             onClick={closeMenu}
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
           >
-            Contact Us
+            Contact
           </a>
           <button
             className="mt-4 bg-primary text-white py-2 px-5 rounded-md hover:bg-primary-foreground transition-colors duration-300 font-medium shadow-md w-full"

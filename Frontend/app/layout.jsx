@@ -2,9 +2,6 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { ReduxProvider } from '@/lib/redux/provider';
-import CommonLoader from '@/components/ui/CommonLoader';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -26,12 +23,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <Header />
          <Toaster position="top-right" />
          <ReduxProvider>
            {children}
          </ReduxProvider>
-      <Footer />
       </body>
     </html>
   );

@@ -9,10 +9,11 @@ export default function ServicePage({ params }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* <Header /> */}
+      <Header />
       <main className="flex-grow pt-[4.5rem] md:pt-[5rem]">
         <ServiceDetail serviceId={id} />
       </main>
+      <Footer />
     </div>
   );
 }
