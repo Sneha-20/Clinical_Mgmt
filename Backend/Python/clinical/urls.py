@@ -9,7 +9,8 @@ from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailVi
 
 from .api_inventory_item_update import InventoryItemUpdateView,InventorySerialNumberCreateView
 from .api_inventory_dropdowns import InventoryDropdownsView
-from .api_inventory_item_list import InventoryItemListView, InventorySerialListView
+from .api_inventory_item_list import (InventoryItemListView, InventorySerialListView, InventoryItemPendingListView,
+                                      ApproveInventoryItemView,MainInventoryItemListView,InventoryTransferHistoryView)
 from .api_inventory_item_create import InventoryItemCreateView,InventoryItemDestroyView, BrandListView, BrandCreateView, ModelCreateView, ModelListView
 from .api_trials import TrialCreateView, TrialListView
 from .api_trial_devices import TrialDeviceListView
@@ -124,6 +125,11 @@ urlpatterns = [
    path('inventory/transfer/', InventoryTransferView.as_view(), name='inventory_transfer'),
    path('inventory/transfer/history/', InventoryTransferHistoryView.as_view(), name='inventory_transfer_history'),
    path('inventory/flat-list/', InventoryFlatListView.as_view(), name='inventory_flat_list'),
+   path('inventory/items/pending/', InventoryItemPendingListView.as_view(), name='inventory_item_pending_list'),
+   path('inventory/item/<int:pk>/approve/', ApproveInventoryItemView.as_view(), name='approve_inventory_item'),
+   path('inventory/items/main/', MainInventoryItemListView.as_view(), name='main_inventory_item_list'),
+   path('inventory/transfers/', InventoryTransferHistoryView.as_view(), name='inventory_transfers'),
+   
 
 
    # Brand and Model endpoints

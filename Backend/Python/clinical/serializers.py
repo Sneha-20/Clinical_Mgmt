@@ -1273,6 +1273,7 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
         stock_type = validated_data.get('stock_type')
         clinic_id = Clinic.objects.filter(is_main_inventory=True).values_list('id', flat=True).first()
         validated_data['clinic_id'] = clinic_id
+        validated_data['is_approved'] = True  # Automatically approve new inventory items
 
         with transaction.atomic():
             if stock_type == 'Serialized':
@@ -1668,6 +1669,9 @@ class InventoryTransferSerializer(serializers.ModelSerializer):
     to_clinic_name = serializers.CharField(source='to_clinic.name', read_only=True)
     transferred_by_name = serializers.CharField(source='transferred_by.name', read_only=True)
 
+    log_message = serializers.ReadOnlyField()
+
     class Meta:
         model = InventoryTransfer
-        fields = '__all__'
+        fields = ['from_clinic_name', 'to_clinic_name', 'transferred_by_name', 'log_message', 'transferred_at']
+        

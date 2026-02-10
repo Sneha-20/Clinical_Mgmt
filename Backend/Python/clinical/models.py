@@ -421,6 +421,8 @@ class InventoryItem(models.Model):
     notes = models.TextField(blank=True, null=True)
     use_in_trial = models.BooleanField(default=False)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    is_approved = models.BooleanField(default=False)
+
     master_item = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='distributed_copies', help_text="Link to the main inventory item if this is a distributed copy")
 
     class Meta:
@@ -639,3 +641,16 @@ class InventoryTransfer(models.Model):
     transferred_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     transferred_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Transfer: {self.item_name} ({self.quantity}) -> {self.to_clinic}"
+
+    @property
+    def log_message(self):
+        """Returns a formatted log string for the transfer."""
+        date_str = self.transferred_at.strftime('%Y-%m-%d %H:%M') if self.transferred_at else "N/A"
+        user_name = self.transferred_by.name if self.transferred_by else "System"
+        from_name = self.from_clinic.name if self.from_clinic else "Unknown"
+        to_name = self.to_clinic.name if self.to_clinic else "Unknown"
+        
+        return f"[{date_str}] {user_name} transferred {self.quantity} x {self.item_name} ({self.brand} {self.model}) from {from_name} to {to_name}."
