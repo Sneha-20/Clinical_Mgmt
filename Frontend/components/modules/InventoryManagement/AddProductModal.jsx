@@ -17,6 +17,8 @@ export default function AddProductModal({
   models = [],
   onCategoryChange,
   onBrandChange,
+  onCreateBrand,
+  onCreateModel,
   loading = false,
 }) {
   const [formData, setFormData] = useState({
@@ -30,7 +32,16 @@ export default function AddProductModal({
     use_in_trial: false,
     stock_type: false,
     serial_numbers: "",
+    quantity_in_stock: "",
+    reorder_level: "",
   });
+
+  const [showAddBrand, setShowAddBrand] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [showAddModel, setShowAddModel] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
+  const [creatingBrand, setCreatingBrand] = useState(false);
+  const [creatingModel, setCreatingModel] = useState(false);
 
   // Prefill when editing
   useEffect(() => {
@@ -46,6 +57,8 @@ export default function AddProductModal({
         use_in_trial: initialData.use_in_trial || false,
         stock_type: initialData.stock_type === "Serialized",
         serial_numbers: "",
+        quantity_in_stock: initialData.quantity_in_stock || "",
+        reorder_level: initialData.reorder_level || "",
       });
 
       // Ensure dropdowns are populated for the current category/brand
@@ -55,6 +68,8 @@ export default function AddProductModal({
       if (initialData.category && initialData.brand) {
         onBrandChange?.(initialData.category, initialData.brand);
       }
+      setShowAddBrand(false);
+      setShowAddModel(false);
     }
   }, [isOpen, isEdit, initialData, onCategoryChange, onBrandChange]);
 
@@ -74,8 +89,14 @@ export default function AddProductModal({
         use_in_trial: false,
         stock_type: false,
         serial_numbers: "",
+        quantity_in_stock: "",
+        reorder_level: "",
       });
       setErrors({});
+      setShowAddBrand(false);
+      setNewBrandName("");
+      setShowAddModel(false);
+      setNewModelName("");
     }
   }, [isOpen]);
 
@@ -84,6 +105,8 @@ export default function AddProductModal({
     if (formData.category) {
       onCategoryChange?.(formData.category);
       setFormData((prev) => ({ ...prev, brand: "", model_type: "" }));
+      setShowAddBrand(false);
+      setShowAddModel(false);
     }
   }, [formData.category, onCategoryChange]);
 
@@ -92,6 +115,7 @@ export default function AddProductModal({
     if (formData.brand && formData.category) {
       onBrandChange?.(formData.category, formData.brand);
       setFormData((prev) => ({ ...prev, model_type: "" }));
+      setShowAddModel(false);
     }
   }, [formData.brand, formData.category, onBrandChange]);
 
@@ -113,11 +137,50 @@ export default function AddProductModal({
     }
   };
 
+  const handleAddBrand = async () => {
+    if (!newBrandName.trim()) {
+      setErrors((prev) => ({ ...prev, newBrandName: "Brand name is required" }));
+      return;
+    }
+
+    setCreatingBrand(true);
+    const result = await onCreateBrand?.(newBrandName.trim(), formData.category);
+    setCreatingBrand(false);
+
+    if (result) {
+      setNewBrandName("");
+      setShowAddBrand(false);
+      // Auto-select the newly created brand if it has an id
+      if (result.id) {
+        updateField("brand", result.id);
+      }
+    }
+  };
+
+  const handleAddModel = async () => {
+    if (!newModelName.trim()) {
+      setErrors((prev) => ({ ...prev, newModelName: "Model name is required" }));
+      return;
+    }
+
+    setCreatingModel(true);
+    const result = await onCreateModel?.(newModelName.trim(), formData.category, formData.brand);
+    setCreatingModel(false);
+
+    if (result) {
+      setNewModelName("");
+      setShowAddModel(false);
+      // Auto-select the newly created model if it has an id
+      if (result.id) {
+        updateField("model_type", result.id);
+      }
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = {};
 
-    // Debug: confirm submit fired and current form state
     console.log("AddProductModal: handleSubmit called", { isEdit, formData });
 
     if (!formData.category) newErrors.category = "Category is required";
@@ -127,28 +190,25 @@ export default function AddProductModal({
     if (!formData.location) newErrors.location = "Location is required";
     if (!formData.unit_price) newErrors.unit_price = "Unit price is required";
 
-    // Require serial numbers only when creating a serialized product (not when editing)
-    if (formData.stock_type && !isEdit && !formData.serial_numbers) {
-      newErrors.serial_numbers = "Serial numbers are required for serialized items";
-    }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       console.log("AddProductModal: validation failed", newErrors);
       return;
     }
 
-    // Prepare payload
+    // Prepare payload with brand and model as IDs
     const payload = {
       category: formData.category,
       product_name: formData.product_name,
-      brand: formData.brand,
-      model_type: formData.model_type,
+      brand: parseInt(formData.brand) || formData.brand,
+      model_type: parseInt(formData.model_type) || formData.model_type,
       description: formData.description || "",
       stock_type: formData.stock_type ? "Serialized" : "Non-Serialized",
       location: formData.location,
       unit_price: formData.unit_price,
       use_in_trial: formData.use_in_trial,
+      quantity_in_stock: formData.quantity_in_stock || 0,
+      reorder_level: formData.reorder_level || 0,
     };
 
     // Add serial numbers if stock type is serialized and we are creating (not editing)
@@ -174,15 +234,15 @@ export default function AddProductModal({
   }));
 
   const brandOptions = brands.map((brand) => ({
-    label: brand,
-    value: brand,
+    label: brand.name,
+    value: brand.id,
   }));
 
   const modelOptions = models.map((model) => ({
-    label: model,
-    value: model,
+    label: model.name,
+    value: model.id,
   }));
-
+ console.log("form data", formData);
   return (
     <Modal
       isModalOpen={isOpen}
@@ -190,7 +250,7 @@ export default function AddProductModal({
       header={isEdit ? `Edit Product - ${initialData?.product_name || ""}` : "Add New Product"}
       showButton={false}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <DropDown
             label="Category"
@@ -203,29 +263,97 @@ export default function AddProductModal({
             important
           />
 
-          <DropDown
-            label="Brand"
-            name="brand"
-            options={brandOptions}
-            value={formData.brand}
-            onChange={updateField}
-            placeholder="Select brand"
-            error={errors.brand}
-            isDisabled={!formData.category}
-            important
-          />
+          <div className="space-y-2">
+            <DropDown
+              label="Brand"
+              name="brand"
+              options={brandOptions}
+              value={formData.brand}
+              onChange={updateField}
+              placeholder="Select brand"
+              error={errors.brand}
+              isDisabled={!formData.category}
+              important
+            />
+            {formData.category && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddBrand(!showAddBrand)}
+                className="w-full"
+              >
+                {showAddBrand ? "Cancel Add Brand" : "Add New Brand"}
+              </Button>
+            )}
+            {showAddBrand && formData.category && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter brand name"
+                  value={newBrandName}
+                  onChange={(e) => {
+                    setNewBrandName(e.target.value);
+                    if (errors.newBrandName) setErrors((prev) => ({ ...prev, newBrandName: "" }));
+                  }}
+                  error={errors.newBrandName}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddBrand}
+                  disabled={creatingBrand || loading}
+                  size="sm"
+                >
+                  {creatingBrand ? "Creating..." : "Add"}
+                </Button>
+              </div>
+            )}
+          </div>
 
-          <DropDown
-            label="Model"
-            name="model_type"
-            options={modelOptions}
-            value={formData.model_type}
-            onChange={updateField}
-            placeholder="Select model"
-            error={errors.model_type}
-            isDisabled={!formData.brand}
-            important
-          />
+          <div className="space-y-2">
+            <DropDown
+              label="Model"
+              name="model_type"
+              options={modelOptions}
+              value={formData.model_type}
+              onChange={updateField}
+              placeholder="Select model"
+              error={errors.model_type}
+              isDisabled={!formData.brand}
+              important
+            />
+            {formData.brand && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddModel(!showAddModel)}
+                className="w-full"
+              >
+                {showAddModel ? "Cancel Add Model" : "Add New Model"}
+              </Button>
+            )}
+            {showAddModel && formData.brand && (
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter model name"
+                  value={newModelName}
+                  onChange={(e) => {
+                    setNewModelName(e.target.value);
+                    if (errors.newModelName) setErrors((prev) => ({ ...prev, newModelName: "" }));
+                  }}
+                  error={errors.newModelName}
+                />
+                <Button
+                  type="button"
+                  onClick={handleAddModel}
+                  disabled={creatingModel || loading}
+                  size="sm"
+                >
+                  {creatingModel ? "Creating..." : "Add"}
+                </Button>
+              </div>
+            )}
+          </div>
 
           <Input
             label="Product Name"
@@ -257,6 +385,24 @@ export default function AddProductModal({
             placeholder="Enter price"
             error={errors.unit_price}
             important
+          />
+
+          <Input
+            label="Quantity in Stock"
+            name="quantity_in_stock"
+            type="number"
+            value={formData.quantity_in_stock}
+            onChange={handleChange}
+            placeholder="Enter quantity"
+          />
+
+          <Input
+            label="Reorder Level"
+            name="reorder_level"
+            type="number"
+            value={formData.reorder_level}
+            onChange={handleChange}
+            placeholder="Enter reorder level"
           />
         </div>
 
@@ -358,10 +504,10 @@ export default function AddProductModal({
         )}
 
         <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={loading || creatingBrand || creatingModel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || creatingBrand || creatingModel}>
             {loading ? (isEdit ? "Updating..." : "Creating...") : (isEdit ? "Update Product" : "Create Product")}
           </Button>
         </div>

@@ -47,7 +47,6 @@ export default function InventoryManagement() {
     filterStatus,
     criticalItemCount,
     lowItemCount,
-    fetchCategories,
     fetchBrands,
     fetchModels,
     createItem,
@@ -55,6 +54,8 @@ export default function InventoryManagement() {
     updateItem,
     fetchInventoryItems,
     changeFilter,
+    createNewBrand,
+    createNewModel,
   } = useInventory()
 
   const handleAddProduct = async (productData) => {
@@ -271,6 +272,8 @@ export default function InventoryManagement() {
         models={models}
         onCategoryChange={fetchBrands}
         onBrandChange={fetchModels}
+        onCreateBrand={createNewBrand}
+        onCreateModel={createNewModel}
         loading={isSubmitting}
       />
 

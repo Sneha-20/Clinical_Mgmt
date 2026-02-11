@@ -34,6 +34,8 @@ export const routes = {
   inventoryItemCreate: "clinical/inventory/item/create/",
   inventoryItems: "clinical/inventory/items/",
   inventorySerialNumberCreate: "clinical/inventory/serial-number/create/",
+  inventoryBrandCreate: "clinical/inventory/brands/create/",
+  inventoryModelCreate: "clinical/inventory/models/create/",
 
   audiologist:{
    appointmentList:"clinical/audiologits/queue/",

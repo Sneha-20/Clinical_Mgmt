@@ -97,6 +97,36 @@ export const updateInventoryItem = async (id, data) => {
   }
 };
 
+/**
+ * Create a new brand
+ * @param {Object} data - Brand data with category
+ * @returns {Promise<Object>} Response from the API
+ */
+export const createBrand = async (data) => {
+  try {
+    const url = routes.inventoryBrandCreate;
+    const response = await apiClient.post(url, data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Create a new model
+ * @param {Object} data - Model data with category and brand_id
+ * @returns {Promise<Object>} Response from the API
+ */
+export const createModel = async (data) => {
+  try {
+    const url = routes.inventoryModelCreate;
+    const response = await apiClient.post(url, data);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
 
 
 /**

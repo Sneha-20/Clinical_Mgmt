@@ -6,6 +6,8 @@ import {
   getInventoryItems,
   addInventoryStock,
   updateInventoryItem,
+  createBrand,
+  createModel,
 } from "@/lib/services/inventory";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
@@ -75,6 +77,7 @@ export default function useInventory() {
     }
     try {
       const data = await getInventoryDropdowns({ category });
+      console.log("Brands fetched:", data);
       setBrands(data?.brands || []);
       setModels([]); // Reset models when category changes
     } catch (error) {
@@ -84,19 +87,26 @@ export default function useInventory() {
   }, []);
 
   // Fetch models when brand is selected
-  const fetchModels = useCallback(async (category, brand) => {
-    if (!brand || !category) {
+  const fetchModels = useCallback(async (category, brandIdOrName) => {
+    if (!brandIdOrName || !category) {
       setModels([]);
       return;
     }
     try {
-      const data = await getInventoryDropdowns({ category, brand });
+      // If brandIdOrName is a number (ID), we need to find the brand name from brands array
+      let brandName = brandIdOrName;
+      if (typeof brandIdOrName === 'number') {
+        const selectedBrand = brands.find(b => b.id === brandIdOrName);
+        brandName = selectedBrand?.name || brandIdOrName;
+      }
+      
+      const data = await getInventoryDropdowns({ category, brand: brandName });
       setModels(data?.models || []);
     } catch (error) {
       console.error("Error fetching models:", error);
       setModels([]);
     }
-  }, []);
+  }, [brands]);
 
   // Change active filter and fetch items for that status
   const changeFilter = useCallback(
@@ -178,6 +188,57 @@ export default function useInventory() {
     [dispatch, fetchInventoryItems, pagination, filterStatus]
   );
 
+  // Create new brand
+  const createNewBrand = useCallback(
+    async (brandName, category) => {
+      try {
+        dispatch(startLoading());
+        const payload = { name: brandName, category };
+        const res = await createBrand(payload);
+        console.log("Brand created successfully:", res);
+        showToast({ type: "success", message: "Brand created successfully" });
+        // Refetch brands after creating new brand
+        await fetchBrands(category);
+        return res;
+      } catch (error) {
+        console.error("Error creating brand:", error);
+        showToast({
+          type: "error",
+          message: error?.response?.data?.error || "Failed to create brand",
+        });
+        return null;
+      } finally {
+        dispatch(stopLoading());
+      }
+    },
+    [dispatch, fetchBrands]
+  );
+
+  // Create new model
+  const createNewModel = useCallback(
+    async (modelName, category, brandId) => {
+      try {
+        dispatch(startLoading());
+        const payload = { name: modelName, category, brand: brandId };
+        const res = await createModel(payload);
+        console.log("Model created successfully:", res);
+        showToast({ type: "success", message: "Model created successfully" });
+        await fetchModels(category, brandId);
+        return res;
+      } catch (error) {
+        console.error("Error creating model:", error);
+        showToast({
+          type: "error",
+          message: error?.response?.data?.error || "Failed to create model",
+        });
+        return null;
+      } finally {
+        dispatch(stopLoading());
+      }
+    },
+    [dispatch, fetchModels]
+  );
+
 
 
   useEffect(() => {
@@ -202,5 +263,7 @@ export default function useInventory() {
     addStock,
     updateItem,
     changeFilter,
+    createNewBrand,
+    createNewModel,
   };
 }
