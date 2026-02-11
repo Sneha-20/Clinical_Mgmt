@@ -408,3 +408,30 @@ export const getInventoryStatus = async () => {
   }
 };
 
+
+export const GetClinicDropdowns = async () => {
+  try {
+    const url = `${routes.clinicDropdown}`;
+    const response = await apiClient.get(url);
+    return response.data;
+  }
+    catch (error) {
+    console.error("Clinic dropdown fetch error:", error);
+    throw error;
+  }
+};
+
+export const GetInventoryDropdowns = async () => {
+  try {
+    const url = `${routes.inventoryDropdowns}`;
+    const response = await apiClient.get(url);
+
+    return response.data;
+  } catch (error) {
+    console.error("Inventory dropdown fetch error:", error);
+    throw error;
+  }
+};
+
+
+

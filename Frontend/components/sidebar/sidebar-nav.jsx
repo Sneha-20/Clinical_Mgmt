@@ -31,6 +31,8 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
+      { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
+
     ],
     Speech: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
@@ -39,7 +41,7 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '👨‍👩‍👧', label: 'Reports', href: '/dashboard/reports' },
     ],
   }
-console.log("SidebarNav role:", role);
+  // console.log("SidebarNav role:", role);
   const items = navItems[role] || []
 
   return (
