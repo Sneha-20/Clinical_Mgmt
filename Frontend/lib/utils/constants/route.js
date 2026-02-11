@@ -81,7 +81,9 @@ export const routes = {
   // Accounts
   accountsReceptionists: "accounts/receptionists/",
   pendingUser: "accounts/users/pending/",
-  accountsUsers: "accounts/users/"
+  accountsUsers: "accounts/users/",
+  clinicDropdown: "accounts/clinics/",
+  inventoryDropdowns:"clinical/inventory/flat-list/"
   
 };
 export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
