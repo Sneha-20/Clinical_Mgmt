@@ -50,7 +50,16 @@ class TokenObtainWithClinicView(APIView):
 class ClinicListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = ClinicSimpleSerializer
-    queryset = Clinic.objects.values('id', 'name','address','phone')
+    queryset = Clinic.objects.values('id', 'name','address','phone', 'is_main_inventory')
+
+    def list(self, request, *args, **kwargs):
+        transfer_inventory = request.query_params.get('transfer_inventory', None)
+        if transfer_inventory and transfer_inventory.lower() == 'true':
+            self.queryset = self.queryset.filter(is_main_inventory=False)
+        else:
+            self.queryset = self.get_queryset()
+        serializer = self.get_serializer(self.queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
 class RoleListView(generics.ListAPIView):
     permission_classes = [AllowAny]

@@ -236,3 +236,72 @@ class AdminRevenueReportsView(APIView):
             
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+
+class DoctorReferrralListView(APIView):
+    """
+    List of doctor referrals for admin dashboard
+    """
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
+    
+    def get(self, request):
+        clinic_id = request.GET.get('clinic_id')  # Optional filter by clinic
+        try:
+           # 1. Start with a base queryset using ONE model
+            queryset = Patient.objects.filter(referral_doctor__isnull=False).exclude(
+            referral_doctor__exact=""
+        )
+        
+            # 2. Apply the optional filter dynamically
+            if clinic_id:
+                queryset = queryset.filter(clinic_id=clinic_id)
+            
+            return JsonResponse({'status': status.HTTP_200_OK, 'data': list(queryset.values('referral_doctor', 'clinic__name', 'created_at').distinct('referral_doctor'))})
+        except Exception as e:
+            return JsonResponse({'status': status.HTTP_500_INTERNAL_SERVER_ERROR, 'message': str(e)}, status=500)
+
+
+
+# get the patient record (name , bills) with referral doctor name
+class PatientReferralDetailView(APIView):
+    permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
+    
+    def get(self, request):
+        referral_doctor = request.GET.get('referral_doctor')
+        clinic_id = request.GET.get('clinic_id')  # Optional filter by clinic
+        try:
+            if not referral_doctor:
+                return JsonResponse({'status': status.HTTP_400_BAD_REQUEST, 'message': 'Referral doctor name is required'}, status=400)
+            
+            # 1. Start with a base queryset using ONE model
+            queryset = Patient.objects.filter(referral_doctor=referral_doctor)
+        
+            # 2. Apply the optional filter dynamically
+            if clinic_id:
+                queryset = queryset.filter(clinic_id=clinic_id)
+            
+            # 3. Prefetch related visits and bills to avoid N+1 queries
+            queryset = queryset.prefetch_related('visits__bill')
+
+            
+            # 4. Prepare the response data
+            data = []
+            for patient in queryset:
+                visits_data = []
+                for visit in patient.visits.all():
+                    bill_amount = visit.bill.final_amount if hasattr(visit, 'bill') else 0
+                    visits_data.append({
+                        'visit_date': visit.created_at.date(),
+                        'final_amount': bill_amount
+                    })
+
+                data.append({
+                    'patient_name': patient.name,
+                    'clinic_name': patient.clinic.name if patient.clinic else None,
+                    'visits': visits_data
+                })
+            
+            return JsonResponse({'status': status.HTTP_200_OK, 'data': data})
+        except Exception as e:
+            return JsonResponse({'status': status.HTTP_500_INTERNAL_SERVER_ERROR, 'message': str(e)}, status=500)

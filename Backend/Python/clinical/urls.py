@@ -19,7 +19,7 @@ from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
 from .trial_completion_view import TrialCompletionView
 from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView,PartsUsedListView
-from .admin_services import (AdminRevenueReportsView,AdminClinicReportView)
+from .admin_services import (AdminRevenueReportsView,AdminClinicReportView,DoctorReferrralListView, PatientReferralDetailView)
 from .admin_staff_performance import AdminTrialPerformanceAPIView
 from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
 from .api_inventory_transfer import InventoryTransferView, InventoryTransferHistoryView,InventoryFlatListView
@@ -130,6 +130,8 @@ urlpatterns = [
    path('inventory/item/<int:pk>/approve/', ApproveInventoryItemView.as_view(), name='approve_inventory_item'),
    path('inventory/items/main/', MainInventoryItemListView.as_view(), name='main_inventory_item_list'),
    path('inventory/transfers/', InventoryTransferHistoryView.as_view(), name='inventory_transfers'),
+   path('doctor-referrals/', DoctorReferrralListView.as_view(), name='admin_doctor_referrals'),
+   path('patient-referral/', PatientReferralDetailView.as_view(), name='patient_referral_detail'),
    
 
 
