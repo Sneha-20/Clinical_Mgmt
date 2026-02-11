@@ -3,10 +3,39 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from django.db.models import Count, Q
-from .models import InventoryItem, InventorySerial, Trial, Patient
-from .serializers import TrialDeviceSerialSerializer, ProductInfoBySerialSerializer
+from .models import InventoryItem, InventorySerial, Trial, Patient, ModelType
+from .serializers import TrialDeviceSerialSerializer, ProductInfoBySerialSerializer, ModelTypeSerializer
 from clinical_be.utils.pagination import StandardResultsSetPagination
 
+
+class TrialAvailableModelsView(APIView):
+    """
+    API to get distinct model names of Hearing Aids available for trial.
+    Returns model names where:
+    1. Category is 'Hearing Aid'
+    2. use_in_trial is True
+    3. Has > 0 serial numbers with status 'In Stock'
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        model_type_ids = InventoryItem.objects.filter(
+            category='Hearing Aid',
+            use_in_trial=True,
+            model_type__isnull=False
+        ).annotate(
+            available_serials=Count('serials', filter=Q(serials__status='In Stock'))
+        ).filter(
+            available_serials__gt=0
+        ).values_list('model_type', flat=True).distinct()
+
+        model_types = ModelType.objects.filter(id__in=model_type_ids).select_related('brand').order_by('name')
+        serializer = ModelTypeSerializer(model_types, many=True)
+        
+        return Response({
+            "status": status.HTTP_200_OK,
+            "data": serializer.data
+        })
 
 class TrialDeviceSerialListView(generics.ListAPIView):
     """API endpoint for listing serial numbers of trial devices with count > 0."""
@@ -15,6 +44,10 @@ class TrialDeviceSerialListView(generics.ListAPIView):
     
     def get_queryset(self):
         """Get serial numbers for trial devices with available count > 0 and not used in trials."""
+
+        # get the model id from query params if provided
+        model_type_id = self.request.query_params.get('model_type_id', None)
+
         # Get serial numbers that are already used in trials
         used_serial_numbers = Trial.objects.filter(
             serial_number__isnull=False
@@ -22,14 +55,20 @@ class TrialDeviceSerialListView(generics.ListAPIView):
 
         # Get search parameter from query params
         search_serial = self.request.query_params.get('serial_number', None)
+
+        if model_type_id:
+            # Filter available devices excluding those used in trials
+            queryset = InventorySerial.objects.filter(
+                inventory_item__use_in_trial=True,
+                inventory_item__model_type_id=model_type_id,
+                status='In Stock'
+            ).exclude(
+                serial_number__in=used_serial_numbers
+            )
         
-        # Filter available devices excluding those used in trials
-        queryset = InventorySerial.objects.filter(
-            inventory_item__use_in_trial=True,
-            status='In Stock'
-        ).exclude(
-            serial_number__in=used_serial_numbers
-        )
+            
+
+
         
         # Apply search filter if serial_number parameter is provided
         if search_serial:
@@ -164,5 +203,3 @@ class TrialDeviceInUseListView(generics.ListAPIView):
             "status": status.HTTP_200_OK,
             "data": devices_in_use
         })
-
-
