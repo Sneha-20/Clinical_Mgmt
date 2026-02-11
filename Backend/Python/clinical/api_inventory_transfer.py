@@ -195,8 +195,9 @@ class InventoryFlatListView(APIView): # For dropdowns and quick access
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        queryset = InventoryItem.objects.select_related('clinic').all().distinct()
+        clinic = Clinic.objects.filter(is_main_inventory=True).first()
+
+        queryset = InventoryItem.objects.select_related('clinic').filter(clinic=clinic).distinct()
         data = queryset.values('id', 'product_name', 'brand__name', 'model_type__name', 'stock_type')
         return Response({"status": 200, "data": list(data)}, status=status.HTTP_200_OK)
     
