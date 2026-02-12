@@ -1,5 +1,6 @@
+"use client"
 import TransferForm from "@/components/modules/admin/TransferForm";
-import TransferHistory from "@/components/modules/admin/TransferHistory";
+// import TransferHistory from "@/components/modules/admin/TransferHistory";
 import { ArrowRightLeft, Box, AlertTriangle, TrendingDown } from "lucide-react";
 
 const stats = [
@@ -8,7 +9,7 @@ const stats = [
   { icon: TrendingDown, label: "3 Low Stock Items", sub: "Below minimum threshold", color: "text-warning" },
 ];
 
-const TransferProductsPage = () => {
+export default function TransferProductsPage() {
   return (
     <div className="flex-1 space-y-8 px-8 py-6">
         {/* Header */}
@@ -44,11 +45,10 @@ const TransferProductsPage = () => {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <TransferForm />
-            <TransferHistory />
+            {/* <TransferHistory /> */}
           </div>
         </div>
     </div>
   );
 };
 
-export default TransferProductsPage;

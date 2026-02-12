@@ -1,3 +1,4 @@
+
 "use client";
 
 import { routes } from "@/lib/utils/constants/route";
@@ -140,6 +141,37 @@ export const getInventorySerialList = async (params = {}) => {
     if (inventory_item) queryParams.append('inventory_item', inventory_item.toString());
     const url = `clinical/inventory/serial/list/?${queryParams.toString()}`;
     const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Get pending inventory items for a clinic
+ * @param {Object} params - Query params (clinic_id required)
+ * @returns {Promise<Array>} List of pending inventory items
+ */
+export const getPendingInventoryItems = async (params = {}) => {
+  try {
+    const { clinic_id = 4 } = params;
+    const url = `clinical/inventory/items/pending/?clinic_id=${clinic_id}`;
+    const response = await apiClient.get(url);
+    return response.data || [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Approve a pending inventory item
+ * @param {number|string} id - Inventory item id
+ * @returns {Promise<Object>} Response from the API
+ */
+export const approvePendingInventoryItem = async (id) => {
+  try {
+    const url = `clinical/inventory/item/${id}/approve/`;
+    const response = await apiClient.post(url);
     return response;
   } catch (error) {
     throw error;

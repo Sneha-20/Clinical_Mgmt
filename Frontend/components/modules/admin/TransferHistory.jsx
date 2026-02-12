@@ -1,3 +1,4 @@
+"use client";
 import { useState, useMemo } from "react";
 import { ArrowRightLeft, Calendar as CalendarIcon, Clock, Filter, MapPin, User, X } from "lucide-react";
 import { transferLogs, clinics } from "@/data/mockData";
@@ -10,8 +11,8 @@ import { cn } from "@/lib/utils";
 
 const TransferHistory = () => {
   const [clinicFilter, setClinicFilter] = useState<string>("all");
-  const [fromDate, setFromDate] = useState<Date | undefined>();
-  const [toDate, setToDate] = useState<Date | undefined>();
+  // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  // const [toDate, setToDate] = useState<Date | undefined>(undefined);
 
   const filteredLogs = useMemo(() => {
     return transferLogs.filter((log) => {
