@@ -292,7 +292,11 @@ class PatientReferralDetailView(APIView):
                 for visit in patient.visits.all():
                     bill_amount = visit.bill.final_amount if hasattr(visit, 'bill') else 0
                     visits_data.append({
+                        'visit_type': visit.visit_type,
+                        'present_complaint': visit.present_complaint,
                         'visit_date': visit.created_at.date(),
+                        'trial_given': True if visit.trial_set.exists() else False,
+                        'bills_items': list(visit.bill.bill_items.values('item_type', 'description', 'cost', 'quantity')) if hasattr(visit, 'bill') else [],
                         'final_amount': bill_amount
                     })
 
