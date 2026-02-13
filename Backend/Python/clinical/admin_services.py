@@ -275,36 +275,31 @@ class PatientReferralDetailView(APIView):
                 return JsonResponse({'status': status.HTTP_400_BAD_REQUEST, 'message': 'Referral doctor name is required'}, status=400)
             
             # 1. Start with a base queryset using ONE model
-            queryset = Patient.objects.filter(referral_doctor=referral_doctor)
+            queryset = PatientVisit.objects.filter(patient__referral_doctor=referral_doctor)
         
             # 2. Apply the optional filter dynamically
             if clinic_id:
                 queryset = queryset.filter(clinic_id=clinic_id)
             
             # 3. Prefetch related visits and bills to avoid N+1 queries
-            queryset = queryset.prefetch_related('visits__bill')
+            queryset = queryset.prefetch_related('bill')
 
-            
+
             # 4. Prepare the response data
             data = []
-            for patient in queryset:
-                visits_data = []
-                for visit in patient.visits.all():
-                    bill_amount = visit.bill.final_amount if hasattr(visit, 'bill') else 0
-                    visits_data.append({
-                        'visit_type': visit.visit_type,
-                        'present_complaint': visit.present_complaint,
-                        'visit_date': visit.created_at.date(),
-                        'trial_given': True if visit.trial_set.exists() else False,
-                        'bills_items': list(visit.bill.bill_items.values('item_type', 'description', 'cost', 'quantity')) if hasattr(visit, 'bill') else [],
-                        'final_amount': bill_amount
-                    })
-
+            for visit in queryset:
+                bill_amount = visit.bill.final_amount if hasattr(visit, 'bill') else 0
                 data.append({
-                    'patient_name': patient.name,
-                    'clinic_name': patient.clinic.name if patient.clinic else None,
-                    'visits': visits_data
+                    'patient_name': visit.patient.name,
+                    'clinic_name': visit.clinic.name if visit.clinic else None,
+                    'visit_type': visit.visit_type,
+                    'present_complaint': visit.present_complaint,
+                    'visit_date': visit.created_at.date(),
+                    'trial_given': True if visit.trial_set.exists() else False,
+                    'bills_items': list(visit.bill.bill_items.values('item_type', 'description', 'cost', 'quantity')) if hasattr(visit, 'bill') else [],
+                    'final_amount': bill_amount
                 })
+
             
             return JsonResponse({'status': status.HTTP_200_OK, 'data': data})
         except Exception as e:
