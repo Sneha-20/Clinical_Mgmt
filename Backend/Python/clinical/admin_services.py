@@ -268,8 +268,8 @@ class PatientReferralDetailView(APIView):
     permission_classes = [IsAuthenticated,IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
     
     def get(self, request):
-        referral_doctor = request.GET.get('referral_doctor')
-        clinic_id = request.GET.get('clinic_id')  # Optional filter by clinic
+        referral_doctor = request.query_params.get('referral_doctor')
+        clinic_id = request.query_params.get('clinic_id')  # Optional filter by clinic
         try:
             if not referral_doctor:
                 return JsonResponse({'status': status.HTTP_400_BAD_REQUEST, 'message': 'Referral doctor name is required'}, status=400)
