@@ -17,6 +17,7 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
       { icon: '👁️', label: 'Trials', href: '/dashboard/trials' },
+      { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
     ],
     Doctor: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
@@ -32,6 +33,8 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
       { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
+            { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
+
 
     ],
     Speech: [
