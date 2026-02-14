@@ -35,8 +35,12 @@ export default function TransferForm() {
     updateQuantity,
     setProductQuantity,
     toggleSerial,
+    availableSerials,
+    toggleAvailableSerial,
     handleSubmit,
   } = useTransferProducts();
+  
+  
 
   return (
     <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -65,7 +69,7 @@ export default function TransferForm() {
               City Hearing Clinic
             </div>
           </div>
-          <div className="flex items-end justify-center pb-2">
+          <div className="flex items-center justify-center pt-4">
             <ArrowRight className="h-5 w-5 text-muted-foreground" />
           </div>
           <div>
@@ -93,7 +97,7 @@ export default function TransferForm() {
             <div className="flex flex-col gap-2">
               <DropDown
                 options={inventoryItems
-                  .filter((i) => !products.find((p) => p.item.id === i.id))
+                  // .filter((i) => !products.find((p) => p.item.id === i.id))
                   .map((i) => ({
                     value: String(i.id),
                     label: `${i.product_name} — ${i.stock} in stock`,
@@ -121,9 +125,9 @@ export default function TransferForm() {
                       disabled={
                         !selectedItemId ||
                         (selectedItem &&
-                        selectedItem.stock_type === "Serialized"
-                          ? tempSerials.length === 0
-                          : !tempQuantity)
+                          (selectedItem.stock_type === "Serialized"
+                            ? tempSerials.length === 0
+                            : !tempQuantity))
                       }
                       size="sm"
                       className="shrink-0"
@@ -140,18 +144,46 @@ export default function TransferForm() {
                     <Input
                       value={tempSerialInput}
                       onChange={(e) => setTempSerialInput(e.target.value)}
-                      placeholder="Enter serial"
+                      placeholder="Filter serials"
                       className="w-48"
                     />
-                    <Button
-                      size="sm"
-                      onClick={addTempSerial}
-                      className="shrink-0"
-                    >
-                      Add SN
-                    </Button>
+                    <div className="flex items-center">
+                      <Button
+                        onClick={addProduct}
+                        disabled={!selectedItemId || tempSerials.length === 0}
+                        size="sm"
+                        className="shrink-0"
+                      >
+                        <Plus className="mr-1 h-4 w-4" /> Add
+                      </Button>
+                    </div>
                   </div>
-                  <div>Serial number list</div>
+
+                  <div className="mt-2">
+                    <div className="text-sm text-muted-foreground mt-2 mb-1">Available items</div>
+                    <div className="max-h-40 overflow-auto rounded border border-border bg-card p-2">
+                      {(availableSerials || []).filter((sn) =>
+                        String(sn).toLowerCase().includes((tempSerialInput || "").toLowerCase())
+                      ).length > 0 ? (
+                        (availableSerials || [])
+                          .filter((sn) =>
+                            String(sn).toLowerCase().includes((tempSerialInput || "").toLowerCase())
+                          )
+                          .map((sn) => (
+                            <label key={sn} className="flex items-center gap-2 px-2 py-1">
+                              <input
+                                type="checkbox"
+                                checked={tempSerials.includes(sn)}
+                                onChange={() => toggleAvailableSerial(sn)}
+                              />
+                              <span className="text-sm">{sn}</span>
+                            </label>
+                          ))
+                      ) : (
+                        <div className="text-xs text-muted-foreground px-2 py-1">No serials available</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -284,7 +316,7 @@ export default function TransferForm() {
         <Button
           onClick={handleSubmit}
           className="w-full"
-          disabled={!toClinicId || products.length === 0 || submitting}
+          // disabled={!toClinicId || products.length === 0 || submitting}
         >
           <Send className="mr-2 h-4 w-4" />
           {submitting ? "Submitting..." : "Submit Transfer"}

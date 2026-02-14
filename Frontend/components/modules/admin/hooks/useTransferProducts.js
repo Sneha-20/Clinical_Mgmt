@@ -12,6 +12,7 @@ export default function useTransferProducts() {
   const [tempQuantity, setTempQuantity] = useState(1);
   const [tempSerialInput, setTempSerialInput] = useState('');
   const [tempSerials, setTempSerials] = useState([]);
+  const [availableSerials, setAvailableSerials] = useState([]);
   const [clinics, setClinics] = useState([]);
   const [inventoryItems, setInventoryItems] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -103,21 +104,39 @@ export default function useTransferProducts() {
     }));
   };
 
-      // const fetchSerials = async (product) => {
-      //   if (product && product.stock_type === "Serialized") {
-      //     try {
-      //       const res = await getInventorySerialList({ inventory_item: product.id });
-      //       // Response shape may vary; prefer array in res.data or res?.data?.results
-      //       const list = res?.data || res?.data?.results || [];
-      //       // setSerialList(list);
-      //     } catch (err) {
-      //       console.error("Error fetching serials:", err);
-      //       // setSerialList([]);
-      //     }
-      //   }
-      // };
+      const fetchSerials = async (product) => {
+        if (product && product.stock_type === "Serialized") {
+          try {
+            const res = await getInventorySerialList({ inventory_item: product.id });
+            const list = res?.data || res?.data?.results || [];
+            // normalize to array of serial strings if objects provided
+            const serials = Array.isArray(list)
+              ? list.map((it) => (typeof it === 'string' ? it : it.serial_number || it.sn || it.name || String(it))).filter(Boolean)
+              : [];
+            setAvailableSerials(serials);
+          } catch (err) {
+            console.error("Error fetching serials:", err);
+          }
+        }
+      };
+
+    // when selected item changes, clear temp serials/input and fetch available serials
+    useEffect(() => {
+      setAvailableSerials([]);
+      setTempSerials([]);
+      setTempSerialInput('');
+      if (selectedItem && selectedItem.stock_type === 'Serialized') {
+        fetchSerials(selectedItem);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedItemId]);
+
+    const toggleAvailableSerial = (sn) => {
+      setTempSerials((prev) => (prev.includes(sn) ? prev.filter((s) => s !== sn) : [...prev, sn]));
+    };
 
   const handleSubmit = async () => {
+    console.log('Submitting transfer', { toClinicId, products });
     if (!toClinicId || products.length === 0) {
       showToast({ type: 'error', message: 'Please select a destination clinic and add at least one product.' });
       return;
@@ -175,5 +194,7 @@ export default function useTransferProducts() {
     inventoryItems,
     selectedItem,
     submitting,
+    availableSerials,
+    toggleAvailableSerial,
   };
 }
