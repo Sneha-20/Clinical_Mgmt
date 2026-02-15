@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------- */
+/*   COLOR VARIABLES            */
+/* ---------------------------- */
+
+@layer base {
+  :root {
+    --background: oklch(0.98 0 0);
+    --foreground: oklch(0.15 0 0);
+    --primary-text: rgba(20, 67, 91);
+
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.15 0 0);
+
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.15 0 0);
+
+    /* --primary: rgba(36, 171, 213); */
+     --primary: rgba(0, 173, 238);
+    --primary-foreground: rgba(9, 162, 211);
+
+    --secondary: rgba(71, 173, 196);
+    --secondary-foreground: rgba(60, 154, 177);
+    --secondary-light: rgba(124, 207, 222);
+
+    --muted: oklch(0.93 0 0);
+    --muted-foreground: oklch(0.50 0 0);
+
+    --accent: oklch(0.55 0.12 150.4);
+    --accent-foreground: oklch(1 0 0);
+
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(1 0 0);
+
+    --border: oklch(0.92 0 0);
+    --input: oklch(0.97 0 0);
+    --ring: oklch(0.42 0.12 200.5);
+
+    --chart-1: oklch(0.42 0.12 200.5);
+    --chart-2: oklch(0.55 0.12 150.4);
+    --chart-3: oklch(0.50 0.08 210.8);
+    --chart-4: oklch(0.60 0.10 180);
+    --chart-5: oklch(0.48 0.09 195);
+
+    --radius: 0.5rem;
+
+    --sidebar: rgba(229, 244, 249);
+    --sidebar-foreground: oklch(0.15 0 0);
+    --sidebar-primary: oklch(0.42 0.12 200.5);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: rgba(193, 226, 242, 0.9);
+    --sidebar-accent-foreground: oklch(1 0 0);
+    --sidebar-border: oklch(0.88 0.01 200);
+    --sidebar-ring: oklch(0.42 0.12 200.5);
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+/* Optional: Remove default margin padding */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+/* --- Container Sizing (Kept from your original code) --- */
+.react-datepicker-popper {
+  @apply w-[295px];
+}
+.react-datepicker-wrapper,
+.react-datepicker,
+.react-datepicker__month-container {
+  @apply w-full;
+}
+.react-datepicker {
+  @apply font-sans border-none rounded-xl shadow-lg overflow-hidden !important;
+  background-color: white !important;
+}
+
+/* --- Header Section (Light Blue Background) --- */
+.react-datepicker__header {
+  @apply !bg-sidebar border-none !pt-0;
+}
+h2.react-datepicker__current-month {
+  @apply mb-2 text-blue-900 font-bold text-lg !important;
+}
+.react-datepicker__header select {
+    @apply bg-white border border-blue-900 rounded px-2 py-1 text-blue-900 font-bold mx-1 outline-none cursor-pointer;
+}
+.react-datepicker__navigation-icon::before {
+   border-color: theme('colors.blue.900') !important;
+}
+
+.react-datepicker__week,
+.react-datepicker__day-names {
+  @apply flex justify-between;
+}
+
+.react-datepicker__day-names {
+  @apply px-2;
+}
+
+.react-datepicker__day-name {
+  @apply text-blue-900 font-bold w-10 h-10 flex items-center justify-center !important;
+}
+
+.react-datepicker__day {
+  @apply text-blue-900 w-8 h-8 flex items-center justify-center rounded-full transition-colors font-medium  !important;
+}
+
+.react-datepicker__day:hover {
+   @apply bg-secondary text-white !important;
+}
+
+.react-datepicker__day--outside-month {
+   @apply text-gray-300 !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  @apply !bg-secondary text-white font-bold !important;
+
+}
+
+.react-datepicker__day--today:not(.react-datepicker__day--selected) {
+    @apply font-bold text-blue-900 bg-transparent border-none !important;
+}
+
+.react-datepicker__day.react-datepicker__day--disabled{
+  @apply opacity-55 cursor-not-allowed;
+}
