@@ -1,4 +1,5 @@
 import ReceptionistDashboard from "@/components/modules/receptionist/Receptionistdashboard";
+import { TransferHisotry } from "@/lib/services/inventory";
 
 export const routes = {
   // auth
@@ -89,7 +90,8 @@ export const routes = {
 
   // referal doctors
   referrals: "clinical/doctor-referrals/",
-  patientreferrals: "clinical/patient-referral/"
+  patientreferrals: "clinical/patient-referral/",
+  TransferHistory: "clinical/inventory/transfer/history/"
   
 };
 export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];

@@ -283,10 +283,10 @@ console.log("Clinic options:", clinicOptions);
                           {item.category}
                         </td>
                         <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">
-                          {item.brand}
+                          {item.brand_name}
                         </td>
                         <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">
-                          {item.model_type}
+                          {item.model_type_name}
                         </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3 font-semibold">
                           {item.quantity_in_stock || 0}
