@@ -30,52 +30,6 @@ export default function AudiologistDashboard() {
     nextPendingtest,
   } = useAudiologist();
 
-  const [queue, setQueue] = useState([
-    {
-      id: 1,
-      name: "Rajesh Kumar",
-      complaint: "Hearing problem",
-      testsRequired: ["PTA", "Tympanometry"],
-      referral: "Doctor",
-    },
-    {
-      id: 2,
-      name: "Priya Singh",
-      complaint: "Follow-up Trial",
-      testsRequired: ["Free Field"],
-      referral: "Self",
-    },
-    {
-      id: 3,
-      name: "Vijay Reddy",
-      complaint: "Hearing Testing",
-      testsRequired: ["BERA", "OAE"],
-      referral: "Self",
-    },
-  ]);
-
-  // const [completedTests] = useState([
-  //   { id: 1, name: 'Amit Patel', test: 'Pure Tone Audiometry', time: '10:30 AM', result: 'Mild Hearing Loss' },
-  //   { id: 2, name: 'Neha Sharma', test: 'Tympanometry', time: '10:15 AM', result: 'Normal' },
-  // ])
-
-  // const [showCaseHistory, setShowCaseHistory] = useState(false)
-  // const [selectedPatient, setSelectedPatient] = useState(null)
-
-  // const handleStartTest = (patientName) => {
-  //   setSelectedPatient(patientName)
-  //   setShowCaseHistory(true)
-  // }
-
-  // const handleCaseHistorySubmit = (data) => {
-  //   console.log('Case history submitted:', data)
-  //   setShowCaseHistory(false)
-  //   if (selectedPatient) {
-  //     setQueue(queue.filter(p => p.name !== selectedPatient))
-  //   }
-  //   setSelectedPatient(null)
-  // }
-
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>

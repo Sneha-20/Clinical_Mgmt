@@ -100,3 +100,14 @@ export const getTrialDevice = async ({ serial_number = "" }) => {
   }
 };
 
+export const getModalList = async () => {
+  try {
+    const url = `${routes.audiologist.modalList}`; 
+    const response = await apiClient.get(url);
+    return response;
+  }
+  catch (error) {
+    throw error;
+  }
+};
+

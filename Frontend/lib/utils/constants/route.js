@@ -52,7 +52,8 @@ export const routes = {
    activeTrialDevice:"clinical/trials/",
    inventoryDeviceList:"/clinical/device-booking/inventory/",
    deviceSerialList:"/clinical/device-booking/serial",
-   bookeddevice:"clinical/trials/"
+   bookeddevice:"clinical/trials/",
+   modalList : "/clinical/inventory/trial-available-models/"
   },
 
    billing:{

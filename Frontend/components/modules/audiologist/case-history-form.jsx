@@ -38,6 +38,7 @@ export default function CaseHistoryForm({ patientId }) {
     testFileList,
     trialDeviceList,
     searchTerm,
+    modalList,
     setSearchTerm,
     handleDeleteReport,
     setTestType,
@@ -61,6 +62,12 @@ export default function CaseHistoryForm({ patientId }) {
       setCurrentStep(Number(savedStep));
     }
   }, []);
+ console.log("modalList:", modalList);
+  const modalOptions = modalList?.map((modal) => ({
+    label: modal.name,
+    value: modal.name,
+  }));
+
 
   const handleNextStep = (step) => {
     setCurrentStep(step);
@@ -203,7 +210,7 @@ export default function CaseHistoryForm({ patientId }) {
         {/* ---------------- STEP 3 ---------------- */}
         {currentStep === 3 && (
           <div className="space-y-4">
-            <TrialGivenForm visitId={patientId} registerTrialForm={registerTrialForm} trialDeviceList={trialDeviceList} setSearchTerm={setSearchTerm} searchTerm={searchTerm} goToDashboard={goToDashboard}/>
+            <TrialGivenForm visitId={patientId} registerTrialForm={registerTrialForm} trialDeviceList={trialDeviceList} setSearchTerm={setSearchTerm} searchTerm={searchTerm} modalOptions={modalOptions} onSubmitSuccess={handleNextStep} goToDashboard={goToDashboard}/>
 
             {/* <Button onClick={goToDashboard}>
               Submit & Go to Dashboard
