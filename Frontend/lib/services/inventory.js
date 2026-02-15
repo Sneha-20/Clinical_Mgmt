@@ -48,10 +48,11 @@ export const createInventoryItem = async (data) => {
  */
 export const getInventoryItems = async (params = {}) => {
   try {
-    const { page = 1,status } = params;
+    const { page = 1,status, clinicId } = params;
     const queryParams = new URLSearchParams();
     if (page) queryParams.append("page", page.toString());
     if (status && status !== "All") queryParams.append("status", status);
+    if (clinicId && clinicId !== "All") queryParams.append("clinic_id", clinicId.toString());
     
     const url = `${routes.inventoryItems}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
