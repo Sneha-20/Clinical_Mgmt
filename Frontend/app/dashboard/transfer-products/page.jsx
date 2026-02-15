@@ -1,5 +1,6 @@
 "use client"
 import TransferForm from "@/components/modules/admin/TransferForm";
+import TransferHistory from "@/components/modules/admin/TransferHistory";
 // import TransferHistory from "@/components/modules/admin/TransferHistory";
 import { ArrowRightLeft, Box, AlertTriangle, TrendingDown } from "lucide-react";
 
@@ -45,7 +46,7 @@ export default function TransferProductsPage() {
 
           <div className="grid gap-6 lg:grid-cols-2">
             <TransferForm />
-            {/* <TransferHistory /> */}
+            <TransferHistory />
           </div>
         </div>
     </div>

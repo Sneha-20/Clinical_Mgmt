@@ -177,3 +177,14 @@ export const approvePendingInventoryItem = async (id) => {
     throw error;
   }
 };
+
+export const getTransferHisotry = async (params = {}) => {
+  try {
+    const url = routes.TransferHistory;;
+    const response = await apiClient.get(url);
+    return response.data;
+  }
+  catch (error) {
+    throw error;
+  }
+};
