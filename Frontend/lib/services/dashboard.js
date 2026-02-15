@@ -434,5 +434,25 @@ export const GetInventoryDropdowns = async () => {
   }
 };
 
+/**
+ * Get trial performance data for staff
+ * @param {number} staffId - Staff ID
+ * @param {string} queryParams - Additional query parameters (optional)
+ * @returns {Promise<Object>} Trial performance data
+ */
+export const getTrialPerformance = async (staffId, queryParams = '') => {
+  try {
+    let url = `clinical/admin/trial-performance/?staff_id=${staffId}`;
+    if (queryParams) {
+      url += `&${queryParams}`;
+    }
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Trial performance fetch error:", error);
+    throw error;
+  }
+};
+
 
 
