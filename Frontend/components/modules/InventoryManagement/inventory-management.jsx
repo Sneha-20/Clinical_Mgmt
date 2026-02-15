@@ -14,18 +14,51 @@ import useInventory from "@/lib/hooks/useInventory";
 import AddProductModal from "./AddProductModal";
 import AddStockModal from "./AddStockModal";
 import Pagination from "@/components/ui/Pagination";
+import DropDown from "@/components/ui/dropdown";
 
 export default function InventoryManagement() {
+    const {
+    clinics,
+    inventoryItems,
+    pagination,
+    categories,
+    brands,
+    models,
+    filterStatus,
+    criticalItemCount,
+    lowItemCount,
+    selectedClinic,
+    changeClinic,
+    fetchBrands,
+    fetchModels,
+    createItem,
+    addStock,
+    updateItem,
+    fetchInventoryItems,
+    changeFilter,
+    createNewBrand,
+    createNewModel,
+  } = useInventory();
+
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [clinicOptions, setClinicOptions] = useState([]);
 
+const clinicOptions = [
+  { label: "All", value: "All" },
+  ...(clinics?.map((clinic) => ({
+    label: clinic.name,
+    value: clinic.id,
+  })) || []),
+];
+
+
+console.log("Clinic options:", clinicOptions);
   // Handlers for edit
   const handleEditClick = (product) => {
-    // Log click and ensure modal opens *after* selectedProduct is set so the modal
-    // renders in edit mode and pre-fills reliably.
     console.log("handleEditClick: selecting product", product);
     setSelectedProduct(product);
     setTimeout(() => {
@@ -44,25 +77,7 @@ export default function InventoryManagement() {
     setIsSubmitting(false);
   };
 
-  const {
-    inventoryItems,
-    pagination,
-    categories,
-    brands,
-    models,
-    filterStatus,
-    criticalItemCount,
-    lowItemCount,
-    fetchBrands,
-    fetchModels,
-    createItem,
-    addStock,
-    updateItem,
-    fetchInventoryItems,
-    changeFilter,
-    createNewBrand,
-    createNewModel,
-  } = useInventory();
+
 
   const handleAddProduct = async (productData) => {
     setIsSubmitting(true);
@@ -112,16 +127,25 @@ export default function InventoryManagement() {
             Track stock levels and manage transactions
           </p>
         </div>
+        <div className="flex flex-row gap-4 items-center">
+        <DropDown
+          options={clinicOptions}
+          value={selectedClinic}
+          placeholder="Select Clinic"
+          onChange={(n, v) => changeClinic(v)}
+          className="w-[200px]"
+          />
         <Button
           onClick={() => {
             setSelectedProduct(null);
             setShowAddProductModal(true);
           }}
           className="gap-2 w-full sm:w-auto"
-        >
+          >
           <Plus className="w-4 h-4" />
           Add Product
         </Button>
+          </div>
       </div>
 
       {/* Alerts */}

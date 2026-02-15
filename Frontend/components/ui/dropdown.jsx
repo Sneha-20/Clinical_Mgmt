@@ -19,7 +19,7 @@ export default function DropDown({
   formatOptionLabel,
 }) {
   return (
-    <div className={`flex flex-col gap-1 w-full mb-4 ${className}`}>
+    <div className={`flex flex-col gap-1 w-full ${className}`}>
       {label && (
         <label className="text-sm font-medium text-gray-700 mb-1">
           {label}
