@@ -215,7 +215,7 @@ class AdminRevenueReportsView(APIView):
             total_bills = bills.count()
             avg_bill_amount = bills.aggregate(avg=Avg('final_amount'))['avg'] or 0
 
-            staff_revenue_data = bills.values('created_by__name').annotate(
+            staff_revenue_data = bills.values('created_by__name', 'created_by__id').annotate(
                     total_revenue=Sum('final_amount'),
                     total_bills=Count('id'),
                     avg_bill_amount=Avg('final_amount')

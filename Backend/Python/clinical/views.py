@@ -360,12 +360,7 @@ class AudiologistPatientQueueView(generics.ListAPIView):
         appointment_date = self.request.query_params.get('appointment_date', None)
         if appointment_date:
             queryset = queryset.filter(appointment_date=appointment_date)
-        else:
-            # Default: today's records only
-            from django.utils import timezone
-            today = timezone.now().date()
-            queryset = queryset.filter(appointment_date=today)
-
+    
         # The rest of the filtering will be handled by DjangoFilterBackend and search/filter classes
 
         return queryset.order_by('created_at')

@@ -7,6 +7,7 @@ from .models import InventoryItem, InventorySerial, InventoryTransfer
 from accounts.models import Clinic
 from .serializers import InventoryTransferSerializer
 from clinical_be.utils.permission import IsClinicAdmin
+from django.db import models
 
 class InventoryTransferView(APIView):
     """
@@ -197,8 +198,8 @@ class InventoryFlatListView(APIView): # For dropdowns and quick access
     def get(self, request):
         clinic = Clinic.objects.filter(is_main_inventory=True).first()
 
-        queryset = InventoryItem.objects.select_related('clinic').filter(clinic=clinic).distinct()
-        data = queryset.values('id', 'product_name', 'brand__name', 'model_type__name', 'stock_type')
+        queryset = InventoryItem.objects.select_related('clinic').filter(clinic=clinic, quantity_in_stock__gt=0).distinct()
+        data = queryset.values('id', 'product_name', 'brand__name', 'model_type__name', 'stock_type', 'quantity_in_stock')
         return Response({"status": 200, "data": list(data)}, status=status.HTTP_200_OK)
     
 

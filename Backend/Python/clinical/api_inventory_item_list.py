@@ -70,11 +70,21 @@ class InventorySerialListView(ListAPIView):
 
     def get(self, request, format=None):
         inventory_item = request.query_params.get('inventory_item')
-        
+
+        # this api is used for inentory transfer dropdown so we need to show only stock available , need some flag to know what it is needed for, for now we can use a query param like show_available_only=true, and then filter the inventory serials based on that. Available means not expired and not already transferred out.
+        show_available_only = request.query_params.get('show_available_only')
+
         if not inventory_item:
             return Response({"error": "inventory_item is required"}, status=status.HTTP_400_BAD_REQUEST)
         
-        inventory_serials = InventorySerial.objects.filter(inventory_item=inventory_item)
+
+        if show_available_only and show_available_only.lower() == 'true':
+            inventory_serials = InventorySerial.objects.filter(inventory_item=inventory_item, status='In Stock')
+        else:
+            inventory_serials = InventorySerial.objects.filter(inventory_item=inventory_item)
+           
+        
+    
         page = self.paginate_queryset(inventory_serials)
         if page is not None:
             serializer = InventorySerialDetailSerializer(page, many=True)

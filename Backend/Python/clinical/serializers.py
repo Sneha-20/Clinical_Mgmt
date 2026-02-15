@@ -413,7 +413,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                 visit_type = visit_data.get('visit_type')
                 if visit_type in ['Battery Purchase', 'Tip / Dome Change', 'TGA']:
                     status_value = 'Pending for Service'
-                else:
+                else: #  For new test , followup tests
                     status_value = 'Test pending'
 
                 # `seen_by` has already been validated by PatientVisitRegistrationSerializer
@@ -632,10 +632,10 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
     
     patient_id = serializers.IntegerField(source='patient.id', read_only=True)
     patient_name = serializers.CharField(source='patient.name', read_only=True)
-    patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    # patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
     visit_id = serializers.IntegerField(source='id', read_only=True)
-    referral_type = serializers.CharField(source='patient.referral_type', read_only=True)
-    referral_doctor = serializers.CharField(source='patient.referral_doctor', read_only=True)
+    # referral_type = serializers.CharField(source='patient.referral_type', read_only=True)
+    # referral_doctor = serializers.CharField(source='patient.referral_doctor', read_only=True)
     # service_type = serializers.CharField(source='service_type', read_only=True)
 
     def to_representation(self, instance):
@@ -659,14 +659,14 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
             'visit_id',
             'patient_id',
             'patient_name',
-            'patient_phone',
+            # 'patient_phone',
             'visit_type',
             'present_complaint',
             'test_requested',
-            'status',
-            # 'appointment_date',
-            'referral_type',
-            'referral_doctor',
+            # 'status',
+            'appointment_date',
+            # 'referral_type',
+            # 'referral_doctor',
             'service_type'
         ]
 
@@ -1163,6 +1163,7 @@ class ModelTypeSerializer(serializers.ModelSerializer):
 class InventoryItemSerializer(serializers.ModelSerializer):
     brand_name = serializers.CharField(source='brand.name', read_only=True)
     model_type_name = serializers.CharField(source='model_type.name', read_only=True)
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
 
     class Meta:
         model = InventoryItem
@@ -1179,7 +1180,9 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'notes',
             'use_in_trial',
             'unit_price',
-            'status'
+            'status', 
+            'clinic_id',
+            'clinic_name'
         ]
 
 

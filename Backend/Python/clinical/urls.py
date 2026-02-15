@@ -20,7 +20,7 @@ from .completed_tests_views import CompletedTestsListView, CompletedTestDetailVi
 from .trial_completion_view import TrialCompletionView
 from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView,PartsUsedListView
 from .admin_services import (AdminRevenueReportsView,AdminClinicReportView,DoctorReferrralListView, PatientReferralDetailView)
-from .admin_staff_performance import AdminTrialPerformanceAPIView
+from .admin_staff_performance import AdminStaffPerformanceAPIView
 from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
 from .api_inventory_transfer import InventoryTransferView, InventoryTransferHistoryView,InventoryFlatListView
 
@@ -114,7 +114,7 @@ urlpatterns = [
    path('inventory/items/', InventoryItemListView.as_view(), name='inventory_item_list'),
    path('inventory/serial/list/', InventorySerialListView.as_view(), name='inventory_serial_list'),
    path('inventory/item/<int:pk>/destroy/', InventoryItemDestroyView.as_view(), name='inventory_item_destroy'),
-   path('admin/trial-performance/',AdminTrialPerformanceAPIView.as_view(),name='admin_trial_performance'),
+   path('admin/trial-performance/',AdminStaffPerformanceAPIView.as_view(),name='admin_trial_performance'),
 
    # Patient history APIs
    path('patient/<int:patient_id>/purchases/', PatientPurchaseHistoryView.as_view(), name='patient_purchase_history'),
