@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import CommonDatePicker from '@/components/ui/CommonDatePicker';
 import { format } from 'date-fns';
 import { getAllClinics, getRevenueReports } from '@/lib/services/dashboard';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import { Eye } from 'lucide-react';
 
 export default function AnalyticsPage() {
   const [clinics, setClinics] = useState([]);
@@ -16,6 +18,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(false);
   const [revenueData, setRevenueData] = useState(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -168,15 +171,25 @@ console.log('Revenue Data:', revenueData);
                       <TableHead>Total Revenue</TableHead>
                       <TableHead>Total Bills</TableHead>
                       <TableHead>Avg Bill</TableHead>
+                      <TableHead>Actions</TableHead>
                     </tr>
                   </TableHeader>
                   <TableBody>
                     {revenueData.staff_revenue.map((s, idx) => (
-                      <TableRow key={s.created_by__name ?? idx}>
+                      <TableRow key={s.created_by__id ?? idx}>
                         <TableCell>{s.created_by__name}</TableCell>
                         <TableCell>{formatMoney(s.total_revenue)}</TableCell>
                         <TableCell>{s.total_bills ?? 0}</TableCell>
                         <TableCell>{formatMoney(s.avg_bill_amount)}</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => router.push(`/dashboard/analytics/staff/${s.created_by__id}?start_date=${startDate}&end_date=${endDate}`)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" /> View
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -191,4 +204,3 @@ console.log('Revenue Data:', revenueData);
     </div>
   );
 }
-
