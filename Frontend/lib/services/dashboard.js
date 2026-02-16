@@ -454,5 +454,32 @@ export const getTrialPerformance = async (staffId, queryParams = '') => {
   }
 };
 
+/**
+ * Get user profile data
+ * @returns {Promise<Object>} User profile data
+ */
+export const getUserProfile = async () => {
+  try {
+    const url = 'accounts/profile/';
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    console.error("User profile fetch error:", error);
+    throw error;
+  }
+};
+
+
+// Change Password 
+export const changepassword = async (data) => {
+  try {
+    const url = `${routes.changepassword}`;
+    const response = await apiClient.post(url, data);
+    return response;
+  } catch (error) {
+    console.error("Change password error:", error);
+    throw error;
+  }
+};
 
 

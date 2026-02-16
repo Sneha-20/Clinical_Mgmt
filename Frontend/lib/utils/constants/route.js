@@ -5,6 +5,7 @@ export const routes = {
   // auth
   register: "/accounts/register/",
   login: "/accounts/token/",
+  changepassword: "/accounts/change-password/",
 
   // clinical
   patientList: "/clinical/patient/visit/",
