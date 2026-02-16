@@ -83,6 +83,7 @@ class CompletedTestsListView(APIView):
                     'present_complaint': visit.present_complaint,
                     'test_performed': test_types,
                     'total_test_performed': len(test_types),
+                    'step_process': visit.step_process
                 })
             
             return paginator.get_paginated_response(simple_list)

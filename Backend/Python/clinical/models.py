@@ -38,6 +38,7 @@ class PatientVisit(models.Model):
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    step_process = models.IntegerField(default=1)  # Track the current step in the process (1-Case History, 2-Tests, 3-Trial, 4-Booking)
 
 
 

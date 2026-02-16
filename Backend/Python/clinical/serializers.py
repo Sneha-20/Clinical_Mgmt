@@ -434,6 +434,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     appointment_date=appointment_date,
                     seen_by=seen_by_user,
                     test_requested=test_requested,
+                    step_process=1,
                     **visit_data
                 )
                 created_visits.append(visit)
@@ -667,7 +668,8 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
             'appointment_date',
             # 'referral_type',
             # 'referral_doctor',
-            'service_type'
+            'service_type',
+            'step_process'
         ]
 
 
@@ -960,7 +962,8 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             if test_performed_instance:
                 visit.status = 'Test Performed'
                 visit.status_note = 'Test Performed by Audiologist'
-                visit.save(update_fields=['status', 'status_note'])
+                visit.step_process = 2  # Move to next step in workflow
+                visit.save(update_fields=['status', 'status_note', 'step_process'])
 
         return case_history
 
