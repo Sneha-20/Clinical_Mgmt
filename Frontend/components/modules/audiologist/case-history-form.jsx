@@ -62,6 +62,8 @@ export default function CaseHistoryForm({ patientId }) {
     if (savedStep) {
       setCurrentStep(Number(savedStep));
     }
+    return () => { localStorage.removeItem(STEP_KEY);
+    }
   }, []);
  console.log("modalList:", modalList);
   const modalOptions = modalList?.map((modal) => ({

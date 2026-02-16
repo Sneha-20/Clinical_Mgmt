@@ -29,7 +29,7 @@ export default function DropDown({
 
       <Select
         name={name}
-        value={options.find((opt) => opt.value === value) || null}
+        value={options?.find((opt) => opt.value === value) || null}
         options={options}
         placeholder={placeholder}
         isDisabled={isDisabled}
