@@ -24,6 +24,7 @@ export default function AudiologistDashboard() {
     totalPendingTest,
     completedtestPage,
     totalCompletedTest,
+    showCaseHistoryform,
     prevCompletedtest,
     nextCompletedTest,
     prevPendingtest,
@@ -115,21 +116,26 @@ export default function AudiologistDashboard() {
               <div
                 key={item.visit_id}
                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer"
-                onClick={() => showVisitDeteail(item.visit_id)}
+                
               >
                 <div>
-                  <h4 className="font-semibold text-sm sm:text-base">
+                  <h4 className="font-semibold text-sm sm:text-base" onClick={() => showVisitDeteail(item.visit_id)}>
                     {item.patient_name}
                   </h4>
                   <p className="text-xs sm:text-sm text-slate-600">
                     {item.visit_type}
                   </p>
                 </div>
-                <div className="text-left sm:text-right">
+                <div className="flex items-center gap-3 text-left sm:text-right">
                   <p className="text-xs sm:text-sm font-medium">
                     {item.present_complaint}
                   </p>
-                  {/* <p className="text-xs text-slate-600">{item.time}</p> */}
+                  {item.step_process == 2 ? (
+                    <Button variant="link" onClick={() => showCaseHistoryform(item.visit_id, item.step_process)}>Add reports</Button>
+                  ):(
+                    <Button variant="link" onClick={() => showCaseHistoryform(item.visit_id, item.step_process)}>Add Trail</Button>
+                   )
+                }
                 </div>
               </div>
             ))}
