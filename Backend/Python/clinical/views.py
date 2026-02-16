@@ -874,8 +874,8 @@ class DeviceBookingDropdownView(generics.ListAPIView):
                 item_data = {
                     'id': item.id,
                     'product_name': item.product_name,
-                    'brand': item.brand if item.brand else '',
-                    'model_type': item.model_type,
+                    'brand': item.brand.name if item.brand else '',
+                    'model_type': item.model_type.name if item.model_type else '',
                     'stock_type': item.stock_type,
                     'quantity_in_stock': item.quantity_in_stock,
                     'unit_price': float(item.unit_price) if item.unit_price else 0,
