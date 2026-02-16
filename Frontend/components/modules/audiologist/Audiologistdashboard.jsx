@@ -52,7 +52,7 @@ export default function AudiologistDashboard() {
                 <p className="text-slate-600 text-xs sm:text-sm">
                   Patients in Queue
                 </p>
-                <p className="text-xl sm:text-2xl font-bold">{queue.length}</p>
+                {/* <p className="text-xl sm:text-2xl font-bold">{queue.length}</p> */}
               </div>
             </div>
           </CardContent>

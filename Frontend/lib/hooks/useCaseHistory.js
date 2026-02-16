@@ -26,6 +26,7 @@ export default function useCaseHistory() {
   const [trialDeviceList, setTrialDeviceList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalList, setModalList] = useState([]);
+  const [selectedModal, setSelectedModal] = useState(null);
 
   const fetchPatientFormData = async (id) => {
     if (!id) return;
@@ -54,10 +55,12 @@ export default function useCaseHistory() {
   useEffect(() => {
     fetchModalList();
   }, []);
+  console.log("Selected Modal:", selectedModal);
 
-  const fetchTrialDeviceList = async ({ search, modalID }) => {
+  const fetchTrialDeviceList = async ({ search }) => {
     try {
-      const res = await getTrialDevice({ serial_number: search, modal_id: modalID });
+      const res = await getTrialDevice({ serial_number: search, modal_id: selectedModal });
+      console.log("Trial Device List Response:", res);
       setTrialDeviceList(res);
     } catch (err) {
       showToast({
@@ -68,10 +71,10 @@ export default function useCaseHistory() {
   };
 
   useEffect(() => {
-    if (searchTerm?.length > 0) {
+    if (searchTerm?.length > 0 && selectedModal) {
       fetchTrialDeviceList({ search: searchTerm });
     }
-  }, [searchTerm]);
+  }, [searchTerm, selectedModal]);
 
   const registerTrialForm = async (data) => {
     dispatch(startLoading());
@@ -186,6 +189,7 @@ export default function useCaseHistory() {
     searchTerm,
     modalList,
     setSearchTerm,
+    setSelectedModal,
     // handleSubmitTest,
     handleDeleteReport,
     setIsModalOpen,

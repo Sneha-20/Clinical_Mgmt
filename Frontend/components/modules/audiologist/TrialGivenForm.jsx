@@ -36,13 +36,13 @@ export default function TrialGivenForm({
   registerTrialForm,
   goToDashboard,
   modalOptions,
+  setSelectedModal,
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
   console.log("modalOptions:", modalOptions);
   const formik = useFormik({
     initialValues: {
       visit: visitId,
-      model_name: "",
       serial_number: "",
       receiver_size: "",
       ear_fitted: "",
@@ -78,11 +78,11 @@ export default function TrialGivenForm({
             label="Select Modal"
             options={modalOptions}
             value={formik.values.model_name}
-            onChange={(n, v) => formik.setFieldValue("model_name", v)}
+            onChange={(n, v) => setSelectedModal(v)}
             error={formik.errors.model_name}
           />
 
-          <div>
+          <div className="relative">
             <Input
               label="Serial Number"
               name="serial_number"
@@ -97,7 +97,7 @@ export default function TrialGivenForm({
             />
 
             {showDropdown && searchTerm.length > 0 && (
-              <ul className="max-h-40 overflow-y-auto border border-slate-200 rounded-md mt-1">
+              <ul className="absolute bg-white w-full z-[5] max-h-40 overflow-y-auto border border-slate-200 rounded-md mt-1">
                 {trialDeviceList.length > 0 ? (
                   trialDeviceList.map((device) => (
                     <li
