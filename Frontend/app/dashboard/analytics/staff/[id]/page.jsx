@@ -22,8 +22,6 @@ export default function StaffPerformancePage() {
   const startDate = searchParams.get('start_date');
   const endDate = searchParams.get('end_date');
 
-  console.log('Selected card:', selectedCard);
-
   useEffect(() => {
     fetchPerformanceData();
   }, [params.id, startDate, endDate]);
@@ -38,8 +36,6 @@ export default function StaffPerformancePage() {
       if (endDate) queryParams.append('end_date', endDate);
       
       const data = await getTrialPerformance(params.id, queryParams.toString());
-      console.log('Performance data:', data);
-      // Handle the response structure properly
       setPerformanceData(data[0] || null);
      
     } catch (error) {

@@ -30,7 +30,6 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
     setLoading(true);
     try {
       const data = await getTgaServiceDetails(serviceId);
-      console.log("Service details:", data);
       setService(data);
       setFormData({
         action_taken: data.action_taken || "",

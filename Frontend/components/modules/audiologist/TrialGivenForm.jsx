@@ -6,7 +6,7 @@ import TextArea from "@/components/ui/TextArea";
 import DropDown from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
 import { trialGivenSchema } from "@/lib/utils/schema";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // You can later move this to schema file
 const earOptions = [
@@ -39,10 +39,11 @@ export default function TrialGivenForm({
   setSelectedModal,
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
-  console.log("modalOptions:", modalOptions);
+  const wrapperRef = useRef(null);
   const formik = useFormik({
     initialValues: {
       visit: visitId,
+      model_name: "",
       serial_number: "",
       receiver_size: "",
       ear_fitted: "",
@@ -61,12 +62,29 @@ export default function TrialGivenForm({
     validationSchema: trialGivenSchema,
     onSubmit: async (values) => {
       await registerTrialForm(values);
-      goToDashboard()
+      goToDashboard();
       onSubmitSuccess?.();
     },
   });
+  const selectTrialDevice = (device) => {
+    formik.setFieldValue("serial_number", device);
+    setSearchTerm(device);
+    setShowDropdown(false);
+  };
 
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+      setShowDropdown(false);
+    }
+  };
 
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
   return (
     <form onSubmit={formik.handleSubmit} className="space-y-6">
       {/* Device Info */}
@@ -74,40 +92,37 @@ export default function TrialGivenForm({
         <h3 className="font-semibold text-primary mb-3">Device Information</h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-           <DropDown
+          <DropDown
             label="Select Modal"
             options={modalOptions}
             value={formik.values.model_name}
-            onChange={(n, v) => setSelectedModal(v)}
+            onChange={(n, v) => {formik.setFieldValue("model_name", v),setSelectedModal(v)}}
             error={formik.errors.model_name}
           />
 
-          <div className="relative">
+          <div className="relative" ref={wrapperRef}>
             <Input
               label="Serial Number"
               name="serial_number"
               value={searchTerm}
               error={formik.errors.serial_number}
+              onFocus={() => setShowDropdown(true)}
+              // onBlur={() => setShowDropdown(false)}
               onChange={(e) => {
                 const value = e.target.value;
                 setSearchTerm(value);
                 formik.setFieldValue("serial_number", value);
-                setShowDropdown(true);
               }}
             />
 
-            {showDropdown && searchTerm.length > 0 && (
+            {showDropdown && (
               <ul className="absolute bg-white w-full z-[5] max-h-40 overflow-y-auto border border-slate-200 rounded-md mt-1">
                 {trialDeviceList.length > 0 ? (
                   trialDeviceList.map((device) => (
                     <li
                       key={device}
                       className="px-3 py-2 cursor-pointer hover:bg-slate-100"
-                      onClick={() => {
-                        formik.setFieldValue("serial_number", device);
-                        setSearchTerm(device);
-                        setShowDropdown(false);
-                      }}
+                      onClick={() => selectTrialDevice(device)}
                     >
                       {device}
                     </li>
@@ -152,7 +167,6 @@ export default function TrialGivenForm({
         <h3 className="font-semibold text-primary mb-3">
           Audiology Parameters
         </h3>
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
             label="SRT Before"
@@ -238,7 +252,6 @@ export default function TrialGivenForm({
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button type="submit">Save Trial & Continue</Button>
       </div>

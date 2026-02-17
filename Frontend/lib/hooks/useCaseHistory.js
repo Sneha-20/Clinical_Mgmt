@@ -55,11 +55,16 @@ export default function useCaseHistory() {
   useEffect(() => {
     fetchModalList();
   }, []);
+  
   console.log("Selected Modal:", selectedModal);
 
   const fetchTrialDeviceList = async ({ search }) => {
+    console.log("searchhhhh", search)
     try {
-      const res = await getTrialDevice({ serial_number: search, modal_id: selectedModal });
+      const res = await getTrialDevice({
+        serial_number: search,
+        modal_id: selectedModal,
+      });
       console.log("Trial Device List Response:", res);
       setTrialDeviceList(res);
     } catch (err) {
@@ -71,7 +76,7 @@ export default function useCaseHistory() {
   };
 
   useEffect(() => {
-    if (searchTerm?.length > 0 && selectedModal) {
+    if (selectedModal) {
       fetchTrialDeviceList({ search: searchTerm });
     }
   }, [searchTerm, selectedModal]);
@@ -129,7 +134,7 @@ export default function useCaseHistory() {
       const res = await addTestFile(formData);
       showToast({
         type: "success",
-        message: res?.status || "File uploaded successfully",
+        message: res?.message || "File uploaded successfully",
       });
 
       // Reset
@@ -177,6 +182,7 @@ export default function useCaseHistory() {
   useEffect(() => {
     fetchTestFile();
   }, []);
+  console.log("selected Modal", selectedModal);
 
   return {
     patientsCaseHistory,
@@ -190,7 +196,6 @@ export default function useCaseHistory() {
     modalList,
     setSearchTerm,
     setSelectedModal,
-    // handleSubmitTest,
     handleDeleteReport,
     setIsModalOpen,
     setTestType,

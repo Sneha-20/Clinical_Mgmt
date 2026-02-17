@@ -99,8 +99,6 @@ export default function ServiceRequestForm({ onClose, onSuccess }) {
     }
   };
 
-  console.log("formData", formData);
-
   // Format dropdown options
   const patientOptions = patients.map((patient) => ({
     label: `${patient.patient_name} - (${patient.phone || patient.phone_primary})`,

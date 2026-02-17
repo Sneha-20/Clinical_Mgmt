@@ -180,9 +180,6 @@ export default function AddProductModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = {};
-
-    console.log("AddProductModal: handleSubmit called", { isEdit, formData });
-
     if (!formData.category) newErrors.category = "Category is required";
     if (!formData.brand) newErrors.brand = "Brand is required";
     if (!formData.model_type) newErrors.model_type = "Model is required";
@@ -192,7 +189,6 @@ export default function AddProductModal({
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      console.log("AddProductModal: validation failed", newErrors);
       return;
     }
 
@@ -218,8 +214,6 @@ export default function AddProductModal({
         .map((sn) => sn.trim())
         .filter((sn) => sn.length > 0);
     }
-
-    console.log("AddProductModal: calling onSubmit with payload", payload);
     if (!onSubmit || typeof onSubmit !== 'function') {
       console.error('AddProductModal: onSubmit is not a function or undefined', onSubmit);
       return;
@@ -228,11 +222,10 @@ export default function AddProductModal({
     onSubmit(payload);
   };
 
-  const categoryOptions = categories.map((cat) => ({
+  const categoryOptions = categories?.map((cat) => ({
     label: cat,
     value: cat,
   }));
-
   const brandOptions = brands.map((brand) => ({
     label: brand.name,
     value: brand.id,
@@ -242,7 +235,6 @@ export default function AddProductModal({
     label: model.name,
     value: model.id,
   }));
- console.log("form data", formData);
   return (
     <Modal
       isModalOpen={isOpen}

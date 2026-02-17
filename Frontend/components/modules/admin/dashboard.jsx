@@ -115,7 +115,6 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    console.log("Clinics data changed:", clinics);
     if (clinics.length > 0 && !selectedClinicId) {
       const firstClinicId = clinics[0]?.id;
       if (firstClinicId) {
@@ -146,8 +145,6 @@ export default function AdminDashboard() {
         start_date,
         end_date,
       );
-      console.log("Daily status data fetched:", dailyStatusData);
-
       if (dailyStatusData && dailyStatusData.summary) {
         setDailyStatus(dailyStatusData);
       } else {

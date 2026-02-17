@@ -18,7 +18,6 @@ const TransferHistory = () => {
     const fetchLogs = async () => {
       try {
         const data = await getTransferHisotry();
-        console.log("Transfer history data:", data);
         if (data) {
           setLogs(data);
         }

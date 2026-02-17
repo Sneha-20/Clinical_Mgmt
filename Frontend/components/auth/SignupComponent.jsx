@@ -146,7 +146,6 @@ export default function SignupComponent() {
         phone: formData.phone,
       };
       const res = await register(payload);
-      console.log("Registration response:", res);
       showToast({
         type: "success",
         message: res?.message || "Account created successfully!",
@@ -154,7 +153,6 @@ export default function SignupComponent() {
       router.push(routes.pages.login);
       handleSignup(formData.role_id);
     } catch (error) {
-      console.log("Error during registration:", error);
       if (error.name === "ValidationError") {
         setErrors(extractYupErrors(error));
       } else {

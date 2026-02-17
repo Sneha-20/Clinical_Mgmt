@@ -89,10 +89,10 @@ export const getTrialDevice = async ({ serial_number = "", modal_id = ""}) => {
     if (modal_id) queryParams.append("model_type_id", modal_id);
   try {
     const query = serial_number
-      ? `?serial_number=${encodeURIComponent(serial_number)}`
-      : "";
+      ? `?serial_number=${encodeURIComponent(serial_number)}&`
+      : "?";
 
-    const url = `${routes.audiologist.trialDeviceList}${query}${queryParams.toString() ? `&${queryParams.toString()}` : ""}`;
+    const url = `${routes.audiologist.trialDeviceList}${query}${queryParams.toString() ? `${queryParams.toString()}` : ""}`;
 
     const response = await apiClient.get(url);
     return response?.data || [];

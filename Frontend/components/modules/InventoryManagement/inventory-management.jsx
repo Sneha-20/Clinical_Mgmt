@@ -55,11 +55,7 @@ const clinicOptions = [
   })) || []),
 ];
 
-
-console.log("Clinic options:", clinicOptions);
-  // Handlers for edit
   const handleEditClick = (product) => {
-    console.log("handleEditClick: selecting product", product);
     setSelectedProduct(product);
     setTimeout(() => {
       setShowAddProductModal(true);
@@ -68,7 +64,6 @@ console.log("Clinic options:", clinicOptions);
 
   const handleUpdateProduct = async (productData) => {
     setIsSubmitting(true);
-    console.log("Updating product with data:", productData);
     const success = await updateItem(selectedProduct.id, productData);
     if (success) {
       setShowAddProductModal(false);

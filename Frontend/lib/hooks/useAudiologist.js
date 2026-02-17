@@ -10,12 +10,11 @@ export default function useAudiologist() {
   const router = useRouter();
   const caseHistory = routes.pages.patientCaseHistory;
   const visitDetail = routes.pages.patientVisitdetail;
+
   const [appoinementList, setAppoinmentList] = useState([]);
   const [completedTests, setCompletedTests] = useState([]);
-
   const [prendingTestPage, setPendingtestPage] = useState(1);
   const [totalPendingTest, setTotalpendingTest] = useState(1);
-
   const [completedtestPage, setcompletedTestPage] = useState(1);
   const [totalCompletedTest, setTotalCompletedTest] = useState(1);
 
@@ -74,8 +73,8 @@ export default function useAudiologist() {
   const prevCompletedtest = () => {
     if (completedtestPage > 1) setcompletedTestPage((p) => p - 1);
   };
+
   const showCaseHistoryform = (visitId, step) => {
-    console.log("visitId:", visitId, "step:", step);
     localStorage.setItem("caseHistoryStep", step);
     router.push(`${caseHistory}/${visitId}`);
   };

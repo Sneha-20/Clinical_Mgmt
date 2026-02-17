@@ -142,7 +142,6 @@ export default function LoginForm({ onLogin }) {
           message: res?.message || "Login successful!",
         });
       } catch (error) {
-        console.log("Login error:", error);
         if (error.name === "ValidationError") {
           setError(extractYupErrors(error));
         } else {

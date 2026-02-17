@@ -32,7 +32,7 @@ export const routes = {
   partsUsed: "clinical/service/parts-used/",
 
   // Inventory Routes
-  inventoryDropdowns: "clinical/inventory/dropdowns/",
+  inventoryItemList: "clinical/inventory/dropdowns/",
   inventoryItemCreate: "clinical/inventory/item/create/",
   inventoryItems: "clinical/inventory/items/",
   inventorySerialNumberCreate: "clinical/inventory/serial-number/create/",

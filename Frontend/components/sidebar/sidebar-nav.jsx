@@ -44,7 +44,6 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '👨‍👩‍👧', label: 'Reports', href: '/dashboard/reports' },
     ],
   }
-  // console.log("SidebarNav role:", role);
   const items = navItems[role] || []
 
   return (

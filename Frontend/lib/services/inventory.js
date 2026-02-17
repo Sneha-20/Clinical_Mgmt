@@ -18,9 +18,9 @@ export const getInventoryDropdowns = async (params = {}) => {
     if (category) queryParams.append("category", category);
     if (brand) queryParams.append("brand", brand);
     
-    const url = `${routes.inventoryDropdowns}?${queryParams.toString()}`;
+    const url = `${routes.inventoryItemList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
-    return response;
+    return response || {};
   } catch (error) {
     throw error;
   }

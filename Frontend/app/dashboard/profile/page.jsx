@@ -24,8 +24,6 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       const response = await getUserProfile();
-      console.log('Profile data:', response);
-      
       if (response?.status === 200 && response?.data) {
         const data = response.data;
         setUserData({

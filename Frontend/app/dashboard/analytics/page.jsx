@@ -84,7 +84,6 @@ export default function AnalyticsPage() {
     if (Number.isNaN(n)) return value;
     return `₹${n.toFixed(2)}`;
   };
-console.log('Revenue Data:', revenueData);
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex items-start justify-between">

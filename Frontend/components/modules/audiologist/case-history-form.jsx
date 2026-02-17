@@ -6,9 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   X,
   Upload,
-  MessageSquare,
-  Stethoscope,
-  User,
   FileText,
   ArrowRight,
 } from "lucide-react";
@@ -62,15 +59,15 @@ export default function CaseHistoryForm({ patientId }) {
     if (savedStep) {
       setCurrentStep(Number(savedStep));
     }
-    return () => { localStorage.removeItem(STEP_KEY);
-    }
+    return () => {
+      localStorage.removeItem(STEP_KEY);
+    };
   }, []);
- console.log("modalList:", modalList);
+
   const modalOptions = modalList?.map((modal) => ({
     label: modal.name,
     value: modal.id,
   }));
-
 
   const handleNextStep = (step) => {
     setCurrentStep(step);
@@ -87,7 +84,7 @@ export default function CaseHistoryForm({ patientId }) {
       fetchPatientFormData(patientId);
     }
   }, [patientId]);
- 
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -115,14 +112,26 @@ export default function CaseHistoryForm({ patientId }) {
       <CardHeader>
         <CardTitle>{patientsCaseHistory?.patient_name}</CardTitle>
       </CardHeader>
-   <CaseHistoryStepper currentStep={currentStep} />
+      <CaseHistoryStepper currentStep={currentStep} />
       <CardContent>
         {/* ---------------- STEP 1 ---------------- */}
         {currentStep === 1 && (
           <form onSubmit={formik.handleSubmit} className="space-y-4">
-            <TextArea label="Medical History" name="medical_history" formik={formik} />
-            <TextArea label="Family History" name="family_history" formik={formik} />
-            <TextArea label="Noise Exposure" name="noise_exposure" formik={formik} />
+            <TextArea
+              label="Medical History"
+              name="medical_history"
+              formik={formik}
+            />
+            <TextArea
+              label="Family History"
+              name="family_history"
+              formik={formik}
+            />
+            <TextArea
+              label="Noise Exposure"
+              name="noise_exposure"
+              formik={formik}
+            />
 
             <DropDown
               label="Experience"
@@ -183,9 +192,14 @@ export default function CaseHistoryForm({ patientId }) {
             {testFileList.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {testFileList.map((file) => (
-                  <div key={file.id} className="flex items-center gap-2 border p-2 rounded">
+                  <div
+                    key={file.id}
+                    className="flex items-center gap-2 border p-2 rounded"
+                  >
                     <FileText className="h-4 w-4" />
-                    <a href={file.file_url} target="_blank">{file.file_type}</a>
+                    <a href={file.file_url} target="_blank">
+                      {file.file_type}
+                    </a>
                     <X
                       className="h-4 w-4 text-red-500 cursor-pointer"
                       onClick={() => {
@@ -213,13 +227,17 @@ export default function CaseHistoryForm({ patientId }) {
         {/* ---------------- STEP 3 ---------------- */}
         {currentStep === 3 && (
           <div className="space-y-4">
-            <TrialGivenForm visitId={patientId} setSelectedModal={setSelectedModal} registerTrialForm={registerTrialForm} trialDeviceList={trialDeviceList} setSearchTerm={setSearchTerm} searchTerm={searchTerm} modalOptions={modalOptions} onSubmitSuccess={handleNextStep} goToDashboard={goToDashboard}/>
-
-            {/* <Button onClick={goToDashboard}>
-              Submit & Go to Dashboard
-            </Button> */}
-
-        
+            <TrialGivenForm
+              visitId={patientId}
+              setSelectedModal={setSelectedModal}
+              registerTrialForm={registerTrialForm}
+              trialDeviceList={trialDeviceList}
+              setSearchTerm={setSearchTerm}
+              searchTerm={searchTerm}
+              modalOptions={modalOptions}
+              onSubmitSuccess={handleNextStep}
+              goToDashboard={goToDashboard}
+            />
           </div>
         )}
       </CardContent>

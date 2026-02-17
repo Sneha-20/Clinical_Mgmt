@@ -126,20 +126,10 @@ export default function PatientRegistrationForm({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={formik.touched.name && formik.errors.name}
+                  important
                 />
-
-                <Input
-                  label="Age"
-                  name="age"
-                  type="number"
-                  value={formik.values.age}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.age && formik.errors.age}
-                />
-
-                <CommonDatePicker
-                  label="Date of Birth"
+                  <CommonDatePicker
+                  label="Date of Birth*"
                   selectedDate={
                     formik.values.dob ? new Date(formik.values.dob) : null
                   }
@@ -149,9 +139,21 @@ export default function PatientRegistrationForm({
                   maxDate={new Date()} 
                   error={formik.touched.dob && formik.errors.dob}
                 />
+                <Input
+                  label="Age"
+                  name="age"
+                  type="number"
+                  value={formik.values.age}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.age && formik.errors.age}
+                  important
+                />
+
+              
 
                 <DropDown
-                  label="Gender"
+                  label="Gender*"
                   name="gender"
                   options={genderOptions}
                   value={formik.values.gender}
@@ -178,6 +180,8 @@ export default function PatientRegistrationForm({
                   error={
                     formik.touched.phone_primary && formik.errors.phone_primary
                   }
+                  important
+
                 />
 
                 <Input
@@ -199,6 +203,8 @@ export default function PatientRegistrationForm({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={formik.touched.city && formik.errors.city}
+                  important
+
                 />
 
                 <Input
@@ -208,6 +214,8 @@ export default function PatientRegistrationForm({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={formik.touched.address && formik.errors.address}
+                  important
+
                 />
 
                 <CommonDatePicker
@@ -294,7 +302,7 @@ export default function PatientRegistrationForm({
                 </h3>
 
                 <DropDown
-                  label="Purpose of Visit"
+                  label="Purpose of Visit*"
                   options={visitTypeOptions}
                   value={visit.visit_type}
                   onChange={(n, v) =>
@@ -304,7 +312,7 @@ export default function PatientRegistrationForm({
                 />
 
                 <DropDown
-                  label="Present Complaint"
+                  label="Present Complaint*"
                   options={complaintOptions}
                   value={visit.present_complaint}
                   onChange={(n, v) =>
@@ -313,18 +321,18 @@ export default function PatientRegistrationForm({
                       v
                     )
                   }
+                  className="mt-3"
                 />
 
                 <DropDown
-                  label="Assigned To"
+                  label="Assigned To*"
                   options={doctorOption}
                   value={visit.seen_by}
                   onChange={(n, v) =>
                     formik.setFieldValue(`visit_details.${index}.seen_by`, v)
                   }
+                  className="mt-3"
                 />
-                
-
                 <textarea
                   className="w-full border rounded p-2 mt-2"
                   value={visit.notes}

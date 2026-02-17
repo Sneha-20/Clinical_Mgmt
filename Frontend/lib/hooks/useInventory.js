@@ -45,7 +45,6 @@ export default function useInventory() {
 
      fetchClinics();
    }, []);
-   console.log("Clinics fetched in useInventory:", clinics);
 
   
   // Fetch inventory items list
@@ -55,7 +54,6 @@ export default function useInventory() {
       try {
         dispatch(startLoading());
         const data = await getInventoryItems({ page, status, clinicId });
-        console.log("Data fetched:", data);
         setInventoryItems(data.items || []);
         setLowItemCount(data.lowItem || 0);
         setCriticalItemCount(data.criticalItem || 0);
@@ -79,7 +77,8 @@ export default function useInventory() {
   const fetchCategories = useCallback(async () => {
     try {
       const data = await getInventoryDropdowns();
-      setCategories(data?.categories || []);
+      console.log("Categories fetched:", data);
+      setCategories(data.categories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
