@@ -78,7 +78,7 @@ export default function TransferForm() {
             </Label>
             <DropDown
               options={clinics
-                .filter((c) => c.id !== 1)
+                .filter((c) => c.is_main_inventory !== true)
                 .map((c) => ({ value: String(c.id), label: c.name }))}
               value={toClinicId}
               onChange={(name, val) => setToClinicId(val)}

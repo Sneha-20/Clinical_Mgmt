@@ -17,7 +17,7 @@ import Pagination from "@/components/ui/Pagination";
 import DropDown from "@/components/ui/dropdown";
 
 export default function InventoryManagement() {
-    const {
+  const {
     clinics,
     inventoryItems,
     pagination,
@@ -45,16 +45,20 @@ export default function InventoryManagement() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [clinicOptions, setClinicOptions] = useState([]);
+  console.log("selected clinic", selectedClinic);
 
-const clinicOptions = [
-  { label: "All", value: "All" },
-  ...(clinics?.map((clinic) => ({
-    label: clinic.name,
-    value: clinic.id,
-  })) || []),
-];
-
+  const clinicOptions = [
+    { label: "All", value: "All" },
+    ...(clinics?.map((clinic) => ({
+      label: clinic.name,
+      value: clinic.id,
+    })) || []),
+  ];
+  const isSelectedClinicMain =
+    clinics?.find((clinic) => clinic.id === selectedClinic)
+      ?.is_main_inventory == true
+      ? true
+      : false;
   const handleEditClick = (product) => {
     setSelectedProduct(product);
     setTimeout(() => {
@@ -71,8 +75,6 @@ const clinicOptions = [
     }
     setIsSubmitting(false);
   };
-
-
 
   const handleAddProduct = async (productData) => {
     setIsSubmitting(true);
@@ -123,24 +125,26 @@ const clinicOptions = [
           </p>
         </div>
         <div className="flex flex-row gap-4 items-center">
-        <DropDown
-          options={clinicOptions}
-          value={selectedClinic}
-          placeholder="Select Clinic"
-          onChange={(n, v) => changeClinic(v)}
-          className="w-[200px]"
+          <DropDown
+            options={clinicOptions}
+            value={selectedClinic}
+            placeholder="Select Clinic"
+            onChange={(n, v) => changeClinic(v)}
+            className="min-w-[200px]"
           />
-        <Button
-          onClick={() => {
-            setSelectedProduct(null);
-            setShowAddProductModal(true);
-          }}
-          className="gap-2 w-full sm:w-auto"
-          >
-          <Plus className="w-4 h-4" />
-          Add Product
-        </Button>
-          </div>
+          {isSelectedClinicMain && (
+            <Button
+              onClick={() => {
+                setSelectedProduct(null);
+                setShowAddProductModal(true);
+              }}
+              className="gap-2 w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4" />
+              Add Product
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Alerts */}
@@ -250,9 +254,12 @@ const clinicOptions = [
                     <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
                       Status
                     </th>
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
-                      Action
-                    </th>
+                    {isSelectedClinicMain && (
+                      <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
+                        Actions
+                      </th>
+                    )}
+                   
                   </tr>
                 </thead>
                 <tbody>
@@ -311,24 +318,26 @@ const clinicOptions = [
                                 : "Critical"}
                           </span>
                         </td>
-                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3 space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAddStockClick(item)}
-                            className="text-xs"
-                          >
-                            Add Stock
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditClick(item)}
-                            className="text-xs"
-                          >
-                            Edit
-                          </Button>
-                        </td>
+                        {isSelectedClinicMain && (
+                          <td className="text-center py-2 sm:py-3 px-2 sm:px-3 space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddStockClick(item)}
+                              className="text-xs"
+                            >
+                              Add Stock
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(item)}
+                              className="text-xs"
+                            >
+                              Edit
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import Companylogo from "@/public/icon/clinic-logo.png";
 import Image from 'next/image'
 
@@ -12,7 +11,6 @@ export default function SidebarNav({ role, onItemClick }) {
   const navItems = {
     Reception: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
-      // { icon: '📝', label: 'New Patient', href: '/dashboard/patients' },
       { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
@@ -21,19 +19,26 @@ export default function SidebarNav({ role, onItemClick }) {
     ],
     Doctor: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
+      { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
       // { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
       // { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
-      { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
       // { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
+    ],
+       ClinicManager: [
+      { icon: '📊', label: 'Dashboard', href: '/dashboard' },
+      { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
+      { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
+      { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
+      { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
     ],
     ClinicOwner: [
       { icon: '📊', label: 'Dashboard', href: '/dashboard' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
-      // { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
-      // { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
+      { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
-            { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
+      // { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
+      // { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
 
 
     ],

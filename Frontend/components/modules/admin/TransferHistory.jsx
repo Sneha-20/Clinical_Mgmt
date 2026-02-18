@@ -113,7 +113,7 @@ const TransferHistory = () => {
       </div> */}
 
       {/* Logs */}
-      <div className="space-y-3">
+      <div className="space-y-3 max-h-[400px] overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center py-8 text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading history...

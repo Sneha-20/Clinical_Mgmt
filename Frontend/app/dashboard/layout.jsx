@@ -19,7 +19,9 @@ export default function DashboardLayout({ children }) {
     }
     if(role === "Audiologist" || role === "Speech" || role === "Audiologist &  Speech Therapist"){
       setUserRole("Doctor");
-    } else if (role === "Admin" || role === "Clinic Manager") {
+    }else if(role === "clinic Manager"){
+      setUserRole("ClinicManager");
+    }else if (role === "Admin") {
       setUserRole("ClinicOwner");
     }else{
       setUserRole(role);
