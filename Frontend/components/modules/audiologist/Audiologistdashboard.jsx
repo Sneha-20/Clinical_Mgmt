@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,12 +9,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, Clock, CheckCircle } from "lucide-react";
+import { Users, Clock, CheckCircle, Activity } from "lucide-react";
 import useAudiologist from "@/lib/hooks/useAudiologist";
 import AppoinmentListCard from "./components/AppoinmentListCard";
 import Pagination from "@/components/ui/Pagination";
+import { getDashboardStats } from "@/lib/services/dashboard";
 
 export default function AudiologistDashboard() {
+  const [dashboardStats, setDashboardStats] = useState({
+    pending_tests: 0,
+    completed_tests: 0,
+    trials_active: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
+
   const {
     handleViewPatient,
     showVisitDeteail,
@@ -30,6 +38,25 @@ export default function AudiologistDashboard() {
     prevPendingtest,
     nextPendingtest,
   } = useAudiologist();
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoadingStats(true);
+      const response = await getDashboardStats();
+      console.log(response)
+      if (response) {
+        setDashboardStats(response);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -53,7 +80,9 @@ export default function AudiologistDashboard() {
                 <p className="text-slate-600 text-xs sm:text-sm">
                   Patients in Queue
                 </p>
-                {/* <p className="text-xl sm:text-2xl font-bold">{queue.length}</p> */}
+                <p className="text-xl sm:text-2xl font-bold">
+                  {loadingStats ? "..." : dashboardStats.pending_tests}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -70,7 +99,7 @@ export default function AudiologistDashboard() {
                   Tests Completed
                 </p>
                 <p className="text-xl sm:text-2xl font-bold">
-                  {completedTests.length}
+                  {loadingStats ? "..." : dashboardStats.completed_tests}
                 </p>
               </div>
             </div>
@@ -80,14 +109,16 @@ export default function AudiologistDashboard() {
         <Card className="border-0">
           <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-center gap-3 sm:gap-4">
-              <div className="bg-purple-100 p-2 sm:p-3 rounded-lg flex-shrink-0">
-                <Clock className="w-5 sm:w-6 h-5 sm:h-6 text-purple-600" />
+              <div className="bg-orange-100 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                <Activity className="w-5 sm:w-6 h-5 sm:h-6 text-orange-600" />
               </div>
               <div className="min-w-0">
                 <p className="text-slate-600 text-xs sm:text-sm">
-                  Avg Test Time
+                  Active Trials
                 </p>
-                <p className="text-xl sm:text-2xl font-bold">18 min</p>
+                <p className="text-xl sm:text-2xl font-bold">
+                  {loadingStats ? "..." : dashboardStats.trials_active}
+                </p>
               </div>
             </div>
           </CardContent>

@@ -23,11 +23,14 @@ import Modal from "@/components/ui/Modal";
 import { useRouter } from "next/navigation";
 import CaseHistoryStepper from "@/components/ui/CaseHistoryStepper";
 import TrialGivenForm from "./TrialGivenForm";
+import { getTestTypes } from "@/lib/services/dashboard";
 
 const STEP_KEY = "caseHistoryStep";
 
 export default function CaseHistoryForm({ patientId }) {
   const router = useRouter();
+  const [testTypes, setTestTypes] = useState([]);
+  const [loadingTestTypes, setLoadingTestTypes] = useState(false);
   const {
     patientsCaseHistory,
     fileName,
@@ -82,8 +85,28 @@ export default function CaseHistoryForm({ patientId }) {
   useEffect(() => {
     if (patientId) {
       fetchPatientFormData(patientId);
+      fetchTestTypesForVisit(patientId);
     }
   }, [patientId]);
+
+  const fetchTestTypesForVisit = async (visitId) => {
+    try {
+      setLoadingTestTypes(true);
+      const response = await getTestTypes(visitId);
+      if (response?.status === 200 && response?.data) {
+        // Convert API response to dropdown format
+        const dropdownOptions = response.data.map((testType) => ({
+          label: testType,
+          value: testType,
+        }));
+        setTestTypes(dropdownOptions);
+      }
+    } catch (error) {
+      console.error('Error fetching test types:', error);
+    } finally {
+      setLoadingTestTypes(false);
+    }
+  };
 
   const formik = useFormik({
     enableReinitialize: true,
@@ -172,9 +195,11 @@ export default function CaseHistoryForm({ patientId }) {
             <DropDown
               label="Select Test Type"
               name="testType"
-              options={testRequestedOptions}
+              options={testTypes}
               value={testType}
               onChange={(n, v) => setTestType(v)}
+              disabled={loadingTestTypes}
+              placeholder={loadingTestTypes ? "Loading test types..." : "Select test type"}
             />
 
             <FileUploadField

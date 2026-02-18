@@ -166,13 +166,15 @@ const TrialList = () => {
                     </div>
                     {/* Actions */}
                     <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        onClick={() => openDecisionDialog(trial)}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Complete Trial
-                      </Button>
+                      {trial.trial_decision === "Follow up" && (
+                        <Button
+                          size="sm"
+                          onClick={() => openDecisionDialog(trial)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Complete Trial
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

@@ -29,9 +29,9 @@ export default function SidebarNav({ role, onItemClick }) {
     ClinicOwner: [
       { icon: '📊', label: 'Dashboard', href: '/dashboard' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
-      { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
+      // { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
-      { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
+      // { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
       { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
             { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
 

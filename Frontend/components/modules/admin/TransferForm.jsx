@@ -100,7 +100,7 @@ export default function TransferForm() {
                   // .filter((i) => !products.find((p) => p.item.id === i.id))
                   .map((i) => ({
                     value: String(i.id),
-                    label: `${i.product_name} — ${i.stock} in stock`,
+                    label: `${i.product_name} — ${i.quantity_in_stock} in stock`,
                   }))}
                 value={selectedItemId}
                 onChange={(name, val) => setSelectedItemId(val)}
@@ -114,7 +114,7 @@ export default function TransferForm() {
                   <Input
                     type="number"
                     min={1}
-                    max={selectedItem.stock ?? undefined}
+                    max={selectedItem.quantity_in_stock ?? undefined}
                     value={tempQuantity}
                     onChange={(e) => setTempQuantity(e.target.value)}
                     className="w-28"

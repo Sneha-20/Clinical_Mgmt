@@ -469,6 +469,22 @@ export const getUserProfile = async () => {
   }
 };
 
+/**
+ * Get test types for a visit
+ * @param {number} visitId - Visit ID
+ * @returns {Promise<Object>} Test types data
+ */
+export const getTestTypes = async (visitId) => {
+  try {
+    const url = `clinical/visit/${visitId}/test-types/`;
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    console.error("Test types fetch error:", error);
+    throw error;
+  }
+};
+
 
 // Change Password 
 export const changepassword = async (data) => {
