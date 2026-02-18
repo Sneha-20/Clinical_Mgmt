@@ -20,9 +20,9 @@ export default function DashboardLayout({ children }) {
     if(role === "Audiologist" || role === "Speech" || role === "Audiologist &  Speech Therapist"){
       setUserRole("Doctor");
     }else if(role === "clinic Manager"){
-      setUserRole("ClinicManager");
+      setUserRole("Manager");
     }else if (role === "Admin") {
-      setUserRole("ClinicOwner");
+      setUserRole("Admin");
     }else{
       setUserRole(role);
     }

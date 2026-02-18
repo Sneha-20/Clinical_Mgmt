@@ -20,27 +20,20 @@ export default function SidebarNav({ role, onItemClick }) {
     Doctor: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
-      // { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
-      // { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
-      // { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
     ],
-       ClinicManager: [
+    Manager: [
       { icon: '📊', label: 'Dashboard', href: '/dashboard' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
     ],
-    ClinicOwner: [
+    Admin: [
       { icon: '📊', label: 'Dashboard', href: '/dashboard' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
-      // { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
-      // { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
-
-
     ],
     Speech: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard' },
@@ -72,9 +65,7 @@ export default function SidebarNav({ role, onItemClick }) {
       {/* Role Badge */}
       <div className="px-4 py-3 text-xs">
         <div className="px-2 py-1 bg-sidebar-accent text-primaryText rounded-md text-center font-medium">
-          {role === "speech"
-            ? "Speech Therapist"
-            : role.charAt(0).toUpperCase() + role.slice(1)}
+          {role.charAt(0).toUpperCase() + role.slice(1)}
         </div>
       </div>
 
