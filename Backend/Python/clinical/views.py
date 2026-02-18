@@ -708,6 +708,41 @@ class TestResultListView(APIView):
                 'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
 
+
+class VisitTestTypesView(APIView):
+    """
+    Get list of test names performed for a specific visit ID.
+    Returns names of tests where the boolean flag is True.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, visit_id):
+        try:
+            test_performed = VisitTestPerformed.objects.get(visit_id=visit_id)
+            
+            test_mapping = [
+                (test_performed.pta, "PTA"),
+                (test_performed.immittance, "Immittance"),
+                (test_performed.oae, "OAE"),
+                (test_performed.bera_assr, "BERA/ASSR"),
+                (test_performed.srt, "SRT"),
+                (test_performed.sds, "SDS"),
+                (test_performed.ucl, "UCL"),
+                (test_performed.free_field, "Free Field")
+            ]
+            
+            test_types = [name for flag, name in test_mapping if flag]
+            
+            if test_performed.other_test:
+                test_types.append(test_performed.other_test)
+                
+            return Response({"status": 200, "data": test_types}, status=status.HTTP_200_OK)
+            
+        except VisitTestPerformed.DoesNotExist:
+             return Response({"status": 200, "data": []}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"status": 500, "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # Delete the Testupload file
 class TestUploadDeleteView(APIView):
     """Delete a specific test upload file"""
@@ -1037,6 +1072,3 @@ class MarkPatientContactedView(APIView):
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error updating contact status: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-
