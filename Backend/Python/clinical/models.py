@@ -408,7 +408,7 @@ class InventoryItem(models.Model):
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)  # Brand
     model_type = models.ForeignKey(ModelType, on_delete=models.SET_NULL, null=True, blank=True)  # Model / Type
-    sku = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
+    sku = models.CharField(max_length=100, unique=True, blank=True, null=True, db_index=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
     STOCK_TYPE_CHOICES = [
         ('Serialized', 'Serialized'),
         ('Non-Serialized', 'Non-Serialized'),
@@ -467,11 +467,9 @@ class InventoryItem(models.Model):
         self.save(update_fields=["quantity_in_stock"])
 
     def save(self, *args, **kwargs):
-        if not self.sku and self.brand and self.model_type:
-            # Auto-generate SKU: BRAND-MODEL (e.g., PHONAK-P90)
-            clean_brand = "".join(e for e in self.brand.name if e.isalnum()).upper()
-            clean_model = "".join(e for e in self.model_type.name if e.isalnum()).upper()
-            self.sku = f"{clean_brand}-{clean_model}"
+        if not self.sku:
+            import uuid
+            self.sku = f"SKU-{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
 
 class InventorySerial(models.Model):
