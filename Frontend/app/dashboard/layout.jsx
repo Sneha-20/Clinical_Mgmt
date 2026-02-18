@@ -14,19 +14,22 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   useEffect(() => {
     const role = localStorage.getItem("userRole");
-     if (!role) {
+    if (!role) {
       router.push("/");
     }
-    if(role === "Audiologist" || role === "Speech" || role === "Audiologist &  Speech Therapist"){
+    if (
+      role === "Audiologist" ||
+      role === "Speech" ||
+      role === "Audiologist &  Speech Therapist"
+    ) {
       setUserRole("Doctor");
-    }else if(role === "clinic Manager"){
+    } else if (role === "clinic Manager") {
       setUserRole("Manager");
-    }else if (role === "Admin") {
+    } else if (role === "Admin") {
       setUserRole("Admin");
-    }else{
+    } else {
       setUserRole(role);
     }
-   
   }, [router]);
 
   const handleLogout = () => {
