@@ -67,7 +67,7 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
             label: item.product_name,
             value: item.id,
             brand: item.brand,
-            price: item.price,
+          price: item.unit_price,
           }))
         );
       } catch (err) {
