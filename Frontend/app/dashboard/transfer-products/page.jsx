@@ -1,7 +1,7 @@
 "use client"
+import useTransferProducts from "@/components/modules/admin/hooks/useTransferProducts";
 import TransferForm from "@/components/modules/admin/TransferForm";
 import TransferHistory from "@/components/modules/admin/TransferHistory";
-// import TransferHistory from "@/components/modules/admin/TransferHistory";
 import { ArrowRightLeft, Box, AlertTriangle, TrendingDown } from "lucide-react";
 
 const stats = [
@@ -11,6 +11,7 @@ const stats = [
 ];
 
 export default function TransferProductsPage() {
+  const transferHook = useTransferProducts();
   return (
     <div className="flex-1 space-y-8 px-8 py-6">
         {/* Header */}
@@ -45,8 +46,8 @@ export default function TransferProductsPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <TransferForm />
-            <TransferHistory />
+            <TransferForm transferHook={transferHook} />
+            <TransferHistory transferHook={transferHook} />
           </div>
         </div>
     </div>

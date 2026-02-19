@@ -6,11 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Textarea from "@/components/ui/textarea";
 import DropDown from "@/components/ui/dropdown";
-import Badge from "@/components/ui/badge";
-import useTransferProducts from "./hooks/useTransferProducts";
 import CommonBadge from "@/components/ui/badge";
 
-export default function TransferForm() {
+export default function TransferForm({ transferHook }) {
   const {
     toClinicId,
     notes,
@@ -23,22 +21,21 @@ export default function TransferForm() {
     inventoryItems,
     selectedItem,
     submitting,
+    availableSerials,
     setToClinicId,
     setNotes,
     setSelectedItemId,
     setTempQuantity,
     setTempSerialInput,
-    addTempSerial,
     removeTempSerial,
     addProduct,
     removeProduct,
     updateQuantity,
     setProductQuantity,
     toggleSerial,
-    availableSerials,
     toggleAvailableSerial,
     handleSubmit,
-  } = useTransferProducts();
+  } = transferHook;
   
   
 
