@@ -597,7 +597,7 @@ class PartsUsedListView(APIView):
             search_query = request.query_params.get('search', None)
             
             # Start with base queryset
-            inventory_items = InventoryItem.objects.all().order_by('product_name')
+            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic).order_by('product_name')
             
             # Apply search filter if provided
             if search_query:
