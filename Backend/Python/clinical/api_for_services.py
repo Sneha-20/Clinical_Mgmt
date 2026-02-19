@@ -558,8 +558,8 @@ class ServiceDetailView(APIView):
                     'device_id': service_visit.device.id if service_visit.device else None,
                     # 'purchase_id': service_visit.device.id if service_visit.device else None,
                     'product_name': service_visit.device.inventory_item.product_name if service_visit.device and service_visit.device.inventory_item else None,
-                    'brand': service_visit.device.inventory_item.brand if service_visit.device and service_visit.device.inventory_item and service_visit.device.inventory_item.brand else None,
-                    'model': service_visit.device.inventory_item.model_type if service_visit.device and service_visit.device.inventory_item else None,
+                    'brand': service_visit.device.inventory_item.brand.name if service_visit.device and service_visit.device.inventory_item and service_visit.device.inventory_item.brand else None,
+                    'model': service_visit.device.inventory_item.model_type.name if service_visit.device and service_visit.device.inventory_item else None,
                     'serial_number': service_visit.device.inventory_serial.serial_number if service_visit.device and service_visit.device.inventory_serial else None,
                     'purchase_date': service_visit.device.purchased_at if service_visit.device else None
                 } if service_visit.device else None,
@@ -611,8 +611,8 @@ class PartsUsedListView(APIView):
                 part_data = {
                     'inventory_item_id': item.id,
                     'product_name': item.product_name,
-                    'brand': item.brand,
-                    'model_type': item.model_type,
+                    'brand': item.brand.name,
+                    'model_type': item.model_type.name,
                     'unit_price': float(item.unit_price) if item.unit_price else 0,
                     # 'quantity_in_stock': item.quantity_in_stock or 0,
                     # 'category': item.category if hasattr(item, 'category') else None
