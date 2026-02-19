@@ -55,7 +55,7 @@ class AudiologistCaseHistory(models.Model):
     family_history = models.TextField()
     noise_exposure = models.TextField()
     previous_ha_experience = models.TextField()
-    red_flags = models.TextField()
+    red_flags = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 

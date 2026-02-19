@@ -126,8 +126,8 @@ class DeviceNeedService(APIView):
                 purchase_data = {
                     'inventory_item_id': purchase.inventory_item.id,
                     'product_name': purchase.inventory_item.product_name,
-                    'brand': purchase.inventory_item.brand,
-                    'model_type': purchase.inventory_item.model_type,
+                    'brand': purchase.inventory_item.brand.name,
+                    'model_type': purchase.inventory_item.model_type.name,
                     'serial_number': purchase.inventory_serial.serial_number if purchase.inventory_serial else None
                 }
                 purchases_data.append(purchase_data)
