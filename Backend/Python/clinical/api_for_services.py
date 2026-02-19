@@ -529,8 +529,8 @@ class ServiceDetailView(APIView):
                     'part_id': part.id,
                     'inventory_item_id': part.inventory_item.id,
                     'inventory_item_name': part.inventory_item.product_name,
-                    'inventory_item_brand': part.inventory_item.brand if part.inventory_item.brand else None,
-                    'inventory_item_model': part.inventory_item.model_type,
+                    'inventory_item_brand': part.inventory_item.brand.name if part.inventory_item.brand else None,
+                    'inventory_item_model': part.inventory_item.model_type.name,
                     'quantity': part.quantity,
                     'unit_price': float(part.inventory_item.unit_price) if part.inventory_item.unit_price else 0,
                     'total_cost': float(part.inventory_item.unit_price * part.quantity) if part.inventory_item.unit_price else 0
