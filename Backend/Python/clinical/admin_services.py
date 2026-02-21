@@ -93,7 +93,7 @@ class AdminClinicReportView(APIView):
                     created_at__date__gte=start_date,
                     created_at__date__lte=end_date
                 ).values(
-                    'assigned_patient__name', 'device_inventory_id__brand', 'device_inventory_id__model_type',
+                    'assigned_patient__name', 'device_inventory_id__product_name', 'device_inventory_id__brand__name', 'device_inventory_id__model_type__name',
                     'visit__clinic__name', 'trial_decision', 'followup_date', 'created_at'
                 )
             
@@ -105,7 +105,7 @@ class AdminClinicReportView(APIView):
                     trial_completed_at__date__lte=end_date,
                     trial_decision='BOOK'
                 ).values(
-                    'assigned_patient__name', 'booked_device_inventory__brand', 'booked_device_inventory__model_type',
+                    'assigned_patient__name', 'device_inventory_id__product_name', 'device_inventory_id__brand__name', 'device_inventory_id__model_type__name',
                     'visit__clinic__name', 'cost', 'trial_completed_at'
                 )
             else:
