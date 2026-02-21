@@ -410,7 +410,7 @@ class InventoryItem(models.Model):
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)  # Brand
     model_type = models.ForeignKey(ModelType, on_delete=models.SET_NULL, null=True, blank=True)  # Model / Type
-    sku = models.CharField(max_length=100, unique=True, blank=True, null=True, db_index=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
+    sku = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
     STOCK_TYPE_CHOICES = [
         ('Serialized', 'Serialized'),
         ('Non-Serialized', 'Non-Serialized'),
