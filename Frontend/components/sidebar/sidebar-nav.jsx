@@ -10,7 +10,7 @@ export default function SidebarNav({ role, onItemClick }) {
 
   const navItems = {
     Reception: [
-      { icon: '👥', label: 'Dashboard', href: '/dashboard' },
+      { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
@@ -18,25 +18,25 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
     ],
     Doctor: [
-      { icon: '👥', label: 'Dashboard', href: '/dashboard' },
+      { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
     ],
     Manager: [
-      { icon: '📊', label: 'Dashboard', href: '/dashboard' },
+      { icon: '📊', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
     ],
     Admin: [
-      { icon: '📊', label: 'Dashboard', href: '/dashboard' },
+      { icon: '📊', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
     ],
     Speech: [
-      { icon: '👥', label: 'Dashboard', href: '/dashboard' },
+      { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📝', label: 'Assessment', href: '/dashboard/assessment' },
       { icon: '📊', label: 'Progress', href: '/dashboard/progress' },
       { icon: '👨‍👩‍👧', label: 'Reports', href: '/dashboard/reports' },

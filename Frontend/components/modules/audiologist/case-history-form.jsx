@@ -79,7 +79,7 @@ export default function CaseHistoryForm({ patientId }) {
 
   const goToDashboard = () => {
     localStorage.removeItem(STEP_KEY);
-    router.push("/dashboard");
+    router.push("/dashboard/home");
   };
 
   useEffect(() => {
