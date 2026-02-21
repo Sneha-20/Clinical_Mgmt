@@ -70,6 +70,7 @@ class VisitTestPerformed(models.Model):
     # test_code = models.CharField(max_length=100)
     # required = models.BooleanField(default=False)
     pta = models.BooleanField(default=False)
+    typm = models.BooleanField(default=False) # Tympanometry
     immittance = models.BooleanField(default=False)
     oae = models.BooleanField(default=False)
     bera_assr = models.BooleanField(default=False)

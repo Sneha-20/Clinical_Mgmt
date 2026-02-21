@@ -723,6 +723,7 @@ class VisitTestTypesView(APIView):
             test_mapping = [
                 (test_performed.pta, "PTA"),
                 (test_performed.immittance, "Immittance"),
+                (test_performed.typm,"Tympanometry"),
                 (test_performed.oae, "OAE"),
                 (test_performed.bera_assr, "BERA/ASSR"),
                 (test_performed.srt, "SRT"),
