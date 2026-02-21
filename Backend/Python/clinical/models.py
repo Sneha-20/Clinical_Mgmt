@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 from accounts.models import User,Clinic
+from django.utils import timezone
 class Patient(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=255)
