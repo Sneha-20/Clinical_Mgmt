@@ -35,6 +35,7 @@ class PatientVisit(models.Model):
     status_note = models.TextField(blank=True, null=True)
     contacted = models.BooleanField(default=False)  # Track if patient has been contacted for follow-up
     contacted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='contacted_visits')  # Who contacted the patient
+    contacted_at = models.DateTimeField(null=True, blank=True, default=timezone.now)  # When the patient was contacted
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

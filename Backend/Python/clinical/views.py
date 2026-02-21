@@ -1046,6 +1046,7 @@ class MarkPatientContactedView(APIView):
             # Update visit with contact information
             visit.contacted = contacted
             visit.contacted_by = request.user if contacted else None
+            visit.contacted_at = timezone.now() if contacted else None
             
             # Update status note if contact note provided
             if contact_note:
@@ -1054,17 +1055,11 @@ class MarkPatientContactedView(APIView):
                 else:
                     visit.status_note = contact_note
             
-            visit.save(update_fields=['contacted', 'contacted_by', 'status_note'])
+            visit.save(update_fields=['contacted', 'contacted_by', 'status_note','contacted_at'])
             
             return Response({
                 'status': status.HTTP_200_OK,
-                'message': 'Patient contact status updated successfully',
-                'data': {
-                    'visit_id': visit.id,
-                    'contacted': visit.contacted,
-                    'contacted_by': visit.contacted_by.name if visit.contacted_by else None,
-                    'status_note': visit.status_note
-                }
+                'message': 'Patient contact status updated successfully'
             }, status=status.HTTP_200_OK)
             
         except Exception as e:

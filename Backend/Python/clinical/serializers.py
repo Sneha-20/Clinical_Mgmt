@@ -331,6 +331,7 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             fields['contacted'] = serializers.BooleanField(read_only=True)
             fields['contacted_by'] = serializers.IntegerField(read_only=True, source='contacted_by.id')
             fields['contacted_by_name'] = serializers.CharField(read_only=True,source='contacted_by.name')
+            fields['contacted_at'] = serializers.DateTimeField(read_only=True)
         
         return fields
 
