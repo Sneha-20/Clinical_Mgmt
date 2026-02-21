@@ -179,6 +179,7 @@ export default function PatientVisitForm({
               onChange={(n, v) =>
                 updateVisitDetails(index, "present_complaint", v)
               }
+              className="mt-2"
             />
 
             <div className="mt-2">
