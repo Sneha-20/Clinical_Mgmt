@@ -126,8 +126,8 @@ class DeviceNeedService(APIView):
                 purchase_data = {
                     'inventory_item_id': purchase.inventory_item.id,
                     'product_name': purchase.inventory_item.product_name,
-                    'brand': purchase.inventory_item.brand,
-                    'model_type': purchase.inventory_item.model_type,
+                    'brand': purchase.inventory_item.brand.name,
+                    'model_type': purchase.inventory_item.model_type.name,
                     'serial_number': purchase.inventory_serial.serial_number if purchase.inventory_serial else None
                 }
                 purchases_data.append(purchase_data)
@@ -529,8 +529,8 @@ class ServiceDetailView(APIView):
                     'part_id': part.id,
                     'inventory_item_id': part.inventory_item.id,
                     'inventory_item_name': part.inventory_item.product_name,
-                    'inventory_item_brand': part.inventory_item.brand if part.inventory_item.brand else None,
-                    'inventory_item_model': part.inventory_item.model_type,
+                    'inventory_item_brand': part.inventory_item.brand.name if part.inventory_item.brand else None,
+                    'inventory_item_model': part.inventory_item.model_type.name,
                     'quantity': part.quantity,
                     'unit_price': float(part.inventory_item.unit_price) if part.inventory_item.unit_price else 0,
                     'total_cost': float(part.inventory_item.unit_price * part.quantity) if part.inventory_item.unit_price else 0
@@ -558,8 +558,8 @@ class ServiceDetailView(APIView):
                     'device_id': service_visit.device.id if service_visit.device else None,
                     # 'purchase_id': service_visit.device.id if service_visit.device else None,
                     'product_name': service_visit.device.inventory_item.product_name if service_visit.device and service_visit.device.inventory_item else None,
-                    'brand': service_visit.device.inventory_item.brand if service_visit.device and service_visit.device.inventory_item and service_visit.device.inventory_item.brand else None,
-                    'model': service_visit.device.inventory_item.model_type if service_visit.device and service_visit.device.inventory_item else None,
+                    'brand': service_visit.device.inventory_item.brand.name if service_visit.device and service_visit.device.inventory_item and service_visit.device.inventory_item.brand else None,
+                    'model': service_visit.device.inventory_item.model_type.name if service_visit.device and service_visit.device.inventory_item else None,
                     'serial_number': service_visit.device.inventory_serial.serial_number if service_visit.device and service_visit.device.inventory_serial else None,
                     'purchase_date': service_visit.device.purchased_at if service_visit.device else None
                 } if service_visit.device else None,
@@ -597,7 +597,7 @@ class PartsUsedListView(APIView):
             search_query = request.query_params.get('search', None)
             
             # Start with base queryset
-            inventory_items = InventoryItem.objects.all().order_by('product_name')
+            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic).exclude(category='Hearing Aid').order_by('product_name')
             
             # Apply search filter if provided
             if search_query:
@@ -611,8 +611,8 @@ class PartsUsedListView(APIView):
                 part_data = {
                     'inventory_item_id': item.id,
                     'product_name': item.product_name,
-                    'brand': item.brand,
-                    'model_type': item.model_type,
+                    'brand': item.brand.name,
+                    'model_type': item.model_type.name,
                     'unit_price': float(item.unit_price) if item.unit_price else 0,
                     # 'quantity_in_stock': item.quantity_in_stock or 0,
                     # 'category': item.category if hasattr(item, 'category') else None

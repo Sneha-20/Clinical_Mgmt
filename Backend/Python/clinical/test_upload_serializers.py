@@ -65,6 +65,12 @@ class TestUploadCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Either file upload or file_path is required")
         
         response =  super().create(validated_data)
+        # update the step process to next step in workflow
+        visit_performed.visit.step_process = 3  # Move to next step in workflow
+        visit_performed.visit.save()
+
+
+        
         return response
 
 

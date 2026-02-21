@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 from accounts.models import User,Clinic
+from django.utils import timezone
 class Patient(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=255)
@@ -35,9 +36,11 @@ class PatientVisit(models.Model):
     status_note = models.TextField(blank=True, null=True)
     contacted = models.BooleanField(default=False)  # Track if patient has been contacted for follow-up
     contacted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='contacted_visits')  # Who contacted the patient
+    contacted_at = models.DateTimeField(null=True, blank=True, default=timezone.now)  # When the patient was contacted
     appointment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    step_process = models.IntegerField(default=1)  # Track the current step in the process (1-Case History, 2-Tests, 3-Trial, 4-Booking)
 
 
 
@@ -54,7 +57,7 @@ class AudiologistCaseHistory(models.Model):
     family_history = models.TextField()
     noise_exposure = models.TextField()
     previous_ha_experience = models.TextField()
-    red_flags = models.TextField()
+    red_flags = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
@@ -67,6 +70,7 @@ class VisitTestPerformed(models.Model):
     # test_code = models.CharField(max_length=100)
     # required = models.BooleanField(default=False)
     pta = models.BooleanField(default=False)
+    typm = models.BooleanField(default=False) # Tympanometry
     immittance = models.BooleanField(default=False)
     oae = models.BooleanField(default=False)
     bera_assr = models.BooleanField(default=False)
@@ -407,7 +411,7 @@ class InventoryItem(models.Model):
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)  # Brand
     model_type = models.ForeignKey(ModelType, on_delete=models.SET_NULL, null=True, blank=True)  # Model / Type
-    sku = models.CharField(max_length=100, blank=True, null=True, db_index=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
+    sku = models.CharField(max_length=100, blank=True, null=True, help_text="Stock Keeping Unit - Unique identifier for the product across clinics")
     STOCK_TYPE_CHOICES = [
         ('Serialized', 'Serialized'),
         ('Non-Serialized', 'Non-Serialized'),
@@ -466,11 +470,9 @@ class InventoryItem(models.Model):
         self.save(update_fields=["quantity_in_stock"])
 
     def save(self, *args, **kwargs):
-        if not self.sku and self.brand and self.model_type:
-            # Auto-generate SKU: BRAND-MODEL (e.g., PHONAK-P90)
-            clean_brand = "".join(e for e in self.brand.name if e.isalnum()).upper()
-            clean_model = "".join(e for e in self.model_type.name if e.isalnum()).upper()
-            self.sku = f"{clean_brand}-{clean_model}"
+        if not self.sku:
+            import uuid
+            self.sku = f"SKU-{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
 
 class InventorySerial(models.Model):

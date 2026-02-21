@@ -3,12 +3,12 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import InventoryItem, InventorySerial,InventoryTransfer
 from .serializers import InventoryItemSerializer, InventorySerialDetailSerializer,InventoryTransferSerializer
-from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission
+from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission, ClinicManagerPermission
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from rest_framework.generics import ListAPIView
 
 class InventoryItemListView(ListAPIView):
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission ]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, format=None):
@@ -21,7 +21,7 @@ class InventoryItemListView(ListAPIView):
                 items = items.filter(clinic_id=clinic_id)
         elif request.user.role.name == 'Clinic Manager':
             # Clinic Managers see items for their clinic, but can also filter by other clinics they manage
-            managed_clinics = request.user.clinic_set.all()
+            managed_clinics = request.user.managed_clinics_assignments.values_list('clinic', flat=True)
             items = InventoryItem.objects.filter(clinic__in=managed_clinics, is_approved=True).order_by('-id')
             clinic_id = request.query_params.get('clinic_id')
             if clinic_id:
@@ -65,7 +65,7 @@ class InventoryItemListView(ListAPIView):
 # Get the InventorySerial info for a product ( inventoryItem)
 class InventorySerialListView(ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | AuditorPermission | 
-                          ReceptionistPermission ]
+                          ReceptionistPermission | ClinicManagerPermission  ]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, format=None):
@@ -110,7 +110,8 @@ class InventoryItemPendingListView(ListAPIView):
             if clinic_id:
                 items = InventoryItem.objects.filter(clinic_id=clinic_id, is_approved=False).order_by('-id')
             else:   
-                items = InventoryItem.objects.filter(clinic__in=request.user.clinic_set.all(), is_approved=False).order_by('-id')
+                managed_clinics = request.user.managed_clinics_assignments.values_list('clinic', flat=True)
+                items = InventoryItem.objects.filter(clinic__in=managed_clinics, is_approved=False).order_by('-id')
         else:
             items = InventoryItem.objects.filter(clinic=request.user.clinic, is_approved=False).order_by('-id')
 

@@ -708,6 +708,42 @@ class TestResultListView(APIView):
                 'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
 
+
+class VisitTestTypesView(APIView):
+    """
+    Get list of test names performed for a specific visit ID.
+    Returns names of tests where the boolean flag is True.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, visit_id):
+        try:
+            test_performed = VisitTestPerformed.objects.get(visit_id=visit_id)
+            
+            test_mapping = [
+                (test_performed.pta, "PTA"),
+                (test_performed.immittance, "Immittance"),
+                (test_performed.typm,"Tympanometry"),
+                (test_performed.oae, "OAE"),
+                (test_performed.bera_assr, "BERA/ASSR"),
+                (test_performed.srt, "SRT"),
+                (test_performed.sds, "SDS"),
+                (test_performed.ucl, "UCL"),
+                (test_performed.free_field, "Free Field")
+            ]
+            
+            test_types = [name for flag, name in test_mapping if flag]
+            
+            if test_performed.other_test:
+                test_types.append(test_performed.other_test)
+                
+            return Response({"status": 200, "data": test_types}, status=status.HTTP_200_OK)
+            
+        except VisitTestPerformed.DoesNotExist:
+             return Response({"status": 200, "data": []}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"status": 500, "error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # Delete the Testupload file
 class TestUploadDeleteView(APIView):
     """Delete a specific test upload file"""
@@ -874,8 +910,8 @@ class DeviceBookingDropdownView(generics.ListAPIView):
                 item_data = {
                     'id': item.id,
                     'product_name': item.product_name,
-                    'brand': item.brand if item.brand else '',
-                    'model_type': item.model_type,
+                    'brand': item.brand.name if item.brand else '',
+                    'model_type': item.model_type.name if item.model_type else '',
                     'stock_type': item.stock_type,
                     'quantity_in_stock': item.quantity_in_stock,
                     'unit_price': float(item.unit_price) if item.unit_price else 0,
@@ -1011,6 +1047,7 @@ class MarkPatientContactedView(APIView):
             # Update visit with contact information
             visit.contacted = contacted
             visit.contacted_by = request.user if contacted else None
+            visit.contacted_at = timezone.now() if contacted else None
             
             # Update status note if contact note provided
             if contact_note:
@@ -1019,17 +1056,11 @@ class MarkPatientContactedView(APIView):
                 else:
                     visit.status_note = contact_note
             
-            visit.save(update_fields=['contacted', 'contacted_by', 'status_note'])
+            visit.save(update_fields=['contacted', 'contacted_by', 'status_note','contacted_at'])
             
             return Response({
                 'status': status.HTTP_200_OK,
-                'message': 'Patient contact status updated successfully',
-                'data': {
-                    'visit_id': visit.id,
-                    'contacted': visit.contacted,
-                    'contacted_by': visit.contacted_by.name if visit.contacted_by else None,
-                    'status_note': visit.status_note
-                }
+                'message': 'Patient contact status updated successfully'
             }, status=status.HTTP_200_OK)
             
         except Exception as e:
@@ -1037,6 +1068,3 @@ class MarkPatientContactedView(APIView):
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error updating contact status: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-

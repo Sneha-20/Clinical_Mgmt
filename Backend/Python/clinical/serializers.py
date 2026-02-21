@@ -331,6 +331,7 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             fields['contacted'] = serializers.BooleanField(read_only=True)
             fields['contacted_by'] = serializers.IntegerField(read_only=True, source='contacted_by.id')
             fields['contacted_by_name'] = serializers.CharField(read_only=True,source='contacted_by.name')
+            fields['contacted_at'] = serializers.DateTimeField(read_only=True)
         
         return fields
 
@@ -434,6 +435,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     appointment_date=appointment_date,
                     seen_by=seen_by_user,
                     test_requested=test_requested,
+                    step_process=1,
                     **visit_data
                 )
                 created_visits.append(visit)
@@ -667,7 +669,8 @@ class AudiologistQueueSerializer(serializers.ModelSerializer):
             'appointment_date',
             # 'referral_type',
             # 'referral_doctor',
-            'service_type'
+            'service_type',
+            'step_process'
         ]
 
 
@@ -960,7 +963,8 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             if test_performed_instance:
                 visit.status = 'Test Performed'
                 visit.status_note = 'Test Performed by Audiologist'
-                visit.save(update_fields=['status', 'status_note'])
+                visit.step_process = 2  # Move to next step in workflow
+                visit.save(update_fields=['status', 'status_note', 'step_process'])
 
         return case_history
 
@@ -1319,8 +1323,8 @@ class ServiceVisitListSerializer(serializers.ModelSerializer):
             item = obj.device.inventory_item
             return {
                 'name': item.product_name,
-                'brand': item.brand,
-                'model': item.model_type,
+                'brand': item.brand.name,
+                'model': item.model_type.name,
                 'purchase_date': obj.device.purchased_at.date() if obj.device.purchased_at else None
             }
         return None
