@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
 import { showToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
+import PasswordField from "./PasswordField";
 
 export default function LoginForm({ onLogin }) {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function LoginForm({ onLogin }) {
   const [error, setError] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false); // Ref to prevent multiple calls
+  const [showPassword, setShowPassword] = useState(false);
   
   const clinicOptions = useMemo(
     () =>
@@ -165,13 +167,15 @@ export default function LoginForm({ onLogin }) {
           />
         </div>
         <div>
-          <Input
+          <PasswordField
             label="Password"
-            type="password"
+            // type="password"
             name="password"
             placeholder="••••••••"
             value={userData.password}
             onChange={handleChange}
+            setShowPassword={setShowPassword}
+            showPassword={showPassword}
             className="bg-input text-sm"
             error={error.password}
           />

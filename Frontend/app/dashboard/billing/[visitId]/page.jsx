@@ -45,8 +45,8 @@ export default function BillingDetailPage() {
       };
       await markBillAsPaid(billingDetail.id, paymentData);
       showToast({ type: "success", message: "Bill marked as paid successfully" });
-      // Refresh the detail
       fetchBillingDetail();
+       router.back()
     } catch (error) {
       showToast({ type: "error", message: "Failed to mark bill as paid" });
     } finally {

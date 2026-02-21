@@ -56,7 +56,6 @@ export default function useCaseHistory() {
     fetchModalList();
   }, []);
   
-  console.log("Selected Modal:", selectedModal);
 
   const fetchTrialDeviceList = async ({ search }) => {
     console.log("searchhhhh", search)

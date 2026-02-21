@@ -7,7 +7,7 @@ const Input = React.forwardRef(
       {label && (
         <label className="block text-sm font-medium mb-1.5">
           {label}
-          {important && <span className="ml-1">*</span>}
+          {important && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <input

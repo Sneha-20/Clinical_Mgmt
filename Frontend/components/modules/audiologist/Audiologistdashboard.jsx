@@ -146,11 +146,11 @@ export default function AudiologistDashboard() {
             {completedTests.map((item) => (
               <div
                 key={item.visit_id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-50 "
                 
               >
                 <div>
-                  <h4 className="font-semibold text-sm sm:text-base" onClick={() => showVisitDeteail(item.visit_id)}>
+                  <h4 className="font-semibold text-sm sm:text-base hover:underline cursor-pointer" onClick={() => showVisitDeteail(item.visit_id)}>
                     {item.patient_name}
                   </h4>
                   <p className="text-xs sm:text-sm text-slate-600">
