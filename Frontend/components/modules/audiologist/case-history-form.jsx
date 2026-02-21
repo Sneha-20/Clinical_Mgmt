@@ -73,6 +73,11 @@ export default function CaseHistoryForm({ patientId }) {
   }));
 
   const handleNextStep = (step) => {
+    setTimeout(() => {
+      if (step === 2) {
+    fetchTestTypesForVisit(patientId);
+      }
+    }, 1000);
     setCurrentStep(step);
     localStorage.setItem(STEP_KEY, step);
   };
@@ -94,7 +99,6 @@ export default function CaseHistoryForm({ patientId }) {
       setLoadingTestTypes(true);
       const response = await getTestTypes(visitId);
       if (response?.status === 200 && response?.data) {
-        // Convert API response to dropdown format
         const dropdownOptions = response.data.map((testType) => ({
           label: testType,
           value: testType,

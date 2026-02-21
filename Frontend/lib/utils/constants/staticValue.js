@@ -38,12 +38,12 @@ export const complaintOptions = [
 export const testRequestedOptions = [
   { label: "Pure Tone Audiometry", value: "pta" },
   { label: "Tympanometry", value: "tymp" },
-  { label: "SRT / SDS", value: "srt_sds" },
+  { label: "SRT / SDS", value: "srt" },
+   { label: "SDS", value: "sds" },
   { label: "UCL", value: "ucl" },
   { label: "Free Field", value: "free_field" },
   { label: "BERA / ASSR", value: "bera_assr" },
   { label: "OAE", value: "oae" },
-  { label: "Any special test", value: "special" },
   {label:"Immittance", value: "Immittance"}
 ];
 

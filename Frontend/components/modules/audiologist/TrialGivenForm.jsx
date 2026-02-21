@@ -98,6 +98,7 @@ export default function TrialGivenForm({
             value={formik.values.model_name}
             onChange={(n, v) => {formik.setFieldValue("model_name", v),setSelectedModal(v)}}
             error={formik.errors.model_name}
+            important
           />
 
           <div className="relative" ref={wrapperRef}>
@@ -113,6 +114,7 @@ export default function TrialGivenForm({
                 setSearchTerm(value);
                 formik.setFieldValue("serial_number", value);
               }}
+              important
             />
 
             {showDropdown && (
@@ -142,6 +144,7 @@ export default function TrialGivenForm({
             value={formik.values.receiver_size}
             onChange={(n, v) => formik.setFieldValue("receiver_size", v)}
             error={formik.errors.receiver_size}
+            important
           />
 
           <DropDown
@@ -150,6 +153,7 @@ export default function TrialGivenForm({
             value={formik.values.ear_fitted}
             onChange={(n, v) => formik.setFieldValue("ear_fitted", v)}
             error={formik.errors.ear_fitted}
+            important
           />
 
           <DropDown
@@ -158,6 +162,7 @@ export default function TrialGivenForm({
             value={formik.values.dome_type}
             onChange={(n, v) => formik.setFieldValue("dome_type", v)}
             error={formik.errors.dome_type}
+            important
           />
         </div>
       </div>
@@ -174,6 +179,7 @@ export default function TrialGivenForm({
             value={formik.values.srt_before}
             onChange={formik.handleChange}
             error={formik.errors.srt_before}
+            important
           />
 
           <Input
@@ -182,6 +188,7 @@ export default function TrialGivenForm({
             value={formik.values.sds_before}
             onChange={formik.handleChange}
             error={formik.errors.sds_before}
+            important
           />
 
           <Input
@@ -190,22 +197,23 @@ export default function TrialGivenForm({
             value={formik.values.ucl_before}
             onChange={formik.handleChange}
             error={formik.errors.ucl_before}
+            important
           />
         </div>
       </div>
 
       {/* Notes */}
       <div className="space-y-4">
-        <TextArea label="Gain Settings" name="gain_settings" formik={formik} />
+        <TextArea label="Gain Settings*" name="gain_settings" formik={formik} />
 
         <TextArea
-          label="Patient Response"
+          label="Patient Response*"
           name="patient_response"
           formik={formik}
         />
 
         <TextArea
-          label="Counselling Notes"
+          label="Counselling Notes*"
           name="counselling_notes"
           formik={formik}
         />
@@ -223,6 +231,7 @@ export default function TrialGivenForm({
             value={formik.values.trial_start_date}
             onChange={formik.handleChange}
             error={formik.errors.trial_start_date}
+            important
           />
 
           <Input
@@ -232,6 +241,7 @@ export default function TrialGivenForm({
             value={formik.values.trial_end_date}
             onChange={formik.handleChange}
             error={formik.errors.trial_end_date}
+            important
           />
 
           <Input
@@ -240,6 +250,7 @@ export default function TrialGivenForm({
             value={formik.values.cost}
             onChange={formik.handleChange}
             error={formik.errors.cost}
+            important
           />
 
           <Input
@@ -248,6 +259,7 @@ export default function TrialGivenForm({
             value={formik.values.discount_offered}
             onChange={formik.handleChange}
             error={formik.errors.discount_offered}
+            important
           />
         </div>
       </div>
