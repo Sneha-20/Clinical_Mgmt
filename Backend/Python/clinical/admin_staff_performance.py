@@ -109,7 +109,7 @@ class AdminStaffPerformanceAPIView(APIView):
                     pending_service_details[i]['cost'] = service.charges_collected
 
                 # Calls made for followup: PatientVisit where contacted_by = staff
-                calls_made_qs = PatientVisit.objects.filter(contacted_by=staff, contacted=True, bill__payment_status='Paid')
+                calls_made_qs = PatientVisit.objects.filter(contacted_by=staff, contacted=True)
                 if start_date:
                     calls_made_qs = calls_made_qs.filter(updated_at__date__gte=start_date)
                 if end_date:
