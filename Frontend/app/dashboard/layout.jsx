@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }) {
       role === "Audiologist &  Speech Therapist"
     ) {
       setUserRole("Doctor");
-    } else if (role === "clinic Manager") {
+    } else if (role === "Clinic Manager") {
       setUserRole("Manager");
     } else if (role === "Admin") {
       setUserRole("Admin");

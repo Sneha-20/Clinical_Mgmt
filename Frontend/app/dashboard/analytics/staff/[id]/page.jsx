@@ -265,9 +265,11 @@ export default function StaffPerformancePage() {
                   <tr>
                     <TableHead>Patient Name</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Visit Type</TableHead>
+                    <TableHead>Service Type</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Device Details</TableHead>
+                    <TableHead>Action Taken</TableHead>
                   </tr>
                 </TableHeader>
                 <TableBody>
@@ -275,8 +277,8 @@ export default function StaffPerformancePage() {
                     <TableRow key={service.visit_id}>
                       <TableCell className="font-medium">{service.patient_name}</TableCell>
                       <TableCell>{service.patient_phone}</TableCell>
-                      <TableCell>{service.visit_type}</TableCell>
-                      <TableCell>{service.appointment_date}</TableCell>
+                      <TableCell>{service.service_type}</TableCell>
+                      <TableCell>{new Date(service.service_date).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           service.status === 'Completed with payment' ? 'bg-green-100 text-green-800' :
@@ -288,6 +290,8 @@ export default function StaffPerformancePage() {
                           {service.status}
                         </span>
                       </TableCell>
+                      <TableCell className="max-w-xs truncate">{service.device_details.name|| '-'} ({service.device_serial_number|| '-'})</TableCell>
+                      <TableCell className="max-w-xs truncate">{service.action_taken || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -301,8 +305,8 @@ export default function StaffPerformancePage() {
                     <TableHead>Patient Name</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Visit Type</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Contacted Date</TableHead>
+                    <TableHead>Contacted Status </TableHead>
                     <TableHead>Contacted By</TableHead>
                   </tr>
                 </TableHeader>
@@ -312,7 +316,7 @@ export default function StaffPerformancePage() {
                       <TableCell className="font-medium">{call.patient_name}</TableCell>
                       <TableCell>{call.patient_phone}</TableCell>
                       <TableCell>{call.visit_type}</TableCell>
-                      <TableCell>{call.appointment_date}</TableCell>
+                      <TableCell>{ new Date(call.contacted_at).toLocaleDateString()}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           call.status === 'Completed with payment' ? 'bg-green-100 text-green-800' :
@@ -321,7 +325,7 @@ export default function StaffPerformancePage() {
                           call.status === 'Pending for Service' ? 'bg-orange-100 text-orange-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {call.status}
+                          {call.contacted === true ? 'Yes' : 'No'} 
                         </span>
                       </TableCell>
                       <TableCell>{call.contacted_by_name}</TableCell>
@@ -338,19 +342,23 @@ export default function StaffPerformancePage() {
                   <tr>
                     <TableHead>Patient Name</TableHead>
                     <TableHead>Phone</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Test Cost</TableHead>
+                    <TableHead>Device (Serial Number)</TableHead>
+                    <TableHead>Trial Dates</TableHead>
+                    <TableHead>Trial Status</TableHead>
+                    <TableHead>Extended Trial</TableHead>
+                    <TableHead>Trial Security Cost</TableHead>
                   </tr>
                 </TableHeader>
                 <TableBody>
-                  {(selectedCard === 'trials' ? performanceData.trial_details : performanceData.booked_trials_details).map((trial) => (
+                  {(selectedCard === 'Trials Conducted' ? performanceData.trial_details : performanceData.booked_trials_details).map((trial) => (
                     <TableRow key={trial.visit_id || trial.id}>
-                      <TableCell className="font-medium">{trial.patient_name}</TableCell>
-                      <TableCell>{trial.patient_phone}</TableCell>
-                      <TableCell>{trial.appointment_date || trial.date}</TableCell>
-                      <TableCell>{trial.status}</TableCell>
-                      <TableCell>{trial.cost}</TableCell>
+                      <TableCell className="font-medium">{trial.assigned_patient}</TableCell>
+                      <TableCell>{trial.assigned_patient_phone}</TableCell>
+                      <TableCell>{trial.device_name} ({trial.serial_number})</TableCell>
+                      <TableCell>{trial.trial_start_date} - {trial.trial_end_date}</TableCell>
+                      <TableCell>{trial.trial_decision}</TableCell>
+                      <TableCell>{trial.extended_trial === true ? 'Yes' : 'No'}</TableCell>
+                      <TableCell>Rs {trial.cost}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
