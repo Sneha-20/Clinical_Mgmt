@@ -1322,8 +1322,8 @@ class ServiceVisitListSerializer(serializers.ModelSerializer):
             item = obj.device.inventory_item
             return {
                 'name': item.product_name,
-                'brand': item.brand,
-                'model': item.model_type,
+                'brand': item.brand.name,
+                'model': item.model_type.name,
                 'purchase_date': obj.device.purchased_at.date() if obj.device.purchased_at else None
             }
         return None
