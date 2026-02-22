@@ -18,9 +18,9 @@ export const getInventoryDropdowns = async (params = {}) => {
     if (category) queryParams.append("category", category);
     if (brand) queryParams.append("brand", brand);
     
-    const url = `${routes.inventoryDropdowns}?${queryParams.toString()}`;
+    const url = `${routes.inventoryItemList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
-    return response;
+    return response || {};
   } catch (error) {
     throw error;
   }
@@ -48,10 +48,11 @@ export const createInventoryItem = async (data) => {
  */
 export const getInventoryItems = async (params = {}) => {
   try {
-    const { page = 1,status } = params;
+    const { page = 1,status, clinicId } = params;
     const queryParams = new URLSearchParams();
     if (page) queryParams.append("page", page.toString());
     if (status && status !== "All") queryParams.append("status", status);
+    if (clinicId && clinicId !== "All") queryParams.append("clinic_id", clinicId.toString());
     
     const url = `${routes.inventoryItems}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
@@ -154,7 +155,12 @@ export const getInventorySerialList = async (params = {}) => {
  */
 export const getPendingInventoryItems = async (params = {}) => {
   try {
-    const { clinic_id = 4 } = params;
+    const { clinic_id } = params;
+    if(clinic_id === "All") {
+      const url = `clinical/inventory/items/pending/`;
+      const response = await apiClient.get(url);
+      return response.data || [];
+    }
     const url = `clinical/inventory/items/pending/?clinic_id=${clinic_id}`;
     const response = await apiClient.get(url);
     return response.data || [];
@@ -174,6 +180,17 @@ export const approvePendingInventoryItem = async (id) => {
     const response = await apiClient.post(url);
     return response;
   } catch (error) {
+    throw error;
+  }
+};
+
+export const getTransferHisotry = async (params = {}) => {
+  try {
+    const url = routes.TransferHistory;;
+    const response = await apiClient.get(url);
+    return response.data;
+  }
+  catch (error) {
     throw error;
   }
 };

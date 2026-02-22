@@ -37,7 +37,7 @@ const [form, setForm] = useState(INITIAL_BOOK_FORM);
 const [extendForm, setExtendForm] = useState(INITIAL_EXTEND_FORM);
 const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
 
-  useEffect(() => {
+  
     const fetchTrialDevice = async ({ page = 1 } = {}) => {
       try {
         dispatch(startLoading());
@@ -54,6 +54,7 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
         dispatch(stopLoading());
       }
     };
+  useEffect(() => {
     fetchTrialDevice({ page: currentPage });
   }, [currentPage]);
 
@@ -67,7 +68,7 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
             label: item.product_name,
             value: item.id,
             brand: item.brand,
-            price: item.price,
+          price: item.unit_price,
           }))
         );
       } catch (err) {
@@ -144,6 +145,7 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
  
     try{
       const res = await bookedDeviceForm(selectedTrialId,payload)
+      fetchTrialDevice({ page: currentPage });
       handleCloseDialog()
     }catch(err){
        handleCloseDialog()

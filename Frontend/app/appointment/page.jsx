@@ -24,7 +24,6 @@ export default function AppointmentPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Appointment booked:", formData);
     alert("Thank you! Your appointment request has been submitted.");
     setFormData({
       name: "",

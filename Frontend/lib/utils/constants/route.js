@@ -1,9 +1,11 @@
 import ReceptionistDashboard from "@/components/modules/receptionist/Receptionistdashboard";
+import { TransferHisotry } from "@/lib/services/inventory";
 
 export const routes = {
   // auth
   register: "/accounts/register/",
   login: "/accounts/token/",
+  changepassword: "/accounts/change-password/",
 
   // clinical
   patientList: "/clinical/patient/visit/",
@@ -30,7 +32,7 @@ export const routes = {
   partsUsed: "clinical/service/parts-used/",
 
   // Inventory Routes
-  inventoryDropdowns: "clinical/inventory/dropdowns/",
+  inventoryItemList: "clinical/inventory/dropdowns/",
   inventoryItemCreate: "clinical/inventory/item/create/",
   inventoryItems: "clinical/inventory/items/",
   inventorySerialNumberCreate: "clinical/inventory/serial-number/create/",
@@ -51,7 +53,8 @@ export const routes = {
    activeTrialDevice:"clinical/trials/",
    inventoryDeviceList:"/clinical/device-booking/inventory/",
    deviceSerialList:"/clinical/device-booking/serial",
-   bookeddevice:"clinical/trials/"
+   bookeddevice:"clinical/trials/",
+   modalList : "/clinical/inventory/trial-available-models/"
   },
 
    billing:{
@@ -89,7 +92,8 @@ export const routes = {
 
   // referal doctors
   referrals: "clinical/doctor-referrals/",
-  patientreferrals: "clinical/patient-referral/"
+  patientreferrals: "clinical/patient-referral/",
+  TransferHistory: "clinical/inventory/transfer/history/"
   
 };
 export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];

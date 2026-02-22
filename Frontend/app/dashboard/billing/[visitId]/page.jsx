@@ -28,7 +28,6 @@ export default function BillingDetailPage() {
       const resdata = response.billDetail || {};
       setBillingDetail(resdata);
     } catch (error) {
-      console.log("error", error);
       showToast({ type: "error", message: "Failed to fetch Billing Detail" });
     } finally {
       dispatch(stopLoading());
@@ -46,10 +45,9 @@ export default function BillingDetailPage() {
       };
       await markBillAsPaid(billingDetail.id, paymentData);
       showToast({ type: "success", message: "Bill marked as paid successfully" });
-      // Refresh the detail
       fetchBillingDetail();
+       router.back()
     } catch (error) {
-      console.log("error", error);
       showToast({ type: "error", message: "Failed to mark bill as paid" });
     } finally {
       dispatch(stopLoading());

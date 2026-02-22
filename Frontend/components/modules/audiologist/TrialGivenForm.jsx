@@ -6,7 +6,7 @@ import TextArea from "@/components/ui/TextArea";
 import DropDown from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
 import { trialGivenSchema } from "@/lib/utils/schema";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // You can later move this to schema file
 const earOptions = [
@@ -34,12 +34,16 @@ export default function TrialGivenForm({
   searchTerm,
   setSearchTerm,
   registerTrialForm,
-  goToDashboard
+  goToDashboard,
+  modalOptions,
+  setSelectedModal,
 }) {
   const [showDropdown, setShowDropdown] = useState(false);
+  const wrapperRef = useRef(null);
   const formik = useFormik({
     initialValues: {
       visit: visitId,
+      model_name: "",
       serial_number: "",
       receiver_size: "",
       ear_fitted: "",
@@ -58,12 +62,29 @@ export default function TrialGivenForm({
     validationSchema: trialGivenSchema,
     onSubmit: async (values) => {
       await registerTrialForm(values);
-      goToDashboard()
+      goToDashboard();
       onSubmitSuccess?.();
     },
   });
+  const selectTrialDevice = (device) => {
+    formik.setFieldValue("serial_number", device);
+    setSearchTerm(device);
+    setShowDropdown(false);
+  };
 
+  useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+      setShowDropdown(false);
+    }
+  };
 
+  document.addEventListener("mousedown", handleClickOutside);
+
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
   return (
     <form onSubmit={formik.handleSubmit} className="space-y-6">
       {/* Device Info */}
@@ -71,32 +92,39 @@ export default function TrialGivenForm({
         <h3 className="font-semibold text-primary mb-3">Device Information</h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+          <DropDown
+            label="Select Modal"
+            options={modalOptions}
+            value={formik.values.model_name}
+            onChange={(n, v) => {formik.setFieldValue("model_name", v),setSelectedModal(v)}}
+            error={formik.errors.model_name}
+            important
+          />
+
+          <div className="relative" ref={wrapperRef}>
             <Input
               label="Serial Number"
               name="serial_number"
               value={searchTerm}
               error={formik.errors.serial_number}
+              onFocus={() => setShowDropdown(true)}
+              // onBlur={() => setShowDropdown(false)}
               onChange={(e) => {
                 const value = e.target.value;
                 setSearchTerm(value);
                 formik.setFieldValue("serial_number", value);
-                setShowDropdown(true);
               }}
+              important
             />
 
-            {showDropdown && searchTerm.length > 0 && (
-              <ul className="max-h-40 overflow-y-auto border border-slate-200 rounded-md mt-1">
+            {showDropdown && (
+              <ul className="absolute bg-white w-full z-[5] max-h-40 overflow-y-auto border border-slate-200 rounded-md mt-1">
                 {trialDeviceList.length > 0 ? (
                   trialDeviceList.map((device) => (
                     <li
                       key={device}
                       className="px-3 py-2 cursor-pointer hover:bg-slate-100"
-                      onClick={() => {
-                        formik.setFieldValue("serial_number", device);
-                        setSearchTerm(device);
-                        setShowDropdown(false);
-                      }}
+                      onClick={() => selectTrialDevice(device)}
                     >
                       {device}
                     </li>
@@ -116,6 +144,7 @@ export default function TrialGivenForm({
             value={formik.values.receiver_size}
             onChange={(n, v) => formik.setFieldValue("receiver_size", v)}
             error={formik.errors.receiver_size}
+            important
           />
 
           <DropDown
@@ -124,6 +153,7 @@ export default function TrialGivenForm({
             value={formik.values.ear_fitted}
             onChange={(n, v) => formik.setFieldValue("ear_fitted", v)}
             error={formik.errors.ear_fitted}
+            important
           />
 
           <DropDown
@@ -132,6 +162,7 @@ export default function TrialGivenForm({
             value={formik.values.dome_type}
             onChange={(n, v) => formik.setFieldValue("dome_type", v)}
             error={formik.errors.dome_type}
+            important
           />
         </div>
       </div>
@@ -141,7 +172,6 @@ export default function TrialGivenForm({
         <h3 className="font-semibold text-primary mb-3">
           Audiology Parameters
         </h3>
-
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Input
             label="SRT Before"
@@ -149,6 +179,7 @@ export default function TrialGivenForm({
             value={formik.values.srt_before}
             onChange={formik.handleChange}
             error={formik.errors.srt_before}
+            important
           />
 
           <Input
@@ -157,6 +188,7 @@ export default function TrialGivenForm({
             value={formik.values.sds_before}
             onChange={formik.handleChange}
             error={formik.errors.sds_before}
+            important
           />
 
           <Input
@@ -165,22 +197,23 @@ export default function TrialGivenForm({
             value={formik.values.ucl_before}
             onChange={formik.handleChange}
             error={formik.errors.ucl_before}
+            important
           />
         </div>
       </div>
 
       {/* Notes */}
       <div className="space-y-4">
-        <TextArea label="Gain Settings" name="gain_settings" formik={formik} />
+        <TextArea label="Gain Settings*" name="gain_settings" formik={formik} />
 
         <TextArea
-          label="Patient Response"
+          label="Patient Response*"
           name="patient_response"
           formik={formik}
         />
 
         <TextArea
-          label="Counselling Notes"
+          label="Counselling Notes*"
           name="counselling_notes"
           formik={formik}
         />
@@ -198,6 +231,7 @@ export default function TrialGivenForm({
             value={formik.values.trial_start_date}
             onChange={formik.handleChange}
             error={formik.errors.trial_start_date}
+            important
           />
 
           <Input
@@ -207,6 +241,7 @@ export default function TrialGivenForm({
             value={formik.values.trial_end_date}
             onChange={formik.handleChange}
             error={formik.errors.trial_end_date}
+            important
           />
 
           <Input
@@ -215,6 +250,7 @@ export default function TrialGivenForm({
             value={formik.values.cost}
             onChange={formik.handleChange}
             error={formik.errors.cost}
+            important
           />
 
           <Input
@@ -223,11 +259,11 @@ export default function TrialGivenForm({
             value={formik.values.discount_offered}
             onChange={formik.handleChange}
             error={formik.errors.discount_offered}
+            important
           />
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t">
         <Button type="submit">Save Trial & Continue</Button>
       </div>

@@ -14,37 +14,11 @@ import useInventory from "@/lib/hooks/useInventory";
 import AddProductModal from "./AddProductModal";
 import AddStockModal from "./AddStockModal";
 import Pagination from "@/components/ui/Pagination";
+import DropDown from "@/components/ui/dropdown";
 
 export default function InventoryManagement() {
-  const [showAddProductModal, setShowAddProductModal] = useState(false);
-  const [showAddStockModal, setShowAddStockModal] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Handlers for edit
-  const handleEditClick = (product) => {
-    // Log click and ensure modal opens *after* selectedProduct is set so the modal
-    // renders in edit mode and pre-fills reliably.
-    console.log("handleEditClick: selecting product", product);
-    setSelectedProduct(product);
-    setTimeout(() => {
-      setShowAddProductModal(true);
-    }, 0);
-  };
-
-  const handleUpdateProduct = async (productData) => {
-    setIsSubmitting(true);
-    console.log("Updating product with data:", productData);
-    const success = await updateItem(selectedProduct.id, productData);
-    if (success) {
-      setShowAddProductModal(false);
-      setSelectedProduct(null);
-    }
-    setIsSubmitting(false);
-  };
-
   const {
+    clinics,
     inventoryItems,
     pagination,
     categories,
@@ -53,6 +27,8 @@ export default function InventoryManagement() {
     filterStatus,
     criticalItemCount,
     lowItemCount,
+    selectedClinic,
+    changeClinic,
     fetchBrands,
     fetchModels,
     createItem,
@@ -63,6 +39,42 @@ export default function InventoryManagement() {
     createNewBrand,
     createNewModel,
   } = useInventory();
+
+  const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const clinicOptions = [
+    { label: "All", value: "All" },
+    ...(clinics?.map((clinic) => ({
+      label: clinic.name,
+      value: clinic.id,
+    })) || []),
+  ];
+  
+  const isSelectedClinicMain =
+    clinics?.find((clinic) => clinic.id === selectedClinic)
+      ?.is_main_inventory == true
+      ? true
+      : false;
+  const handleEditClick = (product) => {
+    setSelectedProduct(product);
+    setTimeout(() => {
+      setShowAddProductModal(true);
+    }, 0);
+  };
+
+  const handleUpdateProduct = async (productData) => {
+    setIsSubmitting(true);
+    const success = await updateItem(selectedProduct.id, productData);
+    if (success) {
+      setShowAddProductModal(false);
+      setSelectedProduct(null);
+    }
+    setIsSubmitting(false);
+  };
 
   const handleAddProduct = async (productData) => {
     setIsSubmitting(true);
@@ -112,16 +124,27 @@ export default function InventoryManagement() {
             Track stock levels and manage transactions
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setSelectedProduct(null);
-            setShowAddProductModal(true);
-          }}
-          className="gap-2 w-full sm:w-auto"
-        >
-          <Plus className="w-4 h-4" />
-          Add Product
-        </Button>
+        <div className="flex flex-row gap-4 items-center">
+          <DropDown
+            options={clinicOptions}
+            value={selectedClinic}
+            placeholder="Select Clinic"
+            onChange={(n, v) => changeClinic(v)}
+            className="min-w-[200px]"
+          />
+          {isSelectedClinicMain && (
+            <Button
+              onClick={() => {
+                setSelectedProduct(null);
+                setShowAddProductModal(true);
+              }}
+              className="gap-2 w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4" />
+              Add Product
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Alerts */}
@@ -231,9 +254,12 @@ export default function InventoryManagement() {
                     <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
                       Status
                     </th>
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
-                      Action
-                    </th>
+                    {isSelectedClinicMain && (
+                      <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
+                        Actions
+                      </th>
+                    )}
+                   
                   </tr>
                 </thead>
                 <tbody>
@@ -259,10 +285,10 @@ export default function InventoryManagement() {
                           {item.category}
                         </td>
                         <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">
-                          {item.brand}
+                          {item.brand_name}
                         </td>
                         <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">
-                          {item.model_type}
+                          {item.model_type_name}
                         </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3 font-semibold">
                           {item.quantity_in_stock || 0}
@@ -292,24 +318,26 @@ export default function InventoryManagement() {
                                 : "Critical"}
                           </span>
                         </td>
-                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3 space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAddStockClick(item)}
-                            className="text-xs"
-                          >
-                            Add Stock
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditClick(item)}
-                            className="text-xs"
-                          >
-                            Edit
-                          </Button>
-                        </td>
+                        {isSelectedClinicMain && (
+                          <td className="text-center py-2 sm:py-3 px-2 sm:px-3 space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddStockClick(item)}
+                              className="text-xs"
+                            >
+                              Add Stock
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(item)}
+                              className="text-xs"
+                            >
+                              Edit
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

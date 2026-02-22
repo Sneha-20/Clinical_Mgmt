@@ -3,7 +3,6 @@
 import React from "react";
 
 export default function Pagination({ page, totalPages, onNext, onPrev }) {
- console.log("test1")
   return (
     <div className="flex items-center justify-end gap-4 mt-4">
       <button

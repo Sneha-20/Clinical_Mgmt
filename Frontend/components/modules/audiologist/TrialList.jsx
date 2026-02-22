@@ -104,8 +104,8 @@ const TrialList = () => {
                 className="border-border/50 hover:border-primary/30 transition-colors"
               >
                 <CardContent className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* <div className="flex items-start justify-between"> */}
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-primary/10">
                           <Package className="h-5 w-5 text-primary" />
@@ -163,18 +163,21 @@ const TrialList = () => {
                           </div>
                         </div>
                       </div>
+                      <div className="flex items-center justify-end gap-2 ml-4">
+                      {(trial.trial_decision === "Follow up" || trial.trial_decision === "TRIAL_ACTIVE") && (
+                        <Button
+                          size="sm"
+                          onClick={() => openDecisionDialog(trial)}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Complete Trial
+                        </Button>
+                      )}
                     </div>
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 ml-4">
-                      <Button
-                        size="sm"
-                        onClick={() => openDecisionDialog(trial)}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Complete Trial
-                      </Button>
                     </div>
-                  </div>
+
+                    
+                  {/* </div> */}
                 </CardContent>
               </Card>
             ))}

@@ -115,7 +115,6 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    console.log("Clinics data changed:", clinics);
     if (clinics.length > 0 && !selectedClinicId) {
       const firstClinicId = clinics[0]?.id;
       if (firstClinicId) {
@@ -146,8 +145,6 @@ export default function AdminDashboard() {
         start_date,
         end_date,
       );
-      console.log("Daily status data fetched:", dailyStatusData);
-
       if (dailyStatusData && dailyStatusData.summary) {
         setDailyStatus(dailyStatusData);
       } else {
@@ -316,7 +313,7 @@ export default function AdminDashboard() {
               onClick={() => setActiveSection('trials')}
               className={`p-4 rounded-lg cursor-pointer ${activeSection === 'trials' ? 'border-2 border-teal-600 shadow' : 'border border-gray-200'}`}>
               <p className="text-sm font-medium text-gray-700">Active Trials</p>
-              <p className="text-2xl font-bold text-gray-900">{dailyStatus?.summary?.active_trials ?? 0}</p>
+              <p className="text-2xl font-bold text-gray-900">{dailyStatus?.summary?.total_trials ?? 0}</p>
             </div>
 
             <div
@@ -411,7 +408,7 @@ export default function AdminDashboard() {
                     {dailyStatus?.trials?.map((trial, idx) => (
                       <TableRow key={trial.id ?? idx}>
                         <TableCell>{trial.assigned_patient__name}</TableCell>
-                        <TableCell>{`${trial.device_inventory_id__brand ?? ''} ${trial.device_inventory_id__model_type ?? ''}`}</TableCell>
+                        <TableCell>{`${trial.device_inventory_id__product_name ?? ''} - ${trial.device_inventory_id__model_type__name ?? ''}`}</TableCell>
                         <TableCell>{trial.visit__clinic__name}</TableCell>
                         <TableCell>{trial.trial_decision}</TableCell>
                         <TableCell>{trial.followup_date ?? '-'}</TableCell>

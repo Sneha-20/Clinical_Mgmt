@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, X, User } from "lucide-react";
 import SidebarNav from "@/components/sidebar/sidebar-nav";
 import { logoutAction } from "@/lib/services/auth";
 import CommonLoader from "@/components/ui/CommonLoader";
@@ -14,23 +14,32 @@ export default function DashboardLayout({ children }) {
   const router = useRouter();
   useEffect(() => {
     const role = localStorage.getItem("userRole");
-     if (!role) {
+    if (!role) {
       router.push("/");
     }
-    if(role === "Audiologist" || role === "Speech" || role === "Audiologist &  Speech Therapist"){
+    if (
+      role === "Audiologist" ||
+      role === "Speech" ||
+      role === "Audiologist &  Speech Therapist"
+    ) {
       setUserRole("Doctor");
-    } else if (role === "Admin" || role === "Clinic Manager") {
-      setUserRole("ClinicOwner");
-    }else{
+    } else if (role === "Clinic Manager") {
+      setUserRole("Manager");
+    } else if (role === "Admin") {
+      setUserRole("Admin");
+    } else {
       setUserRole(role);
     }
-   
   }, [router]);
 
   const handleLogout = () => {
     logoutAction();
     localStorage.removeItem("userRole");
     router.push("/");
+  };
+
+  const handleProfileClick = () => {
+    router.push("/dashboard/profile");
   };
 
   return (
@@ -72,15 +81,26 @@ export default function DashboardLayout({ children }) {
               day: "numeric",
             })}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="gap-2 text-xs lg:text-sm"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleProfileClick}
+              className="gap-2 text-xs lg:text-sm"
+            >
+              <User className="w-4 h-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2 text-xs lg:text-sm"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto p-3 lg:p-6">{children}</div>

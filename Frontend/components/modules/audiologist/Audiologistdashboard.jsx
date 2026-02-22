@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,12 +9,20 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, Clock, CheckCircle } from "lucide-react";
+import { Users, Clock, CheckCircle, Activity } from "lucide-react";
 import useAudiologist from "@/lib/hooks/useAudiologist";
 import AppoinmentListCard from "./components/AppoinmentListCard";
 import Pagination from "@/components/ui/Pagination";
+import { getDashboardStats } from "@/lib/services/dashboard";
 
 export default function AudiologistDashboard() {
+  const [dashboardStats, setDashboardStats] = useState({
+    pending_tests: 0,
+    completed_tests: 0,
+    trials_active: 0,
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
+
   const {
     handleViewPatient,
     showVisitDeteail,
@@ -24,57 +32,31 @@ export default function AudiologistDashboard() {
     totalPendingTest,
     completedtestPage,
     totalCompletedTest,
+    showCaseHistoryform,
     prevCompletedtest,
     nextCompletedTest,
     prevPendingtest,
     nextPendingtest,
   } = useAudiologist();
 
-  const [queue, setQueue] = useState([
-    {
-      id: 1,
-      name: "Rajesh Kumar",
-      complaint: "Hearing problem",
-      testsRequired: ["PTA", "Tympanometry"],
-      referral: "Doctor",
-    },
-    {
-      id: 2,
-      name: "Priya Singh",
-      complaint: "Follow-up Trial",
-      testsRequired: ["Free Field"],
-      referral: "Self",
-    },
-    {
-      id: 3,
-      name: "Vijay Reddy",
-      complaint: "Hearing Testing",
-      testsRequired: ["BERA", "OAE"],
-      referral: "Self",
-    },
-  ]);
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
 
-  // const [completedTests] = useState([
-  //   { id: 1, name: 'Amit Patel', test: 'Pure Tone Audiometry', time: '10:30 AM', result: 'Mild Hearing Loss' },
-  //   { id: 2, name: 'Neha Sharma', test: 'Tympanometry', time: '10:15 AM', result: 'Normal' },
-  // ])
-
-  // const [showCaseHistory, setShowCaseHistory] = useState(false)
-  // const [selectedPatient, setSelectedPatient] = useState(null)
-
-  // const handleStartTest = (patientName) => {
-  //   setSelectedPatient(patientName)
-  //   setShowCaseHistory(true)
-  // }
-
-  // const handleCaseHistorySubmit = (data) => {
-  //   console.log('Case history submitted:', data)
-  //   setShowCaseHistory(false)
-  //   if (selectedPatient) {
-  //     setQueue(queue.filter(p => p.name !== selectedPatient))
-  //   }
-  //   setSelectedPatient(null)
-  // }
+  const fetchDashboardStats = async () => {
+    try {
+      setLoadingStats(true);
+      const response = await getDashboardStats();
+      console.log(response)
+      if (response) {
+        setDashboardStats(response);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -98,7 +80,9 @@ export default function AudiologistDashboard() {
                 <p className="text-slate-600 text-xs sm:text-sm">
                   Patients in Queue
                 </p>
-                <p className="text-xl sm:text-2xl font-bold">{queue.length}</p>
+                <p className="text-xl sm:text-2xl font-bold">
+                  {loadingStats ? "..." : dashboardStats.pending_tests}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -115,7 +99,7 @@ export default function AudiologistDashboard() {
                   Tests Completed
                 </p>
                 <p className="text-xl sm:text-2xl font-bold">
-                  {completedTests.length}
+                  {loadingStats ? "..." : dashboardStats.completed_tests}
                 </p>
               </div>
             </div>
@@ -125,14 +109,16 @@ export default function AudiologistDashboard() {
         <Card className="border-0">
           <CardContent className="pt-4 sm:pt-6">
             <div className="flex items-center gap-3 sm:gap-4">
-              <div className="bg-purple-100 p-2 sm:p-3 rounded-lg flex-shrink-0">
-                <Clock className="w-5 sm:w-6 h-5 sm:h-6 text-purple-600" />
+              <div className="bg-orange-100 p-2 sm:p-3 rounded-lg flex-shrink-0">
+                <Activity className="w-5 sm:w-6 h-5 sm:h-6 text-orange-600" />
               </div>
               <div className="min-w-0">
                 <p className="text-slate-600 text-xs sm:text-sm">
-                  Avg Test Time
+                  Active Trials
                 </p>
-                <p className="text-xl sm:text-2xl font-bold">18 min</p>
+                <p className="text-xl sm:text-2xl font-bold">
+                  {loadingStats ? "..." : dashboardStats.trials_active}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -160,22 +146,27 @@ export default function AudiologistDashboard() {
             {completedTests.map((item) => (
               <div
                 key={item.visit_id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-100 cursor-pointer"
-                onClick={() => showVisitDeteail(item.visit_id)}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-50 "
+                
               >
                 <div>
-                  <h4 className="font-semibold text-sm sm:text-base">
+                  <h4 className="font-semibold text-sm sm:text-base hover:underline cursor-pointer" onClick={() => showVisitDeteail(item.visit_id)}>
                     {item.patient_name}
                   </h4>
                   <p className="text-xs sm:text-sm text-slate-600">
                     {item.visit_type}
                   </p>
                 </div>
-                <div className="text-left sm:text-right">
+                <div className="flex items-center gap-3 text-left sm:text-right">
                   <p className="text-xs sm:text-sm font-medium">
                     {item.present_complaint}
                   </p>
-                  {/* <p className="text-xs text-slate-600">{item.time}</p> */}
+                  {item.step_process == 2 ? (
+                    <Button variant="link" onClick={() => showCaseHistoryform(item.visit_id, item.step_process)}>Add reports</Button>
+                  ):(
+                    <Button variant="link" onClick={() => showCaseHistoryform(item.visit_id, item.step_process)}>Add Trail</Button>
+                   )
+                }
                 </div>
               </div>
             ))}

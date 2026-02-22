@@ -1,7 +1,6 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import Companylogo from "@/public/icon/clinic-logo.png";
 import Image from 'next/image'
 
@@ -11,8 +10,7 @@ export default function SidebarNav({ role, onItemClick }) {
 
   const navItems = {
     Reception: [
-      { icon: '👥', label: 'Dashboard', href: '/dashboard' },
-      // { icon: '📝', label: 'New Patient', href: '/dashboard/patients' },
+      { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
@@ -20,31 +18,30 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
     ],
     Doctor: [
-      { icon: '👥', label: 'Dashboard', href: '/dashboard' },
-      // { icon: '📋', label: 'Case History', href: '/dashboard/case-history' },
-      // { icon: '📊', label: 'Tests', href: '/dashboard/tests' },
+      { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
-      // { icon: '👨‍⚕️', label: 'Counselling', href: '/dashboard/counselling' },
     ],
-    ClinicOwner: [
-      { icon: '📊', label: 'Dashboard', href: '/dashboard' },
+    Manager: [
+      { icon: '📊', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
-      { icon: '👥', label: 'Staff', href: '/dashboard/staff' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
-      { icon: '💼', label: 'Reports', href: '/dashboard/reports' },
+      { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
+      { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
+    ],
+    Admin: [
+      { icon: '📊', label: 'Dashboard', href: '/dashboard/home' },
+      { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
+      { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
+      { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
-            { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
-
-
     ],
     Speech: [
-      { icon: '👥', label: 'Dashboard', href: '/dashboard' },
+      { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📝', label: 'Assessment', href: '/dashboard/assessment' },
       { icon: '📊', label: 'Progress', href: '/dashboard/progress' },
       { icon: '👨‍👩‍👧', label: 'Reports', href: '/dashboard/reports' },
     ],
   }
-  // console.log("SidebarNav role:", role);
   const items = navItems[role] || []
 
   return (
@@ -68,9 +65,7 @@ export default function SidebarNav({ role, onItemClick }) {
       {/* Role Badge */}
       <div className="px-4 py-3 text-xs">
         <div className="px-2 py-1 bg-sidebar-accent text-primaryText rounded-md text-center font-medium">
-          {role === "speech"
-            ? "Speech Therapist"
-            : role.charAt(0).toUpperCase() + role.slice(1)}
+          {role.charAt(0).toUpperCase() + role.slice(1)}
         </div>
       </div>
 
