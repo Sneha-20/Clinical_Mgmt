@@ -45,7 +45,6 @@ export default function InventoryManagement() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  console.log("selected clinic", selectedClinic);
 
   const clinicOptions = [
     { label: "All", value: "All" },
@@ -54,6 +53,7 @@ export default function InventoryManagement() {
       value: clinic.id,
     })) || []),
   ];
+  
   const isSelectedClinicMain =
     clinics?.find((clinic) => clinic.id === selectedClinic)
       ?.is_main_inventory == true

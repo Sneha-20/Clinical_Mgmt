@@ -155,7 +155,12 @@ export const getInventorySerialList = async (params = {}) => {
  */
 export const getPendingInventoryItems = async (params = {}) => {
   try {
-    const { clinic_id = 4 } = params;
+    const { clinic_id } = params;
+    if(clinic_id === "All") {
+      const url = `clinical/inventory/items/pending/`;
+      const response = await apiClient.get(url);
+      return response.data || [];
+    }
     const url = `clinical/inventory/items/pending/?clinic_id=${clinic_id}`;
     const response = await apiClient.get(url);
     return response.data || [];
