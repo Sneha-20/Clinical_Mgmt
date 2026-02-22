@@ -12,7 +12,7 @@ import {
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
 import { showToast } from "@/components/ui/toast";
-import { set } from "date-fns";
+import { getAllClinics } from "../services/dashboard";
 
 export default function useInventory() {
   const dispatch = useDispatch();
@@ -27,18 +27,33 @@ export default function useInventory() {
   const [models, setModels] = useState([]);
   const [lowItemCount, setLowItemCount] = useState(0);
   const [criticalItemCount, setCriticalItemCount] = useState(0);
-
+  const [clinics, setClinics] = useState([]);
   // Current status filter (All | Critical | Low)
+  const [selectedClinic, setSelectedClinic] = useState(null);
+
   const [filterStatus, setFilterStatus] = useState("All");
 
+   useEffect(() => {
+     const fetchClinics = async () => {
+       try {
+         const data = await getAllClinics();
+         setClinics(data);
+       } catch (error) {
+         console.error("Error fetching clinics:", error);
+       }
+     };
+
+     fetchClinics();
+   }, []);
+
+  
   // Fetch inventory items list
   const fetchInventoryItems = useCallback(
-    async (page = 1, statusParam) => {
+    async (page = 1, statusParam, clinicId = selectedClinic) => {
       const status = statusParam ?? filterStatus;
       try {
         dispatch(startLoading());
-        const data = await getInventoryItems({ page, status });
-        console.log("Data fetched:", data);
+        const data = await getInventoryItems({ page, status, clinicId });
         setInventoryItems(data.items || []);
         setLowItemCount(data.lowItem || 0);
         setCriticalItemCount(data.criticalItem || 0);
@@ -62,7 +77,8 @@ export default function useInventory() {
   const fetchCategories = useCallback(async () => {
     try {
       const data = await getInventoryDropdowns();
-      setCategories(data?.categories || []);
+      console.log("Categories fetched:", data);
+      setCategories(data.categories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -116,6 +132,13 @@ export default function useInventory() {
     },
     [fetchInventoryItems]
   );
+    const changeClinic = useCallback(
+      async (clinicId) => {
+        setSelectedClinic(clinicId);
+        await fetchInventoryItems(1, filterStatus, clinicId);
+      },
+      [fetchInventoryItems],
+    );
 
   // Create inventory item
   const createItem = useCallback(
@@ -247,6 +270,7 @@ export default function useInventory() {
   }, [fetchInventoryItems, fetchCategories]);
 
   return {
+    clinics,
     inventoryItems,
     pagination,
     categories,
@@ -255,6 +279,9 @@ export default function useInventory() {
     filterStatus,
     criticalItemCount,
     lowItemCount,
+    selectedClinic, 
+    changeClinic,
+    setSelectedClinic,
     fetchInventoryItems,
     fetchCategories,
     fetchBrands,

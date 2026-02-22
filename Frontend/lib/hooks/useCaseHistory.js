@@ -8,6 +8,7 @@ import {
   addTrialForm,
   deleteTestReport,
   getAllTestFile,
+  getModalList,
   getpatientHistoryById,
   getTrialDevice,
 } from "../services/patientCaseHistory";
@@ -23,7 +24,9 @@ export default function useCaseHistory() {
   const [testFileList, setTestFileList] = useState([]);
   const [visitId, setVisitId] = useState(null);
   const [trialDeviceList, setTrialDeviceList] = useState([]);
-   const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [modalList, setModalList] = useState([]);
+  const [selectedModal, setSelectedModal] = useState(null);
 
   const fetchPatientFormData = async (id) => {
     if (!id) return;
@@ -39,25 +42,43 @@ export default function useCaseHistory() {
     }
   };
 
+  const fetchModalList = async () => {
+    try {
+      const res = await getModalList();
+      console.log("Modal List Response:", res);
+      setModalList(res.data || []);
+    } catch (e) {
+      console.log("Total fetch error:", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchModalList();
+  }, []);
   
-const fetchTrialDeviceList = async ({ search }) => {
-  try {
-    const res = await getTrialDevice({ serial_number: search });
-    setTrialDeviceList(res);
-  } catch (err) {
-    showToast({
-      type: "error",
-      message: "Failed to fetch trial device list",
-    });
-  }
-};
 
+  const fetchTrialDeviceList = async ({ search }) => {
+    console.log("searchhhhh", search)
+    try {
+      const res = await getTrialDevice({
+        serial_number: search,
+        modal_id: selectedModal,
+      });
+      console.log("Trial Device List Response:", res);
+      setTrialDeviceList(res);
+    } catch (err) {
+      showToast({
+        type: "error",
+        message: "Failed to fetch trial device list",
+      });
+    }
+  };
 
-useEffect(() => {
-  if (searchTerm?.length > 0) {
-    fetchTrialDeviceList({ search: searchTerm });
-  }
-}, [searchTerm]);
+  useEffect(() => {
+    if (selectedModal) {
+      fetchTrialDeviceList({ search: searchTerm });
+    }
+  }, [searchTerm, selectedModal]);
 
   const registerTrialForm = async (data) => {
     dispatch(startLoading());
@@ -77,7 +98,6 @@ useEffect(() => {
     }
   };
 
-
   const registerCasehistory = async (data) => {
     dispatch(startLoading());
     try {
@@ -96,8 +116,6 @@ useEffect(() => {
     }
   };
 
-  
-
   const handleFileSubmit = async () => {
     if (!file || !testType) {
       showToast({
@@ -115,7 +133,7 @@ useEffect(() => {
       const res = await addTestFile(formData);
       showToast({
         type: "success",
-        message: res?.status || "File uploaded successfully",
+        message: res?.message || "File uploaded successfully",
       });
 
       // Reset
@@ -133,8 +151,6 @@ useEffect(() => {
       dispatch(stopLoading());
     }
   };
-  
-  
 
   const fetchTestFile = async () => {
     try {
@@ -145,16 +161,16 @@ useEffect(() => {
     }
   };
 
-    const handleDeleteReport = async (fileId) => {
+  const handleDeleteReport = async (fileId) => {
     try {
       const res = await deleteTestReport(fileId);
-       showToast({
+      showToast({
         type: "success",
         message: res?.message || "File deleted successfully",
       });
       fetchTestFile();
     } catch (err) {
-       showToast({
+      showToast({
         type: "error",
         message: err?.message || "Failed to delete file ",
       });
@@ -164,7 +180,8 @@ useEffect(() => {
 
   useEffect(() => {
     fetchTestFile();
-  },[])
+  }, []);
+  console.log("selected Modal", selectedModal);
 
   return {
     patientsCaseHistory,
@@ -175,8 +192,9 @@ useEffect(() => {
     testFileList,
     trialDeviceList,
     searchTerm,
+    modalList,
     setSearchTerm,
-    // handleSubmitTest,
+    setSelectedModal,
     handleDeleteReport,
     setIsModalOpen,
     setTestType,

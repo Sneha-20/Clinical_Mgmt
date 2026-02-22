@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
 import { showToast } from "@/components/ui/toast";
 import { useRouter } from "next/navigation";
+import PasswordField from "./PasswordField";
 
 export default function LoginForm({ onLogin }) {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function LoginForm({ onLogin }) {
   const [error, setError] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false); // Ref to prevent multiple calls
+  const [showPassword, setShowPassword] = useState(false);
   
   const clinicOptions = useMemo(
     () =>
@@ -99,19 +101,15 @@ export default function LoginForm({ onLogin }) {
   const handleLogin = useCallback(
     async (e) => {
       e.preventDefault();
-      
-      // Prevent multiple simultaneous calls
       if (isSubmittingRef.current) {
         return;
       }
 
       try {
-        // Create validation data - exclude clinicId if isAdmin is true
         const validationData = userData.isAdmin
           ? { email: userData.email, password: userData.password }
           : userData;
         
-        // Create a custom schema for validation
         const customSchema = userData.isAdmin
           ? loginSchema.omit(["clinicId"])
           : loginSchema;
@@ -131,18 +129,12 @@ export default function LoginForm({ onLogin }) {
         };
 
         const res = await login(payload);
-        router.push("/dashboard");
-        // const role = res?.data?.user?.role?.name || res?.user?.role?.name;
-        // if (role) {
-        //   onLogin(role);
-        // }
-        
+        router.push("/dashboard/home");
         showToast({
           type: "success",
           message: res?.message || "Login successful!",
         });
       } catch (error) {
-        console.log("Login error:", error);
         if (error.name === "ValidationError") {
           setError(extractYupErrors(error));
         } else {
@@ -175,13 +167,15 @@ export default function LoginForm({ onLogin }) {
           />
         </div>
         <div>
-          <Input
+          <PasswordField
             label="Password"
-            type="password"
+            // type="password"
             name="password"
             placeholder="••••••••"
             value={userData.password}
             onChange={handleChange}
+            setShowPassword={setShowPassword}
+            showPassword={showPassword}
             className="bg-input text-sm"
             error={error.password}
           />

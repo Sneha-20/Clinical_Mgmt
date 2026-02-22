@@ -26,10 +26,8 @@ export default function SchedulAppoinment({
     };
     searchPatientsList();
   }, [searchTerm]);
-      console.log("searchTerm",searchTerm)
 
   const handleSelectPatient = (patientId) => {
-    console.log("patientId",patientId)
     setShowSelctedPatientId(patientId);
     setShowVisitForm(true);
     onClose();

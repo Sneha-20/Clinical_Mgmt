@@ -4,6 +4,7 @@ import Backbutton from "@/components/ui/Backbutton";
 import CommonBadge from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import useAudiologist from "@/lib/hooks/useAudiologist";
 import usePatientVisitdata from "@/lib/hooks/usePatientVisitData";
 import {
   User,
@@ -19,6 +20,7 @@ import {
 
 export default function PatientVisitDetail({ visitId }) {
   const { patientVisitdetails } = usePatientVisitdata(visitId);
+ const { showCaseHistoryform } = useAudiologist();
 
   // ✅ Destructured & renamed variables
   const {
@@ -124,6 +126,8 @@ export default function PatientVisitDetail({ visitId }) {
 
               <div className="space-y-3">
                 <div>
+
+                <div>
                   <p className="text-sm text-muted-foreground">Service Type</p>
                   <p className="font-medium capitalize">
                     {visitInfo.service_type}
@@ -135,6 +139,11 @@ export default function PatientVisitDetail({ visitId }) {
                   </p>
                   <p className="font-medium">{visitInfo.present_complaint}</p>
                 </div>
+
+                </div>
+              <Button variant="link" onClick={() => showCaseHistoryform(visitInfo.visit_id, 2)}>Add reports</Button>
+                
+
               </div>
             </div>
           </CardContent>
@@ -171,9 +180,6 @@ export default function PatientVisitDetail({ visitId }) {
               <p className="rounded-full px-2 py-1 bg-teal-100 text-xs text-teal-700">
                 {testReports.files_count} file(s)
               </p>
-              {/* <Badge variant="secondary" className="ml-2">
-                {testReports.files_count} file(s)
-              </Badge> */}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -208,6 +214,7 @@ export default function PatientVisitDetail({ visitId }) {
                     </Button>
                   </div>
                 ))}
+
               </div>
             ) : (
               <p className="text-muted-foreground text-center py-4">

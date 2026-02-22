@@ -4,13 +4,11 @@ import { ArrowRight, Minus, Package, Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Textarea from "@/components/ui/textarea";
+import TextArea from '@/components/ui/TextArea'
 import DropDown from "@/components/ui/dropdown";
-import Badge from "@/components/ui/badge";
-import useTransferProducts from "./hooks/useTransferProducts";
 import CommonBadge from "@/components/ui/badge";
 
-export default function TransferForm() {
+export default function TransferForm({ transferHook }) {
   const {
     toClinicId,
     notes,
@@ -23,22 +21,21 @@ export default function TransferForm() {
     inventoryItems,
     selectedItem,
     submitting,
+    availableSerials,
     setToClinicId,
     setNotes,
     setSelectedItemId,
     setTempQuantity,
     setTempSerialInput,
-    addTempSerial,
     removeTempSerial,
     addProduct,
     removeProduct,
     updateQuantity,
     setProductQuantity,
     toggleSerial,
-    availableSerials,
     toggleAvailableSerial,
     handleSubmit,
-  } = useTransferProducts();
+  } = transferHook;
   
   
 
@@ -78,7 +75,7 @@ export default function TransferForm() {
             </Label>
             <DropDown
               options={clinics
-                .filter((c) => c.id !== 1)
+                .filter((c) => c.is_main_inventory !== true)
                 .map((c) => ({ value: String(c.id), label: c.name }))}
               value={toClinicId}
               onChange={(name, val) => setToClinicId(val)}
@@ -100,7 +97,7 @@ export default function TransferForm() {
                   // .filter((i) => !products.find((p) => p.item.id === i.id))
                   .map((i) => ({
                     value: String(i.id),
-                    label: `${i.product_name} — ${i.stock} in stock`,
+                    label: `${i.product_name} — ${i.quantity_in_stock} in stock`,
                   }))}
                 value={selectedItemId}
                 onChange={(name, val) => setSelectedItemId(val)}
@@ -114,7 +111,7 @@ export default function TransferForm() {
                   <Input
                     type="number"
                     min={1}
-                    max={selectedItem.stock ?? undefined}
+                    max={selectedItem.quantity_in_stock ?? undefined}
                     value={tempQuantity}
                     onChange={(e) => setTempQuantity(e.target.value)}
                     className="w-28"
@@ -304,7 +301,8 @@ export default function TransferForm() {
           <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Notes (Optional)
           </Label>
-          <Textarea
+          <TextArea
+            name="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add any notes about this transfer..."

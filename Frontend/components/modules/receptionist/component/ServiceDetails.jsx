@@ -8,6 +8,7 @@ import { getTgaServiceDetails, updateTgaService, getPartsUsed } from "@/lib/serv
 import { showToast } from "@/components/ui/toast";
 import { tgaServiceStatusOptions } from "@/lib/utils/constants/staticValue";
 import { routes } from "@/lib/utils/constants/route";
+import TextArea from '@/components/ui/TextArea'
 
 export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) {
   const [service, setService] = useState(null);
@@ -30,7 +31,6 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
     setLoading(true);
     try {
       const data = await getTgaServiceDetails(serviceId);
-      console.log("Service details:", data);
       setService(data);
       setFormData({
         action_taken: data.action_taken || "",
@@ -316,7 +316,7 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
               Action Taken
             </label>
             {editing ? (
-              <textarea
+              <TextArea
                 className="w-full border border-gray-300 rounded-md p-2"
                 rows={4}
                 value={formData.action_taken}

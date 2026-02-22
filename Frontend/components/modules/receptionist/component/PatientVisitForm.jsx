@@ -15,6 +15,7 @@ import {
   complaintOptions,
 } from "@/lib/utils/constants/staticValue";
 import { showToast } from "@/components/ui/toast";
+import TextArea from '@/components/ui/TextArea'
 
 export default function PatientVisitForm({
   onClose,
@@ -23,6 +24,7 @@ export default function PatientVisitForm({
   doctorList,
   isModalOpen
 }) {
+  const [errors, setErrors] = useState({});
   const initialVisitDetails = {
     visit_type: "",
     present_complaint: "",
@@ -30,13 +32,13 @@ export default function PatientVisitForm({
     test_requested: [],
     notes: "",
   };
-
   const getInitialFormState = (patientId) => ({
     patient: patientId || null,
     service_type: "clinic",
     appointment_date: "",
     visit_details: [initialVisitDetails],
   });
+
   useEffect(() => {
   if (showSelctedPatientId) {
     setFormData((prev) => ({
@@ -45,6 +47,7 @@ export default function PatientVisitForm({
     }));
   }
 }, [showSelctedPatientId]);
+
   const serviceOption = [
     { label: "Clinic", value: "clinic" },
     { label: "Home", value: "home" },
@@ -53,10 +56,7 @@ export default function PatientVisitForm({
     label: doctor.name,
     value: doctor.id,
   }));
-  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState(getInitialFormState(showSelctedPatientId));
-  
-  
   const updateField = useCallback(
     (name, value) => {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -71,9 +71,9 @@ export default function PatientVisitForm({
     updatedVisit[index] = { ...updatedVisit[index], [key]: value };
     setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
   };
+
   const handleAddMoreVisit = () => {
     const lastVisit = formData.visit_details[formData.visit_details.length - 1];
-
     if (!lastVisit.visit_type || !lastVisit.present_complaint) {
       return showToast({
         type: "error",
@@ -101,14 +101,11 @@ export default function PatientVisitForm({
     try {
       await visitPatientSchema.validate(formData, { abortEarly: false });
       setErrors({});
-
       if (onSubmit) await onSubmit(formData);
-
       // Reset form to initial state after successful submit
       setFormData(getInitialFormState(showSelctedPatientId));
       setErrors({});
     } catch (error) {
-      console.log("Validation errors:", extractYupErrors(error));
       if (error.name === "ValidationError") {
         setErrors(extractYupErrors(error));
       } else {
@@ -142,7 +139,7 @@ export default function PatientVisitForm({
           )}
         </div>
         <CommonDatePicker
-          label="Appointment Date"
+          label="Appointment Date*"
           selectedDate={formData.appointment_date ? new Date(formData.appointment_date) : null}
           onChange={(date) => updateField("appointment_date", format(date, "yyyy-MM-dd"))}
           minDate={new Date()}
@@ -183,11 +180,13 @@ export default function PatientVisitForm({
               onChange={(n, v) =>
                 updateVisitDetails(index, "present_complaint", v)
               }
+              className="mt-2"
             />
 
             <div className="mt-2">
               <label className="text-sm font-medium mb-1 block">Notes</label>
-              <textarea
+              <TextArea
+                name={`visit_details.${index}.notes`}
                 className="w-full px-3 py-2 border rounded-md"
                 placeholder="Notes about complaint"
                 value={visit.notes}

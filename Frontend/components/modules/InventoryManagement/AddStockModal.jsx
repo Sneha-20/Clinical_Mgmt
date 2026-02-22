@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Modal from "@/components/ui/Modal";
 import { getInventorySerialList } from "@/lib/services/inventory";
+import TextArea from '@/components/ui/TextArea'
 
 export default function AddStockModal({
   isOpen,
@@ -120,7 +121,7 @@ export default function AddStockModal({
             <label className="text-sm font-medium mb-1 block">
               Serial Numbers (comma-separated) <span className="text-red-500">*</span>
             </label>
-            <textarea
+            <TextArea
               name="serial_numbers"
               value={formData.serial_numbers}
               onChange={handleChange}

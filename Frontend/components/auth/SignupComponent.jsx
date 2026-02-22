@@ -26,6 +26,7 @@ import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { routes } from "@/lib/utils/constants/route";
 import { useRouter } from "next/navigation";
 import CommonCheckbox from "../ui/CommonCheckbox";
+import PasswordField from "./component/PasswordField";
 
 export default function SignupComponent() {
   const dispatch = useDispatch();
@@ -146,7 +147,6 @@ export default function SignupComponent() {
         phone: formData.phone,
       };
       const res = await register(payload);
-      console.log("Registration response:", res);
       showToast({
         type: "success",
         message: res?.message || "Account created successfully!",
@@ -154,7 +154,6 @@ export default function SignupComponent() {
       router.push(routes.pages.login);
       handleSignup(formData.role_id);
     } catch (error) {
-      console.log("Error during registration:", error);
       if (error.name === "ValidationError") {
         setErrors(extractYupErrors(error));
       } else {
@@ -313,36 +312,3 @@ export default function SignupComponent() {
   );
 }
 
-/* ----------------------------------
-   Reusable Sub Components
----------------------------------- */
-
-function PasswordField({
-  label,
-  showPassword,
-  setShowPassword,
-  error,
-  ...props
-}) {
-  return (
-    <div className="relative">
-      <label className="block text-sm font-medium mb-1.5">{label}</label>
-      <Input
-        {...props}
-        type={showPassword ? "text" : "password"}
-        className="bg-input text-sm"
-        placeholder="••••••••"
-      />
-
-      <button
-        type="button"
-        className="absolute right-2 top-[38px] text-gray-500"
-        onClick={() => setShowPassword((prev) => !prev)}
-      >
-        {showPassword ? "🙈" : "👁️"}
-      </button>
-
-      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-    </div>
-  );
-}

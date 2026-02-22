@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { X, Download, Printer } from 'lucide-react'
+import TextArea from '@/components/ui/TextArea'
 
 export default function BillingForm({ onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -120,7 +121,8 @@ export default function BillingForm({ onClose, onSubmit }) {
             {/* Notes */}
             <div>
               <label className="block text-xs sm:text-sm font-medium mb-1.5">Additional Notes</label>
-              <textarea
+              <TextArea
+                name="notes"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Warranty terms, service conditions, etc..."

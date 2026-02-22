@@ -434,5 +434,68 @@ export const GetInventoryDropdowns = async () => {
   }
 };
 
+/**
+ * Get trial performance data for staff
+ * @param {number} staffId - Staff ID
+ * @param {string} queryParams - Additional query parameters (optional)
+ * @returns {Promise<Object>} Trial performance data
+ */
+export const getTrialPerformance = async (staffId, queryParams = '') => {
+  try {
+    let url = `clinical/admin/trial-performance/?staff_id=${staffId}`;
+    if (queryParams) {
+      url += `&${queryParams}`;
+    }
+    const response = await apiClient.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Trial performance fetch error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get user profile data
+ * @returns {Promise<Object>} User profile data
+ */
+export const getUserProfile = async () => {
+  try {
+    const url = 'accounts/profile/';
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    console.error("User profile fetch error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get test types for a visit
+ * @param {number} visitId - Visit ID
+ * @returns {Promise<Object>} Test types data
+ */
+export const getTestTypes = async (visitId) => {
+  try {
+    const url = `clinical/visit/${visitId}/test-types/`;
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    console.error("Test types fetch error:", error);
+    throw error;
+  }
+};
+
+
+// Change Password 
+export const changepassword = async (data) => {
+  try {
+    const url = `${routes.changepassword}`;
+    const response = await apiClient.post(url, data);
+    return response;
+  } catch (error) {
+    console.error("Change password error:", error);
+    throw error;
+  }
+};
 
 

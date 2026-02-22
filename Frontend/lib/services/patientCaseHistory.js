@@ -84,18 +84,31 @@ export const deleteTestReport = async (fileId) => {
 //     throw error;
 //   }
 // };
-export const getTrialDevice = async ({ serial_number = "" }) => {
+export const getTrialDevice = async ({ serial_number = "", modal_id = ""}) => {
+   const queryParams = new URLSearchParams();
+    if (modal_id) queryParams.append("model_type_id", modal_id);
   try {
     const query = serial_number
-      ? `?serial_number=${encodeURIComponent(serial_number)}`
-      : "";
+      ? `?serial_number=${encodeURIComponent(serial_number)}&`
+      : "?";
 
-    const url = `${routes.audiologist.trialDeviceList}${query}`;
+    const url = `${routes.audiologist.trialDeviceList}${query}${queryParams.toString() ? `${queryParams.toString()}` : ""}`;
 
     const response = await apiClient.get(url);
     return response?.data || [];
   } catch (error) {
     console.error("❌ failed to fetch trial device list", error);
+    throw error;
+  }
+};
+
+export const getModalList = async () => {
+  try {
+    const url = `${routes.audiologist.modalList}`; 
+    const response = await apiClient.get(url);
+    return response;
+  }
+  catch (error) {
     throw error;
   }
 };

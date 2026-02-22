@@ -204,8 +204,6 @@ export default function CompleteTrialModal({
           {selectedAction === "BOOK" && (
             <Button
               onClick={() => handleCompleteTrials()}
-              //   disabled={!selectedInventoryDevice}
-              //   className="bg-success hover:bg-success/90"
             >
               Confirm Booking
             </Button>
