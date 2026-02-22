@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import TextArea from '@/components/ui/TextArea'
 import DropDown from "@/components/ui/dropdown";
 import Modal from "@/components/ui/Modal";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
@@ -442,7 +443,7 @@ export default function AddProductModal({
               Serial Numbers (comma-separated){" "}
               <span className="text-red-500">*</span>
             </label>
-            <textarea
+            <TextArea
               name="serial_numbers"
               value={formData.serial_numbers}
               onChange={handleChange}
@@ -478,7 +479,7 @@ export default function AddProductModal({
 
         <div>
           <label className="text-sm font-medium mb-1 block">Description</label>
-          <textarea
+          <TextArea
             name="description"
             value={formData.description}
             onChange={handleChange}

@@ -15,6 +15,7 @@ import {
   complaintOptions,
 } from "@/lib/utils/constants/staticValue";
 import { showToast } from "@/components/ui/toast";
+import TextArea from '@/components/ui/TextArea'
 
 export default function PatientVisitForm({
   onClose,
@@ -184,7 +185,8 @@ export default function PatientVisitForm({
 
             <div className="mt-2">
               <label className="text-sm font-medium mb-1 block">Notes</label>
-              <textarea
+              <TextArea
+                name={`visit_details.${index}.notes`}
                 className="w-full px-3 py-2 border rounded-md"
                 placeholder="Notes about complaint"
                 value={visit.notes}

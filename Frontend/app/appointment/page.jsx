@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import TextArea from '@/components/ui/TextArea'
 
 export default function AppointmentPage() {
   const [formData, setFormData] = useState({
@@ -146,14 +147,14 @@ export default function AppointmentPage() {
                 <label className="block text-sm font-medium mb-2">
                   Additional Message
                 </label>
-                <textarea
+                <TextArea
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
                   placeholder="Tell us about your concern..."
-                  rows="4"
+                  rows={4}
                   className="w-full p-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                ></textarea>
+                />
               </div>
 
               <Button type="submit" className="w-full py-3 text-lg">

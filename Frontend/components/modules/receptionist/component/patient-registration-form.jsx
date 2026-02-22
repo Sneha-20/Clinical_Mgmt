@@ -12,6 +12,7 @@ import CommonRadio from "@/components/ui/CommonRadio";
 import { patientSchema } from "@/lib/utils/schema";
 import { showToast } from "@/components/ui/toast";
 import { format } from "date-fns";
+import TextArea from '@/components/ui/TextArea'
 
 import {
   genderOptions,
@@ -333,8 +334,8 @@ export default function PatientRegistrationForm({
                   }
                   className="mt-3"
                 />
-                <textarea
-                  className="w-full border rounded p-2 mt-2"
+                <TextArea
+                  name={`visit_details.${index}.notes`}
                   value={visit.notes}
                   onChange={(e) =>
                     formik.setFieldValue(
@@ -342,6 +343,7 @@ export default function PatientRegistrationForm({
                       e.target.value
                     )
                   }
+                  className="w-full border rounded p-2 mt-2"
                 />
 
                 {/* Tests Required */}

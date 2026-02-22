@@ -14,6 +14,7 @@ import {
 } from "@/lib/services/dashboard";
 import { showToast } from "@/components/ui/toast";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
+import TextArea from '@/components/ui/TextArea'
 
 export default function ServiceRequestForm({ onClose, onSuccess }) {
   const dispatch = useDispatch();
@@ -150,7 +151,7 @@ export default function ServiceRequestForm({ onClose, onSuccess }) {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Complaint
           </label>
-          <textarea
+          <TextArea
             className="w-full border border-gray-300 rounded-md p-2"
             rows={4}
             value={formData.complaint}

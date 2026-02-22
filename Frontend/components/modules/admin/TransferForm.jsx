@@ -4,7 +4,7 @@ import { ArrowRight, Minus, Package, Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Textarea from "@/components/ui/textarea";
+import TextArea from '@/components/ui/TextArea'
 import DropDown from "@/components/ui/dropdown";
 import CommonBadge from "@/components/ui/badge";
 
@@ -301,7 +301,8 @@ export default function TransferForm({ transferHook }) {
           <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Notes (Optional)
           </Label>
-          <Textarea
+          <TextArea
+            name="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Add any notes about this transfer..."

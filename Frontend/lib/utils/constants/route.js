@@ -1,6 +1,3 @@
-import ReceptionistDashboard from "@/components/modules/receptionist/Receptionistdashboard";
-import { TransferHisotry } from "@/lib/services/inventory";
-
 export const routes = {
   // auth
   register: "/accounts/register/",
