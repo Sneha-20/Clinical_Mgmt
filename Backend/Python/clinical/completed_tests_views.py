@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db import models
 from clinical_be.utils.pagination import StandardResultsSetPagination
-from .models import PatientVisit, AudiologistCaseHistory, VisitTestPerformed, TestUpload
+from .models import PatientVisit, AudiologistCaseHistory, VisitTestPerformed, TestUpload, Trial
 
 
 class CompletedTestsListView(APIView):
@@ -83,7 +83,9 @@ class CompletedTestsListView(APIView):
                     'present_complaint': visit.present_complaint,
                     'test_performed': test_types,
                     'total_test_performed': len(test_types),
-                    'step_process': visit.step_process
+                    'step_process': visit.step_process,
+                    'is_test_uploaded': bool(test_files_count_map.get(visit.id, 0)),
+                    'is_trial_done': Trial.objects.filter(visit=visit).exists()
                 })
             
             return paginator.get_paginated_response(simple_list)
