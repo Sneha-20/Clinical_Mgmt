@@ -62,6 +62,7 @@ class TrialDeviceSerialListView(generics.ListAPIView):
                 inventory_item__use_in_trial=True,
                 inventory_item__model_type_id=model_type_id,
                 status='In Stock'
+                inventory_item__clinic=self.request.user.clinic
             ).exclude(
                 serial_number__in=used_serial_numbers
             )
