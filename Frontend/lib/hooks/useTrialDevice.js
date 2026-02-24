@@ -7,6 +7,7 @@ import {
   fetchInventoryDevice,
   fetchSerialList,
   getActiveTrialDeviceList,
+  returnTrialDevice,
 } from "../services/audiologist";
 
 const INITIAL_BOOK_FORM = {
@@ -145,6 +146,8 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
  
     try{
       const res = await bookedDeviceForm(selectedTrialId,payload)
+      const returnDeviceResponse = await returnTrialDevice(selectedTrial?.serial_number,"Device returned after trial completion");
+      console.log("Return Device Response:", returnDeviceResponse);
       fetchTrialDevice({ page: currentPage });
       handleCloseDialog()
     }catch(err){
