@@ -28,6 +28,8 @@ export default function InventoryManagement() {
     criticalItemCount,
     lowItemCount,
     selectedClinic,
+     showTrial, setShowTrial,
+    changeTab,
     changeClinic,
     fetchBrands,
     fetchModels,
@@ -39,6 +41,7 @@ export default function InventoryManagement() {
     createNewBrand,
     createNewModel,
   } = useInventory();
+
 
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
@@ -129,7 +132,7 @@ export default function InventoryManagement() {
             options={clinicOptions}
             value={selectedClinic}
             placeholder="Select Clinic"
-            onChange={(n, v) => changeClinic(v)}
+            onChange={(n, v) => changeClinic(v, showTrial)}
             className="min-w-[200px]"
           />
           {isSelectedClinicMain && (
@@ -215,10 +218,34 @@ export default function InventoryManagement() {
       {/* Inventory Table */}
       <Card>
         <CardHeader className="pb-3 sm:pb-4">
-          <CardTitle className="text-lg sm:text-xl">Inventory Items</CardTitle>
-          <CardDescription className="text-xs sm:text-sm">
-            Current stock status and product information
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg sm:text-xl">Inventory Items</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">Current stock status and product information</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => changeTab(false)}
+                // onClick={async () => {
+                //   setShowTrial(false);
+                //   await fetchInventoryItems(1, filterStatus, selectedClinic, false);
+                // }}
+                className={`px-3 py-1 rounded-t-md border-b-2 ${!showTrial ? 'border-primary bg-white' : 'border-transparent bg-transparent text-muted-foreground'}`}>
+                Inventory
+              </button>
+              <button
+                type="button"
+                 onClick={() => changeTab(true)}
+                // onClick={async () => {
+                //   setShowTrial(true);
+                //   await fetchInventoryItems(1, filterStatus, selectedClinic, true);
+                // }}
+                className={`px-3 py-1 rounded-t-md border-b-2 ${showTrial ? 'border-primary bg-white' : 'border-transparent bg-transparent text-muted-foreground'}`}>
+                Trial Items
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto -mx-3 sm:mx-0">
           {inventoryItems.length === 0 ? (

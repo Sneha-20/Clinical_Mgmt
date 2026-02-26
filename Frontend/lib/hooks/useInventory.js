@@ -30,6 +30,7 @@ export default function useInventory() {
   const [clinics, setClinics] = useState([]);
   // Current status filter (All | Critical | Low)
   const [selectedClinic, setSelectedClinic] = useState(null);
+  const [showTrial, setShowTrial] = useState(false);
 
   const [filterStatus, setFilterStatus] = useState("All");
 
@@ -48,30 +49,61 @@ export default function useInventory() {
 
   
   // Fetch inventory items list
-  const fetchInventoryItems = useCallback(
-    async (page = 1, statusParam, clinicId = selectedClinic) => {
-      const status = statusParam ?? filterStatus;
-      try {
-        dispatch(startLoading());
-        const data = await getInventoryItems({ page, status, clinicId });
-        setInventoryItems(data.items || []);
-        setLowItemCount(data.lowItem || 0);
-        setCriticalItemCount(data.criticalItem || 0);
-        setPagination({
-          currentPage: data.currentPage || page,
-          totalPages: data.totalPages || 1,
-          totalItems: data.totalItems || 0,
-        });
-      } catch (error) {
-        console.error("Error fetching inventory items:", error);
-        showToast({ type: "error", message: "Failed to fetch inventory items" });
-        setInventoryItems([]);
-      } finally {
-        dispatch(stopLoading());
-      }
+ const fetchInventoryItems = useCallback(
+  async (page = 1, statusParam, clinicIdParam, typeParam) => {
+    const status = statusParam ?? filterStatus;
+    const clinicId = clinicIdParam ?? selectedClinic;
+    const type = typeParam ?? showTrial;
+
+    try {
+      dispatch(startLoading());
+      const data = await getInventoryItems({ page, status, clinicId, type });
+
+      setInventoryItems(data.items || []);
+      setLowItemCount(data.lowItem || 0);
+      setCriticalItemCount(data.criticalItem || 0);
+
+      setPagination({
+        currentPage: data.currentPage || page,
+        totalPages: data.totalPages || 1,
+        totalItems: data.totalItems || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+      showToast({ type: "error", message: "Failed to fetch inventory items" });
+      setInventoryItems([]);
+    } finally {
+      dispatch(stopLoading());
+    }
+  },
+  [dispatch, filterStatus, selectedClinic, showTrial]
+);
+
+   // Change active filter and fetch items for that status
+  const changeFilter = useCallback(
+    async (status) => {
+      console.log("show trialll", showTrial)
+      setFilterStatus(status);
+      await fetchInventoryItems(1, status, selectedClinic, showTrial);
     },
-    [dispatch, filterStatus]
+    [fetchInventoryItems, selectedClinic, showTrial]
   );
+
+    const changeClinic = useCallback(
+      async (clinicId, type = showTrial) => {
+        setSelectedClinic(clinicId);
+        await fetchInventoryItems(1, filterStatus, clinicId, type);
+      },
+      [fetchInventoryItems, filterStatus, showTrial],
+    );
+
+    const changeTab = useCallback(
+      async (type) => {
+        setShowTrial(type);
+        await fetchInventoryItems(1, filterStatus, selectedClinic, type);
+      },
+      [fetchInventoryItems, filterStatus, selectedClinic],
+    );
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -124,22 +156,7 @@ export default function useInventory() {
     }
   }, [brands]);
 
-  // Change active filter and fetch items for that status
-  const changeFilter = useCallback(
-    async (status) => {
-      setFilterStatus(status);
-      await fetchInventoryItems(1, status);
-    },
-    [fetchInventoryItems]
-  );
-    const changeClinic = useCallback(
-      async (clinicId) => {
-        setSelectedClinic(clinicId);
-        await fetchInventoryItems(1, filterStatus, clinicId);
-      },
-      [fetchInventoryItems],
-    );
-
+ 
   // Create inventory item
   const createItem = useCallback(
     async (itemData) => {
@@ -280,6 +297,9 @@ export default function useInventory() {
     criticalItemCount,
     lowItemCount,
     selectedClinic, 
+    showTrial, 
+    setShowTrial,
+    changeTab,
     changeClinic,
     setSelectedClinic,
     fetchInventoryItems,

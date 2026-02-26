@@ -153,6 +153,7 @@ export default function useCaseHistory() {
   };
 
   const fetchTestFile = async () => {
+    if (!visitId) return;
     try {
       const res = await getAllTestFile(visitId);
       setTestFileList(res);

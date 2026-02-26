@@ -51,6 +51,7 @@ export const routes = {
    inventoryDeviceList:"/clinical/device-booking/inventory/",
    deviceSerialList:"/clinical/device-booking/serial",
    bookeddevice:"clinical/trials/",
+   returnDevice:"/clinical/api/inventory/return-trial-device/",
    modalList : "/clinical/inventory/trial-available-models/"
   },
 

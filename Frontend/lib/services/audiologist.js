@@ -75,12 +75,22 @@ export const fetchSerialList = async (params = {}) => {
 };
 
 export const bookedDeviceForm = async (visitId,bookedDevicedata) => {
-  console.log("bookedDevicedata",bookedDevicedata)
    try{
      const response = await apiClient.post(`${routes.audiologist.bookeddevice}${visitId}/complete/`, bookedDevicedata);
      const bookDeviceResponse = response?.data?.data || response?.data || response;
      return bookDeviceResponse
    }catch(err){
     throw err?.response?.data || "registration failed"
+   }
+}
+
+export const returnTrialDevice = async (serialNumber,notes) => {
+   try{
+     const response = await apiClient.post(`${routes.audiologist.returnDevice}`, {serial_number:serialNumber,device_condition_on_return:notes});
+     const returnDeviceResponse = response?.data?.data || response?.data || response;
+     console.log("returnDeviceResponse",returnDeviceResponse)
+     return returnDeviceResponse
+   }catch(err){
+    throw err?.response?.data || "failed to return device"
    }
 }
