@@ -9,7 +9,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, Clock, CheckCircle, Activity } from "lucide-react";
+import {
+  Users,
+  Clock,
+  CheckCircle,
+  Activity,
+  CheckCircle2,
+  ArrowBigLeftDash,
+  ArrowBigRightIcon,
+  CircleArrowLeft,
+  CircleArrowRightIcon,
+} from "lucide-react";
 import useAudiologist from "@/lib/hooks/useAudiologist";
 import AppoinmentListCard from "./components/AppoinmentListCard";
 import Pagination from "@/components/ui/Pagination";
@@ -47,12 +57,12 @@ export default function AudiologistDashboard() {
     try {
       setLoadingStats(true);
       const response = await getDashboardStats();
-      console.log(response)
+      console.log(response);
       if (response) {
         setDashboardStats(response);
       }
     } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
+      console.error("Error fetching dashboard stats:", error);
     } finally {
       setLoadingStats(false);
     }
@@ -131,7 +141,7 @@ export default function AudiologistDashboard() {
         page={prendingTestPage}
         totalPages={totalPendingTest}
         onNext={nextPendingtest}
-        onPrev={prevPendingtest} 
+        onPrev={prevPendingtest}
       />
 
       <Card>
@@ -146,28 +156,84 @@ export default function AudiologistDashboard() {
             {completedTests.map((item) => (
               <div
                 key={item.visit_id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-50 "
-                
+                className="relative grid grid-cols-1 sm:grid-cols-3 items-centergap-2 p-3 sm:p-4 border border-slate-200 rounded-lg"
               >
                 <div>
-                  <h4 className="font-semibold text-sm sm:text-base hover:underline cursor-pointer" onClick={() => showVisitDeteail(item.visit_id)}>
+                  <h4 className="font-semibold text-sm sm:text-base mb-2">
                     {item.patient_name}
                   </h4>
+                  {/* <p className="text-xs sm:text-sm text-slate-600">
+                    Visit Id: {item.visit_id}
+                  </p> */}
                   <p className="text-xs sm:text-sm text-slate-600">
-                    {item.visit_type}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 text-left sm:text-right">
-                  <p className="text-xs sm:text-sm font-medium">
                     {item.present_complaint}
                   </p>
-                  {item.step_process == 2 ? (
-                    <Button variant="link" onClick={() => showCaseHistoryform(item.visit_id, item.step_process)}>Add reports</Button>
-                  ):(
-                    <Button variant="link" onClick={() => showCaseHistoryform(item.visit_id, item.step_process)}>Add Trail</Button>
-                   )
-                }
                 </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-medium mb-2">
+                    {item.visit_type}
+                  </p>
+                  <p className="text-xs sm:text-sm text-slate-600">
+                    {item.appointment_date}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <div>
+                      {item.is_test_uploaded ? (
+                        <div className="flex items-center gap-1 text-primary px-4 py-2">
+                          <CheckCircle className="h-4 w-4" />
+                          <p className="text-xs">Report uploaded</p>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="link"
+                          onClick={() =>
+                            showCaseHistoryform(
+                              item.visit_id,
+                              item.step_process,
+                            )
+                          }
+                          className="text-primary text-xs sm:text-sm font-medium "
+                        >
+                          Add reports
+                        </Button>
+                      )}
+                    </div>
+                    <div>
+                      {item.is_trial_done ? (
+                        <div
+                          className="flex items-center gap-1 text-primary px-4 py-2"
+                          title="Trial completed"
+                        >
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="text-xs">Trial completed</span>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="link"
+                          onClick={() =>
+                            showCaseHistoryform(
+                              item.visit_id,
+                              item.step_process,
+                            )
+                          }
+                          className="text-primary"
+                        >
+                          Add Trail
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div
+                    className="w-9 h-9 flex items-center justify-center rounded-full 
+                bg-transparent hover:bg-primary transition-colors duration-200 cursor-pointer"
+                    onClick={() => showVisitDeteail(item.visit_id)}
+                  >
+                    <CircleArrowRightIcon className="w-8 h-8 text-primary hover:text-white" />
+                  </div>
+                </div>
+                <p className="text-xs absolute right-2 top-2 text-slate-400">Visit Id:{item.visit_id}</p>
               </div>
             ))}
           </div>
