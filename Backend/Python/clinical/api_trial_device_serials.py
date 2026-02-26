@@ -49,9 +49,9 @@ class TrialDeviceSerialListView(generics.ListAPIView):
         model_type_id = self.request.query_params.get('model_type_id', None)
 
         # Get serial numbers that are already used in trials
-        used_serial_numbers = Trial.objects.filter(
-            serial_number__isnull=False
-        ).values_list('serial_number', flat=True)
+        # used_serial_numbers = Trial.objects.filter(
+        #     serial_number__isnull=False
+        # ).values_list('serial_number', flat=True)
 
         # Get search parameter from query params
         search_serial = self.request.query_params.get('serial_number', None)
@@ -61,9 +61,8 @@ class TrialDeviceSerialListView(generics.ListAPIView):
             queryset = InventorySerial.objects.filter(
                 inventory_item__use_in_trial=True,
                 inventory_item__model_type_id=model_type_id,
-                status='In Stock'
-            ).exclude(
-                serial_number__in=used_serial_numbers
+                status='In Stock',
+                inventory_item__clinic=self.request.user.clinic
             )
         
             

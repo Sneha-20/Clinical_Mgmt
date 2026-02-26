@@ -490,8 +490,8 @@ class TrialSerializer(serializers.ModelSerializer):
         if obj.device_inventory_id:
             return {
                 'id': obj.device_inventory_id.id,
-                'brand': obj.device_inventory_id.brand,
-                'model_type': obj.device_inventory_id.model_type,
+                'brand': obj.device_inventory_id.brand.name,
+                'model_type': obj.device_inventory_id.model_type.name,
                 'category': obj.device_inventory_id.category
             }
         return None
@@ -520,7 +520,7 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
     seen_by_name = serializers.CharField(source='seen_by.name', read_only=True)
     
     # Case history
-    case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
+    # case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
     
     # Conditional data based on visit type
     tests_performed = serializers.SerializerMethodField()
@@ -567,7 +567,7 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
                     'complaint': service_visit.complaint,
                     'action_taken': service_visit.action_taken,
                     'action_taken_on': service_visit.action_taken_on,
-                    'warranty_applicable': service_visit.warranty_applicable,
+                    # 'warranty_applicable': service_visit.warranty_applicable,
                     'charges_collected': service_visit.charges_collected,
                     'rtc_date': service_visit.rtc_date,
                     'device': {
@@ -624,7 +624,7 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
             # Doctor information
             'seen_by_name',
             # Clinical data (conditional based on visit type)
-            'case_history', 'tests_performed', 'test_uploads', 'trials', 'service_visit',
+             'tests_performed', 'test_uploads', 'trials', 'service_visit',
             # Billing
             'bill_details'
         ]

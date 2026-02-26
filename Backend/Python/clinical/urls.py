@@ -42,7 +42,7 @@ urlpatterns = [
    path('audiologits/queue/',AudiologistPatientQueueView.as_view(), name='audiologist_queue'), # Audiologist queue 
 
    path('patient/visit/<int:id>/',PatientVisitDetailView.as_view()), # Patient visit details by visit ID 
-   # path('patient/visit/<int:id>/full/',PatientVisitFullDetailsView.as_view()), # Full patient visit details with tests and trials
+   path('patient/visit/<int:id>/full/',PatientVisitFullDetailsView.as_view()), # Full patient visit details with tests and trials
    path('audiologist/test/perform/',AudiologistCaseHistoryCreateView.as_view()), # PAtient test performed and result uploaded 
    
    # Bill endpoints
