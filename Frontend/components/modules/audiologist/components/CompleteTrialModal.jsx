@@ -30,6 +30,8 @@ export default function CompleteTrialModal({
     { label: "10 days", value: 10 },
     { label: "14 days (2 weeks)", value: 14 },
   ];
+
+  console.log("Inventory Devices:", inventoryDevice);
   return (
     <Modal
       header="Complete Trial"
@@ -106,7 +108,12 @@ export default function CompleteTrialModal({
                   onChange={handleChange}
                   formatOptionLabel={(opt) => (
                     <div className="flex flex-col">
-                      <span className="font-medium">{opt.label}</span>
+                      <p className="flex items-center">
+                      <span className="font-medium">{opt.label} </span>
+                        <span className="text-xs text-muted-foreground ml-2">
+                          Stock : {opt.qty}
+                        </span>
+                      </p>
                       <span className="text-xs text-gray-500">
                         {opt.brand} • ₹{opt.price}
                       </span>
@@ -114,6 +121,7 @@ export default function CompleteTrialModal({
                   )}
                 />
               </div>
+              
               <div className="space-y-2">
                 <DropDown
                   label="Select Serial Number"
@@ -121,7 +129,7 @@ export default function CompleteTrialModal({
                   options={serialOption}
                   value={form.serialId}
                   onChange={handleChange}
-                  isDisabled={!form.deviceId}
+                  isDisabled={!form.deviceId || (inventoryDevice.find(d => d.value === form.deviceId)?.qty === 0)}
                 />
               </div>
 
@@ -133,6 +141,13 @@ export default function CompleteTrialModal({
                   onChange={(e) => handleChange("notes", e.target.value)}
                 />
               </div>
+               {inventoryDevice?.find(d => d.value === form.deviceId)?.qty === 0 && (
+                <p className="text-xs text-destructive mt-[2px]">
+                  Selected device is currently out of stock – booking will be marked
+                  as <span className="text-sm">"Awaiting Stock"</span>.
+                </p>
+              )}
+             
             </div>
           )}
 
@@ -145,7 +160,6 @@ export default function CompleteTrialModal({
               </p>
 
               <div className="space-y-2">
-                {/* <Label>Reason for Not Booking <span className="text-destructive">*</span></Label> */}
                 <TextArea
                   label="Reason for Not Booking"
                   name="notBookReason"
@@ -221,10 +235,8 @@ export default function CompleteTrialModal({
 
           {selectedAction === "FOLLOWUP" && (
             <Button
-                onClick={() => handleCompleteTrials()}
-              //   disabled={!extendReason || !extendDays}
-               variant="extend"
-              // className="bg-warning hover:bg-warning/90 text-warning-foreground"
+              onClick={() => handleCompleteTrials()}
+              variant="extend"
             >
               Extend Trial
             </Button>

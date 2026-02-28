@@ -43,7 +43,7 @@ export default function AddProductModal({
   const [newModelName, setNewModelName] = useState("");
   const [creatingBrand, setCreatingBrand] = useState(false);
   const [creatingModel, setCreatingModel] = useState(false);
-
+  
   // Prefill when editing
   useEffect(() => {
     if (isOpen && isEdit && initialData) {

@@ -28,15 +28,15 @@ export default function () {
   const [activeTrialDeviceList, setActiveTrialDeviceList] = useState([]);
   const [totalPage, setTotalpage] = useState(null);
   const [currentPage, setCurrenPage] = useState(1);
-  const [inventoryDevice, setInventoryDevice] = useState({});
+  const [inventoryDevice, setInventoryDevice] = useState([]);
   const [serials, setSerials] = useState([]);
   const [completeTrialDialogOpen, setCompleteTrialDialogOpen] = useState(false);
   const [selectedTrial, setSelectedTrial] = useState(null);
   const [selectedTrialId, setSelectedTrialId] = useState(null);
   const [selectedAction, setSelectedAction] = useState("BOOK");
-const [form, setForm] = useState(INITIAL_BOOK_FORM);
-const [extendForm, setExtendForm] = useState(INITIAL_EXTEND_FORM);
-const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
+  const [form, setForm] = useState(INITIAL_BOOK_FORM);
+  const [extendForm, setExtendForm] = useState(INITIAL_EXTEND_FORM);
+  const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
 
   
     const fetchTrialDevice = async ({ page = 1 } = {}) => {
@@ -69,7 +69,8 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
             label: item.product_name,
             value: item.id,
             brand: item.brand,
-          price: item.unit_price,
+            price: item.unit_price,
+            qty :  item.quantity_in_stock,
           }))
         );
       } catch (err) {
@@ -113,46 +114,75 @@ const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
     setForm((prev) => ({ ...prev, [name]: value }));
     if (name === "deviceId") {
       setForm((prev) => ({ ...prev, serialId: null }));
-      await fetchSerialsByDevice(value);
+      const selected = inventoryDevice.find((d) => d.value === value);
+      // if the device has no stock show a warning and don't fetch serials
+      if (selected?.qty === 0) {
+        showToast({
+          type: "warning",
+          message:
+            "Selected device is out of stock – booking will be marked as awaiting stock.",
+        });
+        setSerials([]);
+      } else {
+        await fetchSerialsByDevice(value);
+      }
     }
   };
 
   const handleCompleteTrials = async () => {
     let payload = {};
 
-  if (selectedAction === "BOOK") {
-    payload = {
-      trial_decision: "BOOK",
-      booked_device_inventory: form.deviceId,
-      booked_device_serial: form.serialId,
-      completion_notes: form.notes || "",
-    };
-  }
+    if (selectedAction === "BOOK") {
+      // determine if the chosen inventory item is out of stock
+      const selected = inventoryDevice.find((d) => d.value === form.deviceId);
+      if (selected?.qty === 0) {
+        payload = {
+          trial_decision: "BOOK - Awaiting Stock",
+          booked_device_inventory: form.deviceId,
+          completion_notes: form.notes || "",
+        };
+        // inform user pre-submission
+        showToast({
+          type: "info",
+          message: "Device is out of stock; booking will be recorded as awaiting stock.",
+        });
+      } else {
+        payload = {
+          trial_decision: "BOOK",
+          booked_device_inventory: form.deviceId,
+          booked_device_serial: form.serialId,
+          completion_notes: form.notes || "",
+        };
+      }
+    }
 
-  if (selectedAction === "DECLINE") {
-    payload = {
-      trial_decision: "DECLINE",
-      completion_notes: notBookReason,
-    };
-  }
+    if (selectedAction === "DECLINE") {
+      payload = {
+        trial_decision: "DECLINE",
+        completion_notes: notBookReason,
+      };
+    }
 
-  if (selectedAction === "FOLLOWUP") {
-    payload = {
-      trial_decision: "TRIAL ACTIVE",
-      next_followup: extendForm.dayCount,
-      completion_notes: extendForm.reason,
-    };
-  }
- 
+    if (selectedAction === "FOLLOWUP") {
+      payload = {
+        trial_decision: "TRIAL ACTIVE",
+        next_followup: extendForm.dayCount,
+        completion_notes: extendForm.reason,
+      };
+    }
+
     try{
       const res = await bookedDeviceForm(selectedTrialId,payload)
       const returnDeviceResponse = await returnTrialDevice(selectedTrial?.serial_number,"Device returned after trial completion");
-      console.log("Return Device Response:", returnDeviceResponse);
+      showToast({
+        type: "success",
+        message: res?.message || "Trial completed successfully",
+      });
       fetchTrialDevice({ page: currentPage });
       handleCloseDialog()
     }catch(err){
        handleCloseDialog()
-      console.log("Error:",err)
+       console.log("Error:",err)
     }finally{
     setForm(INITIAL_BOOK_FORM);
     setExtendForm(INITIAL_EXTEND_FORM);

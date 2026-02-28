@@ -107,6 +107,7 @@ export default function useInventory() {
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
+    if (categories.length > 0) return;
     try {
       const data = await getInventoryDropdowns();
       console.log("Categories fetched:", data);
@@ -114,7 +115,7 @@ export default function useInventory() {
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
-  }, []);
+  }, [categories]);
 
   // Fetch brands when category is selected
   const fetchBrands = useCallback(async (category) => {
@@ -125,7 +126,6 @@ export default function useInventory() {
     }
     try {
       const data = await getInventoryDropdowns({ category });
-      console.log("Brands fetched:", data);
       setBrands(data?.brands || []);
       setModels([]); // Reset models when category changes
     } catch (error) {
