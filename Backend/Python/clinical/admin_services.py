@@ -103,16 +103,16 @@ class AdminClinicReportView(APIView):
                     visit__clinic_id=clinic_id,
                     trial_completed_at__date__gte=start_date,
                     trial_completed_at__date__lte=end_date,
-                    trial_decision='BOOK'
+                    trial_decision__in=['BOOK - Awaiting Stock', 'BOOK - Device Allocated']
                 ).values(
                     'assigned_patient__name', 'device_inventory_id__product_name', 'device_inventory_id__brand__name', 'device_inventory_id__model_type__name',
-                    'visit__clinic__name', 'cost', 'trial_completed_at'
+                    'visit__clinic__name', 'cost', 'trial_completed_at','trial_decision'
                 )
             else:
                 bookings_data = Trial.objects.filter(
                     trial_completed_at__date__gte=start_date,
                     trial_completed_at__date__lte=end_date,
-                    trial_decision='BOOK'
+                    trial_decision='BOOK - Device Allocated'
                 ).values(
                     'assigned_patient__name', 'booked_device_inventory__brand', 'booked_device_inventory__model_type',
                     'visit__clinic__name', 'cost', 'trial_completed_at'
