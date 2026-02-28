@@ -17,7 +17,7 @@ from .api_trial_devices import TrialDeviceListView
 from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySerialView, TrialDeviceInUseListView, TrialAvailableModelsView
 from .test_upload_views import TestUploadListCreateView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
-from .trial_completion_view import TrialCompletionView
+from .trial_completion_view import TrialCompletionView, AwaitingStockListView, AllocateSerialFlatList, AllocateSerialNumber
 from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView,PartsUsedListView
 from .admin_services import (AdminRevenueReportsView,AdminClinicReportView,DoctorReferrralListView, PatientReferralDetailView)
 from .admin_staff_performance import AdminStaffPerformanceAPIView
@@ -26,6 +26,11 @@ from .api_inventory_transfer import InventoryTransferView, InventoryTransferHist
 
 
 urlpatterns = [
+      # Awaiting stock trial endpoints
+      path('trials/awaiting-stock/', AwaitingStockListView.as_view(), name='trials_awaiting_stock'),
+      path('trials/awaiting-stock/<int:trial_id>/', AllocateSerialFlatList.as_view(), name='trial_awaiting_stock_detail'),
+      path('trials/allocate-serial/<int:trial_id>/', AllocateSerialNumber.as_view(), name='trial_allocate_serial'),
+      
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
    path('patient/<int:id>/', PatientDetailView.as_view(), name='patient_detail'), # Retrieve patient details
    
