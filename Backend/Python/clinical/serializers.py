@@ -1597,7 +1597,13 @@ class TrialCompletionSerializer(serializers.Serializer):
     }
     """
     trial_decision = serializers.ChoiceField(
-        choices=[('BOOK', 'Book Device'), ('TRIAL', 'Need Time - Not Booked'), ('DECLINE', 'Decline Device Booking')],
+        
+        choices=[
+
+        ('TRIAL_ACTIVE', 'Trial Active'),
+        ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
+        ('BOOK - Allocated', 'Book Device Allocated' ),
+        ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
     )
@@ -1638,13 +1644,15 @@ class TrialCompletionSerializer(serializers.Serializer):
                 inventory_item = InventoryItem.objects.get(id=data['booked_device_inventory'])
                 
                 # Check if it's a serialized item and serial number is provided
-                if inventory_item.stock_type == 'Serialized' and not data.get('booked_device_serial'):
-                    raise serializers.ValidationError({
-                        'booked_device_serial': 'Serial number is required for serialized devices'
-                    })
-                
+                # if inventory_item.stock_type == 'Serialized' and not data.get('booked_device_serial'):
+                #     raise serializers.ValidationError({
+                #         'booked_device_serial': 'Serial number is required for serialized devices'
+                #     })
+
+                booked_device_serial = data.get('booked_device_serial')  # Store for use in view logic
+
                 # For serialized items, validate the serial number exists and is in stock
-                if inventory_item.stock_type == 'Serialized' and data.get('booked_device_serial'):
+                if inventory_item.stock_type == 'Serialized' and booked_device_serial:
                     try:
                         from .models import InventorySerial
                         serial = InventorySerial.objects.get(
@@ -1653,6 +1661,7 @@ class TrialCompletionSerializer(serializers.Serializer):
                             status='In Stock'
                         )
                         data['validated_serial'] = serial
+
                     except InventorySerial.DoesNotExist:
                         raise serializers.ValidationError({
                             'booked_device_serial': 'Serial number not found or not available in stock'
@@ -1682,3 +1691,33 @@ class InventoryTransferSerializer(serializers.ModelSerializer):
         model = InventoryTransfer
         fields = ['from_clinic_name', 'to_clinic_name', 'transferred_by_name', 'log_message', 'transferred_at']
         
+
+class AwaitingStockListSerializer(serializers.ModelSerializer):
+    """Serializer for listing trials that are awaiting stock for booked devices."""
+    patient_name = serializers.CharField(source='assigned_patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='assigned_patient.phone_primary', read_only=True)
+    doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
+    device_name = serializers.CharField(source='booked_device_inventory.product_name', read_only=True)
+    device_brand = serializers.CharField(source='booked_device_inventory.brand.name', read_only=True)
+    device_model = serializers.CharField(source='booked_device_inventory.model_type.name', read_only=True)
+    # trial_decision = serializers.CharField(source='trial_decision', read_only=True)
+    # visit_id = serializers.IntegerField(source='visit.id', read_only=True)
+    trial_completed_at = serializers.DateTimeField(source='completed_at', read_only=True)
+
+    class Meta:
+        model = Trial
+        fields = [
+            'id',
+            'patient_name',
+            'patient_phone',
+            'doctor_name',
+            'booked_device_inventory',
+            'device_name',
+            'device_brand',
+            'device_model',
+            # 'visit_id',
+            'trial_end_date',
+            'trial_completed_at',
+            'trial_decision',
+
+        ]
