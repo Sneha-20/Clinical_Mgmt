@@ -75,7 +75,7 @@ class AdminStaffPerformanceAPIView(APIView):
                 # completed_followups = PatientVisit.objects.filter(seen_by=staff, status='Follow-up', contacted=True).count()
                 # followup_completion = (completed_followups / total_followups * 100) if total_followups > 0 else 0
                 
-                booked_trials_qs = trial_qs.filter(trial_decision='BOOK')
+                booked_trials_qs = trial_qs.filter(trial_decision__in=['BOOK - Awaiting Stock', 'BOOK - Device Allocated'])
                 trials_booked = booked_trials_qs.count()
                 booked_trials_details = TrialListSerializer(booked_trials_qs, many=True).data
                 for i, trial in enumerate(booked_trials_qs):
