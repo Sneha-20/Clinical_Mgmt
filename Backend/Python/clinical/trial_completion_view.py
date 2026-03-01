@@ -62,7 +62,7 @@ class TrialCompletionView(APIView):
                         patient=trial.assigned_patient,
                         visit=trial.visit,
                         inventory_item=inventory_item,
-                        inventory_serial=booked_serial,
+                        inventory_serial=trial.booked_device_serial,
                         quantity=1,
                         unit_price=unit_price,
                         total_price=unit_price
