@@ -49,7 +49,7 @@ export default function PatientRegistrationForm({
     initialValues: {
       name: "",
       age: "",
-      dob: "",
+      dob: null,
       email: "",
       gender: "",
       phone_primary: "",
@@ -67,6 +67,8 @@ export default function PatientRegistrationForm({
           seen_by: "",
           test_requested: [],
           notes: "",
+          cost_taken_amount: "",
+          mode_of_payment: "",
         },
       ],
     },
@@ -127,15 +129,14 @@ export default function PatientRegistrationForm({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={formik.touched.name && formik.errors.name}
-                  important
                 />
                   <CommonDatePicker
-                  label="Date of Birth*"
+                  label="Date of Birth"
                   selectedDate={
                     formik.values.dob ? new Date(formik.values.dob) : null
                   }
                   onChange={(date) =>
-                    formik.setFieldValue("dob", format(date, "yyyy-MM-dd"))
+                    formik.setFieldValue("dob", date ? format(date, "yyyy-MM-dd") : null)
                   }
                   maxDate={new Date()} 
                   error={formik.touched.dob && formik.errors.dob}
@@ -378,8 +379,53 @@ export default function PatientRegistrationForm({
                     </div>
                   </>
                 )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                  <Input
+                    label="Amount Taken From Patient"
+                    name="cost_taken_amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="Enter Amount - 120.00"
+                    value={visit.cost_taken_amount}
+
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // formik.setFieldValue('cost_taken_amount', value === '' ? '' : parseFloat(value));
+                      formik.setFieldValue(
+                        `visit_details.${index}.cost_taken_amount`,
+                        value === '' ? '' : parseFloat(value)
+                      );
+                    }}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.cost_taken_amount &&
+                      formik.errors.cost_taken_amount
+                    }
+                  />
+
+                  <Input
+                    label="Mode of Payment"
+                    name="mode_of_payment"
+                    value={visit.mode_of_payment}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      formik.setFieldValue(
+                        `visit_details.${index}.mode_of_payment`,
+                        value
+                      );
+                    }}
+                    onBlur={formik.handleBlur}
+                    error={
+                      formik.touched.mode_of_payment &&
+                      formik.errors.mode_of_payment
+                    }
+                  />
+                </div>
               </div>
             ))}
+
+
 
             <Button
               type="button"
