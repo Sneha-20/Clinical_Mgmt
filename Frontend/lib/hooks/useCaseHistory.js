@@ -12,6 +12,7 @@ import {
   getpatientHistoryById,
   getTrialDevice,
 } from "../services/patientCaseHistory";
+import { Formik } from "formik";
 
 export default function useCaseHistory() {
   const dispatch = useDispatch();
@@ -117,19 +118,20 @@ export default function useCaseHistory() {
   };
 
   const handleFileSubmit = async () => {
-    if (!file || !testType) {
-      showToast({
-        type: "error",
-        message: "Please select test type and file",
-      });
-      return;
-    }
+    // if (!file || !testType) {
+    //   showToast({
+    //     type: "error",
+    //     message: "Please select test type and file",
+    //   });
+    //   return;
+    // }
     dispatch(startLoading());
     try {
       const formData = new FormData();
       formData.append("patient_visit", visitId);
-      formData.append("file_type", testType);
+      formData.append("report_type", testType);
       formData.append("file", file);
+      formData.append("report_description", Formik.values.report_description);
       const res = await addTestFile(formData);
       showToast({
         type: "success",
@@ -143,6 +145,7 @@ export default function useCaseHistory() {
       setIsModalOpen(false);
       fetchTestFile();
     } catch (err) {
+      console.log(err);
       showToast({
         type: "error",
         message: err?.error || "Upload failed",
