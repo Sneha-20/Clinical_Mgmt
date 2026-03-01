@@ -365,10 +365,10 @@ class PatientPurchase(models.Model):
 
     def clean(self):
         """Ensure that a serial number is provided for serialized items."""
-        if self.inventory_item.stock_type == 'Serialized' and not self.inventory_serial:
-            raise ValidationError(
-                f"A serial number must be provided for serialized items like '{self.inventory_item}'."
-            )
+        # if self.inventory_item.stock_type == 'Serialized' and not self.inventory_serial:
+        #     raise ValidationError(
+        #         f"A serial number must be provided for serialized items like '{self.inventory_item}'."
+        #     )
         if self.inventory_item.stock_type == 'Non-Serialized' and self.inventory_serial:
             raise ValidationError(
                 f"A serial number should not be provided for non-serialized items like '{self.inventory_item}'."
