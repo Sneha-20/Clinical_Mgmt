@@ -117,7 +117,7 @@ class Trial(models.Model):
     TRIAL_DECISION_CHOICES = [
         ('TRIAL_ACTIVE', 'Trial Active'),
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
-        ('BOOK - Allocated', 'Book Device Allocated' ),
+        ('BOOK - Device Allocated', 'Book Device Allocated' ),
         ('FOLLOWUP', 'Need Time - Not Booked'),
         ('DECLINE', 'Decline Device Booking'),
     ]

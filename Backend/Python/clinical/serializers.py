@@ -1635,7 +1635,7 @@ class TrialCompletionSerializer(serializers.Serializer):
 
         ('TRIAL_ACTIVE', 'Trial Active'),
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
-        ('BOOK - Allocated', 'Book Device Allocated' ),
+        ('BOOK - Device Allocated', 'Book Device Allocated' ),
         ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
