@@ -889,7 +889,9 @@ class DeviceBookingDropdownView(generics.ListAPIView):
         """
         queryset = InventoryItem.objects.filter(
             category='Hearing Aid',
-            use_in_trial=False
+            use_in_trial=False, 
+            clinic=getattr(self.request.user, 'clinic', None)  # Filter by clinic for multi-tenant support
+            
         )
         
         # Apply search filter from query parameters
