@@ -196,7 +196,7 @@ export default function PatientVisitDetail({ visitId }) {
                       </div>
                       <div>
                         <p className="font-medium text-sm">
-                          {report.file_type.toUpperCase()} Report
+                          {report.report_type.toUpperCase()} Report
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Uploaded on{" "}

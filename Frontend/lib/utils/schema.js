@@ -86,6 +86,7 @@ export const CaseHistorySchema = Yup.object({
   previous_ha_experience: Yup.string().required('This firld is required'),
   red_flags: Yup.string('This firld is required'),
   test_requested: Yup.array().min(1, 'Select at least one test'),
+  report_description: Yup.string().required('Report description is required'),
   srtValue: Yup.number().nullable(),
   sdsValue: Yup.number().nullable(),
   uclValue: Yup.number().nullable(),

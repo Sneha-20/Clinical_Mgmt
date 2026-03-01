@@ -122,6 +122,7 @@ export default function CaseHistoryForm({ patientId }) {
         patientsCaseHistory?.case_history?.previous_ha_experience || "no",
       red_flags: patientsCaseHistory?.case_history?.red_flags || "",
       test_requested: patientsCaseHistory?.test_requested || [],
+      report_description: patientsCaseHistory?.report_description || ""
     },
     validationSchema: CaseHistorySchema,
     onSubmit: (values) => {
@@ -206,6 +207,13 @@ export default function CaseHistoryForm({ patientId }) {
               placeholder={loadingTestTypes ? "Loading test types..." : "Select test type"}
             />
 
+            <TextArea
+              label="Report Description"
+              name="report_description"
+              formik={formik}
+              important
+            />
+
             <FileUploadField
               label="Select Test Report"
               fileName={fileName}
@@ -227,7 +235,7 @@ export default function CaseHistoryForm({ patientId }) {
                   >
                     <FileText className="h-4 w-4" />
                     <a href={file.file_url} target="_blank">
-                      {file.file_type}
+                      {file.report_type}
                     </a>
                     <X
                       className="h-4 w-4 text-red-500 cursor-pointer"
