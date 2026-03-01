@@ -58,13 +58,16 @@ class CompletedTestsListView(APIView):
                     # Use list comprehension for better performance
                     test_mapping = [
                         (test_performed.pta, "PTA"),
-                        (test_performed.immittance, "Immittance"),
-                        (test_performed.oae, "OAE"),
+                        (test_performed.impedance, "Impedance"),
+                        (test_performed.srt_sds, "SRT/SDS"),
                         (test_performed.bera_assr, "BERA/ASSR"),
-                        (test_performed.srt, "SRT"),
-                        (test_performed.sds, "SDS"),
-                        (test_performed.ucl, "UCL"),
-                        (test_performed.free_field, "Free Field")
+                        (test_performed.pta_sds, "PTA/SDS"),
+                        (test_performed.special_tests, "Special Tests"),
+                        (test_performed.impedance_etf, "Impedance/ETF"),
+                        (test_performed.bera, "BERA"),
+                        (test_performed.assr , "ASSR"),
+                        (test_performed.speech_assessment, "Speech Assessment"),
+                       
                     ]
                     
                     test_types = [name for flag, name in test_mapping if flag]
@@ -125,30 +128,32 @@ class CompletedTestDetailView(APIView):
             # Build detailed test types with flags
             test_details = {
                 'pta': test_performed.pta,
-                'immittance': test_performed.immittance,
-                'oae': test_performed.oae,
+                'impedance': test_performed.impedance,
+                'srt_sds': test_performed.srt_sds,
                 'bera_assr': test_performed.bera_assr,
-                'srt': test_performed.srt,
-                'sds': test_performed.sds,
-                'ucl': test_performed.ucl,
-                'free_field': test_performed.free_field,
-                'other_test': test_performed.other_test
+                'pta_sds': test_performed.pta_sds,
+                'special_tests': test_performed.special_tests,
+                'impedance_etf': test_performed.impedance_etf,
+                'bera': test_performed.bera,
+                'assr': test_performed.assr,
+                'speech_assessment': test_performed.speech_assessment
             }
             
             # Build test types list
             test_types = []
             for test_type, performed in test_details.items():
-                if performed and test_type != 'other_test':
+                if performed:
                     test_types.append(test_type.upper().replace('_', '/'))
-            if test_performed.other_test:
-                test_types.append(test_performed.other_test)
+            # if test_performed.other_test:
+            #     test_types.append(test_performed.other_test)
             
             # Build test files details
             files_details = []
             for file in test_files:
                 files_details.append({
                     'id': file.id,
-                    'file_type': file.file_type,
+                    'file_type': file.report_type,
+                    'file_description': file.report_description,
                     'file_url': file.file_path,
                     'file_name': file.file_path.split('/')[-1] if file.file_path else 'Unknown',
                     'created_at': file.created_at,
@@ -281,13 +286,15 @@ class PatientTestHistoryView(APIView):
                     # Use list comprehension for better performance
                     test_mapping = [
                         (test_performed.pta, "PTA"),
-                        (test_performed.immittance, "Immittance"),
-                        (test_performed.oae, "OAE"),
+                        (test_performed.impedance, "Impedance"),
+                        (test_performed.srt_sds, "SRT/SDS"),
                         (test_performed.bera_assr, "BERA/ASSR"),
-                        (test_performed.srt, "SRT"),
-                        (test_performed.sds, "SDS"),
-                        (test_performed.ucl, "UCL"),
-                        (test_performed.free_field, "Free Field")
+                        (test_performed.pta_sds, "PTA/SDS"),
+                        (test_performed.special_tests, "Special Tests"),
+                        (test_performed.impedance_etf, "Impedance/ETF"),
+                        (test_performed.bera, "BERA"),
+                        (test_performed.assr , "ASSR"),
+                        (test_performed.speech_assessment, "Speech Assessment"),
                     ]
                     
                     test_types = [name for flag, name in test_mapping if flag]
@@ -308,7 +315,8 @@ class PatientTestHistoryView(APIView):
                     'total_test_result': len(test_files),
                     'test_results_files': [
                         {
-                            'test_type': file.file_type,
+                            'test_type': file.report_type,
+                            'report_description': file.report_description,
                             'report_url': file.file_path,
                         } for file in test_files
                     ],

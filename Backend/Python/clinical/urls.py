@@ -5,7 +5,7 @@ from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailVi
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
                     TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,
-                    MarkPatientContactedView, VisitTestTypesView)
+                    MarkPatientContactedView, VisitTestTypesView,TestTypeUpdateListView)
 
 from .api_inventory_item_update import InventoryItemUpdateView,InventorySerialNumberCreateView
 from .api_inventory_dropdowns import InventoryDropdownsView
@@ -91,6 +91,7 @@ urlpatterns = [
    path('test-results/<int:visit_id>/', TestResultListView.as_view(), name='test-result-list'),
    path('visit/<int:visit_id>/test-types/', VisitTestTypesView.as_view(), name='visit_test_types'),
    path('test-upload/<int:file_id>/delete/', TestUploadDeleteView.as_view(), name='test-upload-delete'),
+   path('test-types/', TestTypeUpdateListView.as_view(), name='test-type-update-list'),
 
    path('mark-bill-paid/<int:bill_id>/', MarkAsPaidView.as_view(), name='mark-bill-paid'),
 

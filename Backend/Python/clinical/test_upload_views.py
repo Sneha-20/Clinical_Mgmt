@@ -14,9 +14,9 @@ class TestUploadListCreateView(generics.ListCreateAPIView):
     """List and create test upload records"""
     queryset = TestUpload.objects.all()
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['visit', 'file_type']
-    search_fields = ['file_type', 'visit__visit__patient__name']
-    ordering_fields = ['created_at', 'file_type']
+    filterset_fields = ['visit', 'report_type']
+    search_fields = ['report_type', 'visit__visit__patient__name']
+    ordering_fields = ['created_at', 'report_type']
     ordering = ['-created_at']
     
     def get_serializer_class(self):
@@ -51,34 +51,12 @@ class TestUploadListCreateView(generics.ListCreateAPIView):
 #         return TestUpload.objects.filter(visit__id=visit_id)
 
 
-# class BulkTestUploadView(APIView):
-#     """Bulk upload multiple test files"""
-    
-#     def post(self, request):
-#         serializer = BulkTestUploadSerializer(
-#             data=request.data, 
-#             context={'request': request}
-#         )
-        
-#         if serializer.is_valid():
-#             created_uploads = serializer.save()
-            
-#             # Serialize the created uploads for response
-#             response_serializer = TestUploadSerializer(created_uploads, many=True)
-            
-#             return Response({
-#                 'message': f'Successfully uploaded {len(created_uploads)} files',
-#                 'uploads': response_serializer.data
-#             }, status=status.HTTP_201_CREATED)
-        
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class TestUploadByPatientView(generics.ListAPIView):
     """Get all test uploads for a specific patient across all visits"""
     serializer_class = TestUploadSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['file_type']
+    search_fields = ['report_type']
     ordering = ['-created_at']
     
     def get_queryset(self):

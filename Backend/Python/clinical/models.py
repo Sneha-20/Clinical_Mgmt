@@ -4,17 +4,19 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 from accounts.models import User,Clinic
 from django.utils import timezone
+
+
 class Patient(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=255)
-    age = models.IntegerField()
-    dob = models.DateField()
+    age = models.IntegerField(null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
     email = models.EmailField(blank=True, null=True)
     gender = models.CharField(max_length=50)
     phone_primary = models.CharField(max_length=50)
     phone_secondary = models.CharField(max_length=50, blank=True, null=True)
     city = models.CharField(max_length=255)
-    address = models.TextField()
+    address = models.TextField(null=True, blank=True)
     referral_type = models.CharField(max_length=255, blank=True, null=True)
     referral_doctor = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -31,7 +33,6 @@ class PatientVisit(models.Model):
     present_complaint = models.CharField(max_length=255, blank=True, null=True)
     test_requested = models.CharField(max_length=255, blank=True, null=True) # it will be dropdown in frontend
     notes = models.TextField(blank=True, null=True)
-    # created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50,null=True)  #  ( Test Pending / Trial active/ Booked / Follow-up)
     status_note = models.TextField(blank=True, null=True)
     contacted = models.BooleanField(default=False)  # Track if patient has been contacted for follow-up
@@ -41,7 +42,8 @@ class PatientVisit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     step_process = models.IntegerField(default=1)  # Track the current step in the process (1-Case History, 2-Tests, 3-Trial, 4-Booking)
-
+    cost_taken_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    mode_of_payment = models.CharField(max_length=50, blank=True, null=True)
 
 
 class AudiologistCaseHistory(models.Model):
@@ -67,24 +69,23 @@ class AudiologistCaseHistory(models.Model):
 
 class VisitTestPerformed(models.Model):
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
-    # test_code = models.CharField(max_length=100)
-    # required = models.BooleanField(default=False)
     pta = models.BooleanField(default=False)
-    typm = models.BooleanField(default=False) # Tympanometry
-    immittance = models.BooleanField(default=False)
-    oae = models.BooleanField(default=False)
+    srt_sds = models.BooleanField(default=False)  # Combined field for SRT and SDS since they often go together
+    pta_sds = models.BooleanField(default=False)
+    special_tests = models.TextField(blank=True, null=True)
+    impedance  = models.BooleanField(default=False)  # Impedance testing (Tympanometry + Reflexes)
+    impedance_etf = models.BooleanField(default=False)  # Eustachian Tube Function test
+    bera = models.BooleanField(default=False)  # BERA/ABR
+    assr = models.BooleanField(default=False)  # ASSR
     bera_assr = models.BooleanField(default=False)
-    srt = models.BooleanField(default=False)
-    sds = models.BooleanField(default=False)
-    ucl = models.BooleanField(default=False)
-    free_field = models.BooleanField(default=False)
-    other_test = models.CharField(max_length=255, blank=True, null=True)
+    speech_assessment = models.BooleanField(default=False)  # Speech assessment (SRT/SDS)
 
 
 class TestUpload(models.Model):
     visit = models.ForeignKey(VisitTestPerformed, on_delete=models.CASCADE)
-    file_type = models.CharField(max_length=100)
-    file_path = models.TextField()
+    report_type = models.CharField(max_length=100)
+    report_description = models.TextField(blank=True, null=True)
+    file_path = models.TextField(null=True, blank=True)  # Store file path or URL to the uploaded report
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -101,7 +102,7 @@ class Trial(models.Model):
     sds_before = models.CharField(max_length=255, blank=True, null=True)
     ucl_before = models.CharField(max_length=255, blank=True, null=True)
     patient_response = models.CharField(max_length=255, blank=True, null=True)
-    counselling_notes = models.TextField()
+    counselling_notes = models.TextField(null=True, blank=True)
     discount_offered = models.IntegerField(blank=True, null=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="Cost associated with the trial")
     followup_date = models.DateField(blank=True, null=True)
@@ -165,6 +166,7 @@ class Bill(models.Model):
     bill_number = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text="Auto-generated bill number")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total amount (auto-calculated from bill items)")
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total discount applied")
+    gst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="GST amount applied")
     final_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Final amount after discount")
     payment_status = models.CharField(
         max_length=50,
@@ -190,23 +192,27 @@ class Bill(models.Model):
         return f"Bill {self.bill_number or self.id} - {self.visit.patient.name}"
 
     def calculate_total(self):
-        """Calculate total from all bill items (fix Decimal/float subtraction)"""
+        """Calculate total from all bill items, deduct cost_taken_amount from PatientVisit."""
         from django.db.models import F, Sum, DecimalField
         from decimal import Decimal
 
-        # Aggregate will always return Decimal or None; ensure default is Decimal
         total = self.bill_items.aggregate(
             total=Sum(F('cost') * F('quantity'), output_field=DecimalField())
         )['total']
         if total is None:
             total = Decimal('0.00')
-        # Ensure discount_amount is Decimal, not float (avoid subtraction error)
         if self.discount_amount is None:
             self.discount_amount = Decimal('0.00')
         elif not isinstance(self.discount_amount, Decimal):
-            self.discount_amount = Decimal(str(self.discount_amount))  # Convert float to str then Decimal, safe for .00
+            self.discount_amount = Decimal(str(self.discount_amount))
+
+        # Deduct cost_taken_amount from PatientVisit if present
+        cost_taken_amount = Decimal('0.00')
+        if self.visit and getattr(self.visit, 'cost_taken_amount', None):
+            cost_taken_amount = Decimal(str(self.visit.cost_taken_amount or 0))
+
         self.total_amount = total
-        self.final_amount = total - self.discount_amount
+        self.final_amount = total - self.discount_amount - cost_taken_amount
         self.save(update_fields=['total_amount', 'final_amount'])
 
     def generate_bill_number(self):
@@ -384,7 +390,7 @@ CATEGORY_CHOICES = [
     ('Mold', 'Mold'),
     ('Tube', 'Tube'),
     ('Hearing Aid', 'Hearing Aid'),
-    ('Trial Stock', 'Trial Stock'),
+    # ('Trial Stock', 'Trial Stock'),
     ('Speech Material', 'Speech Material'),
 ]
 
@@ -538,16 +544,14 @@ class ServiceVisit(models.Model):
     )
 
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPE_CHOICES)
-
     complaint = models.TextField()
     action_taken = models.TextField() 
     action_taken_on = models.DateTimeField(auto_now_add=True)
 
     warranty_applicable = models.BooleanField(default=False)
     charges_collected = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    gst_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     rtc_date = models.DateField(blank=True, null=True)
-
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

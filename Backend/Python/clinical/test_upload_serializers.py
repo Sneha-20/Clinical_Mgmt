@@ -4,17 +4,14 @@ from .models import TestUpload, VisitTestPerformed, PatientVisit
 
 class TestUploadSerializer(serializers.ModelSerializer):
     """Serializer for TestUpload model"""
-    # visit_id = serializers.IntegerField(source='visit.id', read_only=True)
-    # visit_patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
     
     class Meta:
         model = TestUpload
         fields = [
             'id',
             'visit',
-            # 'visit_id',
-            # 'visit_patient_name',
-            'file_type',
+            'report_type',
+            'report_description',
             'file_path',
             'created_at'
         ]
@@ -30,7 +27,7 @@ class TestUploadCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TestUpload
-        fields = ['patient_visit', 'file_type']
+        fields = ['patient_visit', 'report_type', 'report_description']
     
     def create(self, validated_data):
         """Handle both direct file upload and file path"""
@@ -38,7 +35,7 @@ class TestUploadCreateSerializer(serializers.ModelSerializer):
         
         request = self.context.get('request')
         patient_visit = validated_data.pop('patient_visit')  # Remove patient_visit from validated_data
-        file_type = validated_data['file_type']
+        file_type = validated_data['report_type']
         
         # Find or create VisitTestPerformed for this patient visit
         visit_performed = VisitTestPerformed.objects.get(
@@ -72,44 +69,3 @@ class TestUploadCreateSerializer(serializers.ModelSerializer):
 
         
         return response
-
-
-# class BulkTestUploadSerializer(serializers.Serializer):
-#     """Serializer for bulk uploading multiple test files"""
-#     visit = serializers.PrimaryKeyRelatedField(queryset=VisitTestPerformed.objects.all())
-#     test_files = serializers.ListField(
-#         child=serializers.DictField(),
-#         help_text="List of {'file_type': str, 'file': File} or {'file_type': str, 'file_path': str}"
-#     )
-    
-#     def create(self, validated_data):
-#         """Create multiple TestUpload records"""
-#         from .file_utils import upload_file_to_s3
-        
-#         request = self.context.get('request')
-#         visit = validated_data['visit']
-#         test_files = validated_data['test_files']
-        
-#         created_uploads = []
-        
-#         for file_data in test_files:
-#             file_type = file_data.get('file_type')
-            
-#             if 'file' in file_data:
-#                 # Direct file upload
-#                 uploaded_file = file_data['file']
-#                 file_path = upload_file_to_s3(uploaded_file, file_type)
-#             else:
-#                 # Use provided file_path
-#                 file_path = file_data.get('file_path')
-#                 if not file_path:
-#                     raise serializers.ValidationError(f"file_path required for {file_type}")
-            
-#             test_upload = TestUpload.objects.create(
-#                 visit=visit,
-#                 file_type=file_type,
-#                 file_path=file_path
-#             )
-#             created_uploads.append(test_upload)
-        
-#         return created_uploads

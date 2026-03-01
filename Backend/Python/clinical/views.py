@@ -21,9 +21,10 @@ from .serializers import (
     PatientVisitWithCaseHistorySerializer,
     TrialDeviceReturnSerializer,
     TrialCompletionSerializer,
-    PatientVisitFullDetailsSerializer
+    PatientVisitFullDetailsSerializer,
+    TestTypeSerializer
 )
-from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem
+from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -686,8 +687,8 @@ class TestResultListView(APIView):
             for test_file in test_results:
                 result_data.append({
                     'id': test_file.id,
-                    'file_type': test_file.file_type,
-                    # 'file_path': test_file.file_path,
+                    'report_type': test_file.report_type,
+                    'report_description': test_file.report_description,
                     'file_url': test_file.file_path,  # For frontend convenience
                     'created_at': test_file.created_at,
                     # 'uploaded_by': test_file.uploaded_by.username if test_file.uploaded_by else None
@@ -722,20 +723,22 @@ class VisitTestTypesView(APIView):
             
             test_mapping = [
                 (test_performed.pta, "PTA"),
-                (test_performed.immittance, "Immittance"),
-                (test_performed.typm,"Tympanometry"),
-                (test_performed.oae, "OAE"),
+                (test_performed.speech_assessment, "Speech Assessment"),
                 (test_performed.bera_assr, "BERA/ASSR"),
-                (test_performed.srt, "SRT"),
-                (test_performed.sds, "SDS"),
-                (test_performed.ucl, "UCL"),
-                (test_performed.free_field, "Free Field")
+                (test_performed.impedance, "Impedance"),
+                (test_performed.impedance_etf, "Impedance/ETF"),
+                (test_performed.pta_sds, "PTA/SDS"),
+                (test_performed.srt_sds, "SRT/SDS"),
+                (test_performed.bera, "BERA"),
+                (test_performed.assr, "ASSR"),
+                (test_performed.special_tests, "Special Tests"),
+               
             ]
             
             test_types = [name for flag, name in test_mapping if flag]
             
-            if test_performed.other_test:
-                test_types.append(test_performed.other_test)
+            # if test_performed.other_test:
+            #     test_types.append(test_performed.other_test)
                 
             return Response({"status": 200, "data": test_types}, status=status.HTTP_200_OK)
             
@@ -1067,4 +1070,73 @@ class MarkPatientContactedView(APIView):
             return Response({
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error updating contact status: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class TestTypeUpdateListView(generics.ListAPIView):
+    """
+    API to get list of available test types for dropdowns (GET) and update in bulk (PATCH).
+    Returns all test types defined in the system.
+    PATCH expects a list of test types with id and name.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = TestTypeSerializer
+    queryset = TestType.objects.all().order_by('-id')  # Assuming newer test types are more relevant for dropdowns
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            data = self.get_serializer(queryset, many=True).data
+            return Response({
+                'status': status.HTTP_200_OK,
+                'data': data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error fetching test types: {str(e)}',
+                'data': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def patch(self, request, *args, **kwargs):
+        """
+        Update a single TestType by id using serializer validation. Expects: {"id": 1, ...fields...}
+        You can update any field of TestType.
+        """
+        try:
+            data = request.data
+            test_type_id = data.get('id')
+            if not test_type_id:
+                return Response({
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'message': 'TestType id is required.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                test_type = TestType.objects.get(id=test_type_id)
+            except TestType.DoesNotExist:
+                return Response({
+                    'status': status.HTTP_404_NOT_FOUND,
+                    'message': 'TestType not found.'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = TestTypeSerializer(test_type, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'status': status.HTTP_200_OK,
+                    'message': 'TestType updated successfully.',
+                    # 'data': serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'message': 'Validation error.',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error updating test type: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
