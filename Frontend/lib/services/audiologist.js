@@ -94,3 +94,40 @@ export const returnTrialDevice = async (serialNumber,notes) => {
     throw err?.response?.data || "failed to return device"
    }
 }
+
+/**
+ * Get awaiting stock trials list
+ * @param {Object} params - Query parameters
+ * @param {number} params.page - Page number (default: 1)
+ * @returns {Promise<Object>} Response with awaiting stock trials list
+ */
+export const getAwaitingStockTrials = async (params = {}) => {
+  try {
+    const { page = 1 } = params;
+    const queryParams = new URLSearchParams();
+    queryParams.append("page", page.toString());
+    const url = `${routes.audiologist.awaitingStockTrials}?${queryParams.toString()}`;
+    const response = await apiClient.get(url);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Complete awaiting stock trial
+ * @param {number} trialId - Trial ID to complete
+ * @param {Object} data - Completion data
+ * @returns {Promise<Object>} Response with completion status
+ */
+export const completeAwaitingStockTrial = async (trialId, data) => {
+  try {
+    const response = await apiClient.post(
+      `${routes.audiologist.completeAwaitingTrial}${trialId}/complete/`,
+      data
+    );
+    return response?.data?.data || response?.data || response;
+  } catch (err) {
+    throw err?.response?.data || "Failed to complete trial";
+  }
+}

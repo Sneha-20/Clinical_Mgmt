@@ -16,6 +16,7 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
       { icon: '👁️', label: 'Trials', href: '/dashboard/trials' },
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
+      { icon: '🔧', label: 'Awaiting Device', href: '/dashboard/awaiting-device'},
     ],
     Doctor: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
