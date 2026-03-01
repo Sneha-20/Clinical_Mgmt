@@ -239,7 +239,6 @@ useEffect(() => {
   // ADD VISIT
   // ------------------------------------------
   const handleAddVisit = async (data) => {
-    console.log("tttttt")
      dispatch(startLoading());
     try {
      await addNewVisit(data);

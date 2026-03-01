@@ -31,6 +31,8 @@ export default function PatientVisitForm({
     seen_by: "",
     test_requested: [],
     notes: "",
+    cost_taken_amount: "",
+    mode_of_payment: "",
   };
   const getInitialFormState = (patientId) => ({
     patient: patientId || null,
@@ -40,19 +42,19 @@ export default function PatientVisitForm({
   });
 
   useEffect(() => {
-  if (showSelctedPatientId) {
-    setFormData((prev) => ({
-      ...prev,
-      patient: showSelctedPatientId,
-    }));
-  }
-}, [showSelctedPatientId]);
+    if (showSelctedPatientId) {
+      setFormData((prev) => ({
+        ...prev,
+        patient: showSelctedPatientId,
+      }));
+    }
+  }, [showSelctedPatientId]);
 
   const serviceOption = [
     { label: "Clinic", value: "clinic" },
     { label: "Home", value: "home" },
   ];
-   const doctors = doctorList.map((doctor) => ({
+  const doctors = doctorList.map((doctor) => ({
     label: doctor.name,
     value: doctor.id,
   }));
@@ -97,6 +99,7 @@ export default function PatientVisitForm({
     }));
   };
   const handleSubmit = async (e) => {
+    console.log(formData)
     e.preventDefault();
     try {
       await visitPatientSchema.validate(formData, { abortEarly: false });
@@ -198,32 +201,53 @@ export default function PatientVisitForm({
             {/* Tests Required */}
             {(visit.visit_type === "New Test" ||
               visit.visit_type === "Hearing Aid Trial") && (
-              <>
-                <div className="mt-4">
-                  <label className="font-medium text-sm text-gray-700">
-                    Tests Required (Tick)
-                  </label>
-                </div>
+                <>
+                  <div className="mt-4">
+                    <label className="font-medium text-sm text-gray-700">
+                      Tests Required (Tick)
+                    </label>
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                  {testRequestedOptions.map((test) => (
-                    <CommonCheckbox
-                      key={test.value}
-                      label={test.label}
-                      value={test.value}
-                      checked={visit.test_requested.includes(test.value)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        const updated = visit.test_requested.includes(value)
-                          ? visit.test_requested.filter((t) => t !== value)
-                          : [...visit.test_requested, value];
-                        updateVisitDetails(index, "test_requested", updated);
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {testRequestedOptions.map((test) => (
+                      <CommonCheckbox
+                        key={test.value}
+                        label={test.label}
+                        value={test.value}
+                        checked={visit.test_requested.includes(test.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const updated = visit.test_requested.includes(value)
+                            ? visit.test_requested.filter((t) => t !== value)
+                            : [...visit.test_requested, value];
+                          updateVisitDetails(index, "test_requested", updated);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              <Input
+                label="Amount Taken From Patient"
+                name="cost_taken_amount"
+                type="number"
+                step="0.01"
+                placeholder="Enter Amount - 120.00"
+                value={visit.cost_taken_amount}
+                onChange={(n, v) => updateVisitDetails(index, "cost_taken_amount", v)}
+                error={errors?.visit_details?.[index]?.cost_taken_amount}
+              />
+
+              <Input
+                label="Mode of Payment"
+                name="mode_of_payment"
+                value={visit.mode_of_payment}
+                onChange={(n, v) => updateVisitDetails(index, "mode_of_payment", v)}
+                error={errors?.visit_details?.[index]?.mode_of_payment}
+              />
+            </div>
           </div>
         ))}
 
