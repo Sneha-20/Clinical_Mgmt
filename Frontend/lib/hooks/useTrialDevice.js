@@ -148,7 +148,7 @@ export default function () {
         });
       } else {
         payload = {
-          trial_decision: "BOOK",
+          trial_decision: "BOOK - Device Allocated",
           booked_device_inventory: form.deviceId,
           booked_device_serial: form.serialId,
           completion_notes: form.notes || "",
@@ -187,7 +187,7 @@ export default function () {
     setForm(INITIAL_BOOK_FORM);
     setExtendForm(INITIAL_EXTEND_FORM);
     setNotBookReason(INITIAL_NOT_BOOK_REASON);
-    setSelectedAction("Book");
+    setSelectedAction("BOOK");
     }
   }
 

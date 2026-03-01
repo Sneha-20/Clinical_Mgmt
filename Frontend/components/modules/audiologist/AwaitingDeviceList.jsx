@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -12,14 +12,13 @@ import {
 } from "@/components/ui/Table";
 import Pagination from "@/components/ui/Pagination";
 import useAwaitingDevices from "@/lib/hooks/useAwaitingDevices";
-import AwaitingDeviceModal from "./components/AwaitingDeviceModal";
 import { CommonLoader } from "@/components/ui/CommonLoader";
 import { Phone, User, Calendar, Package } from "lucide-react";
+import AwaitingDeviceModal from "./components/AwaitingDeviceModal";
 
 const AwaitingDeviceList = () => {
   const {
     awaitingDevicesList,
-    inventoryDevice,
     serials,
     totalPage,
     currentPage,
@@ -187,7 +186,6 @@ const AwaitingDeviceList = () => {
         completeTrialDialogOpen={completeTrialDialogOpen}
         selectedTrial={selectedTrial}
         handleCloseDialog={handleCloseDialog}
-        inventoryDevice={inventoryDevice}
         serials={serials}
         form={form}
         handleChange={handleChange}

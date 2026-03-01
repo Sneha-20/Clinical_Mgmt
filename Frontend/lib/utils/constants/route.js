@@ -50,6 +50,7 @@ export const routes = {
    activeTrialDevice:"clinical/trials/",
    awaitingStockTrials:"clinical/trials/awaiting-stock/",
    completeAwaitingTrial:"clinical/trials/",
+   allocateSerialTrial: "clinical/trials/allocate-serial/",
    inventoryDeviceList:"/clinical/device-booking/inventory/",
    deviceSerialList:"/clinical/device-booking/serial",
    bookeddevice:"clinical/trials/",

@@ -131,3 +131,21 @@ export const completeAwaitingStockTrial = async (trialId, data) => {
     throw err?.response?.data || "Failed to complete trial";
   }
 }
+
+/**
+ * Allocate a serial number for an awaiting stock trial
+ * @param {number} trialId - ID of the trial
+ * @param {Object} data - Payload containing booked_device_serial
+ * @returns {Promise<Object>} Response object
+ */
+export const allocateTrialSerial = async (trialId, data) => {
+  try {
+    const response = await apiClient.post(
+      `${routes.audiologist.allocateSerialTrial}${trialId}/`,
+      data
+    );
+    return response?.data?.data || response?.data || response;
+  } catch (err) {
+    throw err?.response?.data || "Failed to allocate serial";
+  }
+};

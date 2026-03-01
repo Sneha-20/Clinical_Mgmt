@@ -4,15 +4,12 @@ import { showToast } from "@/components/ui/toast";
 import { useEffect, useState } from "react";
 import {
   getAwaitingStockTrials,
-  completeAwaitingStockTrial,
-  fetchInventoryDevice,
+  allocateTrialSerial,
   fetchSerialList,
 } from "../services/audiologist";
 
 const INITIAL_COMPLETE_FORM = {
-  deviceId: null,
-  serialId: null,
-  notes: "",
+  serialId: "",
 };
 
 export default function useAwaitingDevices() {
@@ -20,7 +17,8 @@ export default function useAwaitingDevices() {
   const [awaitingDevicesList, setAwaitingDevicesList] = useState([]);
   const [totalPage, setTotalPage] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [inventoryDevice, setInventoryDevice] = useState([]);
+  // inventoryDevice removed per new requirements
+  // const [inventoryDevice, setInventoryDevice] = useState([]);
   const [serials, setSerials] = useState([]);
   const [completeTrialDialogOpen, setCompleteTrialDialogOpen] = useState(false);
   const [selectedTrial, setSelectedTrial] = useState(null);
@@ -50,33 +48,19 @@ export default function useAwaitingDevices() {
     fetchAwaitingDevices({ page: currentPage });
   }, [currentPage]);
 
-  // Fetch inventory devices
-  useEffect(() => {
-    const getInventoryDevice = async () => {
-      try {
-        const res = await fetchInventoryDevice();
-        const resData = res.data || [];
-        setInventoryDevice(
-          resData.map((item) => ({
-            label: item.product_name,
-            value: item.id,
-            brand: item.brand,
-            price: item.unit_price,
-            qty: item.quantity_in_stock,
-          }))
-        );
-      } catch (err) {
-        console.log("Error fetching inventory devices:", err);
-      }
-    };
-    getInventoryDevice();
-  }, []);
-
   // Open complete trial dialog
   const openCompleteDialog = (trial) => {
     setCompleteTrialDialogOpen(true);
     setSelectedTrial(trial);
     setForm(INITIAL_COMPLETE_FORM);
+
+    // clear previous serials
+    setSerials([]);
+
+    // fetch serials using booked device id from trial
+    if (trial.booked_device_inventory) {
+      fetchSerialsByDevice(trial.booked_device_inventory);
+    }
   };
 
   // Close complete trial dialog
@@ -109,18 +93,19 @@ export default function useAwaitingDevices() {
     }
   };
 
-  // Handle form change
+  // Handle form change (serial selection)
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle complete trial
+  // Handle allocate serial and complete trial
+  // Handle allocate serial and complete trial
   const handleCompleteTrial = async () => {
-    if (!selectedTrial || !form.deviceId || !form.serialId) {
+    if (!selectedTrial || !form.serialId) {
       showToast({
         type: "error",
-        message: "Please select device and serial number",
+        message: "Please select a serial number",
       });
       return;
     }
@@ -129,26 +114,24 @@ export default function useAwaitingDevices() {
       setIsCompleting(true);
       dispatch(startLoading());
 
-      const completeData = {
-        device_booking_id: form.deviceId,
-        serial_number: form.serialId,
-        notes: form.notes || "",
+      const payload = {
+        booked_device_serial: form.serialId,
       };
 
-      await completeAwaitingStockTrial(selectedTrial.id, completeData);
+      await allocateTrialSerial(selectedTrial.id, payload);
 
       showToast({
         type: "success",
-        message: "Trial completed successfully",
+        message: "Device allocated successfully",
       });
 
       handleCloseDialog();
       fetchAwaitingDevices({ page: currentPage });
     } catch (error) {
-      console.error("Error completing trial:", error);
+      console.error("Error allocating serial:", error);
       showToast({
         type: "error",
-        message: error.message || "Failed to complete trial",
+        message: error.message || "Failed to allocate serial",
       });
     } finally {
       setIsCompleting(false);
@@ -174,7 +157,6 @@ export default function useAwaitingDevices() {
     totalPage,
     currentPage,
     setCurrentPage,
-    inventoryDevice,
     serials,
     completeTrialDialogOpen,
     selectedTrial,

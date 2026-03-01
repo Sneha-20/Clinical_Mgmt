@@ -58,6 +58,7 @@ export default function PatientVisitForm({
     label: doctor.name,
     value: doctor.id,
   }));
+
   const [formData, setFormData] = useState(getInitialFormState(showSelctedPatientId));
   const updateField = useCallback(
     (name, value) => {
@@ -233,19 +234,16 @@ export default function PatientVisitForm({
                 label="Amount Taken From Patient"
                 name="cost_taken_amount"
                 type="number"
-                step="0.01"
-                placeholder="Enter Amount - 120.00"
+                placeholder="Enter Amount"
                 value={visit.cost_taken_amount}
-                onChange={(n, v) => updateVisitDetails(index, "cost_taken_amount", v)}
-                error={errors?.visit_details?.[index]?.cost_taken_amount}
+                onChange={(e) => updateVisitDetails(index, "cost_taken_amount", e.target.value)}
               />
 
               <Input
                 label="Mode of Payment"
                 name="mode_of_payment"
                 value={visit.mode_of_payment}
-                onChange={(n, v) => updateVisitDetails(index, "mode_of_payment", v)}
-                error={errors?.visit_details?.[index]?.mode_of_payment}
+                onChange={(e) => updateVisitDetails(index, "mode_of_payment", e.target.value)}
               />
             </div>
           </div>

@@ -55,6 +55,7 @@ export default function ReceptionistDashboard() {
   };
 
   const onAddVisitSubmit = async (data) => {
+    console.log("Visit Form Data:", data);
     try {
       await handleAddVisit(data);
     } catch (err) {
