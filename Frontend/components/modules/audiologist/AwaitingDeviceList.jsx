@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/Table";
 import Pagination from "@/components/ui/Pagination";
 import useAwaitingDevices from "@/lib/hooks/useAwaitingDevices";
-import { CommonLoader } from "@/components/ui/CommonLoader";
 import { Phone, User, Calendar, Package } from "lucide-react";
 import AwaitingDeviceModal from "./components/AwaitingDeviceModal";
+import CommonLoader from "@/components/ui/CommonLoader";
 
 const AwaitingDeviceList = () => {
   const {
@@ -73,14 +73,14 @@ const AwaitingDeviceList = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-card rounded-lg shadow p-4 border border-border">
             <p className="text-sm text-muted-foreground mb-1">Total Trials</p>
             <p className="text-2xl font-bold text-foreground">
               {awaitingDevicesList.length}
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* Table Section */}
         <div className="bg-card rounded-lg shadow border border-border overflow-hidden">
@@ -101,7 +101,7 @@ const AwaitingDeviceList = () => {
                     <TableHead>Doctor</TableHead>
                     <TableHead>Device Details</TableHead>
                     <TableHead>Trial End Date</TableHead>
-                    <TableHead>Status</TableHead>
+                    {/* <TableHead>Status</TableHead> */}
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -150,7 +150,7 @@ const AwaitingDeviceList = () => {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(trial.trial_decision)}</TableCell>
+                      {/* <TableCell>{getStatusBadge(trial.trial_decision)}</TableCell> */}
                       <TableCell className="text-right">
                         <Button
                           size="sm"
@@ -190,7 +190,7 @@ const AwaitingDeviceList = () => {
         form={form}
         handleChange={handleChange}
         handleCompleteTrial={handleCompleteTrial}
-        fetchSerialsByDevice={fetchSerialsByDevice}
+        // fetchSerialsByDevice={fetchSerialsByDevice}
         isCompleting={isCompleting}
       />
     </div>

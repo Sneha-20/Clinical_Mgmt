@@ -76,14 +76,15 @@ export default function useAwaitingDevices() {
       dispatch(startLoading());
       const response = await fetchSerialList({ deviceId });
       const resData = response.data || [];
-      setSerials(
-        resData.map((item) => ({
-          label: item,
-          value: item,
-        }))
-      );
+      const serialOptions = resData.map((item) => ({ label: item, value: item }));
+      setSerials(serialOptions);
+
+      // If the trial already contains a serial_number, preselect it when available
+      if (selectedTrial?.serial_number) {
+        const match = serialOptions.find((s) => s.value === selectedTrial.serial_number);
+        if (match) setForm((prev) => ({ ...prev, serialId: match.value }));
+      }
     } catch (err) {
-      console.log("Error fetching serials:", err);
       showToast({
         type: "error",
         message: "Failed to fetch serials",
@@ -93,9 +94,9 @@ export default function useAwaitingDevices() {
     }
   };
 
-  // Handle form change (serial selection)
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  // Handle form change (serial selection).
+  // Accepts (name, value) signature from `DropDown`.
+  const handleChange = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 

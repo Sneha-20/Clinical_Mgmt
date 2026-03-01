@@ -118,13 +118,6 @@ export default function useCaseHistory() {
   };
 
   const handleFileSubmit = async () => {
-    // if (!file || !testType) {
-    //   showToast({
-    //     type: "error",
-    //     message: "Please select test type and file",
-    //   });
-    //   return;
-    // }
     dispatch(startLoading());
     try {
       const formData = new FormData();
@@ -185,7 +178,6 @@ export default function useCaseHistory() {
   useEffect(() => {
     fetchTestFile();
   }, []);
-  console.log("selected Modal", selectedModal);
 
   return {
     patientsCaseHistory,

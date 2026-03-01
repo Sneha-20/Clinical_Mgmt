@@ -67,7 +67,7 @@ export default function PatientRegistrationForm({
           seen_by: "",
           test_requested: [],
           notes: "",
-          cost_taken_amount: "",
+          cost_taken_amount: null,
           mode_of_payment: "",
         },
       ],
@@ -129,6 +129,7 @@ export default function PatientRegistrationForm({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   error={formik.touched.name && formik.errors.name}
+                  important
                 />
                   <CommonDatePicker
                   label="Date of Birth"
@@ -152,15 +153,14 @@ export default function PatientRegistrationForm({
                   important
                 />
 
-              
-
                 <DropDown
-                  label="Gender*"
+                  label="Gender"
                   name="gender"
                   options={genderOptions}
                   value={formik.values.gender}
                   onChange={(n, v) => formik.setFieldValue("gender", v)}
                   error={formik.touched.gender && formik.errors.gender}
+                  important
                 />
 
                 <Input
@@ -176,6 +176,7 @@ export default function PatientRegistrationForm({
                 <Input
                   label="Primary Phone"
                   name="phone_primary"
+                  maxLength={10}
                   value={formik.values.phone_primary}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -304,17 +305,18 @@ export default function PatientRegistrationForm({
                 </h3>
 
                 <DropDown
-                  label="Purpose of Visit*"
+                  label="Purpose of Visit"
                   options={visitTypeOptions}
                   value={visit.visit_type}
                   onChange={(n, v) =>
                     formik.setFieldValue(`visit_details.${index}.visit_type`, v)
                   }
                   error={formik.errors.visit_details?.[index]?.visit_type}
+                  important
                 />
 
                 <DropDown
-                  label="Present Complaint*"
+                  label="Present Complaint"
                   options={complaintOptions}
                   value={visit.present_complaint}
                   onChange={(n, v) =>
@@ -323,16 +325,18 @@ export default function PatientRegistrationForm({
                       v
                     )
                   }
+                  important
                   className="mt-3"
                 />
 
                 <DropDown
-                  label="Assigned To*"
+                  label="Assigned To"
                   options={doctorOption}
                   value={visit.seen_by}
                   onChange={(n, v) =>
                     formik.setFieldValue(`visit_details.${index}.seen_by`, v)
                   }
+                  important
                   className="mt-3"
                 />
                 <TextArea
@@ -391,17 +395,16 @@ export default function PatientRegistrationForm({
 
                     onChange={(e) => {
                       const value = e.target.value;
-                      // formik.setFieldValue('cost_taken_amount', value === '' ? '' : parseFloat(value));
                       formik.setFieldValue(
                         `visit_details.${index}.cost_taken_amount`,
                         value === '' ? '' : parseFloat(value)
                       );
                     }}
-                    onBlur={formik.handleBlur}
-                    error={
-                      formik.touched.cost_taken_amount &&
-                      formik.errors.cost_taken_amount
-                    }
+                    // onBlur={formik.handleBlur}
+                    // error={
+                    //   formik.touched.cost_taken_amount &&
+                    //   formik.errors.cost_taken_amount
+                    // }
                   />
 
                   <Input
@@ -415,11 +418,11 @@ export default function PatientRegistrationForm({
                         value
                       );
                     }}
-                    onBlur={formik.handleBlur}
-                    error={
-                      formik.touched.mode_of_payment &&
-                      formik.errors.mode_of_payment
-                    }
+                    // onBlur={formik.handleBlur}
+                    // error={
+                    //   formik.touched.mode_of_payment &&
+                    //   formik.errors.mode_of_payment
+                    // }
                   />
                 </div>
               </div>

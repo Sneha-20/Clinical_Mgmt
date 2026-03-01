@@ -99,21 +99,21 @@ export const trialGivenSchema = Yup.object({
   ear_fitted: Yup.string().required("Ear fitted is required"),
   dome_type: Yup.string().required("Dome type is required"),
 
-  srt_before: Yup.string().required("SRT before is required"),
-  sds_before: Yup.string().required("SDS before is required"),
-  ucl_before: Yup.string().required("UCL before is required"),
+  // srt_before: Yup.string().required("SRT before is required"),
+  // sds_before: Yup.string().required("SDS before is required"),
+  // ucl_before: Yup.string().required("UCL before is required"),
 
-  gain_settings: Yup.string().required("Gain settings required"),
+  // gain_settings: Yup.string().required("Gain settings required"),
   patient_response: Yup.string().required("Patient response required"),
-  counselling_notes: Yup.string().required("Counselling notes required"),
+  // counselling_notes: Yup.string().required("Counselling notes required"),
 
   cost: Yup.number()
     .typeError("Cost must be a number")
     .required("Cost is required"),
 
   discount_offered: Yup.number()
-    .typeError("Discount must be a number")
-    .max(100, "Discount cannot exceed 100"),
+    .typeError("Discount must be a number"),
+    // .max(100, "Discount cannot exceed 100"),
 
   trial_start_date: Yup.date().required("Start date required"),
   trial_end_date: Yup.date()

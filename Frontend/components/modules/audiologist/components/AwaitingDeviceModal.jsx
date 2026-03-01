@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import DropDown from "@/components/ui/dropdown";
 import Modal from "@/components/ui/Modal";
-import { CheckCircle, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import React from "react";
 
 export default function AwaitingDeviceModal({

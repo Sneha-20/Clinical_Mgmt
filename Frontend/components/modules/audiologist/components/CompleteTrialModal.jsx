@@ -31,7 +31,7 @@ export default function CompleteTrialModal({
     { label: "14 days (2 weeks)", value: 14 },
   ];
 
-  console.log("Inventory Devices:", selectedAction);
+  
   return (
     <Modal
       header="Complete Trial"

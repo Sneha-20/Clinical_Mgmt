@@ -207,26 +207,20 @@ export default function CaseHistoryForm({ patientId }) {
               placeholder={loadingTestTypes ? "Loading test types..." : "Select test type"}
             />
 
-            <TextArea
-              label="Report Description"
-              name="report_description"
-              formik={formik}
-              important
-            />
-
             <FileUploadField
               label="Select Test Report"
               fileName={fileName}
               setFileName={setFileName}
               onFileChange={(file) => setFile(file)}
             />
+            <div className="w-full text-right">
 
             <Button variant="link" onClick={handleFileSubmit}>
               <Upload className="h-4 w-4 mr-1" />
               Upload Report
             </Button>
-
-            {testFileList.length > 0 && (
+            </div>
+              {testFileList.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {testFileList.map((file) => (
                   <div
@@ -248,6 +242,12 @@ export default function CaseHistoryForm({ patientId }) {
                 ))}
               </div>
             )}
+              <TextArea
+              label="Report Description"
+              name="report_description"
+              formik={formik}
+              important
+            />
 
             <div className="flex gap-3">
               <Button onClick={() => handleNextStep(3)}>
