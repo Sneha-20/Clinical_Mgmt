@@ -132,6 +132,9 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     )
     notes = serializers.CharField(required=False, allow_blank=True)
     seen_by = serializers.IntegerField(required=False, allow_null=True)
+    cost_taken_amount = serializers.FloatField(required=False, default=0)   
+    mode_of_payment = serializers.CharField(required=False, allow_blank=True)
+
 
     def validate_seen_by(self, value):
         print(value)
@@ -161,7 +164,6 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 
     # Nested list of visit records
     visit_details = PatientVisitRegistrationSerializer(many=True, write_only=True)
-    cost_taken_amount = serializers.FloatField(write_only=True, required=False, default=0)
 
     class Meta:
         model = Patient
@@ -170,7 +172,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             'phone_primary', 'phone_secondary', 'city', 'address',
             'referral_type', 'referral_doctor',
             'service_type', 'appointment_date',
-            'visit_details'  # Include the nested field
+            'visit_details'
+              # Include the nested field
         ]
         read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic']
 
@@ -201,7 +204,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         visits_data = validated_data.pop('visit_details', [])
         service_type = validated_data.pop('service_type', None)
         appointment_date = validated_data.pop('appointment_date', None)
-        cost_taken_amount = validated_data.pop('cost_taken_amount', 0)  # Store cost amount for later use in visit creation
+
 
         # B. Get User and Clinic info from the request context (passed from View)
         request = self.context.get('request')
@@ -238,6 +241,9 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                 if isinstance(test_requested, list):
                     test_requested = ",".join(test_requested) if test_requested else ""
 
+                # cost_taken_amount = visit_data.pop('cost_taken_amount', 0)  # Store cost amount for later use in visit creation
+                # mode_of_payment = visit_data.pop('mode_of_payment', None)
+
                 PatientVisit.objects.create(
                     patient=patient,
                     clinic=patient.clinic,  # Inherit clinic from patient
@@ -247,7 +253,6 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                     appointment_date=appointment_date,
                     seen_by=seen_by_user,
                     test_requested=test_requested,
-                    cost_taken_amount=cost_taken_amount,  # Initialize cost taken amount to 0
                     **visit_data
                 )
 
