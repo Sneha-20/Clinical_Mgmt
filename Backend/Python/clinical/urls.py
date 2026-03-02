@@ -15,7 +15,7 @@ from .api_inventory_item_create import InventoryItemCreateView,InventoryItemDest
 from .api_trials import TrialCreateView, TrialListView
 from .api_trial_devices import TrialDeviceListView
 from .api_trial_device_serials import TrialDeviceSerialListView, ProductInfoBySerialView, TrialDeviceInUseListView, TrialAvailableModelsView
-from .test_upload_views import TestUploadListCreateView
+from .test_upload_views import TestUploadListView,ReportTestCreateView,ReportUploadView
 from .completed_tests_views import CompletedTestsListView, CompletedTestDetailView, PatientTestHistoryView
 from .trial_completion_view import TrialCompletionView, AwaitingStockListView, AllocateSerialFlatList, AllocateSerialNumber
 from .api_for_services import CustomerNeedService,DeviceNeedService,ServiceVisitUpdateView,ServiceVisitCreateView,ServiceTypeListView,ServiceVisitList,ServiceDetailView,PartsUsedListView
@@ -79,7 +79,10 @@ urlpatterns = [
    # Trial devices in use list
    path('inventory/trial-devices-in-use/', TrialDeviceInUseListView.as_view(), name='trial_devices_in_use'),
 
-   path('test-uploads/', TestUploadListCreateView.as_view(), name='test-upload-list-create'),
+   path('report-upload/<int:id>/', ReportUploadView.as_view(), name='report-upload'), # Endpoint for uploading files to existing TestUpload records
+   path('report-create/', ReportTestCreateView.as_view(), name='report-create'), #
+   path('test-uploads/list/', TestUploadListView.as_view(), name='test-upload-list'), # List and create test upload records
+
 
    # Completed tests APIs for audiologists
    path('completed-tests/', CompletedTestsListView.as_view(), name='completed-tests-list'),

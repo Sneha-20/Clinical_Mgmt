@@ -6,61 +6,55 @@ from rest_framework import filters
 from .models import TestUpload, VisitTestPerformed
 from .test_upload_serializers import (
     TestUploadSerializer, 
-    TestUploadCreateSerializer, 
-    # BulkTestUploadSerializer
+    BulkReportTestUploadSerializer
 )
+from .file_utils import upload_file_to_s3
 
-class TestUploadListCreateView(generics.ListCreateAPIView):
+
+class ReportTestCreateView(generics.CreateAPIView):
+    """Create test upload records with file upload"""
+    serializer_class = BulkReportTestUploadSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({"status":status.HTTP_201_CREATED,"message":"Report added successfully"}, status=status.HTTP_201_CREATED)
+    
+
+class ReportUploadView(generics.UpdateAPIView):
+    """Update test upload record with file upload"""
+    queryset = TestUpload.objects.all()
+    lookup_field = 'id'
+
+    def patch(self, request, *args, **kwargs):
+        """Handle PATCH request for file upload"""
+        instance = self.get_object()
+        # get the uploaded file from request
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response({"status":status.HTTP_400_BAD_REQUEST,"message":"No file uploaded"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            file_path = upload_file_to_s3(uploaded_file, instance.report_type)
+            instance.file_path = file_path
+            instance.save()
+
+            return Response({"status":status.HTTP_200_OK,"message":"File uploaded successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"status":status.HTTP_500_INTERNAL_SERVER_ERROR,"message":f"File upload failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class TestUploadListView(generics.ListAPIView):
     """List and create test upload records"""
     queryset = TestUpload.objects.all()
+    serializer_class = TestUploadSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['visit', 'report_type']
     search_fields = ['report_type', 'visit__visit__patient__name']
-    ordering_fields = ['created_at', 'report_type']
     ordering = ['-created_at']
     
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            print("POST")
-            return TestUploadCreateSerializer
-        return TestUploadSerializer
-
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response({"status":status.HTTP_201_CREATED,"message":"Test uploaded successfully"}, status=status.HTTP_201_CREATED)
-
-
-# class TestUploadDetailView(generics.RetrieveUpdateDestroyAPIView):
-#     """Retrieve, update, or delete a test upload record"""
-#     queryset = TestUpload.objects.all()
-#     serializer_class = TestUploadSerializer
-
-
-# class TestUploadByVisitView(generics.ListAPIView):
-#     """Get all test uploads for a specific visit"""
-#     serializer_class = TestUploadSerializer
-#     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-#     search_fields = ['file_type']
-#     ordering = ['-created_at']
-    
-#     def get_queryset(self):
-#         visit_id = self.kwargs['visit_id']
-#         return TestUpload.objects.filter(visit__id=visit_id)
 
 
 
-class TestUploadByPatientView(generics.ListAPIView):
-    """Get all test uploads for a specific patient across all visits"""
-    serializer_class = TestUploadSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['report_type']
-    ordering = ['-created_at']
-    
-    def get_queryset(self):
-        patient_id = self.kwargs['patient_id']
-        return TestUpload.objects.filter(
-            visit__visit__patient__id=patient_id
-        )
+   
