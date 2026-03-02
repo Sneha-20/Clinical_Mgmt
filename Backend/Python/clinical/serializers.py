@@ -1468,6 +1468,7 @@ class TrialCreateSerializer(serializers.ModelSerializer):
         # Update the status of Patient visit ( Trial Active )
         visit.status = 'Trial Active'
         visit.status_note = 'Trial is in progress'
+        visit.step_process = 4  # Move to next step in workflow
         visit.save()
 
         validated_data['device_inventory_id'] = serial.inventory_item
