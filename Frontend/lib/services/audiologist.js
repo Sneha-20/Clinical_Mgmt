@@ -140,7 +140,7 @@ export const completeAwaitingStockTrial = async (trialId, data) => {
  */
 export const allocateTrialSerial = async (trialId, data) => {
   try {
-    const response = await apiClient.post(
+    const response = await apiClient.patch(
       `${routes.audiologist.allocateSerialTrial}${trialId}/`,
       data
     );

@@ -53,24 +53,18 @@ export default function useAwaitingDevices() {
     setCompleteTrialDialogOpen(true);
     setSelectedTrial(trial);
     setForm(INITIAL_COMPLETE_FORM);
-
-    // clear previous serials
     setSerials([]);
 
-    // fetch serials using booked device id from trial
     if (trial.booked_device_inventory) {
       fetchSerialsByDevice(trial.booked_device_inventory);
     }
   };
-
-  // Close complete trial dialog
   const handleCloseDialog = () => {
     setCompleteTrialDialogOpen(false);
     setSelectedTrial(null);
     setForm(INITIAL_COMPLETE_FORM);
   };
 
-  // Fetch serial numbers by device
   const fetchSerialsByDevice = async (deviceId) => {
     try {
       dispatch(startLoading());
@@ -79,7 +73,6 @@ export default function useAwaitingDevices() {
       const serialOptions = resData.map((item) => ({ label: item, value: item }));
       setSerials(serialOptions);
 
-      // If the trial already contains a serial_number, preselect it when available
       if (selectedTrial?.serial_number) {
         const match = serialOptions.find((s) => s.value === selectedTrial.serial_number);
         if (match) setForm((prev) => ({ ...prev, serialId: match.value }));
@@ -94,14 +87,10 @@ export default function useAwaitingDevices() {
     }
   };
 
-  // Handle form change (serial selection).
-  // Accepts (name, value) signature from `DropDown`.
   const handleChange = (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle allocate serial and complete trial
-  // Handle allocate serial and complete trial
   const handleCompleteTrial = async () => {
     if (!selectedTrial || !form.serialId) {
       showToast({
