@@ -62,17 +62,17 @@ class TrialCompletionView(APIView):
                         patient=trial.assigned_patient,
                         visit=trial.visit,
                         inventory_item=inventory_item,
-                        inventory_serial=booked_serial,
+                        inventory_serial=trial.booked_device_serial,
                         quantity=1,
                         unit_price=unit_price,
                         total_price=unit_price
                     )
                     
                     # Update inventory
-                    if booked_serial:
+                    if trial.booked_device_serial:
                         # For serialized items, update serial status
-                        booked_serial.status = 'Sold'
-                        booked_serial.save()
+                        trial.booked_device_serial.status = 'Sold'
+                        trial.booked_device_serial.save()
                         
                         # Update inventory quantity from serials
                         inventory_item.update_quantity_from_serials()

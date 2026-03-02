@@ -132,6 +132,9 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     )
     notes = serializers.CharField(required=False, allow_blank=True)
     seen_by = serializers.IntegerField(required=False, allow_null=True)
+    cost_taken_amount = serializers.FloatField(required=False, default=0)   
+    mode_of_payment = serializers.CharField(required=False, allow_blank=True)
+
 
     def validate_seen_by(self, value):
         print(value)
@@ -169,7 +172,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             'phone_primary', 'phone_secondary', 'city', 'address',
             'referral_type', 'referral_doctor',
             'service_type', 'appointment_date',
-            'visit_details'  # Include the nested field
+            'visit_details'
+              # Include the nested field
         ]
         read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic']
 
@@ -200,6 +204,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         visits_data = validated_data.pop('visit_details', [])
         service_type = validated_data.pop('service_type', None)
         appointment_date = validated_data.pop('appointment_date', None)
+
 
         # B. Get User and Clinic info from the request context (passed from View)
         request = self.context.get('request')
@@ -235,6 +240,9 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                 test_requested = visit_data.pop('test_requested', [])
                 if isinstance(test_requested, list):
                     test_requested = ",".join(test_requested) if test_requested else ""
+
+                # cost_taken_amount = visit_data.pop('cost_taken_amount', 0)  # Store cost amount for later use in visit creation
+                # mode_of_payment = visit_data.pop('mode_of_payment', None)
 
                 PatientVisit.objects.create(
                     patient=patient,
@@ -481,7 +489,7 @@ class TestUploadSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TestUpload
-        fields = ['id', 'file_type', 'file_url', 'created_at']
+        fields = ['id', 'report_type', 'report_description', 'file_url', 'created_at']
 
 class TrialSerializer(serializers.ModelSerializer):
     device_details = serializers.SerializerMethodField()
@@ -819,27 +827,34 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         # Valid test field names (case-insensitive mapping)
         valid_test_fields = {
             'pta': 'pta',
-            'immittance': 'immittance',
-            'oae': 'oae',
+            'impedance': 'impedance',
+            'srt_sds': 'srt_sds',
+            'pta_sds' :'pta_sds',
+            'special_tests': 'special_tests',
+            'impedance_etf': 'impedance_etf',
+            'bera': 'bera',
+            'assr': 'assr',
             'bera_assr': 'bera_assr',
-            'bera/assr': 'bera_assr',  # Allow alternative format
-            'srt': 'srt',
-            'sds': 'sds',
-            'ucl': 'ucl',
-            'free_field': 'free_field',
-            'freefield': 'free_field',  # Allow alternative format
+            'speech_assessment': 'speech_assessment',
         }
+        
+
+
+
         
         # Convert test_requested list to boolean fields
         test_performed_data = {
             'pta': False,
-            'immittance': False,
-            'oae': False,
+            'impedance': False,
+            'bera': False,
+            'assr': False,
             'bera_assr': False,
-            'srt': False,
-            'sds': False,
-            'ucl': False,
-            'free_field': False,
+            'srt_sds': False,
+            'pta_sds': False,
+            'impedance_etf': False,
+            'special_tests': False,
+            'speech_assessment': False,
+                
         }
         
         # Set True for tests in the test_requested list
@@ -853,13 +868,16 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         # Map VisitTestPerformed boolean fields -> TestType names
         flag_to_testtype_name = {
             'pta': 'PTA',
-            'immittance': 'Immittance',
-            'oae': 'OAE',
+            'impedance': 'Impedance',
+            'special_tests': 'Special Tests',
+            'speech_assessment': 'Speech Assessment',
+            'srt_sds': 'SRT/SDS',
+            'pta_sds': 'PTA/SDS',
+            'impedance_etf': 'Impedance/ETF',
+            'bera': 'BERA',
+            'assr': 'ASSR',
             'bera_assr': 'BERA/ASSR',
-            'srt': 'SRT',
-            'sds': 'SDS',
-            'ucl': 'UCL',
-            'free_field': 'Free Field',
+           
         }
 
         request = self.context.get('request')
@@ -891,7 +909,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
             # 2. Create or update VisitTestPerformed only if something meaningful is set
             # Check if any boolean test field is True, or if other_test is provided
-            boolean_test_fields = ['pta', 'immittance', 'oae', 'bera_assr', 'srt', 'sds', 'ucl', 'free_field']
+            boolean_test_fields = ['pta', 'impedance', 'special_tests', 'speech_assessment', 'srt_sds', 'pta_sds', 'impedance_etf', 'bera', 'assr', 'bera_assr']
             has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields) or bool(test_performed_data.get('other_test'))
             test_performed_instance = None
             if has_any_test:
@@ -1042,7 +1060,11 @@ class BillItemSerializer(serializers.ModelSerializer):
 
 
 class BillDetailSerializer(serializers.ModelSerializer):
-    """Complete bill serializer with all details for frontend display"""
+    # Amount taken at visit
+    cost_taken_amount = serializers.DecimalField(source='visit.cost_taken_amount', max_digits=10, decimal_places=2, read_only=True)
+    # Amount deducted from total
+    cost_taken_amount_deducted = serializers.SerializerMethodField()
+
     # Patient information
     patient_id = serializers.IntegerField(source='visit.patient.id', read_only=True)
     patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
@@ -1057,6 +1079,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
     visit_date = serializers.DateTimeField(source='visit.created_at', read_only=True)
     appointment_date = serializers.DateField(source='visit.appointment_date', read_only=True)
     service_type = serializers.CharField(source='visit.service_type', read_only=True)
+    doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
 
     # Clinic information
     clinic_name = serializers.CharField(source='clinic.name', read_only=True)
@@ -1078,12 +1101,17 @@ class BillDetailSerializer(serializers.ModelSerializer):
         """Subtotal before discount (same as total_amount)"""
         return float(obj.total_amount)
 
+    def get_cost_taken_amount_deducted(self, obj):
+        # Returns the deducted amount for clarity
+        return float(getattr(obj.visit, 'cost_taken_amount', 0) or 0)
+
     class Meta:
         model = Bill
         fields = [
             # Bill basic info
             'id',
             'bill_number',
+            'gst_amount',
             'created_at',
             'updated_at',
             'payment_status',
@@ -1103,6 +1131,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'visit_date',
             'appointment_date',
             'service_type',
+            'doctor_name'
             
             # Clinic info
             'clinic_name',
@@ -1118,9 +1147,15 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'discount_amount',
             'final_amount',
             'subtotal',
+            'cost_taken_amount',
+            'cost_taken_amount_deducted',
         ]
 
 
+class TestTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestType
+        fields = '__all__'
 
 class InventorySerialDetailSerializer(serializers.ModelSerializer):
     """Serializer for detailed inventory serial information."""
@@ -1466,11 +1501,9 @@ class TrialCreateSerializer(serializers.ModelSerializer):
                 
                 # Apply trial discount to bill if offered (as percentage)
                 if trial.discount_offered and trial.discount_offered > 0:
-                    # Calculate discount as percentage of total bill amount
+                    # Apply discount as a fixed amount
                     from decimal import Decimal
-                    discount_percentage = Decimal(trial.discount_offered) / 100
-                    discount_amount = bill.total_amount * discount_percentage
-                    bill.discount_amount = discount_amount
+                    bill.discount_amount = Decimal(trial.discount_offered)
                     bill.save()
                 
                 # Recalculate bill totals
@@ -1602,7 +1635,7 @@ class TrialCompletionSerializer(serializers.Serializer):
 
         ('TRIAL_ACTIVE', 'Trial Active'),
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
-        ('BOOK - Allocated', 'Book Device Allocated' ),
+        ('BOOK - Device Allocated', 'Book Device Allocated' ),
         ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
