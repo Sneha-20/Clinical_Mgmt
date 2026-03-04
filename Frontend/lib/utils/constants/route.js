@@ -55,7 +55,8 @@ export const routes = {
    deviceSerialList:"/clinical/device-booking/serial",
    bookeddevice:"clinical/trials/",
    returnDevice:"/clinical/api/inventory/return-trial-device/",
-   modalList : "/clinical/inventory/trial-available-models/"
+   modalList : "/clinical/inventory/trial-available-models/",
+   reportCreate: "/clinical/report-create/"
   },
 
    billing:{
@@ -65,19 +66,6 @@ export const routes = {
    markBillPaid:"clinical/mark-bill-paid/"
   },
   
-  // pages
-  pages: {
-    dashboard: "/dashboard",
-    userptofile: "/dashboard/userprofile",
-    patientCaseHistory: "/dashboard/case-history",
-    patientVisitdetail: "/dashboard/patient/visit-details",
-    followUpList: "/dashboard/receptionist/followup-list",
-    signup: "/signup",
-    login: "/login",
-    home: "/",
-    servicepage:"/dashboard/tga-service"
-  },
-
   // Admin Routes
   adminClinics: "accounts/clinics/manager/",
   adminDailyStatus: "clinical/admin/clinic-report/",
@@ -94,9 +82,22 @@ export const routes = {
   // referal doctors
   referrals: "clinical/doctor-referrals/",
   patientreferrals: "clinical/patient-referral/",
-  TransferHistory: "clinical/inventory/transfer/history/"
+  TransferHistory: "clinical/inventory/transfer/history/",
+
+    // pages
+  pages: {
+    dashboard: "/dashboard/home",
+    userptofile: "/dashboard/userprofile",
+    patientCaseHistory: "/dashboard/case-history",
+    patientVisitdetail: "/dashboard/patient/visit-details",
+    followUpList: "/dashboard/receptionist/followup-list",
+    servicepage:"/dashboard/tga-service",
+    signup: "/signup",
+    login: "/login",
+    home: "/",
+  },
   
 };
 export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
 
-export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.home];
+export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.about];

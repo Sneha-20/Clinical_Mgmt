@@ -4,26 +4,19 @@ import { useEffect, useState } from "react";
 import { showToast } from "@/components/ui/toast";
 import {
   addCaseHistory,
-  addTestFile,
   addTrialForm,
-  deleteTestReport,
-  getAllTestFile,
+  createReports,
   getModalList,
   getpatientHistoryById,
   getTrialDevice,
 } from "../services/patientCaseHistory";
-import { Formik } from "formik";
 
 export default function useCaseHistory() {
   const dispatch = useDispatch();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [patientsCaseHistory, setPatientCaseHistory] = useState(null);
-  const [testType, setTestType] = useState(null);
-  const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState(null);
-  const [testFileList, setTestFileList] = useState([]);
-  const [visitId, setVisitId] = useState(null);
+  const [testReports, setTestReports] = useState([]);
   const [trialDeviceList, setTrialDeviceList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalList, setModalList] = useState([]);
@@ -31,7 +24,6 @@ export default function useCaseHistory() {
 
   const fetchPatientFormData = async (id) => {
     if (!id) return;
-    setVisitId(id);
     dispatch(startLoading());
     try {
       const res = await getpatientHistoryById(id);
@@ -59,13 +51,11 @@ export default function useCaseHistory() {
   
 
   const fetchTrialDeviceList = async ({ search }) => {
-    console.log("searchhhhh", search)
     try {
       const res = await getTrialDevice({
         serial_number: search,
         modal_id: selectedModal,
       });
-      console.log("Trial Device List Response:", res);
       setTrialDeviceList(res);
     } catch (err) {
       showToast({
@@ -117,88 +107,37 @@ export default function useCaseHistory() {
     }
   };
 
-  const handleFileSubmit = async () => {
+  const registerReports = async (data) => {
     dispatch(startLoading());
     try {
-      const formData = new FormData();
-      formData.append("patient_visit", visitId);
-      formData.append("report_type", testType);
-      formData.append("file", file);
-      formData.append("report_description", Formik.values.report_description);
-      const res = await addTestFile(formData);
+      await createReports(data);
       showToast({
         type: "success",
-        message: res?.message || "File uploaded successfully",
+        message: "Reports saved successfully",
       });
-
-      // Reset
-      setFile(null);
-      setFileName(null);
-      setTestType(null);
-      setIsModalOpen(false);
-      fetchTestFile();
+      dispatch(stopLoading());
     } catch (err) {
-      console.log(err);
       showToast({
         type: "error",
-        message: err?.error || "Upload failed",
+        message: err?.error || "Failed to save reports",
       });
-    } finally {
       dispatch(stopLoading());
     }
   };
 
-  const fetchTestFile = async () => {
-    if (!visitId) return;
-    try {
-      const res = await getAllTestFile(visitId);
-      setTestFileList(res);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const handleDeleteReport = async (fileId) => {
-    try {
-      const res = await deleteTestReport(fileId);
-      showToast({
-        type: "success",
-        message: res?.message || "File deleted successfully",
-      });
-      fetchTestFile();
-    } catch (err) {
-      showToast({
-        type: "error",
-        message: err?.message || "Failed to delete file ",
-      });
-      console.log(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchTestFile();
-  }, []);
 
   return {
     patientsCaseHistory,
-    fileName,
-    file,
-    testType,
     isModalOpen,
-    testFileList,
     trialDeviceList,
     searchTerm,
     modalList,
     setSearchTerm,
     setSelectedModal,
-    handleDeleteReport,
     setIsModalOpen,
-    setTestType,
-    setFile,
-    handleFileSubmit,
-    setFileName,
     fetchPatientFormData,
     registerCasehistory,
     registerTrialForm,
+    registerReports,
   };
 }
