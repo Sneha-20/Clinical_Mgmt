@@ -299,8 +299,8 @@ class PatientTestHistoryView(APIView):
                     
                     test_types = [name for flag, name in test_mapping if flag]
                     
-                    if test_performed.other_test:
-                        test_types.append(test_performed.other_test)
+                    # if test_performed.other_test:
+                    #     test_types.append(test_performed.other_test)
                 
                 patient_history.append({
                     'visit_id': visit.id,

@@ -59,11 +59,10 @@ class BulkReportTestUploadSerializer(serializers.Serializer):
             }
             created.append(TestUpload.objects.create(**data))
 
-        
         visit_performed.visit.step_process = 3  # Move to next step in workflow
         visit_performed.visit.save()
-        
-        return created
+        step_process = visit_performed.visit.step_process
+        return {"uploads": created, "step_process": step_process}
 
     
 

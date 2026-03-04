@@ -77,17 +77,20 @@ class PatientUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated,ReceptionistPermission]
     lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
-            return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        self.perform_update(serializer)
-        return Response({"status": 200, "message": "Patient details updated successfully"},
-                                status=status.HTTP_200_OK)
-
-
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        result = serializer.save()
+        # result is a dict with 'case_history' and 'step_process'
+        return Response(
+            {
+                "status": 200,
+                "message": "Audiologist case history, test performed, and reports saved successfully",
+                "step_process": result.get("step_process"),
+            },
+            status=status.HTTP_200_OK,
+        )
 class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
     ''' 
     List all Patient Visits 
@@ -423,9 +426,13 @@ class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
             return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        self.perform_create(serializer)
+        result = serializer.save()
         return Response(
-            {"status": 200, "message": "Audiologist case history, test performed, and reports saved successfully"},
+            {
+                "status": 200,
+                "message": "Audiologist case history, test performed, and reports saved successfully",
+                "step_process": result.get("step_process"),
+            },
             status=status.HTTP_200_OK,
         )
 
