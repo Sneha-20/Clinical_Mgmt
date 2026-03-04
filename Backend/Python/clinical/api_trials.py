@@ -14,10 +14,15 @@ class TrialCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
 
-    def create(self, validated_data):
-        super().create(validated_data)
-        # add status and message as response 
-        return Response({"status":status.HTTP_201_CREATED,"message":"Trial created successfully."})
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        return Response({
+            "status": status.HTTP_201_CREATED,
+            "message": "Trial created successfully.",
+            "step_process": result.visit.step_process if hasattr(result, 'visit') else None
+        }, status=status.HTTP_201_CREATED)
 
 class TrialListView(generics.ListAPIView):
     """API endpoint for listing all trial records."""

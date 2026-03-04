@@ -884,7 +884,6 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             # 1. Create or update AudiologistCaseHistory instance (one per patient)
-            # Use get_or_create since case history should be one per patient
             case_history, created = AudiologistCaseHistory.objects.get_or_create(
                 patient=patient,
                 defaults={
@@ -892,8 +891,6 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                     **validated_data
                 }
             )
-            
-            # If case history already exists, update only the specified fields
             if not created:
                 fields_to_update = [
                     'medical_history',
@@ -908,46 +905,36 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                 case_history.save(update_fields=fields_to_update)
 
             # 2. Create or update VisitTestPerformed only if something meaningful is set
-            # Check if any boolean test field is True, or if other_test is provided
             boolean_test_fields = ['pta', 'impedance', 'special_tests', 'speech_assessment', 'srt_sds', 'pta_sds', 'impedance_etf', 'bera', 'assr', 'bera_assr']
-            has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields) or bool(test_performed_data.get('other_test'))
+            has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields)
             test_performed_instance = None
             if has_any_test:
-                # Check if VisitTestPerformed already exists for this visit
                 if VisitTestPerformed.objects.filter(visit=visit).exists():
-
                     raise serializers.ValidationError({
                         "status": status.HTTP_400_BAD_REQUEST,
                         "error": "Test record already exists for this visit"
                     })
-                
                 test_performed_instance = VisitTestPerformed.objects.create(
-                    visit=visit,  # Use the extracted visit, not case_history.visit
+                    visit=visit,
                     **test_performed_data
                 )
 
             # 3. Billing: create / update Bill and BillItems for each test
             if test_performed_instance:
                 clinic = getattr(visit, 'clinic', None)
-
-                # Get or create a Bill for this visit
                 bill, _ = Bill.objects.get_or_create(
-                    visit=visit,  # Use the extracted visit
+                    visit=visit,
                     defaults={
                         'clinic': clinic,
                         'created_by': getattr(request, 'user', None) if request else None,
                     },
                 )
-
-                # For each True flag in VisitTestPerformed, add a BillItem
                 for field_name, testtype_name in flag_to_testtype_name.items():
                     if getattr(test_performed_instance, field_name, False):
                         try:
                             test_type = TestType.objects.get(name__iexact=testtype_name)
                         except TestType.DoesNotExist:
-                            # Skip if no configured TestType for this test
                             continue
-
                         BillItem.objects.create(
                             bill=bill,
                             item_type='Test',
@@ -956,35 +943,20 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                             cost=test_type.cost,
                             quantity=1,
                         )
-
-                # Also handle "other_test" if you have a configured TestType with that name
-                other_test_name = test_performed_instance.other_test
-                if other_test_name:
-                    try:
-                        other_test_type = TestType.objects.get(name__iexact=other_test_name)
-                        BillItem.objects.create(
-                            bill=bill,
-                            item_type='Test',
-                            test_type=other_test_type,
-                            description=other_test_type.name,
-                            cost=other_test_type.cost,
-                            quantity=1,
-                        )
-                    except TestType.DoesNotExist:
-                        # If no TestType exists for this free-text test, skip billing
-                        pass
-
-                # Recalculate totals explicitly (BillItem.save also does this, but this is safe)
                 bill.calculate_total()
 
             # 4. Update PatientVisit status to 'test_performed'
             if test_performed_instance:
                 visit.status = 'Test Performed'
                 visit.status_note = 'Test Performed by Audiologist'
-                visit.step_process = 2  # Move to next step in workflow
+                visit.step_process = 2
                 visit.save(update_fields=['status', 'status_note', 'step_process'])
 
-        return case_history
+        # Return both case_history and step_process for response
+        return {
+            'case_history': case_history,
+            'step_process': visit.step_process if test_performed_instance else visit.step_process
+        }
 
 
 # ============================================================================

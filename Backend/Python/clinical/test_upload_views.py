@@ -18,8 +18,12 @@ class ReportTestCreateView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        return Response({"status":status.HTTP_201_CREATED,"message":"Report added successfully"}, status=status.HTTP_201_CREATED)
+        result = serializer.save()
+        return Response({
+            "status": status.HTTP_201_CREATED,
+            "message": "Report added successfully",
+            "step_process": result.get("step_process") if isinstance(result, dict) else None
+        }, status=status.HTTP_201_CREATED)
     
 
 class ReportUploadView(generics.UpdateAPIView):
