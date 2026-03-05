@@ -26,6 +26,8 @@ from datetime import timedelta
 from accounts.models import User
 from accounts.serializers import RoleSimpleSerializer
 from rest_framework import status
+from django.utils import timezone
+
 
 
 class PatientAllVisitSerializer(serializers.ModelSerializer):
@@ -125,6 +127,11 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     """
 
     visit_type = serializers.CharField()
+    # TGA-specific fields
+    tga_service_type = serializers.CharField(required=False, allow_blank=True)
+    device_serial_need_service = serializers.CharField(required=False, allow_blank=True)
+    complaint = serializers.CharField(required=False, allow_blank=True)
+    # General fields (for non-TGA)
     present_complaint = serializers.CharField(required=False, allow_blank=True)
     test_requested = serializers.ListField(
         child=serializers.CharField(),
@@ -134,6 +141,23 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     seen_by = serializers.IntegerField(required=False, allow_null=True)
     cost_taken_amount = serializers.FloatField(required=False, default=0)   
     mode_of_payment = serializers.CharField(required=False, allow_blank=True)
+
+    def validate(self, data):
+        visit_type = data.get('visit_type')
+        if visit_type in ['Troubleshooting General Adjustment', 'TGA']:
+            # exlucde cost_taken_amount
+            data.pop('cost_taken_amount', None)
+            data.pop('mode_of_payment', None)
+
+            allowed = {'tga_service_type', 'device_serial_need_service', 'complaint', 'visit_type', 'seen_by'}
+            extra = set(data.keys()) - allowed
+            if extra:
+                raise serializers.ValidationError(f"For TGA visits, only these fields are allowed: {', '.join(allowed)}. Extra fields: {', '.join(extra)}")
+            # Ensure required TGA fields are present
+            missing = [f for f in ['tga_service_type', 'device_serial_need_service', 'complaint'] if not data.get(f)]
+            if missing:
+                raise serializers.ValidationError(f"Missing required TGA fields: {', '.join(missing)}")
+        return data
 
 
     def validate_seen_by(self, value):
@@ -420,7 +444,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
         with transaction.atomic():
             for visit_data in visits_data:
                 visit_type = visit_data.get('visit_type')
-                if visit_type in ['Battery Purchase', 'Tip / Dome Change', 'TGA']:
+                if visit_type in ['Battery Purchase', 'Tip / Dome Change', 'TGA','Troubleshooting General Adjustment']:
                     status_value = 'Pending for Service'
                 else: #  For new test , followup tests
                     status_value = 'Test pending'
@@ -435,6 +459,11 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                 if isinstance(test_requested, list):
                     test_requested = ",".join(test_requested) if test_requested else ""
 
+                tga_service_type = visit_data.pop('tga_service_type', None)
+                device_serial_need_service = visit_data.pop('device_serial_need_service', None)
+                complaint = visit_data.pop('complaint', None)
+
+
                 visit = PatientVisit.objects.create(
                     patient=patient,
                     clinic=current_clinic or patient.clinic,
@@ -447,6 +476,21 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     **visit_data
                 )
                 created_visits.append(visit)
+
+                inventory_device_id = PatientPurchase.objects.get(inventory_serial__serial_number=device_serial_need_service)
+
+                # if the visit type is TGA or service related, create a ServiceVisit record as well
+                if visit_type in ['Troubleshooting General Adjustment','TGA']:
+                    ServiceVisit.objects.create(
+                        visit=visit,  # Use the visit we just created
+                        service_type=tga_service_type,
+                        complaint=complaint,
+                        device=inventory_device_id,  # Assuming device_id is passed in visit_data for TGA/service visits
+                        device_serial=inventory_device_id.inventory_serial,  # Use the inventory serial number
+                        created_by=current_user,
+                        created_at=timezone.now(),
+                    )
+
 
         # View does not use serializer.data, so returning list is fine
         return created_visits
@@ -716,7 +760,8 @@ class PatientVisitWithCaseHistorySerializer(serializers.ModelSerializer):
             'referral_type',
             'referral_doctor',
             'service_type',
-            'case_history'
+            'case_history',
+            'step_process'
         ]
 
 
@@ -836,12 +881,7 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             'assr': 'assr',
             'bera_assr': 'bera_assr',
             'speech_assessment': 'speech_assessment',
-        }
-        
-
-
-
-        
+        } 
         # Convert test_requested list to boolean fields
         test_performed_data = {
             'pta': False,
@@ -1103,7 +1143,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'visit_date',
             'appointment_date',
             'service_type',
-            'doctor_name'
+            'doctor_name',
             
             # Clinic info
             'clinic_name',
