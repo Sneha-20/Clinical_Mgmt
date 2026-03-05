@@ -9,6 +9,7 @@ import CommonDatePicker from "@/components/ui/CommonDatePicker";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
 import CommonRadio from "@/components/ui/CommonRadio";
 import { format } from "date-fns";
+import { getPatientDevicePurchases } from "@/lib/services/dashboard";
 import {
   visitTypeOptions,
   testRequestedOptions,
@@ -33,6 +34,10 @@ export default function PatientVisitForm({
     notes: "",
     cost_taken_amount: "",
     mode_of_payment: "",
+    // TGA specific fields
+    tga_service_type: "",
+    device_serial_number: "",
+    complaint: "",
   };
   const getInitialFormState = (patientId) => ({
     patient: patientId || null,
@@ -59,7 +64,18 @@ export default function PatientVisitForm({
     value: doctor.id,
   }));
 
+  const tgaServiceOptions = [
+    { label: "Machine Check", value: "machine_check" },
+    { label: "Repair", value: "repair" },
+    { label: "Cleaning", value: "cleaning" },
+    { label: "Calibration", value: "calibration" },
+    { label: "Other", value: "other" },
+  ];
+
   const [formData, setFormData] = useState(getInitialFormState(showSelctedPatientId));
+  const [patientDevices, setPatientDevices] = useState([]);
+  const [loadingDevices, setLoadingDevices] = useState(false);
+
   const updateField = useCallback(
     (name, value) => {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -67,6 +83,35 @@ export default function PatientVisitForm({
     },
     [errors]
   );
+
+  // Fetch patient devices when patient ID is available
+  useEffect(() => {
+    if (showSelctedPatientId) {
+      fetchPatientDevices(showSelctedPatientId);
+    }
+  }, [showSelctedPatientId]);
+
+  const fetchPatientDevices = async (patientId) => {
+    try {
+      setLoadingDevices(true);
+      const response = await getPatientDevicePurchases(patientId);
+      if (response) {
+        const deviceOptions = response.map((device) => ({
+          label: `${device.product_name} - ${device.serial_number}`,
+          value: device.serial_number,
+        }));
+        setPatientDevices(deviceOptions);
+      }
+    } catch (error) {
+      console.error("Error fetching patient devices:", error);
+      showToast({
+        type: "error",
+        message: "Failed to fetch patient devices",
+      });
+    } finally {
+      setLoadingDevices(false);
+    }
+  };
 
   /* ----------------- Update Visit Details ----------------- */
   const updateVisitDetails = (index, key, value) => {
@@ -105,7 +150,34 @@ export default function PatientVisitForm({
     try {
       await visitPatientSchema.validate(formData, { abortEarly: false });
       setErrors({});
-      if (onSubmit) await onSubmit(formData);
+      
+      // Filter payload based on visit type
+      const filteredPayload = {
+        ...formData,
+        visit_details: formData.visit_details.map(visit => {
+          if (visit.visit_type === 'TGA') {
+            // Only include TGA-specific fields
+            return {
+              visit_type: visit.visit_type,
+              tga_service_type: visit.tga_service_type,
+              device_serial_need_service: visit.device_serial_number,
+              complaint: visit.complaint,
+            };
+          } else {
+            // Include all fields for other visit types
+             const {
+                  tga_service_type,
+                  device_serial_number,
+                  complaint,
+                  ...rest
+                } = visit;
+
+            return rest;
+          }
+        })
+      };
+      
+      if (onSubmit) await onSubmit(filteredPayload);
       // Reset form to initial state after successful submit
       setFormData(getInitialFormState(showSelctedPatientId));
       setErrors({});
@@ -166,38 +238,44 @@ export default function PatientVisitForm({
                 onChange={(n, v) => updateVisitDetails(index, "visit_type", v)}
                 error={errors?.visit_details?.[index]?.visit_type}
               />
-              <DropDown
-                label="Assigned To"
-                name="seen_by"
-                options={doctors}
-                value={visit.seen_by}
-                onChange={(n, v) => updateVisitDetails(index, "seen_by", v)}
-                error={errors?.visit_details?.[index]?.seen_by}
-              />
+              {visit.visit_type !== "TGA" && (
+                <DropDown
+                  label="Assigned To"
+                  name="seen_by"
+                  options={doctors}
+                  value={visit.seen_by}
+                  onChange={(n, v) => updateVisitDetails(index, "seen_by", v)}
+                  error={errors?.visit_details?.[index]?.seen_by}
+                />
+              )}
             </div>
 
-            <DropDown
-              label="Present Complaint"
-              name="present_complaint"
-              options={complaintOptions}
-              value={visit.present_complaint}
-              onChange={(n, v) =>
-                updateVisitDetails(index, "present_complaint", v)
-              }
-              className="mt-2"
-            />
+            {visit.visit_type !== "TGA" && (
+              <>
+                <DropDown
+                  label="Present Complaint"
+                  name="present_complaint"
+                  options={complaintOptions}
+                  value={visit.present_complaint}
+                  onChange={(n, v) =>
+                    updateVisitDetails(index, "present_complaint", v)
+                  }
+                  className="mt-2"
+                />
 
-            <div className="mt-2">
-              <label className="text-sm font-medium mb-1 block">Notes</label>
-              <TextArea
-                name={`visit_details.${index}.notes`}
-                className="w-full px-3 py-2 border rounded-md"
-                placeholder="Notes about complaint"
-                value={visit.notes}
-                onChange={(e) => updateVisitDetails(index, "notes", e.target.value)}
-                rows={3}
-              />
-            </div>
+                <div className="mt-2">
+                  <label className="text-sm font-medium mb-1 block">Notes</label>
+                  <TextArea
+                    name={`visit_details.${index}.notes`}
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder="Notes about complaint"
+                    value={visit.notes}
+                    onChange={(e) => updateVisitDetails(index, "notes", e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </>
+            )}
 
             {/* Tests Required */}
             {(visit.visit_type === "New Test" ||
@@ -229,23 +307,63 @@ export default function PatientVisitForm({
                 </>
               )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-              <Input
-                label="Amount Taken From Patient"
-                name="cost_taken_amount"
-                type="number"
-                placeholder="Enter Amount"
-                value={visit.cost_taken_amount}
-                onChange={(e) => updateVisitDetails(index, "cost_taken_amount", e.target.value)}
-              />
+            {/* TGA Specific Fields */}
+            {visit.visit_type === "TGA" && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <DropDown
+                    label="TGA Service Type"
+                    name="tga_service_type"
+                    options={tgaServiceOptions}
+                    value={visit.tga_service_type}
+                    onChange={(n, v) => updateVisitDetails(index, "tga_service_type", v)}
+                    error={errors?.visit_details?.[index]?.tga_service_type}
+                  />
 
-              <Input
-                label="Mode of Payment"
-                name="mode_of_payment"
-                value={visit.mode_of_payment}
-                onChange={(e) => updateVisitDetails(index, "mode_of_payment", e.target.value)}
-              />
-            </div>
+                  <DropDown
+                    label="Device Serial Number"
+                    name="device_serial_number"
+                    options={patientDevices}
+                    value={visit.device_serial_number}
+                    onChange={(n, v) => updateVisitDetails(index, "device_serial_number", v)}
+                    error={errors?.visit_details?.[index]?.device_serial_number}
+                    disabled={loadingDevices}
+                    placeholder={loadingDevices ? "Loading devices..." : "Select device"}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <Input
+                    label="Complaint"
+                    name="complaint"
+                    placeholder="Describe the issue or complaint"
+                    value={visit.complaint}
+                    onChange={(e) => updateVisitDetails(index, "complaint", e.target.value)}
+                    error={errors?.visit_details?.[index]?.complaint}
+                  />
+                </div>
+              </>
+            )}
+
+            {visit.visit_type !== "TGA" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <Input
+                  label="Amount Taken From Patient"
+                  name="cost_taken_amount"
+                  type="number"
+                  placeholder="Enter Amount"
+                  value={visit.cost_taken_amount}
+                  onChange={(e) => updateVisitDetails(index, "cost_taken_amount", e.target.value)}
+                />
+
+                <Input
+                  label="Mode of Payment"
+                  name="mode_of_payment"
+                  value={visit.mode_of_payment}
+                  onChange={(e) => updateVisitDetails(index, "mode_of_payment", e.target.value)}
+                />
+              </div>
+            )}
           </div>
         ))}
 
