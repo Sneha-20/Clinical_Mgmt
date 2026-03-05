@@ -1,41 +1,83 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LogOut, Menu, X, User } from "lucide-react";
 import SidebarNav from "@/components/sidebar/sidebar-nav";
 import { logoutAction } from "@/lib/services/auth";
 import CommonLoader from "@/components/ui/CommonLoader";
+import {
+  mapBackendRoleToSidebarRole,
+  hasAccessToRoute,
+  decodeToken,
+} from "@/lib/utils/auth-helpers";
+
+// Helper to get token from cookies (client-side)
+function getTokenFromCookies() {
+  if (typeof document === "undefined") return null;
+  const name = "token=";
+  const cookies = document.cookie.split(";");
+  for (let cookie of cookies) {
+    cookie = cookie.trim();
+    if (cookie.indexOf(name) === 0) {
+      return cookie.substring(name.length);
+    }
+  }
+  return null;
+}
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
   useEffect(() => {
+    // Check if user is authenticated and authorized
     const role = localStorage.getItem("userRole");
-    if (!role) {
-      router.push("/");
+    const token = getTokenFromCookies();
+
+    if (!role || !token) {
+      // Not logged in
+      router.push("/login");
+      return;
     }
-    if (
-      role === "Audiologist" ||
-      role === "Speech" ||
-      role === "Audiologist &  Speech Therapist"
-    ) {
-      setUserRole("Doctor");
-    } else if (role === "Clinic Manager") {
-      setUserRole("Manager");
-    } else if (role === "Admin") {
-      setUserRole("Admin");
-    } else {
-      setUserRole(role);
+
+    // Map role to sidebar role
+    const mappedRole = mapBackendRoleToSidebarRole(role);
+    
+    if (!mappedRole) {
+      // Invalid role
+      logoutAction();
+      router.push("/login");
+      return;
     }
-  }, [router]);
+
+    // Check if user has access to current route
+    if (!hasAccessToRoute(mappedRole, pathname)) {
+      // User doesn't have access to this route
+      router.push("/dashboard/home");
+      return;
+    }
+
+    setUserRole(mappedRole);
+    setIsAuthorized(true);
+  }, [router, pathname]);
+
+  if (!isAuthorized || !userRole) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <CommonLoader />
+      </div>
+    );
+  }
 
   const handleLogout = () => {
     logoutAction();
     localStorage.removeItem("userRole");
-    router.push("/");
+    router.push("/login");
   };
 
   const handleProfileClick = () => {

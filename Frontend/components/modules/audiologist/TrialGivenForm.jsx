@@ -204,7 +204,7 @@ export default function TrialGivenForm({
         <TextArea label="Gain Settings" name="gain_settings" formik={formik} />
 
         <TextArea
-          label="Patient Response"
+          label="Patient Response*"
           name="patient_response"
           formik={formik}
         />

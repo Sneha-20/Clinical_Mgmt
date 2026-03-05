@@ -212,14 +212,14 @@ export default function AudiologistDashboard() {
                       ) : (
                         <Button
                           variant="link"
+                          disabled={item.step_process !== 3} 
                           onClick={() =>
                             showCaseHistoryform(
                               item.visit_id,
                               item.step_process,
                             )
                           }
-                          className="text-primary"
-                        >
+                           className="text-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-auto"                        >
                           Add Trail
                         </Button>
                       )}

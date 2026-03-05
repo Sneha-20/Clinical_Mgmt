@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,16 +18,15 @@ import {
   testRequestedOptions,
 } from "@/lib/utils/constants/staticValue";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
-import { useRouter } from "next/navigation";
 import CaseHistoryStepper from "@/components/ui/CaseHistoryStepper";
 import TrialGivenForm from "./TrialGivenForm";
 import { getTestTypes } from "@/lib/services/dashboard";
-import { set } from "date-fns";
+import { current } from "@reduxjs/toolkit";
 
 export default function CaseHistoryForm({ patientId }) {
   const router = useRouter();
-// const currentStep = 2;
-    const {
+
+  const {
     patientsCaseHistory,
     trialDeviceList,
     searchTerm,
@@ -41,7 +41,7 @@ export default function CaseHistoryForm({ patientId }) {
 
   const [testTypes, setTestTypes] = useState([]);
   const [loadingTestTypes, setLoadingTestTypes] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(null); // null until initialized
   const [reports, setReports] = useState([
     { report_type: "", report_description: "" },
   ]);
@@ -54,17 +54,24 @@ export default function CaseHistoryForm({ patientId }) {
     router.push("/dashboard/home");
   };
 
-  // advance to next step in the multi-step wizard
+  // advance to next step - only controlled by backend response
   const handleNextStep = () => {
-    setCurrentStep((prev) => prev + 1);
+    setCurrentStep((prev) => (typeof prev === "number" ? prev + 1 : prev));
   };
+
+  // keep local step in sync when backend data arrives
+  useEffect(() => {
+    if (patientsCaseHistory && typeof patientsCaseHistory.step_process !== "undefined") {
+      setCurrentStep(patientsCaseHistory.step_process);
+    }
+  }, [patientsCaseHistory]);
+
 
   useEffect(() => {
     if (patientId) {
       fetchPatientFormData(patientId);
-      fetchTestTypesForVisit(patientId);
     }
-  }, [patientId]);
+  }, [patientId, fetchPatientFormData]);
 
   // if we fetched existing case history and it contains reports, set them
   useEffect(() => {
@@ -126,12 +133,17 @@ export default function CaseHistoryForm({ patientId }) {
       return;
     }
     try {
-      await registerReports({
+      const res = await registerReports({
         patient_visit: patientId,
         reports,
       });
       setReports([{ report_type: "", report_description: "" }]);
-      handleNextStep();
+      // prefer backend-controlled step from response; fallback to refetch
+      if (res && typeof res.step_process !== "undefined") {
+        setCurrentStep(res.step_process);
+      } else {
+        fetchPatientFormData(patientId);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -151,15 +163,16 @@ export default function CaseHistoryForm({ patientId }) {
     },
     validationSchema: CaseHistorySchema,
     onSubmit: async (values) => {
-      console.log("Submitting case history with values:", values);
-      await registerCasehistory({
+      const res = await registerCasehistory({
         ...values,
         patientId,
         visit: patientsCaseHistory?.visit_id,
       });
-      handleNextStep();
+      fetchTestTypesForVisit(patientId);
+      setCurrentStep(res.step_process);
     },
   });
+
   
 
   return (
@@ -169,6 +182,13 @@ export default function CaseHistoryForm({ patientId }) {
       </CardHeader>
       <CaseHistoryStepper currentStep={currentStep} />
       <CardContent>
+        {/* Show loader while initializing step */}
+        {currentStep === null && (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-slate-500">Loading case history...</p>
+          </div>
+        )}
+
         {/* ---------------- STEP 1 ---------------- */}
         {currentStep === 1 && (
           <form onSubmit={formik.handleSubmit} className="space-y-4">

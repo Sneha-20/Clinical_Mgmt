@@ -264,7 +264,7 @@ export default function AdminDashboard() {
             Clinic Daily Reports
           </h3>
             <div className="flex items-end gap-3">
-              <div className="w-44">
+              <div className="w-[280px]">
                 <CommonDatePicker
                   // label="Start Date"
                   selectedDate={startDate ? new Date(startDate) : null}
@@ -272,7 +272,7 @@ export default function AdminDashboard() {
                   maxDate={new Date()}
                 />
               </div>
-              <div className="w-44">
+              <div className="w-[280px]">
                 <CommonDatePicker
                   // label="End Date"
                   selectedDate={endDate ? new Date(endDate) : null}

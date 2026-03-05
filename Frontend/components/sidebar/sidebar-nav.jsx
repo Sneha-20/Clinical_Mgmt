@@ -8,6 +8,7 @@ export default function SidebarNav({ role, onItemClick }) {
   const router = useRouter()
   const pathname = usePathname()
 
+  // Define role-based navigation items
   const navItems = {
     Reception: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
@@ -18,11 +19,11 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📊', label: 'Awaiting Device', href: '/dashboard/awaiting-device'},
     ],
-    Doctor: [
+    Audiologist: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📱', label: 'Trials', href: '/dashboard/trials' },
     ],
-    Manager: [
+    "Clinic Manager": [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
       { icon: '📈', label: 'Analytics', href: '/dashboard/analytics' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
@@ -36,14 +37,13 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' },
     ],
-    Speech: [
+    "Speech Therapist": [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
-      { icon: '📝', label: 'Assessment', href: '/dashboard/assessment' },
-      { icon: '📊', label: 'Progress', href: '/dashboard/progress' },
-      { icon: '👨‍👩‍👧', label: 'Reports', href: '/dashboard/reports' },
     ],
   }
-  const items = navItems[role] || []
+
+  // Get navigation items for the current role
+  const items = navItems[role] || navItems.Reception
 
   return (
     <>
@@ -66,7 +66,7 @@ export default function SidebarNav({ role, onItemClick }) {
       {/* Role Badge */}
       <div className="px-4 py-3 text-xs">
         <div className="px-2 py-1 bg-sidebar-accent text-primaryText rounded-md text-center font-medium">
-          {role.charAt(0).toUpperCase() + role.slice(1)}
+          {role ? role.charAt(0).toUpperCase() + role.slice(1) : 'User'}
         </div>
       </div>
 

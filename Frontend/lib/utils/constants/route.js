@@ -96,8 +96,96 @@ export const routes = {
     login: "/login",
     home: "/",
   },
-  
 };
-export const privateRoutes = [routes.pages.dashboard,routes.pages.userptofile,routes.pages.patientCaseHistory,routes.pages.followUpList,routes.pages.servicepage];
 
-export const notToshowForPrivate = [routes.pages.login, routes.pages.signup,routes.pages.about];
+// Public routes - accessible without login
+export const publicRoutes = [
+  "/",
+  "/about",
+  "/login",
+  "/signup",
+  "/services",
+  "/offers"
+];
+
+// Private routes - require authentication
+export const privateRoutes = [
+  "/dashboard",
+  "/dashboard/home",
+  "/dashboard/profile",
+  "/dashboard/userprofile",
+  "/dashboard/case-history",
+  "/dashboard/patient/visit-details",
+  "/dashboard/receptionist/followup-list",
+  "/dashboard/tga-service",
+  "/dashboard/pending-item",
+  "/dashboard/inventory",
+  "/dashboard/billing",
+  "/dashboard/trials",
+  "/dashboard/referal-doctor",
+  "/dashboard/awaiting-device",
+  "/dashboard/analytics",
+  "/dashboard/transfer-products",
+];
+
+// Routes to hide when user is logged in
+export const notToshowForPrivate = ["/login", "/signup"];
+
+// Role-based route access control
+export const roleRoutesAccess = {
+  Reception: [
+    "/dashboard/home",
+    "/dashboard/profile",
+    "/dashboard/userprofile",
+    "/dashboard/pending-item",
+    "/dashboard/inventory",
+    "/dashboard/billing",
+    "/dashboard/trials",
+    "/dashboard/referal-doctor",
+    "/dashboard/awaiting-device",
+    "/dashboard/receptionist/followup-list",
+  ],
+  Audiologist: [
+    "/dashboard/home",
+    "/dashboard/profile",
+    "/dashboard/userprofile",
+    "/dashboard/case-history",
+    "/dashboard/patient/visit-details",
+    "/dashboard/trials",
+    "/dashboard/awaiting-device",
+  ],
+  "Speech Therapist": [
+    "/dashboard/home",
+    "/dashboard/profile",
+    "/dashboard/userprofile",
+    "/dashboard/case-history",
+    "/dashboard/patient/visit-details",
+  ],
+  "Clinic Manager": [
+    "/dashboard/home",
+    "/dashboard/profile",
+    "/dashboard/userprofile",
+    "/dashboard/analytics",
+    "/dashboard/inventory",
+    "/dashboard/referal-doctor",
+    "/dashboard/pending-item",
+  ],
+  Admin: [
+    "/dashboard/home",
+    "/dashboard/profile",
+    "/dashboard/userprofile",
+    "/dashboard/analytics",
+    "/dashboard/inventory",
+    "/dashboard/referal-doctor",
+    "/dashboard/transfer-products",
+  ],
+  "Audiologist & Speech": [
+    "/dashboard/home",
+    "/dashboard/profile",
+    "/dashboard/userprofile",
+    "/dashboard/case-history",
+    "/dashboard/patient/visit-details",
+    "/dashboard/trials",
+    "/dashboard/awaiting-device",
+  ],
+};

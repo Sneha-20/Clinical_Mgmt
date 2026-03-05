@@ -1,6 +1,6 @@
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { showToast } from "@/components/ui/toast";
 import {
   addCaseHistory,
@@ -22,7 +22,7 @@ export default function useCaseHistory() {
   const [modalList, setModalList] = useState([]);
   const [selectedModal, setSelectedModal] = useState(null);
 
-  const fetchPatientFormData = async (id) => {
+  const fetchPatientFormData = useCallback(async (id) => {
     if (!id) return;
     dispatch(startLoading());
     try {
@@ -33,9 +33,9 @@ export default function useCaseHistory() {
     } finally {
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
-  const fetchModalList = async () => {
+  const fetchModalList = useCallback(async () => {
     try {
       const res = await getModalList();
       console.log("Modal List Response:", res);
@@ -43,14 +43,14 @@ export default function useCaseHistory() {
     } catch (e) {
       console.log("Total fetch error:", e);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchModalList();
   }, []);
   
 
-  const fetchTrialDeviceList = async ({ search }) => {
+  const fetchTrialDeviceList = useCallback(async ({ search }) => {
     try {
       const res = await getTrialDevice({
         serial_number: search,
@@ -63,7 +63,7 @@ export default function useCaseHistory() {
         message: "Failed to fetch trial device list",
       });
     }
-  };
+  }, [selectedModal]);
 
   useEffect(() => {
     if (selectedModal) {
@@ -71,7 +71,7 @@ export default function useCaseHistory() {
     }
   }, [searchTerm, selectedModal]);
 
-  const registerTrialForm = async (data) => {
+  const registerTrialForm = useCallback(async (data) => {
     dispatch(startLoading());
     try {
       await addTrialForm(data);
@@ -87,17 +87,18 @@ export default function useCaseHistory() {
       });
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
-  const registerCasehistory = async (data) => {
+  const registerCasehistory = useCallback(async (data) => {
     dispatch(startLoading());
     try {
-      await addCaseHistory(data);
+      const res = await addCaseHistory(data);
       showToast({
         type: "success",
         message: data.status || "Registration Successful",
       });
       dispatch(stopLoading());
+      return res;
     } catch (err) {
       showToast({
         type: "error",
@@ -105,17 +106,18 @@ export default function useCaseHistory() {
       });
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
-  const registerReports = async (data) => {
+  const registerReports = useCallback(async (data) => {
     dispatch(startLoading());
     try {
-      await createReports(data);
+      const res = await createReports(data);
       showToast({
         type: "success",
         message: "Reports saved successfully",
       });
       dispatch(stopLoading());
+      return res;
     } catch (err) {
       showToast({
         type: "error",
@@ -123,7 +125,7 @@ export default function useCaseHistory() {
       });
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
 
   return {
