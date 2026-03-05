@@ -38,8 +38,21 @@ export default function CommonDatePicker({
   };
 
   const isDateDisabled = (date) => {
-    if (maxDate && date > maxDate) return true;
-    if (minDate && date < minDate) return true;
+    if (!date) return false;
+    const toDateOnly = (d) => {
+      const dd = d instanceof Date ? d : new Date(d);
+      return new Date(dd.getFullYear(), dd.getMonth(), dd.getDate());
+    };
+
+    const dOnly = toDateOnly(date);
+    if (maxDate) {
+      const maxOnly = toDateOnly(maxDate);
+      if (dOnly > maxOnly) return true;
+    }
+    if (minDate) {
+      const minOnly = toDateOnly(minDate);
+      if (dOnly < minOnly) return true;
+    }
     return false;
   };
 
