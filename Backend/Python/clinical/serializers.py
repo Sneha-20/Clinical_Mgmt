@@ -14,7 +14,8 @@ from .models import (
     TestUpload,
     InventoryTransfer, 
     Brand,  
-    ModelType
+    ModelType,
+    ClinicTransactions
 
 )
 
@@ -27,6 +28,7 @@ from accounts.models import User
 from accounts.serializers import RoleSimpleSerializer
 from rest_framework import status
 from django.utils import timezone
+from django.db import models
 
 
 
@@ -252,6 +254,10 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                 if visit_type in ['Troubleshooting General Adjustment','TGA']:
                     status_value = 'Pending for Service'
                     status_note = 'Waiting for service to be completed'
+
+                elif visit_type in ['Purchase Accessories', 'Purchase']:
+                    status_value = 'Pending'
+                    status_note = 'Pending Purchase'
                 else:
                     status_value = 'Test pending'
                     status_note = 'Waiting for audiologist availability'
@@ -446,6 +452,10 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                 visit_type = visit_data.get('visit_type')
                 if visit_type in ['Battery Purchase', 'Tip / Dome Change', 'TGA','Troubleshooting General Adjustment']:
                     status_value = 'Pending for Service'
+
+                elif visit_type in ['Purchase Accessories', 'Purchase']:
+                    status_value = 'Pending'
+
                 else: #  For new test , followup tests
                     status_value = 'Test pending'
 
@@ -1233,7 +1243,8 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'unit_price',
             'status', 
             'clinic_id',
-            'clinic_name'
+            'clinic_name',
+            'gst_value',
         ]
 
 
@@ -1285,7 +1296,7 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryItem
         fields = [
-            'category', 'product_name', 'brand', 'model_type', 'description',
+            'category', 'product_name', 'brand', 'model_type', 'description', 'gst_value',
             'stock_type', 'quantity_in_stock', 'reorder_level', 'location',
             'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers', 'sku'
         ]
@@ -1767,3 +1778,107 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
             'trial_decision',
 
         ]
+
+
+class ClinicTransactionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClinicTransactions
+        fields = ['transaction_type', 'amount', 'person_name','category']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        clinic = getattr(request.user, 'clinic', None)
+
+        # The amount should be less than the total amount of  transaction type Income if the transaction type is Expense
+        if validated_data['transaction_type'] == 'Expense':
+            total_income = ClinicTransactions.objects.filter(clinic=clinic, transaction_type='Income').aggregate(total=models.Sum('amount'))['total'] or 0
+            total_expense = ClinicTransactions.objects.filter(clinic=clinic, transaction_type='Expense').aggregate(total=models.Sum('amount'))['total'] or 0
+            available_balance = total_income - total_expense
+
+            if validated_data['amount'] > available_balance:
+                raise serializers.ValidationError({
+                        "status": status.HTTP_400_BAD_REQUEST,
+                        "error": "Expense amount cannot exceed available balance of {:.2f}".format(available_balance)
+                    }) 
+        if not clinic:
+            raise serializers.ValidationError({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "error": "User does not belong to any clinic."
+            })
+        
+        transaction = ClinicTransactions.objects.create(
+            clinic=clinic,
+            created_by=request.user,
+            **validated_data
+        )
+        return transaction
+
+class ClinicTransactionListSerializer(serializers.ModelSerializer):
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.name', read_only=True)
+
+    class Meta:
+        model = ClinicTransactions
+        fields = ['id', 'clinic_name', 'transaction_type', 'amount', 'person_name', 'category', 'created_by_name','transaction_date']
+
+
+
+class PurchaseInventoryItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PatientPurchase
+        fields = ['inventory_item','quantity', 'visit', ]
+
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        clinic = getattr(request.user, 'clinic', None)
+
+        if not clinic:
+            raise serializers.ValidationError({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "error": "User does not belong to any clinic."
+            })
+        
+        visit = validated_data['visit']
+        inventoryitem = validated_data['inventory_item']
+        quantity = validated_data['quantity']
+
+        patient_purchase = PatientPurchase.objects.create(
+                clinic=clinic,
+                patient=visit.patient,
+                visit=visit,
+                inventory_item=inventoryitem,
+                quantity=quantity,  # Assuming you want to purchase the available stock quantity
+                unit_price=inventoryitem.unit_price,
+                total_price=inventoryitem.unit_price * quantity
+                )
+        # reduce the stock quantity of the inventory item
+        inventoryitem.quantity_in_stock -= patient_purchase.quantity
+        inventoryitem.save()
+
+        # add it to the bill 
+        bill, _ = Bill.objects.get_or_create(
+                    visit=visit,
+                    defaults={
+                        'clinic': clinic,
+                        'created_by': request.user,
+                    }
+                )
+        
+        BillItem.objects.create(
+                    bill=bill,
+                    item_type='Purchase',
+                    # patient_purchase=patient_purchase,
+                    description=f"Purchase of {inventoryitem.product_name}",
+                    cost=patient_purchase.total_price,
+                    quantity=patient_purchase.quantity,
+                )
+        
+        # Recalculate bill totals
+        bill.calculate_total()
+        return patient_purchase
+
+
+        
+       
