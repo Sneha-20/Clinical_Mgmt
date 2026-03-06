@@ -392,6 +392,7 @@ CATEGORY_CHOICES = [
     ('Hearing Aid', 'Hearing Aid'),
     # ('Trial Stock', 'Trial Stock'),
     ('Speech Material', 'Speech Material'),
+    ("Cochlear Implant", "Cochlear Implant"),
 ]
 
 class Brand(models.Model):
@@ -433,6 +434,7 @@ class InventoryItem(models.Model):
     use_in_trial = models.BooleanField(default=False)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_approved = models.BooleanField(default=False)
+    gst_value = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="GST percentage applicable to this item")
 
     master_item = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='distributed_copies', help_text="Link to the main inventory item if this is a distributed copy")
 
@@ -661,3 +663,19 @@ class InventoryTransfer(models.Model):
         to_name = self.to_clinic.name if self.to_clinic else "Unknown"
         
         return f"[{date_str}] {user_name} transferred {self.quantity} x {self.item_name} ({self.brand} {self.model}) from {from_name} to {to_name}."
+
+
+class ClinicTransactions(models.Model):
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=50, choices=[('Income', 'Income'), ('Expense', 'Expense')])    # Income , expenses
+    category = models.CharField(max_length=50)  # e.g., 'Inventory Transfer', 'Purchase', 'Sale'
+    person_name = models.CharField(max_length=255, blank=True, null=True)  # Name of person involved in transaction (supplier/customer)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_date = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        ordering = ['-transaction_date']
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.amount} on {self.transaction_date.strftime('%Y-%m-%d')}"

@@ -5,7 +5,8 @@ from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailVi
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
                     TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,
-                    MarkPatientContactedView, VisitTestTypesView,TestTypeUpdateListView)
+                    MarkPatientContactedView, VisitTestTypesView,TestTypeUpdateListView,ClinicTransactionListView,ClinicTransactionView,ClinicTransactionUpdateDeleteView,
+                    PurchaseInventoryItemListView,PurchaseInventoryItemCreateView,CustomerNeedPurchase)
 
 from .api_inventory_item_update import InventoryItemUpdateView,InventorySerialNumberCreateView
 from .api_inventory_dropdowns import InventoryDropdownsView
@@ -144,11 +145,23 @@ urlpatterns = [
    path('patient-referral/', PatientReferralDetailView.as_view(), name='patient_referral_detail'),
    
 
-
    # Brand and Model endpoints
    path('inventory/brands/', BrandListView.as_view(), name='brand_list'),
    path('inventory/brands/create/', BrandCreateView.as_view(), name='brand_create'),
    path('inventory/models/', ModelListView.as_view(), name='model_list'),
    path('inventory/models/create/', ModelCreateView.as_view(), name='model_create'),
+
+
+   # Clinic Transactions
+   path('clinic/transactions/', ClinicTransactionListView.as_view(), name='clinic_transaction_list'),
+   path('clinic/transactions/create/', ClinicTransactionView.as_view(), name='clinic_transaction_create'),
+   path('clinic/transactions/<int:id>', ClinicTransactionUpdateDeleteView.as_view(), name='clinic_transaction_update'),
+
+   # Purchase APIs
+   path('customer-need-purchase/', CustomerNeedPurchase.as_view(), name='customer_need_purchase'),
+   path('inventory/items/purchase/', PurchaseInventoryItemListView.as_view(), name='purchase_inventory_item_list'),
+   path('inventory/items/purchase/create/', PurchaseInventoryItemCreateView.as_view(), name='purchase_inventory_item_create'),
+
+
 
 ]
