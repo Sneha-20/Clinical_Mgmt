@@ -18,6 +18,7 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '👁️', label: 'Trials', href: '/dashboard/trials' },
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📊', label: 'Awaiting Device', href: '/dashboard/awaiting-device'},
+      { icon: '💰', label: 'Transaction History', href: '/dashboard/transaction-history' },
     ],
     Audiologist: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },

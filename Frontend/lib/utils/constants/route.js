@@ -84,6 +84,14 @@ export const routes = {
   patientreferrals: "clinical/patient-referral/",
   TransferHistory: "clinical/inventory/transfer/history/",
 
+  // transactions
+  transactions: {
+    list: "clinical/clinic/transactions/",
+    create: "clinical/clinic/transactions/create/",
+    update: "clinical/clinic/transactions/",
+    delete: "clinical/clinic/transactions/",
+  },
+
     // pages
   pages: {
     dashboard: "/dashboard/home",
@@ -92,6 +100,7 @@ export const routes = {
     patientVisitdetail: "/dashboard/patient/visit-details",
     followUpList: "/dashboard/receptionist/followup-list",
     servicepage:"/dashboard/tga-service",
+    transactionHistory: "/dashboard/transaction-history",
     signup: "/signup",
     login: "/login",
     home: "/",
@@ -126,6 +135,7 @@ export const privateRoutes = [
   "/dashboard/awaiting-device",
   "/dashboard/analytics",
   "/dashboard/transfer-products",
+   "/dashboard/transaction-history",
 ];
 
 // Routes to hide when user is logged in
@@ -144,6 +154,7 @@ export const roleRoutesAccess = {
     "/dashboard/referal-doctor",
     "/dashboard/awaiting-device",
     "/dashboard/receptionist/followup-list",
+    "/dashboard/transaction-history",
   ],
   Audiologist: [
     "/dashboard/home",

@@ -121,4 +121,11 @@ export const trialGivenSchema = Yup.object({
     .required("End date required"),
 });
 
+export const transactionSchema = Yup.object({
+  transaction_type: Yup.string().oneOf(['Income', 'Expense'], 'Invalid transaction type').required('Transaction type is required'),
+  person_name: Yup.string().required('Person name is required'),
+  category: Yup.string().required('Category is required'),
+  amount: Yup.number().positive('Amount must be positive').required('Amount is required'),
+});
+
 
