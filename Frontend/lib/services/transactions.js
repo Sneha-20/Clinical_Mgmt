@@ -38,7 +38,7 @@ export const createTransaction = async (data) => {
 
 export const updateTransaction = async (id, data) => {
   try {
-    const response = await apiClient.put(`${routes.transactions.update}${id}/`, data);
+    const response = await apiClient.put(`${routes.transactions.update}${id}`, data);
     return response;
   } catch (error) {
     throw error;
@@ -47,7 +47,7 @@ export const updateTransaction = async (id, data) => {
 
 export const deleteTransaction = async (id) => {
   try {
-    const response = await apiClient.delete(`${routes.transactions.delete}${id}/`);
+    const response = await apiClient.delete(`${routes.transactions.delete}${id}`);
     return response;
   } catch (error) {
     throw error;
