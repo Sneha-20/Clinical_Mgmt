@@ -256,10 +256,10 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
                 if serial_numbers:
                     item["quantity"] = len(serial_numbers)
 
-                elif not quantity:
-                    raise serializers.ValidationError(
-                        "Either serial_number or quantity must be provided in purchase_items"
-                    )
+                # elif not quantity:
+                #     raise serializers.ValidationError(
+                #         "Either serial_number or quantity must be provided in purchase_items"
+                #     )
 
         # -------------------------
         # OTHER VISITS
@@ -479,7 +479,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                             )
                         
                         # reduce stock quantity in inventory
-                        inventory.quantity_in_stock = models.F('quantity_in_stock') - quantity
+                        inventory.quantity_in_stock = inventory.quantity_in_stock - quantity
                         inventory.save()
 
 
@@ -822,7 +822,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                             )
                         
                         # reduce stock quantity in inventory
-                        inventory.quantity_in_stock = models.F('quantity_in_stock') - quantity
+                        inventory.quantity_in_stock = inventory.quantity_in_stock - quantity
                         inventory.save()
 
 
