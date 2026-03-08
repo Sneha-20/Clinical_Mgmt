@@ -1192,6 +1192,18 @@ class ClinicTransactionView(generics.CreateAPIView):
             # 'data': ClinicTransactionSerializer(transaction).data
         }, status=status.HTTP_200_OK)
 
+import django_filters
+
+class ClinicTransactionFilter(django_filters.FilterSet):
+
+    transaction_date = django_filters.DateFilter(
+        field_name="transaction_date",
+        lookup_expr="date"
+    )
+
+    class Meta:
+        model = ClinicTransactions
+        fields = ['transaction_type', 'transaction_date']
 
 class ClinicTransactionListView(generics.ListAPIView):
     """
@@ -1203,17 +1215,15 @@ class ClinicTransactionListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ClinicTransactionListSerializer
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ClinicTransactionFilter
 
     def get_queryset(self):
         clinic = getattr(self.request.user, 'clinic', None)
-        queryset = ClinicTransactions.objects.filter(clinic=clinic).order_by('-id') 
-        
-        # Optional filter by transaction type
-        transaction_type = self.request.query_params.get('transaction_type')
-        if transaction_type in ['Income', 'Expense']:
-            queryset = queryset.filter(transaction_type=transaction_type)
-        
-        return queryset
+
+        return ClinicTransactions.objects.filter(
+            clinic=clinic
+        ).order_by('-id')
     
 class ClinicTransactionUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     """
