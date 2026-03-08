@@ -122,6 +122,15 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
         )
         return data
 
+
+class PurchaseItemSerializer(serializers.Serializer):
+    inventory_item = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+    serial_number = serializers.CharField(required=False, allow_blank=True)
+
+
+
+
 class PatientVisitRegistrationSerializer(serializers.Serializer):
     """
     Nested serializer used only during Patient registration to accept
@@ -144,6 +153,11 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     cost_taken_amount = serializers.FloatField(required=False, default=0)   
     mode_of_payment = serializers.CharField(required=False, allow_blank=True)
 
+    purchase_items = PurchaseItemSerializer(
+        many=True,
+        required=False
+    )
+
     def validate(self, data):
         visit_type = data.get('visit_type')
         if visit_type in ['Troubleshooting General Adjustment', 'TGA']:
@@ -159,6 +173,28 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
             missing = [f for f in ['tga_service_type', 'device_serial_need_service', 'complaint'] if not data.get(f)]
             if missing:
                 raise serializers.ValidationError(f"Missing required TGA fields: {', '.join(missing)}")
+
+
+        elif visit_type in ['Purchase Accessories', 'Purchase']:
+            # exlucde TGA specific fields
+            data.pop('tga_service_type', None)
+            data.pop('device_serial_need_service', None)
+            data.pop('complaint', None)
+
+            allowed = {'inventory_item','quantity' , 'bserial_number'}
+            extra = set(data.keys()) - allowed
+            if extra:
+                raise serializers.ValidationError(f"For Purchase visits, only these fields are allowed: {', '.join(allowed)}. Extra fields: {', '.join(extra)}")
+                # Ensure required Purchase fields are present
+            missing = [f for f in ['inventory_item','quantity'] if not data.get(f)]
+            if missing:
+                raise serializers.ValidationError(f"Missing required Purchase fields: {', '.join(missing)}")
+        else:
+            allowed = {'present_complaint', 'test_requested', 'notes', 'visit_type', 'seen_by', 'cost_taken_amount', 'mode_of_payment'}
+            extra = set(data.keys()) - allowed
+            if extra:
+                raise serializers.ValidationError(f"For non-TGA visits, only these fields are allowed: {', '.join(allowed)}. Extra fields: {', '.join(extra)}") 
+
         return data
 
 
@@ -170,7 +206,6 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
             return User.objects.get(pk=value)
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid 'seen_by' user id.")
-
 
 # 2. Main Serializer for Registration
 class PatientRegistrationSerializer(serializers.ModelSerializer):
@@ -226,68 +261,115 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # A. Extract visit list and common visit fields from the payload
         visits_data = validated_data.pop('visit_details', [])
         service_type = validated_data.pop('service_type', None)
         appointment_date = validated_data.pop('appointment_date', None)
 
-
-        # B. Get User and Clinic info from the request context (passed from View)
         request = self.context.get('request')
         current_user = request.user if request else None
-        # For this example, we assume the logged-in user belongs to a clinic.
-        current_clinic = getattr(request.user, 'clinic', None)
+        current_clinic = getattr(current_user, 'clinic', None)
 
-        # C. Atomic Transaction
+        # Status mapping (faster than if-else chain)
+        STATUS_MAP = {
+            'TGA': ('Pending for Service', 'Waiting for service to be completed'),
+            'Troubleshooting General Adjustment': ('Pending for Service', 'Waiting for service to be completed'),
+            'Purchase': ('Pending', 'Pending Purchase'),
+            'Purchase Accessories': ('Pending', 'Pending Purchase'),
+        }
+
         with transaction.atomic():
-            # 1. Create the Patient
-            # We manually add created_by here since it's read_only in the serializer
+
+            # Create patient
             patient = Patient.objects.create(
                 created_by=current_user,
-                clinic=current_clinic,  # Inherit clinic from logged-in user
+                clinic=current_clinic,
                 **validated_data
             )
 
-            # 2. Create one PatientVisit per item in visits_data
+            # Pre-fetch inventory items for purchase visits
+            inventory_ids = [
+                v.get("inventory_item")
+                for v in visits_data
+                if v.get("inventory_item")
+            ]
+
+            inventory_map = {
+                item.id: item
+                for item in InventoryItem.objects.filter(id__in=inventory_ids)
+            }
+
+            visit_instances = []
+            purchase_instances = []
+
             for visit_data in visits_data:
-                visit_type = visit_data.get('visit_type')
-                if visit_type in ['Troubleshooting General Adjustment','TGA']:
-                    status_value = 'Pending for Service'
-                    status_note = 'Waiting for service to be completed'
 
-                elif visit_type in ['Purchase Accessories', 'Purchase']:
-                    status_value = 'Pending'
-                    status_note = 'Pending Purchase'
-                else:
-                    status_value = 'Test pending'
-                    status_note = 'Waiting for audiologist availability'
+                visit_type = visit_data.get("visit_type")
 
-                # Map seen_by (User instance) and test_requested (list -> CSV string)
-                
-                seen_by_user = visit_data.pop('seen_by') # 0 is the default value if seen_by is not provided
-                if seen_by_user == 0:
-                    seen_by_user = current_user
-                test_requested = visit_data.pop('test_requested', [])
-                if isinstance(test_requested, list):
-                    test_requested = ",".join(test_requested) if test_requested else ""
+                status_value, status_note = STATUS_MAP.get(
+                    visit_type,
+                    ('Test pending', 'Waiting for audiologist availability')
+                )
 
-                # cost_taken_amount = visit_data.pop('cost_taken_amount', 0)  # Store cost amount for later use in visit creation
-                # mode_of_payment = visit_data.pop('mode_of_payment', None)
+                seen_by_user = visit_data.pop("seen_by", 0)
+                seen_by_user = current_user if seen_by_user == 0 else seen_by_user
 
-                PatientVisit.objects.create(
+                test_requested = visit_data.pop("test_requested", [])
+                test_requested = ",".join(test_requested) if test_requested else ""
+
+                visit = PatientVisit(
                     patient=patient,
-                    clinic=patient.clinic,  # Inherit clinic from patient
+                    clinic=patient.clinic,
                     status=status_value,
                     status_note=status_note,
-                    service_type=service_type or None,
+                    service_type=service_type,
                     appointment_date=appointment_date,
                     seen_by=seen_by_user,
                     test_requested=test_requested,
                     **visit_data
                 )
 
+                visit_instances.append(visit)
+
+            # Bulk create visits
+            created_visits = PatientVisit.objects.bulk_create(visit_instances)
+
+            purchase_instances = []
+
+            for visit, visit_data in zip(created_visits, visits_data):
+
+                if visit.visit_type in ['Purchase', 'Purchase Accessories']:
+
+                    items = visit_data.get("purchase_items", [])
+
+                    for item in items:
+
+                        inventory_id = item.get("inventory_item")
+                        quantity = item.get("quantity", 1)
+                        serial_number = item.get("serial_number")
+
+                        inventory = inventory_map.get(inventory_id)
+
+                        if not inventory:
+                            continue
+
+                        purchase_instances.append(
+                            PatientPurchase(
+                                patient=patient,
+                                clinic=patient.clinic,
+                                visit=visit,
+                                inventory_item_id=inventory_id,
+                                quantity=quantity,
+                                inventory_serial__serial_number=serial_number,
+                                unit_price=inventory.unit_price,
+                                total_price=inventory.unit_price * quantity,
+                                purchased_at=timezone.now(),
+                            )
+                        )
+
+            if purchase_instances:
+                PatientPurchase.objects.bulk_create(purchase_instances)
+
         return patient
-    
 
 # Edit Patient record 
 class PatientDetailSerializer(serializers.ModelSerializer):
@@ -435,43 +517,59 @@ class PatientVisitCreateSerializer(serializers.Serializer):
     appointment_date = serializers.DateField(write_only=True, required=False)
     visit_details = PatientVisitRegistrationSerializer(many=True, write_only=True)
 
-    def create(self, validated_data):
-        request = self.context.get('request')
-        current_clinic = getattr(request.user, 'clinic', None) if request else None
-        current_user = request.user if request else None
+    
 
-        patient = validated_data.get('patient')
-        service_type = validated_data.get('service_type')
-        appointment_date = validated_data.get('appointment_date')
-        visits_data = validated_data.get('visit_details', [])
+    def create(self, validated_data):
+
+        request = self.context.get('request')
+        current_user = request.user if request else None
+        current_clinic = getattr(current_user, 'clinic', None)
+
+        patient = validated_data.get("patient")
+        service_type = validated_data.get("service_type")
+        appointment_date = validated_data.get("appointment_date")
+        visits_data = validated_data.get("visit_details", [])
 
         created_visits = []
 
         with transaction.atomic():
+
             for visit_data in visits_data:
-                visit_type = visit_data.get('visit_type')
-                if visit_type in ['Battery Purchase', 'Tip / Dome Change', 'TGA','Troubleshooting General Adjustment']:
-                    status_value = 'Pending for Service'
+
+                visit_type = visit_data.get("visit_type")
+
+                if visit_type in [
+                    'Battery Purchase',
+                    'Tip / Dome Change',
+                    'TGA',
+                    'Troubleshooting General Adjustment'
+                ]:
+                    status_value = "Pending for Service"
 
                 elif visit_type in ['Purchase Accessories', 'Purchase']:
-                    status_value = 'Pending'
+                    status_value = "Pending"
 
-                else: #  For new test , followup tests
-                    status_value = 'Test pending'
+                else:
+                    status_value = "Test pending"
 
-                # `seen_by` has already been validated by PatientVisitRegistrationSerializer
-                seen_by_user = visit_data.pop('seen_by', 0)
+
+                seen_by_user = visit_data.pop("seen_by", 0)
+
                 if seen_by_user == 0:
-                    seen_by_user=current_user
+                    seen_by_user = current_user
 
-                # Convert list of tests to CSV string for storage on the model
-                test_requested = visit_data.pop('test_requested', [])
+
+                test_requested = visit_data.pop("test_requested", [])
                 if isinstance(test_requested, list):
                     test_requested = ",".join(test_requested) if test_requested else ""
 
-                tga_service_type = visit_data.pop('tga_service_type', None)
-                device_serial_need_service = visit_data.pop('device_serial_need_service', None)
-                complaint = visit_data.pop('complaint', None)
+
+                purchase_items = visit_data.pop("purchase_items", [])
+
+
+                tga_service_type = visit_data.pop("tga_service_type", None)
+                device_serial_need_service = visit_data.pop("device_serial_need_service", None)
+                complaint = visit_data.pop("complaint", None)
 
 
                 visit = PatientVisit.objects.create(
@@ -485,26 +583,79 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     step_process=1,
                     **visit_data
                 )
+
                 created_visits.append(visit)
 
-                inventory_device_id = PatientPurchase.objects.get(inventory_serial__serial_number=device_serial_need_service)
 
-                # if the visit type is TGA or service related, create a ServiceVisit record as well
-                if visit_type in ['Troubleshooting General Adjustment','TGA']:
+                # --------------------
+                # TGA Service Visit
+                # --------------------
+
+                if visit_type in ['Troubleshooting General Adjustment', 'TGA']:
+
+                    inventory_device = PatientPurchase.objects.get(
+                        inventory_serial__serial_number=device_serial_need_service
+                    )
+
                     ServiceVisit.objects.create(
-                        visit=visit,  # Use the visit we just created
+                        visit=visit,
                         service_type=tga_service_type,
                         complaint=complaint,
-                        device=inventory_device_id,  # Assuming device_id is passed in visit_data for TGA/service visits
-                        device_serial=inventory_device_id.inventory_serial,  # Use the inventory serial number
+                        device=inventory_device,
+                        device_serial=inventory_device.inventory_serial,
                         created_by=current_user,
-                        created_at=timezone.now(),
+                        created_at=timezone.now()
                     )
 
 
-        # View does not use serializer.data, so returning list is fine
+                # --------------------
+                # Purchase Visit
+                # --------------------
+
+                if visit_type in ['Purchase', 'Purchase Accessories']:
+
+                    purchase_instances = []
+
+                    inventory_ids = [
+                        item["inventory_item"] for item in purchase_items
+                    ]
+
+                    inventory_map = {
+                        item.id: item
+                        for item in InventoryItem.objects.filter(id__in=inventory_ids)
+                    }
+
+                    for item in purchase_items:
+
+                        inventory_id = item.get("inventory_item")
+                        quantity = item.get("quantity", 1)
+                        serial_number = item.get("serial_number")
+
+                        inventory = inventory_map.get(inventory_id)
+
+                        if not inventory:
+                            continue
+
+                        purchase_instances.append(
+                            PatientPurchase(
+                                patient=patient,
+                                clinic=current_clinic or patient.clinic,
+                                visit=visit,
+                                inventory_item_id=inventory_id,
+                                quantity=quantity,
+                                inventory_serial__serial_number=serial_number,
+                                unit_price=inventory.price,
+                                total_price=inventory.price * quantity,
+                                purchased_at=timezone.now()
+                            )
+                        )
+
+                    if purchase_instances:
+                        PatientPurchase.objects.bulk_create(purchase_instances)
+
         return created_visits
-    
+
+        
 # Edit Patient Visit Serializer (used in Update View)
 class PatientVisitUpdateSerializer(serializers.ModelSerializer):
     class Meta:
