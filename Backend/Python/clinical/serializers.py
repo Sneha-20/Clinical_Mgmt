@@ -479,7 +479,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                             )
                         
                         # reduce stock quantity in inventory
-                        inventory.quantity_in_stock = models.F('quantity_in_stock') - quantity
+                        inventory.quantity_in_stock = inventory.quantity_in_stock - quantity
                         inventory.save()
 
 
@@ -822,7 +822,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                             )
                         
                         # reduce stock quantity in inventory
-                        inventory.quantity_in_stock = models.F('quantity_in_stock') - quantity
+                        inventory.quantity_in_stock = inventory.quantity_in_stock - quantity
                         inventory.save()
 
 
