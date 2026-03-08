@@ -125,7 +125,7 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
 
 class PurchaseItemSerializer(serializers.Serializer):
     inventory_item = serializers.IntegerField()
-    quantity = serializers.IntegerField()
+    quantity = serializers.IntegerField(required=False)
     serial_number = serializers.ListField(
         child=serializers.CharField(),
         required=False
@@ -141,11 +141,12 @@ class PurchaseItemSerializer(serializers.Serializer):
         if serial_numbers:
             data["quantity"] = len(serial_numbers)
 
-        # If neither serial_number nor quantity
-        if not serial_numbers and not quantity:
-            raise serializers.ValidationError(
-                "Either serial_number or quantity must be provided"
-            )
+    
+        # # If neither serial_number nor quantity
+        # if not serial_numbers and not quantity:
+        #     raise serializers.ValidationError(
+        #         "Either serial_number or quantity must be provided"
+        #     )
 
         return data
 
