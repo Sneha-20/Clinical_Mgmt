@@ -126,7 +126,11 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
 class PurchaseItemSerializer(serializers.Serializer):
     inventory_item = serializers.IntegerField()
     quantity = serializers.IntegerField()
-    serial_number = serializers.CharField(required=False, allow_blank=True)
+    serial_number = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+
 
     def validate(self, data):
 
@@ -735,26 +739,45 @@ class PatientVisitCreateSerializer(serializers.Serializer):
 
                         inventory_id = item.get("inventory_item")
                         quantity = item.get("quantity", 1)
-                        serial_number = item.get("serial_number")
+                        serial_numbers = item.get("serial_number")
 
                         inventory = inventory_map.get(inventory_id)
 
                         if not inventory:
                             continue
 
-                        purchase_instances.append(
-                            PatientPurchase(
-                                patient=patient,
-                                clinic=current_clinic or patient.clinic,
-                                visit=visit,
-                                inventory_item_id=inventory_id,
-                                quantity=quantity,
-                                inventory_serial__serial_number=serial_number,
-                                unit_price=inventory.price,
-                                total_price=inventory.price * quantity,
-                                purchased_at=timezone.now()
+                        if serial_numbers:
+
+                            for serial in serial_numbers:
+                                purchase_instances.append(
+                                    PatientPurchase(
+                                        patient=patient,
+                                        clinic=current_clinic or patient.clinic,
+                                        visit=visit,
+                                        inventory_item_id=inventory_id,
+                                        quantity=quantity,
+                                        inventory_serial__serial_number=serial,
+                                        unit_price=inventory.unit_price,
+                                        total_price=inventory.unit_price * quantity,
+                                        purchased_at=timezone.now()
+                                    )
+                                )
+
+                        else:
+
+                            purchase_instances.append(
+                                PatientPurchase(
+                                    patient=patient,
+                                    clinic=current_clinic or patient.clinic,
+                                    visit=visit,
+                                    inventory_item_id=inventory_id,
+                                    quantity=quantity,
+                                    unit_price=inventory.unit_price,
+                                    total_price=inventory.unit_price * quantity,
+                                    purchased_at=timezone.now()
+                                )
                             )
-                        )
+
 
                     if purchase_instances:
                        p_purchases =  PatientPurchase.objects.bulk_create(purchase_instances)
