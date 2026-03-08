@@ -511,8 +511,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                 BillItem(
                                     bill=bill[0],
                                     description=f"Purchase - {purchase.inventory_item.product_name}",
-                                    amount=purchase.total_price,
-                                    created_by=current_user
+                                    cost=purchase.total_price,
+                                    # created_by=current_user
                                 ) for purchase in p_purchases
                             ])
                                
