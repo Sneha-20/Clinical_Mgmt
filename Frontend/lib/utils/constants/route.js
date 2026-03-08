@@ -153,6 +153,7 @@ export const roleRoutesAccess = {
     "/dashboard/trials",
     "/dashboard/referal-doctor",
     "/dashboard/awaiting-device",
+    "/dashboard/tga-service",
     "/dashboard/receptionist/followup-list",
     "/dashboard/transaction-history",
   ],

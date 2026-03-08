@@ -53,8 +53,8 @@ export const visitTypeOptions = [
   { label: "Follow-up for Test ", value: "Follow-up" },
   { label: "TGA / Machine Check", value: "TGA" },
   {label:"Accessories", value:"Accessories"} ,
-  {label:'Speech Therapy', value:'Speech_therapy'}
-  // { label: "Tip / Dome Change", value: "Tip / Dome Change" },
+  {label:'Speech Therapy', value:'Speech_therapy'},
+  { label: "Purchase", value: "Purchase" },
   // { label: "Machine cleaning", value: "machine_cleaning" },
   // { label: "Hearing Aid Trial", value: "Hearing Aid Trial" },
   // { label: "Hearing Aid Fitting", value: "Hearing Aid Fitting" },

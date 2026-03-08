@@ -17,6 +17,7 @@ import {
 } from "@/lib/utils/constants/staticValue";
 import { showToast } from "@/components/ui/toast";
 import TextArea from '@/components/ui/TextArea'
+import { getPurchaseInventoryItems, getInventorySerialList } from "@/lib/services/inventory";
 
 export default function PatientVisitForm({
   onClose,
@@ -34,10 +35,10 @@ export default function PatientVisitForm({
     notes: "",
     cost_taken_amount: "",
     mode_of_payment: "",
-    // TGA specific fields
     tga_service_type: "",
     device_serial_number: "",
     complaint: "",
+    purchase_items: [],
   };
   const getInitialFormState = (patientId) => ({
     patient: patientId || null,
@@ -76,6 +77,11 @@ export default function PatientVisitForm({
   const [patientDevices, setPatientDevices] = useState([]);
   const [loadingDevices, setLoadingDevices] = useState(false);
 
+  // Purchase related state
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [loadingInventory, setLoadingInventory] = useState(false);
+  const [purchaseItems, setPurchaseItems] = useState([]); // Array of { inventory_item, quantity?, serial_number? }
+
   const updateField = useCallback(
     (name, value) => {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -90,6 +96,11 @@ export default function PatientVisitForm({
       fetchPatientDevices(showSelctedPatientId);
     }
   }, [showSelctedPatientId]);
+
+  // Fetch inventory items on component mount
+  useEffect(() => {
+    fetchInventoryItems();
+  }, []);
 
   const fetchPatientDevices = async (patientId) => {
     try {
@@ -113,6 +124,104 @@ export default function PatientVisitForm({
     }
   };
 
+  const fetchInventoryItems = async () => {
+    try {
+      setLoadingInventory(true);
+      const response = await getPurchaseInventoryItems();
+      const itemOptions = response.map((item) => ({
+        label: `${item.category} - ${item.product_name} (${item.brand_name})`,
+        value: item.id,
+        stock_type: item.stock_type,
+      }));
+      setInventoryItems(itemOptions);
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+      showToast({
+        type: "error",
+        message: "Failed to fetch inventory items",
+      });
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+
+  const fetchSerialsForItem = async (inventoryItemId, visitIndex) => {
+    try {
+      const response = await getInventorySerialList({ inventory_item: inventoryItemId });
+      // Handle both string and object responses from API
+      const serialOptions = response.data.map((serial) => {
+        const serialNumber = typeof serial === 'string' ? serial : serial.serial_number;
+        return {
+          label: serialNumber,
+          value: serialNumber,
+        };
+      });
+      // Update the visit's purchase_items with serials for this item
+      const updatedVisit = [...formData.visit_details];
+      const purchaseItems = updatedVisit[visitIndex].purchase_items || [];
+      // Find the item and update its serials
+      const itemIndex = purchaseItems.findIndex(item => item.inventory_item === inventoryItemId);
+      if (itemIndex !== -1) {
+        purchaseItems[itemIndex].serials = serialOptions;
+        updatedVisit[visitIndex].purchase_items = purchaseItems;
+        setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
+      }
+    } catch (error) {
+      console.error("Error fetching serials:", error);
+      showToast({
+        type: "error",
+        message: "Failed to fetch serial numbers",
+      });
+    }
+  };
+
+  const addPurchaseItem = (visitIndex) => {
+    const updatedVisit = [...formData.visit_details];
+    const purchaseItems = updatedVisit[visitIndex].purchase_items || [];
+    purchaseItems.push({
+      inventory_item: "",
+      quantity: 1,
+      serial_numbers: [],
+      stock_type: "",
+      serials: [],
+    });
+    updatedVisit[visitIndex].purchase_items = purchaseItems;
+    setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
+  };
+
+  const updatePurchaseItem = (visitIndex, itemIndex, key, value) => {
+    const updatedVisit = [...formData.visit_details];
+    const purchaseItems = [...updatedVisit[visitIndex].purchase_items];
+    
+    if (key === 'serial_numbers') {
+      // Handle array of serial numbers
+      purchaseItems[itemIndex] = { ...purchaseItems[itemIndex], serial_numbers: value };
+    } else {
+      purchaseItems[itemIndex] = { ...purchaseItems[itemIndex], [key]: value };
+    }
+    updatedVisit[visitIndex].purchase_items = purchaseItems;
+    setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
+
+    // If inventory_item changed, fetch serials if serialized
+    if (key === 'inventory_item' && value) {
+      const selectedItem = inventoryItems.find(item => item.value === value);
+      if (selectedItem) {
+        purchaseItems[itemIndex].stock_type = selectedItem.stock_type;
+        purchaseItems[itemIndex].serial_numbers = [];
+        if (selectedItem.stock_type === 'Serialized') {
+          fetchSerialsForItem(value, visitIndex);
+        }
+      }
+    }
+  };
+
+  const removePurchaseItem = (visitIndex, itemIndex) => {
+    const updatedVisit = [...formData.visit_details];
+    const purchaseItems = updatedVisit[visitIndex].purchase_items.filter((_, i) => i !== itemIndex);
+    updatedVisit[visitIndex].purchase_items = purchaseItems;
+    setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
+  };
+
   /* ----------------- Update Visit Details ----------------- */
   const updateVisitDetails = (index, key, value) => {
     const updatedVisit = [...formData.visit_details];
@@ -122,12 +231,30 @@ export default function PatientVisitForm({
 
   const handleAddMoreVisit = () => {
     const lastVisit = formData.visit_details[formData.visit_details.length - 1];
-    if (!lastVisit.visit_type || !lastVisit.present_complaint) {
-      return showToast({
-        type: "error",
-        message:
-          "Please fill in the current visit details before adding a new one.",
-      });
+    
+    // Validation based on visit type
+    if (lastVisit.visit_type === 'Purchase') {
+      if (!lastVisit.purchase_items || lastVisit.purchase_items.length === 0) {
+        return showToast({
+          type: "error",
+          message: "Please add at least one purchase item before adding a new visit.",
+        });
+      }
+    } else if (lastVisit.visit_type === 'TGA') {
+      if (!lastVisit.tga_service_type || !lastVisit.complaint) {
+        return showToast({
+          type: "error",
+          message: "Please fill in TGA service type and complaint before adding a new visit.",
+        });
+      }
+    } else {
+      if (!lastVisit.visit_type || !lastVisit.present_complaint) {
+        return showToast({
+          type: "error",
+          message:
+            "Please fill in the current visit details before adding a new one.",
+        });
+      }
     }
 
     setFormData((prev) => ({
@@ -140,6 +267,7 @@ export default function PatientVisitForm({
           seen_by: "",
           test_requested: [],
           notes: "",
+          purchase_items: [],
         },
       ],
     }));
@@ -148,7 +276,7 @@ export default function PatientVisitForm({
     console.log(formData)
     e.preventDefault();
     try {
-      await visitPatientSchema.validate(formData, { abortEarly: false });
+      // await visitPatientSchema.validate(formData, { abortEarly: false });
       setErrors({});
       
       // Filter payload based on visit type
@@ -163,12 +291,31 @@ export default function PatientVisitForm({
               device_serial_need_service: visit.device_serial_number,
               complaint: visit.complaint,
             };
+          } else if (visit.visit_type === 'Purchase') {
+            // Only include Purchase-specific fields (exclude seen_by and other irrelevant fields)
+            return {
+              visit_type: visit.visit_type,
+              purchase_items: visit.purchase_items.map(item => {
+                // Remove internal fields like serials array before sending
+                const { serials, stock_type, ...itemData } = item;
+                // For non-serialized items, don't send serial_numbers array
+                if (stock_type === 'Non-Serialized') {
+                  const { serial_numbers, ...cleanItem } = itemData;
+                  return cleanItem;
+                } else {
+                  // For serialized items, don't send quantity field
+                  const { quantity, ...cleanItem } = itemData;
+                  return cleanItem;
+                }
+              }),
+            };
           } else {
             // Include all fields for other visit types
              const {
                   tga_service_type,
                   device_serial_number,
                   complaint,
+                  purchase_items,
                   ...rest
                 } = visit;
 
@@ -238,7 +385,7 @@ export default function PatientVisitForm({
                 onChange={(n, v) => updateVisitDetails(index, "visit_type", v)}
                 error={errors?.visit_details?.[index]?.visit_type}
               />
-              {visit.visit_type !== "TGA" && (
+              {visit.visit_type !== "TGA" && visit.visit_type !== "Purchase" && (
                 <DropDown
                   label="Assigned To"
                   name="seen_by"
@@ -250,7 +397,7 @@ export default function PatientVisitForm({
               )}
             </div>
 
-            {visit.visit_type !== "TGA" && (
+            {visit.visit_type !== "TGA" && visit.visit_type !== "Purchase" && (
               <>
                 <DropDown
                   label="Present Complaint"
@@ -345,7 +492,100 @@ export default function PatientVisitForm({
               </>
             )}
 
-            {visit.visit_type !== "TGA" && (
+            {/* Purchase Specific Fields */}
+            {visit.visit_type === "Purchase" && (
+              <>
+                <div className="mt-4">
+                  <h4 className="font-medium text-sm text-gray-700 mb-2">Purchase Items</h4>
+                  {visit.purchase_items && visit.purchase_items.map((item, itemIndex) => (
+                    <div key={itemIndex} className="border rounded-lg p-4 mb-4 bg-gray-50">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <DropDown
+                          label="Inventory Item"
+                          name={`inventory_item_${itemIndex}`}
+                          options={inventoryItems}
+                          value={item.inventory_item}
+                          onChange={(n, v) => updatePurchaseItem(index, itemIndex, "inventory_item", v)}
+                          disabled={loadingInventory}
+                          placeholder={loadingInventory ? "Loading items..." : "Select item"}
+                        />
+                        {item.stock_type === "Non-Serialized" && (
+                          <Input
+                            label="Quantity"
+                            name={`quantity_${itemIndex}`}
+                            type="number"
+                            min="1"
+                            value={item.quantity || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "") {
+                                updatePurchaseItem(index, itemIndex, "quantity", "");
+                              } else {
+                                const num = parseInt(val);
+                                if (!isNaN(num) && num >= 1) {
+                                  updatePurchaseItem(index, itemIndex, "quantity", num);
+                                }
+                              }
+                            }}
+                          />
+                        )}
+                        {item.stock_type === "Serialized" && (
+                          <div className="mt-2">
+                            <label className="text-sm font-medium mb-2 block">Serial Numbers</label>
+                            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2 bg-white">
+                              {item.serials && item.serials.length > 0 ? (
+                                item.serials.map((serial) => (
+                                  <div key={serial.value} className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      id={`serial_${itemIndex}_${serial.value}`}
+                                      checked={item.serial_numbers.includes(serial.value)}
+                                      onChange={(e) => {
+                                        const currentSerials = item.serial_numbers || [];
+                                        if (e.target.checked) {
+                                          updatePurchaseItem(index, itemIndex, "serial_numbers", [...currentSerials, serial.value]);
+                                        } else {
+                                          updatePurchaseItem(index, itemIndex, "serial_numbers", currentSerials.filter(s => s !== serial.value));
+                                        }
+                                      }}
+                                      className="rounded"
+                                    />
+                                    <label htmlFor={`serial_${itemIndex}_${serial.value}`} className="ml-2 text-sm cursor-pointer">
+                                      {serial.label}
+                                    </label>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-xs text-gray-500">Loading serial numbers...</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removePurchaseItem(index, itemIndex)}
+                        className="mt-2"
+                      >
+                        Remove Item
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => addPurchaseItem(index)}
+                    className="mt-2"
+                  >
+                    + Add Purchase Item
+                  </Button>
+                </div>
+              </>
+            )}
+
+            {visit.visit_type !== "TGA" && visit.visit_type !== "Purchase" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <Input
                   label="Amount Taken From Patient"
@@ -364,6 +604,7 @@ export default function PatientVisitForm({
                 />
               </div>
             )}
+
           </div>
         ))}
 

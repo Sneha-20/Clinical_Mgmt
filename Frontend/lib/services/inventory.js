@@ -150,6 +150,20 @@ export const getInventorySerialList = async (params = {}) => {
 };
 
 /**
+ * Get inventory items for purchase
+ * @returns {Promise<Array>} List of inventory items available for purchase
+ */
+export const getPurchaseInventoryItems = async () => {
+  try {
+    const url = `clinical/inventory/items/purchase/`;
+    const response = await apiClient.get(url);
+    return response.data || [];
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
  * Get pending inventory items for a clinic
  * @param {Object} params - Query params (clinic_id required)
  * @returns {Promise<Array>} List of pending inventory items
