@@ -52,9 +52,15 @@ export const visitTypeOptions = [
   { label: "Hearing Test", value: "New Test" },
   { label: "Follow-up for Test ", value: "Follow-up" },
   { label: "TGA / Machine Check", value: "TGA" },
+<<<<<<< HEAD
   {label:"Accessories", value:"Accessories"} ,
   {label:'Speech Therapy', value:'Speech_therapy'},
   { label: "Purchase", value: "Purchase" },
+=======
+  {label:"Accessories", value:"Accessories"},
+  {label:'Speech Therapy', value:'Speech_therapy'}
+  // { label: "Tip / Dome Change", value: "Tip / Dome Change" },
+>>>>>>> 019a81633fdb9d3a02df238fd6508b9252c109c1
   // { label: "Machine cleaning", value: "machine_cleaning" },
   // { label: "Hearing Aid Trial", value: "Hearing Aid Trial" },
   // { label: "Hearing Aid Fitting", value: "Hearing Aid Fitting" },
@@ -90,4 +96,13 @@ export const referalTypeOptions = [
     { label: "Doctor", value: "doctor" },
     { label: "Advertisement", value: "advertisement" },
     { label: "Other", value: "other" },
+  ];
+
+export const accessoriesTypeOptions = [
+    { label: "Dome", value: "Dome" },
+    { label: "Tube", value: "Tube" },
+    { label: "Battery", value: "Battery" },
+    { label: "Receiver", value: "Receiver" },
+    { label: "Mold", value: "Mold" },
+    { label: "Charger", value: "Charger" },
   ];
