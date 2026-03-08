@@ -6,6 +6,7 @@ import TextArea from '@/components/ui/TextArea'
 import DropDown from "@/components/ui/dropdown";
 import Modal from "@/components/ui/Modal";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
+import { accessoriesTypeOptions } from "@/lib/utils/constants/staticValue";
 
 export default function AddProductModal({
   isOpen,
@@ -24,6 +25,7 @@ export default function AddProductModal({
 }) {
   const [formData, setFormData] = useState({
     category: "",
+    accessories_type: "",
     brand: "",
     model_type: "",
     product_name: "",
@@ -151,6 +153,7 @@ export default function AddProductModal({
     const result = await onCreateBrand?.(
       newBrandName.trim(),
       formData.category,
+      formData.accessories_type,
     );
     setCreatingBrand(false);
 
@@ -281,7 +284,19 @@ export default function AddProductModal({
             error={errors.category}
             important
           />
-
+{/* if the category is accessories */}
+          {formData.category === "Accessories" && (
+          <DropDown
+            label="Accessories Type"
+            name="accessories_type"
+            options={accessoriesTypeOptions}
+            value={formData.accessories_type}
+            onChange={updateField}
+            placeholder="Select accessories type"
+            error={errors.accessories_type}
+            important
+          />
+          )}
           <div className="space-y-2">
             <DropDown
               label="Brand"

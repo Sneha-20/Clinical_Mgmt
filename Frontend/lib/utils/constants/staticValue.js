@@ -52,7 +52,7 @@ export const visitTypeOptions = [
   { label: "Hearing Test", value: "New Test" },
   { label: "Follow-up for Test ", value: "Follow-up" },
   { label: "TGA / Machine Check", value: "TGA" },
-  {label:"Accessories", value:"Accessories"} ,
+  {label:"Accessories", value:"Accessories"},
   {label:'Speech Therapy', value:'Speech_therapy'}
   // { label: "Tip / Dome Change", value: "Tip / Dome Change" },
   // { label: "Machine cleaning", value: "machine_cleaning" },
@@ -90,4 +90,13 @@ export const referalTypeOptions = [
     { label: "Doctor", value: "doctor" },
     { label: "Advertisement", value: "advertisement" },
     { label: "Other", value: "other" },
+  ];
+
+export const accessoriesTypeOptions = [
+    { label: "Dome", value: "Dome" },
+    { label: "Tube", value: "Tube" },
+    { label: "Battery", value: "Battery" },
+    { label: "Receiver", value: "Receiver" },
+    { label: "Mold", value: "Mold" },
+    { label: "Charger", value: "Charger" },
   ];
