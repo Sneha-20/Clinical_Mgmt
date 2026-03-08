@@ -1,0 +1,3543 @@
+{
+  "info": {
+    "_postman_id": "0c667ac4-9159-47c4-bd2c-93fb884baf3c",
+    "name": "Clinical Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "15640021",
+    "_collection_link": "https://go.postman.co/collection/15640021-0c667ac4-9159-47c4-bd2c-93fb884baf3c?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "APIs",
+      "item": [
+        {
+          "name": "Audiologist Role APIs",
+          "item": [
+            {
+              "name": "Trials",
+              "item": [
+                {
+                  "name": "Awaiting Stock List For purchase",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": []
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/trials/awaiting-stock/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "trials",
+                        "awaiting-stock",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Awaiting Stock details by ID",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": []
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/trials/awaiting-stock/40/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "trials",
+                        "awaiting-stock",
+                        "40",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Allocate Stock",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n    \"booked_device_serial\":\"KNJ231H\"\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/trials/allocate-serial/40/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "trials",
+                        "allocate-serial",
+                        "40",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Trial Given Form",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n        \"visit\": 202,\r\n        \"serial_number\": \"HX23456\",\r\n        \"receiver_size\": \"M\",\r\n        \"ear_fitted\": \"Right\",\r\n        \"dome_type\": \"Open\",\r\n        \"gain_settings\": \"Initial fitting with minor adjustments for high frequencies.\",\r\n        \"srt_before\": \"45 dB\",\r\n        \"sds_before\": \"88%\",\r\n        \"ucl_before\": \"100 dB\",\r\n        \"patient_response\": \"Positive, reports better clarity in quiet environments.\",\r\n        \"counselling_notes\": \"Counselled on device usage and maintenance. Follow-up scheduled.\",\r\n        \"cost\": \"500.00\",\r\n        \"trial_start_date\": \"2025-12-19\",\r\n        \"trial_end_date\": \"2026-01-05\",\r\n        \"discount_offered\": \"10\"\r\n\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/trials/create/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "trials",
+                        "create",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Serial number of Trail Devices",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": ""
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/inventory/trial-device-serials/?model_type_id=4",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "inventory",
+                        "trial-device-serials",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "serial_number",
+                          "value": "SN06",
+                          "disabled": true
+                        },
+                        {
+                          "key": "model_type_id",
+                          "value": "4"
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Model List Dropdown for Trials",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": {
+                      "type": "noauth"
+                    },
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": ""
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/inventory/trial-available-models/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "inventory",
+                        "trial-available-models",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Get product info by serial number",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": ""
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/inventory/product-by-serial/SN12345",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "inventory",
+                        "product-by-serial",
+                        "SN12345"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Trial List",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": []
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/trials/?page=1",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "trials",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "visit_status",
+                          "value": "Book Follow-up Required",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Trial Device in Use list (optional)",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": ""
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/inventory/trial-devices-in-use/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "inventory",
+                        "trial-devices-in-use",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Return Device API",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n    \"serial_number\": \"SN12346\",\r\n    \"device_condition_on_return\": \"Device returned in good condition 2\"\r\n    }",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/api/inventory/return-trial-device/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "api",
+                        "inventory",
+                        "return-trial-device",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Trial Completion with Device Purchase",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "// BOOK\r\n\r\n// {\r\n//     \"trial_decision\": \"BOOK - Device Allocated\",\r\n//     \"booked_device_inventory\": 39, // get from  Booked Device Inventory Data \r\n//     \"booked_device_serial\": \"SN123410\", // Get from Inventory Product  Serial List for specific inventory\r\n//     \"completion_notes\": \"Patient satisfied with trial experience\"\r\n// }\r\n\r\n{\r\n    \"trial_decision\": \"BOOK - Awaiting Stock\",\r\n    \"booked_device_inventory\": 48, // get from  Booked Device Inventory Data \r\n    \"completion_notes\": \"Patient satisfied with trial experience\"\r\n}\r\n\r\n// NOT BOOKED  == FOLLOWUP Needed\r\n// {\r\n//     \"trial_decision\": \"TRIAL ACTIVE\", \r\n//     \"next_followup\":3,\r\n//     \"completion_notes\": \"Patient wants to discuss with family\"\r\n// }\r\n\r\n// DECLINE\r\n\r\n// {\r\n//   \"trial_decision\": \"DECLINE\",\r\n//   \"completion_notes\": \"Patient decided not to proceed with device purchase\"\r\n// }",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}/api/clinical/trials/41/complete/",
+                      "host": [
+                        "{{BASE_URL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "clinical",
+                        "trials",
+                        "41",
+                        "complete",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Inventory Device List  dropdown",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{BASE_URL}}/api/clinical/device-booking/inventory/",
+                      "host": [
+                        "{{BASE_URL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "clinical",
+                        "device-booking",
+                        "inventory",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "search",
+                          "value": "Hearing",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Serial Number dropdown by device id",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{BASE_URL}}/api/clinical/device-booking/serial/48",
+                      "host": [
+                        "{{BASE_URL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "clinical",
+                        "device-booking",
+                        "serial",
+                        "48"
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Audiologist queue List",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/audiologits/queue/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "audiologits",
+                    "queue",
+                    ""
+                  ]
+                },
+                "description": "# GET THE AUDIOLOGIST QUEUE\n\n1. FIlter by Service Type ( clinic/home)\n    \n2. Search by Patient Name and Phone number"
+              },
+              "response": []
+            },
+            {
+              "name": "Visit Record by  visit ID (  Data Inside case form",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/visit/203",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "visit",
+                    "203"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Full Visit Record by  visit ID",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/visit/162/full/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "visit",
+                    "162",
+                    "full",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Save the Case History/Test performed data",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n        \"medical_history\": \"...\",\r\n        \"family_history\": \"...\",\r\n        \"noise_exposure\": \"...\",\r\n        \"previous_ha_experience\": \"..33.\",\r\n        \"red_flags\": \"...\",\r\n        \"visit\": 202,\r\n        \"test_requested\": [\"pta\", \"oae\",\"srt\", \"test\"]\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/audiologist/test/perform/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "audiologist",
+                    "test",
+                    "perform",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Upload Test Report",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "uuid": "a3619317-a507-4d2a-b92a-56c249be35e0",
+                      "src": "postman-cloud:///1f0e58e6-9f02-4d30-b49a-2b9cf80509b4"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/report-upload/91/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "report-upload",
+                    "91",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add Test Report",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"patient_visit\":201,\r\n    \"reports\":[\r\n        {\r\n            \"report_type\": \"PTA\",\r\n            \"report_description\": \"TEST DGFLFJL:FKO:K FLKG:JGSL JGJLGLK\"\r\n        },\r\n\r\n        {\r\n            \"report_type\": \"Immittance\",\r\n            \"report_description\": \"TEST DGFLFJL:FKO:K FLKG:JGSL JGJLGLK \"\r\n        }\r\n    ]\r\n\r\n    \r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/report-create/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "report-create",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "List Test report by visit ID",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/test-results/199/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "test-results",
+                    "199",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Test Report list",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/test-uploads/list/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "test-uploads",
+                    "list",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete the Test report",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/test-upload/35/delete/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "test-upload",
+                    "35",
+                    "delete",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Completed Test List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/completed-tests/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "completed-tests",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Completed Test History by visit ID",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/completed-tests/117/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "completed-tests",
+                    "117",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Test History for Patient ID",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/23/test-history/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "23",
+                    "test-history",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Test Type List  by visit ID",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/visit/201/test-types/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "visit",
+                    "201",
+                    "test-types",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Test type List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": []
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/test-types/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "test-types",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Test type Update",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"id\":3, \r\n    \"name\":\"SRT/SDS\",\r\n            \"description\": \"Speech Discrimination Score - Ability to understand speech at comfortable listening levels & Speech Reception Threshold - Minimum level at which speech is understood\",\r\n    \"code\":\"SRT/SDS\",\r\n    \"cost\":400\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/test-types/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "test-types",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Receptionist",
+          "item": [
+            {
+              "name": "Clinic Transactions",
+              "item": [
+                {
+                  "name": "Add New Clinic Transactions",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n    \"transaction_type\":\"Expense\", // Income , Expense\r\n    \"person_name\":\"Dr Test\",\r\n    \"category\":\"Food\",\r\n    \"amount\":500\r\n    \r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/clinic/transactions/create/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "clinic",
+                        "transactions",
+                        "create",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Clinic Transactions",
+                  "request": {
+                    "method": "PATCH",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n    \"person_name\":\"Dr2 Test\",\r\n    \"transaction_type\":\"Expense\",\r\n    \"category\":\"Food\",\r\n    \"amount\":500\r\n    \r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/clinic/transactions/3",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "clinic",
+                        "transactions",
+                        "3"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Delete Clinic Transaction",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/clinic/transactions/3",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "clinic",
+                        "transactions",
+                        "3"
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Clinic Transactions List",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n    \"transaction_type\":\"Income\",\r\n    \"person_name\":\"Dr Test\",\r\n    \"category\":\"Food\",\r\n    \"amount\":1200\r\n    \r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/clinic/transactions/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "clinic",
+                        "transactions",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "transaction_type",
+                          "value": "Expense",
+                          "type": "text",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Purchase Page APIs",
+              "item": [
+                {
+                  "name": "Purchase Item List",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/inventory/items/purchase/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "inventory",
+                        "items",
+                        "purchase",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Patient List for Purchase ( Dropdown)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/customer-need-purchase/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "customer-need-purchase",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Add Patient purchase record",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Bearer {{token}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\r\n    \"visit\":230,\r\n    \"inventory_item\":60,\r\n    \"quantity\":1\r\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{BASE_URL}}api/clinical/inventory/items/purchase/create/",
+                      "host": [
+                        "{{BASE_URL}}api"
+                      ],
+                      "path": [
+                        "clinical",
+                        "inventory",
+                        "items",
+                        "purchase",
+                        "create",
+                        ""
+                      ]
+                    }
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Add Patient ( Reception)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"name\": \"Patient 06 March \",\r\n    \"age\": 26,\r\n    \"dob\": \"1998-02-20\",\r\n    \"email\": \"patient1r@gmail.com\",\r\n    \"gender\": \"Female\",\r\n    \"phone_primary\": \"9196719547\",\r\n    \"phone_secondary\": \"9999123459\",\r\n    \"city\": \"Chandigarh\",\r\n    \"address\": \"123 MG Road\",\r\n    \"referral_type\": \"Self Referal\",  //  Dropdown \r\n    \"referral_doctor\": \"\",\r\n    \"service_type\":\"clinic\",\r\n    \"appointment_date\": \"2025-03-06\",\r\n    \"visit_details\": [\r\n        {\r\n            \"visit_type\": \"Purchase\", // it will be a dropdown\r\n            // \"present_complaint\": \"Difficulty hearing in noisy places 2\", // it will be text\r\n            // \"test_requested\": [\"PTA\"], // it will be multiple choice\r\n            // \"notes\": \"Patient reports gradual hearing lossc2\", \r\n            \"seen_by\":16// Assigned To\r\n            \r\n                \r\n        }\r\n        // {\r\n        //     \"visit_type\": \"Battery Purchase\", // it will be a dropdown\r\n        //     \"present_complaint\": \"Difficulty in hearing\", // it will be text\r\n        //     \"test_requested\": [], // it will be multiple choice\r\n        //     \"notes\": \"Patient facing Difficulty in hearing\",\r\n        //     \"seen_by\": 0\r\n\r\n        // }\r\n\r\n    ]\r\n\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/register/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "register",
+                    ""
+                  ]
+                },
+                "description": "**\\*_Test Requested use these dropdown :**\n\nPure Tone Audiometry  \nTympanometry  \nSRT / SDS  \nUCL  \nFree Field  \nBERA / ASSR  \nOAE  \nAny special test\n\n\\*_**Purpose of visit / visit type : use these values in dropdown :**\n\nNew Test  \nFollow-up  \nTGA / Machine Check  \nBattery Purchase  \nTip / Dome Change  \nSpeech Assessment  \nSpeech Therapy Follow-up  \nHearing Aid Trial  \nHearing Aid Fitting\n\n**Referal Type Dropdown :**\n\n- **Doctor referral (Name of doctor)**\n    \n- **Self referral**\n    \n- **Old patient referral**"
+              },
+              "response": []
+            },
+            {
+              "name": "Add Patient Visit",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n        \"patient\":65,\r\n        \"service_type\":\"clinic\",\r\n        \"appointment_date\": \"2025-03-05\",\r\n        \"visit_details\":[\r\n            // {\r\n            //     \"visit_type\": \"New Test\", // it will be a dropdown\r\n            //     \"present_complaint\": \"Difficulty Hear  in noisy places \", // it will be text\r\n            //     \"test_requested\": [\"OAE\",\"Immittance\"], // it will be dropdown ( (OAE / PTA / Imp / BERA)\r\n            //     \"notes\": \"Patient reports noise issues\",\r\n            //     \"seen_by\":16\r\n            // },\r\n\r\n            {\r\n                \"visit_type\": \"Troubleshooting General Adjustment\", // it will be a dropdown\r\n                \"tga_service_type\": \"Cleaning & Maintenance\",\r\n                \"device_serial_need_service\": \"sn444\",  // Purchase ID from device history\r\n                \"complaint\": \"Battery not holding charge\"\r\n               \r\n            }\r\n\r\n            // {\r\n            //     \"visit_type\": \"Tip/Dome Change\", // it will be a dropdown\r\n            //     \"present_complaint\": \"Difficulty speech in noisy places \", // it will be text\r\n            //     \"test_requested\": [], // it will be dropdown ( (OAE / PTA / Imp / BERA)\r\n            //     \"notes\": \"Patient reports speech issues\",\r\n            //     \"seen_by\":null\r\n            // }\r\n\r\n            \r\n        ]\r\n       \r\n       \r\n    \r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/visit/create/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "visit",
+                    "create",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Patient Visit",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n                \"visit_type\": \"TGA / Machine Check\",\r\n                \"present_complaint\": \"Difficulty speech in noisy places\",\r\n                \"test_requested\": \"OAE\",\r\n                \"notes\": \"Patient reports speech issues\",\r\n                \"appointment_date\": \"2025-12-01\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/visit/9/update/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "visit",
+                    "9",
+                    "update",
+                    ""
+                  ]
+                },
+                "description": "# Add visit ID in the url"
+              },
+              "response": []
+            },
+            {
+              "name": "Update Patient",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"name\": \"Saniyaaaaaaaaaaaaa Sharma\",\r\n    \"age\": 15,\r\n    \"dob\": \"1911-09-15\",\r\n    \"email\": \"saniyas.sharma@example1.com\",\r\n    \"gender\": \"Female\",\r\n    \"phone_primary\": \"9876543217\",\r\n    \"phone_secondary\": \"9812345675\",\r\n    \"city\": \"Noida\",\r\n    \"address\": \"123 MG Road\",\r\n    \"referral_type\": \"Self Referal\",  //  Dropdown \r\n    \"referral_doctor\": \"\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/2/update/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "2",
+                    "update",
+                    ""
+                  ]
+                },
+                "description": "# Add Patient ID in the URL"
+              },
+              "response": []
+            },
+            {
+              "name": "List all patient visits & search and filters",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/visit/?page=1",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "visit",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "search",
+                      "value": "Taniya Sharma",
+                      "disabled": true
+                    },
+                    {
+                      "key": "service_type",
+                      "value": "home",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "## Search by : search params\n\n1. Name\n    \n2. Phone number\n    \n\n## Filter by :\n\n1. Status ( **Test pending/Test Peformed/Trial Active / Follow-up/**Pending for Service/ Completed)\n    \n2. Service Type"
+              },
+              "response": []
+            },
+            {
+              "name": "All visits for a patient by ID",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/23/visits/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "23",
+                    "visits",
+                    ""
+                  ]
+                },
+                "description": "1. Add Patient ID in the url: patient/id/visits"
+              },
+              "response": []
+            },
+            {
+              "name": "Today appointment List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/visits/today/?page=1",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "visits",
+                    "today",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "service_type",
+                      "value": "clinic",
+                      "disabled": true
+                    },
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "search",
+                      "value": "Dan",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Generate Bill by visit ID",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/bill/visit/192",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "bill",
+                    "visit",
+                    "192"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Billing User List Paid",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/bill/paid/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "bill",
+                    "paid",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Billing User List Pending",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/bill/pending/?page=1",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "bill",
+                    "pending",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Dashboard stats",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/dashboard/stats/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "dashboard",
+                    "stats",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Mark as Bill Paid",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"payment_status\":\"Paid\", // Paid , Partially Paid'\r\n    \"payment_method\":\"UPI\",\r\n    \"transaction_id\":\"UPI-9909099900\", // for upi-reference4\r\n    \"notes\":\"FULLY AMOUNT PAID\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/mark-bill-paid/77/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "mark-bill-paid",
+                    "77",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Follow up List ( Contacted/Non Contacted)",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient-visits/followup?page=1",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient-visits",
+                    "followup"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "contacted",
+                      "value": "false",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Mark Contacted in followup list",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"contacted\": true,\r\n    \"contact_note\": \"Patient confirmed appointment for tomorrow\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient-visits/91/mark-contacted/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient-visits",
+                    "91",
+                    "mark-contacted",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Service History for patient",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/53/service-visits/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "53",
+                    "service-visits",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Patient Purchase History",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/patient/53/purchases/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "patient",
+                    "53",
+                    "purchases",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Service APIs",
+          "item": [
+            {
+              "name": "Patient List Need service",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{BASE_URL}}/api/clinical/patient/service-list/",
+                  "host": [
+                    "{{BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinical",
+                    "patient",
+                    "service-list",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "Danish",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Patient Device Purchase List",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{BASE_URL}}/api/clinical/patient/65/device-purchases/",
+                  "host": [
+                    "{{BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinical",
+                    "patient",
+                    "65",
+                    "device-purchases",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Service Request",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"patient_id\": 28,\r\n  \"service_type\": \"Cleaning & Maintenance\",\r\n  \"device_serial_need_service\": \"SN123410\",  // Purchase ID from device history\r\n  \"complaint\": \"Battery not holding charge\",\r\n  \"warranty_applicable\": false\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}/api/clinical/service/visit/create/",
+                  "host": [
+                    "{{BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinical",
+                    "service",
+                    "visit",
+                    "create",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Service Type Dropdown",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{BASE_URL}}/api/clinical/service/types/",
+                  "host": [
+                    "{{BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinical",
+                    "service",
+                    "types",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Service Update after service is done",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n  \"action_taken\": \"Replaced battery and cleaned device\",\r\n  \"parts_used\": [\r\n    {\r\n      \"inventory_item_id\": 36,\r\n      \"quantity\": 1\r\n    },\r\n    {\r\n      \"inventory_item_id\": 40,\r\n      \"quantity\": 1\r\n    }\r\n  ],\r\n  \"charges_collect_for_service\": 500.00,\r\n  \"rtc_date\": \"2026-01-15\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/service/visit/6/update/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "service",
+                    "visit",
+                    "6",
+                    "update",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Service List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/service/visit/list",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "service",
+                    "visit",
+                    "list"
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "Patient 4",
+                      "disabled": true
+                    },
+                    {
+                      "key": "status",
+                      "value": "Pending",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Service Details info",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/service/visit/4",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "service",
+                    "visit",
+                    "4"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Inventory item",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{BASE_URL}}/api/clinical/service/parts-used/",
+                  "host": [
+                    "{{BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "clinical",
+                    "service",
+                    "parts-used",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "search",
+                      "value": "Pure",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Register New System user",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n   \r\n    \"clinic_ids\": [3],\r\n    \"role_id\":1,\r\n    \"name\":\"Receptionisr 3\",\r\n    \"email\":\"receptionist3@yopmail.com\",\r\n    \"password\":\"Test@123\", \r\n    \"phone\":\"7945576738\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/accounts/register/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "accounts",
+                "register",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Parse the JSON response\r",
+                  "let response = pm.response.json();\r",
+                  "\r",
+                  "// Check if token exists in the response\r",
+                  "if (response.data.access) {\r",
+                  "    pm.environment.set(\"token\", response.data.access);\r",
+                  "    console.log(\"Token saved to environment!\");\r",
+                  "} else {\r",
+                  "    console.log(\"Token not found in response!\");\r",
+                  "}\r",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n//    \"email\":\"audioloist@yopmail.com\",\r\n//     \"password\":\"Test@123\",\r\n\r\n//    \"email\":\"receptionist2@yopmail.com\",\r\n//     \"password\":\"Test@123\",\r\n\r\n   \"email\":\"receptionist@yopmail.com\",\r\n    \"password\":\"Test@1234\",\r\n\r\n\r\n//    \"email\":\"naresh.kumar@yopmail.com\",\r\n//     \"password\":\"Test@123\",\r\n\r\n// Admin \r\n    // \"email\":\"admin2@yopmail.com\",\r\n    // \"password\":\"Admin@123\"\r\n\r\n// clinic manager \r\n    // \"email\":\"clinicmng1@yopmail.com\",\r\n    // \"password\":\"Admin@123\"\r\n\r\n\r\n    \"clinic_id\":2\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/accounts/token/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "accounts",
+                "token",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYzODE4NzE4LCJpYXQiOjE3NjM4MTUxMTgsImp0aSI6ImVlY2NhMDg0NWVmMTQ3M2ZiZjhmOGIxN2M0ZmQwODRhIiwidXNlcl9pZCI6IjMifQ.O-tvFJ-vjGcmUmYPjgq37WgFo2eEWW7FItCrO5ADSEM",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"old_password\":\"Test@123\",\r\n    \"new_password\":\"Sneha@123\",\r\n    \"confirm_password\":\"Sneha@123\"\r\n}\r\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/accounts/change-password/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "accounts",
+                "change-password",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "User Profile",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/accounts/profile/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "accounts",
+                "profile",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Patient Full profile view",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/clinical/patient/53/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "clinical",
+                "patient",
+                "53",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Patient list dropdown and search by name/phone",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"name\": \"Saniyaaaaaaaaaaaaa Sharma\",\r\n    \"age\": 15,\r\n    \"dob\": \"1911-09-15\",\r\n    \"email\": \"saniyas.sharma@example1.com\",\r\n    \"gender\": \"Female\",\r\n    \"phone_primary\": \"9876543217\",\r\n    \"phone_secondary\": \"9812345675\",\r\n    \"city\": \"Noida\",\r\n    \"address\": \"123 MG Road\",\r\n    \"referral_type\": \"Self Referal\",  //  Dropdown \r\n    \"referral_doctor\": \"\"\r\n    \r\n}"
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/clinical/patient/flat-list/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "clinical",
+                "patient",
+                "flat-list",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Ta",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Doctor Flat Dropdown List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}api/clinical/doctor/flat-list/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "clinical",
+                "doctor",
+                "flat-list",
+                ""
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Inventory",
+          "item": [
+            {
+              "name": "Inventory Dropdown",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/dropdowns/?category=Hearing Aid",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "dropdowns",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "category",
+                      "value": "Hearing Aid"
+                    },
+                    {
+                      "key": "brand",
+                      "value": "Phonak",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Inventory items",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "// Items has serial numbers\r\n{\r\n        \"category\": \"Hearing Aid\",\r\n        \"product_name\": \"Hearing Aids 3 BX\",\r\n        \"brand\": 1,\r\n        \"model_type\": 1,\r\n        \"description\": \"Premium rechargeable hearing aid.\",\r\n        \"stock_type\": \"Serialized\",\r\n        \"location\": \"Main Shelf\",\r\n        \"unit_price\": \"50000.00\",\r\n        \"use_in_trial\": true,\r\n        \"serial_numbers\": [\"PHNOX-12\", \"PHNOX-13\", \"PHNOX-14\"]\r\n}\r\n\r\n// // items does not have serial number \r\n// {\r\n//         \"category\": \"Battery\",\r\n//         \"product_name\": \"Battry Rayonac Size 13\",\r\n//         \"brand\": 5,\r\n//         \"model_type\": 11,\r\n//         \"description\": \"Battery\",\r\n//         \"stock_type\": \"Non-Serialized\",\r\n//         \"quantity_in_stock\": 20,\r\n//         \"location\": \"Drawer 3\",\r\n//         \"unit_price\": \"3500.00\"\r\n// }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/item/create/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "item",
+                    "create",
+                    ""
+                  ]
+                },
+                "description": "// Items has serial numbers\n// {\n//         \"category\": \"Hearing Aid\",\n//         \"product_name\": \"Audeo Paradise P90\",\n//         \"brand\": \"Phonak\",\n//         \"model_type\": \"P90-R\",\n//         \"description\": \"Premium rechargeable hearing aid.\",\n//         \"stock_type\": \"Serialized\",\n//         \"location\": \"Main Shelf\",\n//         \"unit_price\": \"1500.00\",\n//         \"use_in_trial\": true,\n//         \"serial_numbers\": [\"SN12345\", \"SN12346\", \"SN12347\"]\n// }\n\n// items does not have serial number \n{\n        \"category\": \"Battery\",\n        \"product_name\": \"Hearing Aid Battery Size 10\",\n        \"brand\": \"Rayovac\",\n        \"model_type\": \"10\",\n        \"description\": \"Pack of 8 batteries.\",\n        \"stock_type\": \"Non-Serialized\",\n        \"quantity_in_stock\": 100,\n        \"reorder_level\": 10,\n        \"location\": \"Drawer 3\",\n        \"unit_price\": \"50.00\"\n}"
+              },
+              "response": []
+            },
+            {
+              "name": "Inventory Items List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/items/?page=1&use_in_trial=true&clinic_id=2",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "items",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "status",
+                      "value": "Good",
+                      "type": "text",
+                      "disabled": true
+                    },
+                    {
+                      "key": "use_in_trial",
+                      "value": "true"
+                    },
+                    {
+                      "key": "clinic_id",
+                      "value": "2"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Inventory Product  Serial List for specific inventory",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/serial/list/?inventory_item=48&show_available_only=True",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "serial",
+                    "list",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "inventory_item",
+                      "value": "48"
+                    },
+                    {
+                      "key": "serial_number",
+                      "value": "123",
+                      "disabled": true
+                    },
+                    {
+                      "key": "show_available_only",
+                      "value": "True",
+                      "description": "for dropdown in inventory transfer \n"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Inventory Item Update",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n        \"category\": \"Hearing Aid\",\r\n        \"product_name\": \" HA Pure Charge&Go 7AX\",\r\n        \"brand\": 1,\r\n        \"model_type\": 1,\r\n        \"description\": \"Premium rechargeable hearing aid.\",\r\n        \"location\": \"Main Shelf\",\r\n        \"unit_price\": \"150000.00\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory-item/37/update/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory-item",
+                    "37",
+                    "update",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Add more product using inventory id",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "// Serialized \r\n{\r\n  \"inventory_item_id\": 37,\r\n  \"serial_numbers\": [\"SN0057\", \"SN0659\", \"SN0073\"]\r\n}\r\n\r\n//  Non-serialized items  \r\n// {\r\n//   \"inventory_item_id\": 36,\r\n//   \"quantity_in_stock\": 20\r\n// }",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/serial-number/create/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "serial-number",
+                    "create",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Inventory item",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/item/41/destroy/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "item",
+                    "41",
+                    "destroy",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Inventory Item for Transfer form",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/flat-list/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "flat-list",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Transfer Form",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "\r\n{\r\n    \"to_clinic_id\": 3,\r\n    \"notes\": \"Restocking batteries for Clinic B\",\r\n    \"products\": [\r\n        {\r\n            \"source_inventory_id\": 49, // For Non -serialized items \r\n            \"quantity\": 5\r\n        },\r\n        \r\n        {\r\n            \"source_inventory_id\": 48,\r\n            \"serial_numbers\": [\"HA1234\", \"SN1900\"] // For -serialized items \r\n        }\r\n    ]\r\n}\r\n",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/transfer/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "transfer",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Brand added",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"name\":\"Rayovac\",\r\n    \"category\":\"Battery\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/brands/create/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "brands",
+                    "create",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Model Add",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n    \"brand\":5,\r\n    \"name\":\"Size 13\"\r\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/models/create/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "models",
+                    "create",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Model List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/models/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "models",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Brand List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/brands/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "brands",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Inventory Pending request",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/items/pending/?clinic_id=3",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "items",
+                    "pending",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "clinic_id",
+                      "value": "3",
+                      "type": "text"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Approve Inventory Item by item ID",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/item/51/approve/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "item",
+                    "51",
+                    "approve",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Main Inventory Item",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/items/main/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "items",
+                    "main",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Inventory Transfer history",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/inventory/transfers/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "inventory",
+                    "transfers",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "User Onboard and Delete",
+          "item": [
+            {
+              "name": "User Onboard Pending List",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/accounts/users/pending/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "accounts",
+                    "users",
+                    "pending",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Approve User By Admin",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/accounts/users/22/approve/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "accounts",
+                    "users",
+                    "22",
+                    "approve",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Reject User By Admin",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "\r\n\r\n"
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/accounts/users/27/reject/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "accounts",
+                    "users",
+                    "27",
+                    "reject",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Staff User /Deactivate",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/accounts/users/staff/19/remove/",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "accounts",
+                    "users",
+                    "staff",
+                    "19",
+                    "remove",
+                    ""
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Reports",
+          "item": [
+            {
+              "name": "Monthly Clinic Report",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n   \"email\":\"audioloist@yopmail.com\",\r\n    \"password\":\"Test@123\",\r\n\r\n//    \"email\":\"receptionist@yopmail.com\",\r\n//     \"password\":\"Test@123\",\r\n\r\n\r\n// Admin \r\n    // \"email\":\"admin2@yopmail.com\",\r\n    // \"password\":\"Admin@123\"\r\n\r\n    \"clinic_id\":2\r\n}"
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/admin/clinic-report/?clinic_id=4&start_date=2026-01-25&end_date=2026-02-28",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "admin",
+                    "clinic-report",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "clinic_id",
+                      "value": "4"
+                    },
+                    {
+                      "key": "start_date",
+                      "value": "2026-01-25"
+                    },
+                    {
+                      "key": "end_date",
+                      "value": "2026-02-28"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Admin Revenue Report by ( Clinic , staff , category)",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\r\n   \"email\":\"audioloist@yopmail.com\",\r\n    \"password\":\"Test@123\",\r\n\r\n//    \"email\":\"receptionist@yopmail.com\",\r\n//     \"password\":\"Test@123\",\r\n\r\n\r\n// Admin \r\n    // \"email\":\"admin2@yopmail.com\",\r\n    // \"password\":\"Admin@123\"\r\n\r\n    \"clinic_id\":2\r\n}"
+                },
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/admin/revenue-reports/?start_date=2025-11-20&end_date=2026-02-28&clinic_id=4",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "admin",
+                    "revenue-reports",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "start_date",
+                      "value": "2025-11-20"
+                    },
+                    {
+                      "key": "end_date",
+                      "value": "2026-02-28"
+                    },
+                    {
+                      "key": "clinic_id",
+                      "value": "4"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Staff Performance List",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{BASE_URL}}api/clinical/admin/trial-performance/?staff_id=20&start_date=2026-02-17&end_date=2026-02-28",
+                  "host": [
+                    "{{BASE_URL}}api"
+                  ],
+                  "path": [
+                    "clinical",
+                    "admin",
+                    "trial-performance",
+                    ""
+                  ],
+                  "query": [
+                    {
+                      "key": "staff_id",
+                      "value": "20",
+                      "description": "Staff ID "
+                    },
+                    {
+                      "key": "start_date",
+                      "value": "2026-02-17"
+                    },
+                    {
+                      "key": "end_date",
+                      "value": "2026-02-28"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Staff User List clinic wise",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/accounts/users/staff/?clinic_id=2&is_active=true",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "accounts",
+                "users",
+                "staff",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "clinic_id",
+                  "value": "2"
+                },
+                {
+                  "key": "is_active",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Clinic list role wise",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/accounts/clinics/manager/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "accounts",
+                "clinics",
+                "manager",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Referral doctor list",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/clinical/doctor-referrals/",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "clinical",
+                "doctor-referrals",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Patient record by referal doctor",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{BASE_URL}}api/clinical/patient-referral/?referral_doctor=Dr.+Navjeeevan+Kumar",
+              "host": [
+                "{{BASE_URL}}api"
+              ],
+              "path": [
+                "clinical",
+                "patient-referral",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "referral_doctor",
+                  "value": "Dr.+Navjeeevan+Kumar"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clinic List (dropdwon)",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{BASE_URL}}api/accounts/clinics/?transfer_inventory=true",
+          "host": [
+            "{{BASE_URL}}api"
+          ],
+          "path": [
+            "accounts",
+            "clinics",
+            ""
+          ],
+          "query": [
+            {
+              "key": "transfer_inventory",
+              "value": "true",
+              "type": "text"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Role list ( Dropdown)",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{BASE_URL}}api/accounts/roles/",
+          "host": [
+            "{{BASE_URL}}api"
+          ],
+          "path": [
+            "accounts",
+            "roles",
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

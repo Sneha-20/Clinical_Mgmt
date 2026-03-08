@@ -384,19 +384,25 @@ from django.utils import timezone
 
 # Choices for category
 CATEGORY_CHOICES = [
+    ('Hearing Aid', 'Hearing Aid'),
+    ('Speech Material', 'Speech Material'),
+    ("Cochlear Implant", "Cochlear Implant"),
+    ("Accessories",'Accessories'),
+]
+
+ACCESSORIES_TYPE_CHOICES = [
     ('Battery', 'Battery'),
     ('Dome', 'Dome'),
     ('Receiver', 'Receiver'),
     ('Mold', 'Mold'),
-    ('Tube', 'Tube'),
-    ('Hearing Aid', 'Hearing Aid'),
-    # ('Trial Stock', 'Trial Stock'),
-    ('Speech Material', 'Speech Material'),
-    ("Cochlear Implant", "Cochlear Implant"),
+     ('Tube', 'Tube'),
+    ('Charger', 'Charger'),
 ]
+
 
 class Brand(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES, help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
     name = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
@@ -416,6 +422,7 @@ class ModelType(models.Model):
 class InventoryItem(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES,help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)  # Brand
     model_type = models.ForeignKey(ModelType, on_delete=models.SET_NULL, null=True, blank=True)  # Model / Type
