@@ -256,10 +256,10 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
                 if serial_numbers:
                     item["quantity"] = len(serial_numbers)
 
-                elif not quantity:
-                    raise serializers.ValidationError(
-                        "Either serial_number or quantity must be provided in purchase_items"
-                    )
+                # elif not quantity:
+                #     raise serializers.ValidationError(
+                #         "Either serial_number or quantity must be provided in purchase_items"
+                #     )
 
         # -------------------------
         # OTHER VISITS
