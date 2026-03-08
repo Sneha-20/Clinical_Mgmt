@@ -614,6 +614,7 @@ class PartsUsedListView(APIView):
                     'brand': item.brand.name,
                     'model_type': item.model_type.name,
                     'unit_price': float(item.unit_price) if item.unit_price else 0,
+                    'accessories_type': item.accessories_type if item.category == 'Accessories' else None 
                     # 'quantity_in_stock': item.quantity_in_stock or 0,
                     # 'category': item.category if hasattr(item, 'category') else None
                 }

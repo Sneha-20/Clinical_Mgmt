@@ -124,6 +124,7 @@ class ProductInfoBySerialView(generics.RetrieveAPIView):
                     'brand': serial.inventory_item.brand,
                     'model_type': serial.inventory_item.model_type,
                     'category': serial.inventory_item.category,
+                    'accessories_type': serial.inventory_item.accessories_type,
                     # 'stock_type': serial.inventory_item.stock_type,
                     'description': serial.inventory_item.description,
                     # 'unit_price': serial.inventory_item.unit_price,
