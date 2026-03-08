@@ -476,6 +476,48 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                     purchased_at=timezone.now()
                                 )
                             )
+                        
+                        # reduce stock quantity in inventory
+                        inventory.quantity_in_stock = models.F('quantity_in_stock') - quantity
+                        inventory.save()
+
+
+                    if purchase_instances:
+                       p_purchases =  PatientPurchase.objects.bulk_create(purchase_instances)
+
+                       if p_purchases:
+                            for purchase in p_purchases:
+                                if not purchase.inventory_serial:
+                                    continue
+
+                                inventory_serial = InventorySerial.objects.get(serial_number=purchase.inventory_serial.serial_number)
+                                inventory_serial.status = 'Sold'
+                                inventory_serial.save()
+
+                            # add to bills for one visit 
+                            bill  = Bill.objects.get_or_create(
+                                visit=visit,
+                                defaults={
+                                    'clinic': current_clinic or patient.clinic,
+                                    'created_by': current_user,
+                                    'total_amount': sum(p.total_price for p in p_purchases),
+                                    'payment_status': 'Pending'
+                                }
+                            )
+
+                            # bill items
+                            BillItem.objects.bulk_create([
+                                BillItem(
+                                    bill=bill[0],
+                                    description=f"Purchase - {purchase.inventory_item.product_name}",
+                                    amount=purchase.total_price,
+                                    created_by=current_user
+                                ) for purchase in p_purchases
+                            ])
+                               
+
+
+                        
 
         if purchase_instances:
             PatientPurchase.objects.bulk_create(purchase_instances)
@@ -777,6 +819,11 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                     purchased_at=timezone.now()
                                 )
                             )
+                        
+                        # reduce stock quantity in inventory
+                        inventory.quantity_in_stock = models.F('quantity_in_stock') - quantity
+                        inventory.save()
+
 
 
                     if purchase_instances:
@@ -784,6 +831,8 @@ class PatientVisitCreateSerializer(serializers.Serializer):
 
                        if p_purchases:
                             for purchase in p_purchases:
+                                if not purchase.inventory_serial:
+                                    continue
 
                                 inventory_serial = InventorySerial.objects.get(serial_number=purchase.inventory_serial.serial_number)
                                 inventory_serial.status = 'Sold'
