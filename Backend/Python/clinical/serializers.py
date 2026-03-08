@@ -501,6 +501,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                 defaults={
                                     'clinic': current_clinic or patient.clinic,
                                     'created_by': current_user,
+                                    'final_amount': sum(p.total_price for p in p_purchases),
                                     'total_amount': sum(p.total_price for p in p_purchases),
                                     'payment_status': 'Pending'
                                 }
@@ -845,6 +846,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                 defaults={
                                     'clinic': current_clinic or patient.clinic,
                                     'created_by': current_user,
+                                    'final_amount': sum(p.total_price for p in p_purchases),
                                     'total_amount': sum(p.total_price for p in p_purchases),
                                     'payment_status': 'Pending'
                                 }
