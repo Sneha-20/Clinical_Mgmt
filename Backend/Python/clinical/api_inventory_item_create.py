@@ -5,8 +5,7 @@ from .serializers import InventoryItemCreateSerializer, InventoryItemSerializer,
 from .models import DeletedRecordLog,ContentType
 from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission
 from django.contrib.contenttypes.models import ContentType
-from django_filters.rest_framework import DjangoFilterBackend
- 
+from django_filters.rest_framework import DjangoFilterBackend 
 
 class BrandListView(generics.ListAPIView):
     queryset = Brand.objects.all()
@@ -15,14 +14,9 @@ class BrandListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['category' , 'accessories_type']  # Allow filtering by category
 
-    def get_queryset(self):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        return queryset
-        
     def list(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_queryset(), many=True)
-        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
+        response = super().list(request, *args, **kwargs)
+        return Response({"status": 200, "data": response.data}, status=status.HTTP_200_OK)
 
 class BrandCreateView(generics.CreateAPIView):
     # queryset = Brand.objects.all()
