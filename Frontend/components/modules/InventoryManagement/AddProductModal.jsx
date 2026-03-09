@@ -357,17 +357,20 @@ export default function AddProductModal({
           </div>
 
           <div className="space-y-2">
-            <DropDown
-              label="Model"
-              name="model_type"
-              options={modelOptions}
-              value={formData.model_type}
-              onChange={updateField}
-              placeholder="Select model"
-              error={errors.model_type}
-              isDisabled={!formData.brand}
-              important
-            />
+            {formData.category !== "Accessories" && (
+              <DropDown
+                label="Model"
+                name="model_type"
+                options={modelOptions}
+                value={formData.model_type}
+                onChange={updateField}
+                placeholder="Select model"
+                error={errors.model_type}
+                isDisabled={!formData.brand}
+                important
+              />
+            )}
+
             {formData.brand && (
               <Button
                 type="button"
