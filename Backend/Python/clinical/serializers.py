@@ -440,6 +440,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                         inventory_id = item.get("inventory_item")
                         quantity = item.get("quantity")
                         serial_numbers = item.get("serial_number", [])
+
+
                         inventory = inventory_map.get(inventory_id)
 
 
@@ -447,8 +449,19 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                             continue
 
                         if serial_numbers:
+                           
+                            # Fetch serial objects
+                            current_serials = InventorySerial.objects.filter(
+                                inventory_item_id=inventory_id,
+                                serial_number__in=serial_numbers
+                            )
+                            serial_obj_map = {s.serial_number: s for s in current_serials} 
+
 
                             for serial in serial_numbers:
+                                serial_obj = serial_obj_map.get(serial)
+
+                               
                                 purchase_instances.append(
                                     PatientPurchase(
                                         patient=patient,
@@ -456,7 +469,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                         visit=visit,
                                         inventory_item_id=inventory_id,
                                         quantity=quantity,
-                                        inventory_serial__serial_number=serial,
+                                        inventory_serial=serial_obj,
                                         unit_price=inventory.unit_price,
                                         total_price=inventory.unit_price * quantity,
                                         purchased_at=timezone.now()
@@ -518,11 +531,6 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                             ])
                                
 
-
-                        
-
-        if purchase_instances:
-            PatientPurchase.objects.bulk_create(purchase_instances)
         return patient
 
 # Edit Patient record 
@@ -791,8 +799,15 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                             continue
 
                         if serial_numbers:
+                            current_serials = InventorySerial.objects.filter(
+                                inventory_item_id=inventory_id,
+                                serial_number__in=serial_numbers
+                            )
+                            serial_obj_map = {s.serial_number: s for s in current_serials}
 
                             for serial in serial_numbers:
+                                serial_obj = serial_obj_map.get(serial)
+
                                 purchase_instances.append(
                                     PatientPurchase(
                                         patient=patient,
@@ -800,7 +815,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                         visit=visit,
                                         inventory_item_id=inventory_id,
                                         quantity=quantity,
-                                        inventory_serial__serial_number=serial,
+                                        inventory_serial=serial_obj,
                                         unit_price=inventory.unit_price,
                                         total_price=inventory.unit_price * quantity,
                                         purchased_at=timezone.now()
