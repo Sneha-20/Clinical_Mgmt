@@ -14,7 +14,12 @@ class BrandListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['category' , 'accessories_type']  # Allow filtering by category
-    
+
+    def get_queryset(self):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        return queryset
+        
     def list(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_queryset(), many=True)
         return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
@@ -53,7 +58,7 @@ class ModelCreateView(generics.CreateAPIView):
     queryset = ModelType.objects.all()
     serializer_class = ModelTypeSerializer
     permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
-    
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
