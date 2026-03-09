@@ -10,17 +10,18 @@ export const serviceOption = [
   { label: "All", value: "All" },
 ];
 
-
 export const visitStatusOptions = [
   { label: "Test pending", value: "Test pending" },
   { label: "Test Performed", value: "Test Performed" },
   { label: "Trial Active", value: "Trial Active" },
   { label: "Device Booked", value: "Device Booked" },
-  { label: "Trial Completed - No Device", value: "Trial Completed - No Device" },
+  {
+    label: "Trial Completed - No Device",
+    value: "Trial Completed - No Device",
+  },
   { label: "Follow up", value: "Follow up" },
   { label: "Pending for Service", value: "Pending for Service" },
   { label: "All", value: "All" },
-
 ];
 
 export const complaintOptions = [
@@ -31,7 +32,7 @@ export const complaintOptions = [
   { label: "Follow-up", value: "follow_up" },
   // { label: "TGA", value: "tga" },
   { label: "Service/Repair", value: "repair" },
-  {label:"Speech Therapy", value:"speech_therapy"},
+  { label: "Speech Therapy", value: "speech_therapy" },
   // { label: "Hearing Testing", value: "hearing_test" },
   { label: "Other", value: "other" },
 ];
@@ -40,27 +41,20 @@ export const testRequestedOptions = [
   { label: "Pure Tone Audiometry", value: "pta" },
   { label: "Tympanometry", value: "tymp" },
   { label: "SRT / SDS", value: "srt" },
-   { label: "SDS", value: "sds" },
+  { label: "SDS", value: "sds" },
   { label: "UCL", value: "ucl" },
   { label: "Free Field", value: "free_field" },
   { label: "BERA / ASSR", value: "bera_assr" },
   { label: "OAE", value: "oae" },
-  {label:"Immittance", value: "Immittance"}
+  { label: "Immittance", value: "Immittance" },
 ];
 
 export const visitTypeOptions = [
   { label: "Hearing Test", value: "New Test" },
   { label: "Follow-up for Test ", value: "Follow-up" },
   { label: "TGA / Machine Check", value: "TGA" },
-  {label:"Accessories", value:"Accessories"} ,
-  {label:'Speech Therapy', value:'Speech_therapy'},
   { label: "Purchase", value: "Purchase" },
-  // { label: "Machine cleaning", value: "machine_cleaning" },
-  // { label: "Hearing Aid Trial", value: "Hearing Aid Trial" },
-  // { label: "Hearing Aid Fitting", value: "Hearing Aid Fitting" },
-  // { label: "Battery Purchase", value: "Battery Purchase" },
-  // { label: "Speech Assessment", value: "Speech Assessment" },
-  // { label: "Speech Therapy Follow-up", value: "Speech Therapy Follow-up" },
+  { label: "Speech Therapy", value: "Speech_therapy" },
 ];
 
 export const previousHearingAidsOptions = [
@@ -84,19 +78,26 @@ export const tgaServiceTypeOptions = [
   { label: "Maintenance", value: "maintenance" },
 ];
 
-
 export const referalTypeOptions = [
-    { label: "Self", value: "Self" },
-    { label: "Doctor", value: "doctor" },
-    { label: "Advertisement", value: "advertisement" },
-    { label: "Other", value: "other" },
-  ];
+  { label: "Self", value: "Self" },
+  { label: "Doctor", value: "doctor" },
+  { label: "Advertisement", value: "advertisement" },
+  { label: "Other", value: "other" },
+];
 
 export const accessoriesTypeOptions = [
-    { label: "Dome", value: "Dome" },
-    { label: "Tube", value: "Tube" },
-    { label: "Battery", value: "Battery" },
-    { label: "Receiver", value: "Receiver" },
-    { label: "Mold", value: "Mold" },
-    { label: "Charger", value: "Charger" },
-  ];
+  { label: "Dome", value: "Dome" },
+  { label: "Tube", value: "Tube" },
+  { label: "Battery", value: "Battery" },
+  { label: "Receiver", value: "Receiver" },
+  { label: "Mold", value: "Mold" },
+  { label: "Charger", value: "Charger" },
+];
+
+export const tgaServiceOptions = [
+  { label: "Machine Check", value: "machine_check" },
+  { label: "Repair", value: "repair" },
+  { label: "Cleaning", value: "cleaning" },
+  { label: "Calibration", value: "calibration" },
+  { label: "Other", value: "other" },
+];

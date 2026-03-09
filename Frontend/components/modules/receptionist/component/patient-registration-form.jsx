@@ -12,7 +12,8 @@ import CommonRadio from "@/components/ui/CommonRadio";
 import { patientSchema } from "@/lib/utils/schema";
 import { showToast } from "@/components/ui/toast";
 import { format } from "date-fns";
-import TextArea from '@/components/ui/TextArea'
+import TextArea from "@/components/ui/TextArea";
+import usePatientData from "@/lib/hooks/usePatientData";
 
 import {
   genderOptions,
@@ -26,6 +27,9 @@ export default function PatientRegistrationForm({
   onSubmit,
   doctorList,
 }) {
+  const { inventoryItems, loadingInventory, fetchSerialsForItem } =
+    usePatientData();
+
   const doctors = doctorList.map((d) => ({
     label: d.name,
     value: d.id,
@@ -44,6 +48,9 @@ export default function PatientRegistrationForm({
     { label: "Clinic", value: "clinic" },
     { label: "Home", value: "home" },
   ];
+  const newVisitTypeOptions = visitTypeOptions.filter(
+    (option) => option.value !== "TGA",
+  );
 
   const formik = useFormik({
     initialValues: {
@@ -69,12 +76,36 @@ export default function PatientRegistrationForm({
           notes: "",
           cost_taken_amount: null,
           mode_of_payment: "",
+          purchase_items: [],
         },
       ],
     },
-    validationSchema: patientSchema,
+    // validationSchema: patientSchema,
     onSubmit: (values) => {
-      onSubmit?.(values);
+      const filteredPayload = {
+        ...values,
+        visit_details: values.visit_details.map((visit) => {
+          if (visit.visit_type === "Purchase") {
+            return {
+              visit_type: visit.visit_type,
+              purchase_items: visit.purchase_items.map((item) => {
+                const { serials, stock_type, ...itemData } = item;
+                if (stock_type === "Non-Serialized") {
+                  const { serial_numbers, ...cleanItem } = itemData;
+                  return cleanItem;
+                } else {
+                  const { quantity, ...cleanItem } = itemData;
+                  return cleanItem;
+                }
+              }),
+            };
+          } else {
+            const { purchase_items, ...rest } = visit;
+            return rest;
+          }
+        }),
+      };
+      onSubmit?.(filteredPayload);
     },
   });
 
@@ -83,7 +114,15 @@ export default function PatientRegistrationForm({
     const lastVisit =
       formik.values.visit_details[formik.values.visit_details.length - 1];
 
-    if (!lastVisit.visit_type || !lastVisit.present_complaint) {
+    if (lastVisit.visit_type === "Purchase") {
+      if (!lastVisit.purchase_items || lastVisit.purchase_items.length === 0) {
+        return showToast({
+          type: "error",
+          message:
+            "Please add at least one purchase item before adding a new visit.",
+        });
+      }
+    } else if (!lastVisit.visit_type || !lastVisit.present_complaint) {
       return showToast({
         type: "error",
         message:
@@ -99,8 +138,88 @@ export default function PatientRegistrationForm({
         seen_by: "",
         test_requested: [],
         notes: "",
+        cost_taken_amount: null,
+        mode_of_payment: "",
+        purchase_items: [],
       },
     ]);
+  };
+
+  /* ---------------- PURCHASE ITEM METHODS ---------------- */
+  const addPurchaseItem = (visitIndex) => {
+    const purchaseItems =
+      formik.values.visit_details[visitIndex].purchase_items || [];
+    purchaseItems.push({
+      inventory_item: "",
+      quantity: 1,
+      serial_numbers: [],
+      stock_type: "",
+      serials: [],
+    });
+    formik.setFieldValue(
+      `visit_details.${visitIndex}.purchase_items`,
+      purchaseItems,
+    );
+  };
+
+  const removePurchaseItem = (visitIndex, itemIndex) => {
+    const purchaseItems =
+      formik.values.visit_details[visitIndex].purchase_items || [];
+    const updated = purchaseItems.filter((_, i) => i !== itemIndex);
+    formik.setFieldValue(`visit_details.${visitIndex}.purchase_items`, updated);
+  };
+
+  const updatePurchaseItem = (visitIndex, itemIndex, key, value) => {
+    const purchaseItems = [
+      ...(formik.values.visit_details[visitIndex].purchase_items || []),
+    ];
+
+    if (key === "serial_numbers") {
+      purchaseItems[itemIndex] = {
+        ...purchaseItems[itemIndex],
+        serial_numbers: value,
+      };
+    } else {
+      purchaseItems[itemIndex] = { ...purchaseItems[itemIndex], [key]: value };
+    }
+
+    // Handle inventory item selection - set stock_type before updating formik
+    if (key === "inventory_item" && value) {
+      const selectedItem = inventoryItems.find((item) => item.value === value);
+      if (selectedItem) {
+        purchaseItems[itemIndex].stock_type = selectedItem.stock_type;
+        purchaseItems[itemIndex].serial_numbers = [];
+        if (selectedItem.stock_type === "Serialized") {
+          handleFetchSerialsForItem(value, visitIndex, itemIndex);
+        }
+      }
+    }
+
+    formik.setFieldValue(
+      `visit_details.${visitIndex}.purchase_items`,
+      purchaseItems,
+    );
+  };
+
+  const handleFetchSerialsForItem = async (
+    inventoryItemId,
+    visitIndex,
+    itemIndex,
+  ) => {
+    const serials = await fetchSerialsForItem(inventoryItemId);
+    if (serials && serials.length > 0) {
+      const purchaseItems = [
+        ...(formik.values.visit_details[visitIndex].purchase_items || []),
+      ];
+      purchaseItems[itemIndex] = {
+        ...purchaseItems[itemIndex],
+        serials: serials,
+      };
+      formik.setFieldValue(
+        `visit_details.${visitIndex}.purchase_items`,
+        purchaseItems,
+      );
+    }
   };
 
   return (
@@ -131,15 +250,18 @@ export default function PatientRegistrationForm({
                   error={formik.touched.name && formik.errors.name}
                   important
                 />
-                  <CommonDatePicker
+                <CommonDatePicker
                   label="Date of Birth"
                   selectedDate={
                     formik.values.dob ? new Date(formik.values.dob) : null
                   }
                   onChange={(date) =>
-                    formik.setFieldValue("dob", date ? format(date, "yyyy-MM-dd") : null)
+                    formik.setFieldValue(
+                      "dob",
+                      date ? format(date, "yyyy-MM-dd") : null,
+                    )
                   }
-                  maxDate={new Date()} 
+                  maxDate={new Date()}
                   error={formik.touched.dob && formik.errors.dob}
                 />
                 <Input
@@ -184,7 +306,6 @@ export default function PatientRegistrationForm({
                     formik.touched.phone_primary && formik.errors.phone_primary
                   }
                   important
-
                 />
 
                 <Input
@@ -207,7 +328,6 @@ export default function PatientRegistrationForm({
                   onBlur={formik.handleBlur}
                   error={formik.touched.city && formik.errors.city}
                   important
-
                 />
 
                 <Input
@@ -218,7 +338,6 @@ export default function PatientRegistrationForm({
                   onBlur={formik.handleBlur}
                   error={formik.touched.address && formik.errors.address}
                   important
-
                 />
 
                 <CommonDatePicker
@@ -231,7 +350,7 @@ export default function PatientRegistrationForm({
                   onChange={(date) =>
                     formik.setFieldValue(
                       "appointment_date",
-                      format(date, "yyyy-MM-dd")
+                      format(date, "yyyy-MM-dd"),
                     )
                   }
                   minDate={new Date()}
@@ -306,7 +425,7 @@ export default function PatientRegistrationForm({
 
                 <DropDown
                   label="Purpose of Visit"
-                  options={visitTypeOptions}
+                  options={newVisitTypeOptions}
                   value={visit.visit_type}
                   onChange={(n, v) =>
                     formik.setFieldValue(`visit_details.${index}.visit_type`, v)
@@ -315,120 +434,271 @@ export default function PatientRegistrationForm({
                   important
                 />
 
-                <DropDown
-                  label="Present Complaint"
-                  options={complaintOptions}
-                  value={visit.present_complaint}
-                  onChange={(n, v) =>
-                    formik.setFieldValue(
-                      `visit_details.${index}.present_complaint`,
-                      v
-                    )
-                  }
-                  important
-                  className="mt-3"
-                />
-
-                <DropDown
-                  label="Assigned To"
-                  options={doctorOption}
-                  value={visit.seen_by}
-                  onChange={(n, v) =>
-                    formik.setFieldValue(`visit_details.${index}.seen_by`, v)
-                  }
-                  important
-                  className="mt-3"
-                />
-                <TextArea
-                  name={`visit_details.${index}.notes`}
-                  value={visit.notes}
-                  onChange={(e) =>
-                    formik.setFieldValue(
-                      `visit_details.${index}.notes`,
-                      e.target.value
-                    )
-                  }
-                  className="w-full border rounded p-2 mt-2"
-                />
-
-                {/* Tests Required */}
-                {visit.visit_type !== "TGA" && (
+                {visit.visit_type !== "Purchase" && (
                   <>
-                    <div className="mt-4">
-                      <label className="font-medium text-sm text-gray-700">
-                        Tests Required (Tick)
-                      </label>
-                    </div>
+                    <DropDown
+                      label="Present Complaint"
+                      options={complaintOptions}
+                      value={visit.present_complaint}
+                      onChange={(n, v) =>
+                        formik.setFieldValue(
+                          `visit_details.${index}.present_complaint`,
+                          v,
+                        )
+                      }
+                      important
+                      className="mt-3"
+                    />
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                      {testRequestedOptions.map((test) => (
-                        <CommonCheckbox
-                          key={test.value}
-                          label={test.label}
-                          value={test.value}
-                          checked={visit.test_requested.includes(test.value)}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            const updated = visit.test_requested.includes(value)
-                              ? visit.test_requested.filter((t) => t !== value)
-                              : [...visit.test_requested, value];
+                    <DropDown
+                      label="Assigned To"
+                      options={doctorOption}
+                      value={visit.seen_by}
+                      onChange={(n, v) =>
+                        formik.setFieldValue(
+                          `visit_details.${index}.seen_by`,
+                          v,
+                        )
+                      }
+                      important
+                      className="mt-3"
+                    />
+                    <TextArea
+                      name={`visit_details.${index}.notes`}
+                      value={visit.notes}
+                      onChange={(e) =>
+                        formik.setFieldValue(
+                          `visit_details.${index}.notes`,
+                          e.target.value,
+                        )
+                      }
+                      className="w-full border rounded p-2 mt-2"
+                    />
 
-                            formik.setFieldValue(
-                              `visit_details.${index}.test_requested`,
-                              updated
-                            );
-                          }}
-                        />
-                      ))}
+                    {/* Tests Required */}
+                    {visit.visit_type !== "Speech_therapy" && (
+                      <>
+                        <div className="mt-4">
+                          <label className="font-medium text-sm text-gray-700">
+                            Tests Required (Tick)
+                          </label>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                          {testRequestedOptions.map((test) => (
+                            <CommonCheckbox
+                              key={test.value}
+                              label={test.label}
+                              value={test.value}
+                              checked={visit.test_requested.includes(
+                                test.value,
+                              )}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                const updated = visit.test_requested.includes(
+                                  value,
+                                )
+                                  ? visit.test_requested.filter(
+                                      (t) => t !== value,
+                                    )
+                                  : [...visit.test_requested, value];
+
+                                formik.setFieldValue(
+                                  `visit_details.${index}.test_requested`,
+                                  updated,
+                                );
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                      <Input
+                        label="Amount Taken From Patient"
+                        name="cost_taken_amount"
+                        type="number"
+                        step="0.01"
+                        placeholder="Enter Amount - 120.00"
+                        value={visit.cost_taken_amount}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          formik.setFieldValue(
+                            `visit_details.${index}.cost_taken_amount`,
+                            value === "" ? "" : parseFloat(value),
+                          );
+                        }}
+                      />
+
+                      <Input
+                        label="Mode of Payment"
+                        name="mode_of_payment"
+                        value={visit.mode_of_payment}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          formik.setFieldValue(
+                            `visit_details.${index}.mode_of_payment`,
+                            value,
+                          );
+                        }}
+                      />
                     </div>
                   </>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                  <Input
-                    label="Amount Taken From Patient"
-                    name="cost_taken_amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="Enter Amount - 120.00"
-                    value={visit.cost_taken_amount}
-
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      formik.setFieldValue(
-                        `visit_details.${index}.cost_taken_amount`,
-                        value === '' ? '' : parseFloat(value)
-                      );
-                    }}
-                    // onBlur={formik.handleBlur}
-                    // error={
-                    //   formik.touched.cost_taken_amount &&
-                    //   formik.errors.cost_taken_amount
-                    // }
-                  />
-
-                  <Input
-                    label="Mode of Payment"
-                    name="mode_of_payment"
-                    value={visit.mode_of_payment}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      formik.setFieldValue(
-                        `visit_details.${index}.mode_of_payment`,
-                        value
-                      );
-                    }}
-                    // onBlur={formik.handleBlur}
-                    // error={
-                    //   formik.touched.mode_of_payment &&
-                    //   formik.errors.mode_of_payment
-                    // }
-                  />
-                </div>
+                {/* Purchase Items Section */}
+                {visit.visit_type === "Purchase" && (
+                  <>
+                    <div className="mt-4">
+                      <h4 className="font-medium text-sm text-gray-700 mb-2">
+                        Purchase Items
+                      </h4>
+                      {visit.purchase_items &&
+                        visit.purchase_items.map((item, itemIndex) => (
+                          <div
+                            key={itemIndex}
+                            className="border rounded-lg p-4 mb-4 bg-gray-50"
+                          >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <DropDown
+                                label="Inventory Item"
+                                name={`inventory_item_${itemIndex}`}
+                                options={inventoryItems}
+                                value={item.inventory_item}
+                                onChange={(n, v) =>
+                                  updatePurchaseItem(
+                                    index,
+                                    itemIndex,
+                                    "inventory_item",
+                                    v,
+                                  )
+                                }
+                                disabled={loadingInventory}
+                                placeholder={
+                                  loadingInventory
+                                    ? "Loading items..."
+                                    : "Select item"
+                                }
+                              />
+                              {item.stock_type === "Non-Serialized" && (
+                                <Input
+                                  label="Quantity"
+                                  name={`quantity_${itemIndex}`}
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity || ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === "") {
+                                      updatePurchaseItem(
+                                        index,
+                                        itemIndex,
+                                        "quantity",
+                                        "",
+                                      );
+                                    } else {
+                                      const num = parseInt(val);
+                                      if (!isNaN(num) && num >= 1) {
+                                        updatePurchaseItem(
+                                          index,
+                                          itemIndex,
+                                          "quantity",
+                                          num,
+                                        );
+                                      }
+                                    }
+                                  }}
+                                />
+                              )}
+                              {console.log("Item Stock Type:", item.stock_type)}
+                              {item.stock_type === "Serialized" && (
+                                <div className="mt-2">
+                                  <label className="text-sm font-medium mb-2 block">
+                                    Serial Numbers
+                                  </label>
+                                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2 bg-white">
+                                    {item.serials && item.serials.length > 0 ? (
+                                      item.serials.map((serial) => (
+                                        <div
+                                          key={serial.value}
+                                          className="flex items-center"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            id={`serial_${itemIndex}_${serial.value}`}
+                                            checked={item.serial_numbers.includes(
+                                              serial.value,
+                                            )}
+                                            onChange={(e) => {
+                                              const currentSerials =
+                                                item.serial_numbers || [];
+                                              if (e.target.checked) {
+                                                updatePurchaseItem(
+                                                  index,
+                                                  itemIndex,
+                                                  "serial_numbers",
+                                                  [
+                                                    ...currentSerials,
+                                                    serial.value,
+                                                  ],
+                                                );
+                                              } else {
+                                                updatePurchaseItem(
+                                                  index,
+                                                  itemIndex,
+                                                  "serial_numbers",
+                                                  currentSerials.filter(
+                                                    (s) => s !== serial.value,
+                                                  ),
+                                                );
+                                              }
+                                            }}
+                                            className="rounded"
+                                          />
+                                          <label
+                                            htmlFor={`serial_${itemIndex}_${serial.value}`}
+                                            className="ml-2 text-sm cursor-pointer"
+                                          >
+                                            {serial.label}
+                                          </label>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-xs text-gray-500">
+                                        Loading serial numbers...
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                removePurchaseItem(index, itemIndex)
+                              }
+                              className="mt-2"
+                            >
+                              Remove Item
+                            </Button>
+                          </div>
+                        ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => addPurchaseItem(index)}
+                        className="mt-2"
+                      >
+                        + Add Purchase Item
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
-
-
 
             <Button
               type="button"
