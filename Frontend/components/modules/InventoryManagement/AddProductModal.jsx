@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import TextArea from '@/components/ui/TextArea'
+import TextArea from "@/components/ui/TextArea";
 import DropDown from "@/components/ui/dropdown";
 import Modal from "@/components/ui/Modal";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
@@ -23,6 +23,7 @@ export default function AddProductModal({
   onCreateModel,
   loading = false,
 }) {
+  console.log("hgkh", initialData);
   const [formData, setFormData] = useState({
     category: "",
     accessories_type: "",
@@ -45,7 +46,7 @@ export default function AddProductModal({
   const [newModelName, setNewModelName] = useState("");
   const [creatingBrand, setCreatingBrand] = useState(false);
   const [creatingModel, setCreatingModel] = useState(false);
-  
+
   // Prefill when editing
   useEffect(() => {
     if (isOpen && isEdit && initialData) {
@@ -68,6 +69,7 @@ export default function AddProductModal({
       if (initialData.category) {
         onCategoryChange?.(initialData.category);
       }
+
       if (initialData.category && initialData.brand) {
         onBrandChange?.(initialData.category, initialData.brand);
       }
@@ -103,15 +105,28 @@ export default function AddProductModal({
     }
   }, [isOpen]);
 
-  // Fetch brands when category changes
   useEffect(() => {
-    if (formData.category) {
+    if (!formData.category) return;
+    setFormData((prev) => ({
+      ...prev,
+      brand: "",
+      model_type: "",
+      accessories_type: "",
+    }));
+
+    setShowAddBrand(false);
+    setShowAddModel(false);
+
+    if (formData.category !== "Accessories") {
       onCategoryChange?.(formData.category);
-      setFormData((prev) => ({ ...prev, brand: "", model_type: "" }));
-      setShowAddBrand(false);
-      setShowAddModel(false);
     }
-  }, [formData.category, onCategoryChange]);
+  }, [formData.category]);
+
+  useEffect(() => {
+    if (formData.category === "Accessories" && formData.accessories_type) {
+      onCategoryChange?.(formData.category, formData.accessories_type);
+    }
+  }, [formData.accessories_type]);
 
   // Fetch models when brand changes
   useEffect(() => {
@@ -148,7 +163,6 @@ export default function AddProductModal({
       }));
       return;
     }
-
     setCreatingBrand(true);
     const result = await onCreateBrand?.(
       newBrandName.trim(),
@@ -160,7 +174,6 @@ export default function AddProductModal({
     if (result) {
       setNewBrandName("");
       setShowAddBrand(false);
-      // Auto-select the newly created brand if it has an id
       if (result.id) {
         updateField("brand", result.id);
       }
@@ -224,9 +237,9 @@ export default function AddProductModal({
       reorder_level: formData.reorder_level || 10,
     };
 
-      if(!formData.stock_type){
+    if (!formData.stock_type) {
       payload.quantity_in_stock = formData.quantity_in_stock;
-      }
+    }
     // Add serial numbers if stock type is serialized and we are creating (not editing)
     if (!isEdit && formData.stock_type && formData.serial_numbers) {
       payload.serial_numbers = formData.serial_numbers
@@ -284,18 +297,17 @@ export default function AddProductModal({
             error={errors.category}
             important
           />
-{/* if the category is accessories */}
           {formData.category === "Accessories" && (
-          <DropDown
-            label="Accessories Type"
-            name="accessories_type"
-            options={accessoriesTypeOptions}
-            value={formData.accessories_type}
-            onChange={updateField}
-            placeholder="Select accessories type"
-            error={errors.accessories_type}
-            important
-          />
+            <DropDown
+              label="Accessories Type"
+              name="accessories_type"
+              options={accessoriesTypeOptions}
+              value={formData.accessories_type}
+              onChange={updateField}
+              placeholder="Select accessories type"
+              error={errors.accessories_type}
+              important
+            />
           )}
           <div className="space-y-2">
             <DropDown

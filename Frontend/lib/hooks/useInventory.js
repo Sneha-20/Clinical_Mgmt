@@ -34,76 +34,78 @@ export default function useInventory() {
 
   const [filterStatus, setFilterStatus] = useState("All");
 
-   useEffect(() => {
-     const fetchClinics = async () => {
-       try {
-         const data = await getAllClinics();
-         setClinics(data);
-       } catch (error) {
-         console.error("Error fetching clinics:", error);
-       }
-     };
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const data = await getAllClinics();
+        setClinics(data);
+      } catch (error) {
+        console.error("Error fetching clinics:", error);
+      }
+    };
 
-     fetchClinics();
-   }, []);
+    fetchClinics();
+  }, []);
 
-  
   // Fetch inventory items list
- const fetchInventoryItems = useCallback(
-  async (page = 1, statusParam, clinicIdParam, typeParam) => {
-    const status = statusParam ?? filterStatus;
-    const clinicId = clinicIdParam ?? selectedClinic;
-    const type = typeParam ?? showTrial;
+  const fetchInventoryItems = useCallback(
+    async (page = 1, statusParam, clinicIdParam, typeParam) => {
+      const status = statusParam ?? filterStatus;
+      const clinicId = clinicIdParam ?? selectedClinic;
+      const type = typeParam ?? showTrial;
 
-    try {
-      dispatch(startLoading());
-      const data = await getInventoryItems({ page, status, clinicId, type });
+      try {
+        dispatch(startLoading());
+        const data = await getInventoryItems({ page, status, clinicId, type });
 
-      setInventoryItems(data.items || []);
-      setLowItemCount(data.lowItem || 0);
-      setCriticalItemCount(data.criticalItem || 0);
+        setInventoryItems(data.items || []);
+        setLowItemCount(data.lowItem || 0);
+        setCriticalItemCount(data.criticalItem || 0);
 
-      setPagination({
-        currentPage: data.currentPage || page,
-        totalPages: data.totalPages || 1,
-        totalItems: data.totalItems || 0,
-      });
-    } catch (error) {
-      console.error("Error fetching inventory items:", error);
-      showToast({ type: "error", message: "Failed to fetch inventory items" });
-      setInventoryItems([]);
-    } finally {
-      dispatch(stopLoading());
-    }
-  },
-  [dispatch, filterStatus, selectedClinic, showTrial]
-);
+        setPagination({
+          currentPage: data.currentPage || page,
+          totalPages: data.totalPages || 1,
+          totalItems: data.totalItems || 0,
+        });
+      } catch (error) {
+        console.error("Error fetching inventory items:", error);
+        showToast({
+          type: "error",
+          message: "Failed to fetch inventory items",
+        });
+        setInventoryItems([]);
+      } finally {
+        dispatch(stopLoading());
+      }
+    },
+    [dispatch, filterStatus, selectedClinic, showTrial],
+  );
 
-   // Change active filter and fetch items for that status
+  // Change active filter and fetch items for that status
   const changeFilter = useCallback(
     async (status) => {
-      console.log("show trialll", showTrial)
+      console.log("show trialll", showTrial);
       setFilterStatus(status);
       await fetchInventoryItems(1, status, selectedClinic, showTrial);
     },
-    [fetchInventoryItems, selectedClinic, showTrial]
+    [fetchInventoryItems, selectedClinic, showTrial],
   );
 
-    const changeClinic = useCallback(
-      async (clinicId, type = showTrial) => {
-        setSelectedClinic(clinicId);
-        await fetchInventoryItems(1, filterStatus, clinicId, type);
-      },
-      [fetchInventoryItems, filterStatus, showTrial],
-    );
+  const changeClinic = useCallback(
+    async (clinicId, type = showTrial) => {
+      setSelectedClinic(clinicId);
+      await fetchInventoryItems(1, filterStatus, clinicId, type);
+    },
+    [fetchInventoryItems, filterStatus, showTrial],
+  );
 
-    const changeTab = useCallback(
-      async (type) => {
-        setShowTrial(type);
-        await fetchInventoryItems(1, filterStatus, selectedClinic, type);
-      },
-      [fetchInventoryItems, filterStatus, selectedClinic],
-    );
+  const changeTab = useCallback(
+    async (type) => {
+      setShowTrial(type);
+      await fetchInventoryItems(1, filterStatus, selectedClinic, type);
+    },
+    [fetchInventoryItems, filterStatus, selectedClinic],
+  );
 
   // Fetch categories
   const fetchCategories = useCallback(async () => {
@@ -118,16 +120,21 @@ export default function useInventory() {
   }, [categories]);
 
   // Fetch brands when category is selected
-  const fetchBrands = useCallback(async (category) => {
+  const fetchBrands = useCallback(async (category, accessories_type) => {
     if (!category) {
       setBrands([]);
       setModels([]);
       return;
     }
+
     try {
-      const data = await getInventoryDropdowns({ category });
+      const data = await getInventoryDropdowns({
+        category,
+        accessories_type,
+      });
+
       setBrands(data?.brands || []);
-      setModels([]); // Reset models when category changes
+      setModels([]);
     } catch (error) {
       console.error("Error fetching brands:", error);
       setBrands([]);
@@ -135,49 +142,58 @@ export default function useInventory() {
   }, []);
 
   // Fetch models when brand is selected
-  const fetchModels = useCallback(async (category, brandIdOrName) => {
-    if (!brandIdOrName || !category) {
-      setModels([]);
-      return;
-    }
-    try {
-      // If brandIdOrName is a number (ID), we need to find the brand name from brands array
-      let brandName = brandIdOrName;
-      if (typeof brandIdOrName === 'number') {
-        const selectedBrand = brands.find(b => b.id === brandIdOrName);
-        brandName = selectedBrand?.name || brandIdOrName;
+  const fetchModels = useCallback(
+    async (category, brandIdOrName) => {
+      if (!brandIdOrName || !category) {
+        setModels([]);
+        return;
       }
-      
-      const data = await getInventoryDropdowns({ category, brand: brandName });
-      setModels(data?.models || []);
-    } catch (error) {
-      console.error("Error fetching models:", error);
-      setModels([]);
-    }
-  }, [brands]);
+      try {
+        // If brandIdOrName is a number (ID), we need to find the brand name from brands array
+        let brandName = brandIdOrName;
+        if (typeof brandIdOrName === "number") {
+          const selectedBrand = brands.find((b) => b.id === brandIdOrName);
+          brandName = selectedBrand?.name || brandIdOrName;
+        }
 
- 
+        const data = await getInventoryDropdowns({
+          category,
+          brand: brandName,
+        });
+        setModels(data?.models || []);
+      } catch (error) {
+        console.error("Error fetching models:", error);
+        setModels([]);
+      }
+    },
+    [brands],
+  );
+
   // Create inventory item
   const createItem = useCallback(
     async (itemData) => {
       try {
         dispatch(startLoading());
         await createInventoryItem(itemData);
-        showToast({ type: "success", message: "Inventory item created successfully" });
+        showToast({
+          type: "success",
+          message: "Inventory item created successfully",
+        });
         await fetchInventoryItems(pagination.currentPage, filterStatus);
         return true;
       } catch (error) {
         console.error("Error creating inventory item:", error);
         showToast({
           type: "error",
-          message: error?.response?.data?.error || "Failed to create inventory item",
+          message:
+            error?.response?.data?.error || "Failed to create inventory item",
         });
         return false;
       } finally {
         dispatch(stopLoading());
       }
     },
-    [dispatch, fetchInventoryItems, pagination, filterStatus]
+    [dispatch, fetchInventoryItems, pagination, filterStatus],
   );
 
   // Add stock to inventory item
@@ -200,7 +216,7 @@ export default function useInventory() {
         dispatch(stopLoading());
       }
     },
-    [dispatch, fetchInventoryItems, pagination, filterStatus]
+    [dispatch, fetchInventoryItems, pagination, filterStatus],
   );
 
   // Update inventory item
@@ -211,34 +227,36 @@ export default function useInventory() {
         dispatch(startLoading());
         const res = await updateInventoryItem(itemId, itemData);
         console.log("useInventory.updateItem response", res);
-        showToast({ type: "success", message: "Inventory item updated successfully" });
+        showToast({
+          type: "success",
+          message: "Inventory item updated successfully",
+        });
         await fetchInventoryItems(pagination.currentPage, filterStatus);
         return true;
       } catch (error) {
         console.error("Error updating inventory item:", error);
         showToast({
           type: "error",
-          message: error?.response?.data?.error || "Failed to update inventory item",
+          message:
+            error?.response?.data?.error || "Failed to update inventory item",
         });
         return false;
       } finally {
         dispatch(stopLoading());
       }
     },
-    [dispatch, fetchInventoryItems, pagination, filterStatus]
+    [dispatch, fetchInventoryItems, pagination, filterStatus],
   );
 
   // Create new brand
   const createNewBrand = useCallback(
-    async (brandName, category) => {
+    async (brandName, category, accessories_type) => {
       try {
         dispatch(startLoading());
-        const payload = { name: brandName, category };
+        const payload = { name: brandName, category, accessories_type };
         const res = await createBrand(payload);
-        console.log("Brand created successfully:", res);
         showToast({ type: "success", message: "Brand created successfully" });
-        // Refetch brands after creating new brand
-        await fetchBrands(category);
+        await fetchBrands(category, accessories_type);
         return res;
       } catch (error) {
         console.error("Error creating brand:", error);
@@ -251,7 +269,7 @@ export default function useInventory() {
         dispatch(stopLoading());
       }
     },
-    [dispatch, fetchBrands]
+    [dispatch, fetchBrands],
   );
 
   // Create new model
@@ -276,10 +294,8 @@ export default function useInventory() {
         dispatch(stopLoading());
       }
     },
-    [dispatch, fetchModels]
+    [dispatch, fetchModels],
   );
-
-
 
   useEffect(() => {
     fetchInventoryItems(1);
@@ -296,8 +312,8 @@ export default function useInventory() {
     filterStatus,
     criticalItemCount,
     lowItemCount,
-    selectedClinic, 
-    showTrial, 
+    selectedClinic,
+    showTrial,
     setShowTrial,
     changeTab,
     changeClinic,

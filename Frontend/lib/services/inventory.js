@@ -1,4 +1,3 @@
-
 "use client";
 
 import { routes } from "@/lib/utils/constants/route";
@@ -13,11 +12,13 @@ import apiClient from "../api/client";
  */
 export const getInventoryDropdowns = async (params = {}) => {
   try {
-    const { category, brand } = params;
+    const { category, accessories_type, brand } = params;
     const queryParams = new URLSearchParams();
     if (category) queryParams.append("category", category);
+    if (accessories_type)
+      queryParams.append("accessories_type", accessories_type);
     if (brand) queryParams.append("brand", brand);
-    
+
     const url = `${routes.inventoryItemList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
     return response || {};
@@ -48,13 +49,14 @@ export const createInventoryItem = async (data) => {
  */
 export const getInventoryItems = async (params = {}) => {
   try {
-    const { page = 1,status, clinicId, type=false } = params;
+    const { page = 1, status, clinicId, type = false } = params;
     const queryParams = new URLSearchParams();
     if (page) queryParams.append("page", page.toString());
     if (status && status !== "All") queryParams.append("status", status);
-    if (clinicId && clinicId !== "All") queryParams.append("clinic_id", clinicId.toString());
+    if (clinicId && clinicId !== "All")
+      queryParams.append("clinic_id", clinicId.toString());
     if (type == true || type == false) queryParams.append("use_in_trial", type);
-    
+
     const url = `${routes.inventoryItems}?${queryParams.toString()}`;
     const response = await apiClient.get(url);
     return {
@@ -130,8 +132,6 @@ export const createModel = async (data) => {
   }
 };
 
-
-
 /**
  * Get serial list for an inventory item
  * @param {Object} params - Query params (inventory_item)
@@ -140,7 +140,8 @@ export const getInventorySerialList = async (params = {}) => {
   try {
     const { inventory_item } = params;
     const queryParams = new URLSearchParams();
-    if (inventory_item) queryParams.append('inventory_item', inventory_item.toString());
+    if (inventory_item)
+      queryParams.append("inventory_item", inventory_item.toString());
     const url = `clinical/inventory/serial/list/?${queryParams.toString()}`;
     const response = await apiClient.get(url);
     return response;
@@ -171,7 +172,7 @@ export const getPurchaseInventoryItems = async () => {
 export const getPendingInventoryItems = async (params = {}) => {
   try {
     const { clinic_id } = params;
-    if(clinic_id === "All") {
+    if (clinic_id === "All") {
       const url = `clinical/inventory/items/pending/`;
       const response = await apiClient.get(url);
       return response.data || [];
@@ -201,11 +202,10 @@ export const approvePendingInventoryItem = async (id) => {
 
 export const getTransferHisotry = async (params = {}) => {
   try {
-    const url = routes.TransferHistory;;
+    const url = routes.TransferHistory;
     const response = await apiClient.get(url);
     return response.data;
-  }
-  catch (error) {
+  } catch (error) {
     throw error;
   }
 };
