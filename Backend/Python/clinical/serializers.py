@@ -517,13 +517,13 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                     # 'final_amount': sum(p.total_price for p in p_purchases),
                                     # 'total_amount': sum(p.total_price for p in p_purchases),
                                     # 'payment_status': 'Pending',
-                                    'gst_amount': inventory_serial.inventory_item.gst_value
+                                    'gst_amount': inventory.gst_value
                                 }
                             )
 
                             if not created:
                                 Bill.objects.filter(id=bill.id).update(
-                                    gst_amount=F('gst_amount') + inventory_serial.inventory_item.gst_value
+                                    gst_amount=F('gst_amount') + inventory.gst_value
                                 )
                                 bill.refresh_from_db()
 
@@ -876,14 +876,14 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                     'final_amount': sum(p.total_price for p in p_purchases),
                                     'total_amount': sum(p.total_price for p in p_purchases),
                                     'payment_status': 'Pending',
-                                    'gst_amount': inventory_serial.inventory_item.gst_value
+                                    'gst_amount': inventory.gst_value
 
                                 }
                             )
 
                             if not created:
                                 Bill.objects.filter(id=bill.id).update(
-                                    gst_amount=F('gst_amount') + inventory_serial.inventory_item.gst_value
+                                    gst_amount=F('gst_amount') + inventory.gst_value
                                 )
                                 bill.refresh_from_db()
 
