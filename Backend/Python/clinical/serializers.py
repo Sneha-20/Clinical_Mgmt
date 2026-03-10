@@ -509,7 +509,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                 inventory_serial.save()
 
                             # add to bills for one visit 
-                            bill  = Bill.objects.get_or_create(
+                            bill, created  = Bill.objects.get_or_create(
                                 visit=visit,
                                 defaults={
                                     'clinic': current_clinic or patient.clinic,
@@ -868,7 +868,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                 inventory_serial.save()
 
                             # add to bills for one visit 
-                            bill  = Bill.objects.get_or_create(
+                            bill, created = Bill.objects.get_or_create(
                                 visit=visit,
                                 defaults={
                                     'clinic': current_clinic or patient.clinic,
