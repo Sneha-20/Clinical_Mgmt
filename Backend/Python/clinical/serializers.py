@@ -29,6 +29,8 @@ from accounts.serializers import RoleSimpleSerializer
 from rest_framework import status
 from django.utils import timezone
 from django.db import models
+from django.db.models import F
+
 
 
 
@@ -468,10 +470,10 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                         clinic=current_clinic or patient.clinic,
                                         visit=visit,
                                         inventory_item_id=inventory_id,
-                                        quantity=quantity,
+                                        quantity=1,
                                         inventory_serial=serial_obj,
                                         unit_price=inventory.unit_price,
-                                        total_price=inventory.unit_price * quantity,
+                                        total_price=inventory.unit_price * 1,
                                         purchased_at=timezone.now()
                                     )
                                 )
@@ -508,6 +510,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                 inventory_serial.status = 'Sold'
                                 inventory_serial.save()
 
+                            total_gst_amount = sum((inventory_map[p.inventory_item_id].gst_value * p.quantity) for p in p_purchases)
+
                             # add to bills for one visit 
                             bill, created  = Bill.objects.get_or_create(
                                 visit=visit,
@@ -517,13 +521,13 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                     # 'final_amount': sum(p.total_price for p in p_purchases),
                                     # 'total_amount': sum(p.total_price for p in p_purchases),
                                     # 'payment_status': 'Pending',
-                                    'gst_amount': inventory.gst_value
+                                    'gst_amount': total_gst_amount
                                 }
                             )
 
                             if not created:
                                 Bill.objects.filter(id=bill.id).update(
-                                    gst_amount=F('gst_amount') + inventory.gst_value
+                                    gst_amount=F('gst_amount') + total_gst_amount
                                 )
                                 bill.refresh_from_db()
 
@@ -531,7 +535,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                             # bill items
                             BillItem.objects.bulk_create([
                                 BillItem(
-                                    bill=bill[0],
+                                    bill=bill,
                                     description=f"Purchase - {purchase.inventory_item.product_name}",
                                     item_type="Purchase",
                                     cost=purchase.total_price,
@@ -826,10 +830,10 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                         clinic=current_clinic or patient.clinic,
                                         visit=visit,
                                         inventory_item_id=inventory_id,
-                                        quantity=quantity,
+                                        quantity=1,
                                         inventory_serial=serial_obj,
                                         unit_price=inventory.unit_price,
-                                        total_price=inventory.unit_price * quantity,
+                                        total_price=inventory.unit_price * 1,
                                         purchased_at=timezone.now()
                                     )
                                 )
@@ -867,6 +871,8 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                 inventory_serial.status = 'Sold'
                                 inventory_serial.save()
 
+                            total_gst_amount = sum((inventory_map[p.inventory_item_id].gst_value * p.quantity) for p in p_purchases)
+
                             # add to bills for one visit 
                             bill, created = Bill.objects.get_or_create(
                                 visit=visit,
@@ -876,21 +882,20 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                     'final_amount': sum(p.total_price for p in p_purchases),
                                     'total_amount': sum(p.total_price for p in p_purchases),
                                     'payment_status': 'Pending',
-                                    'gst_amount': inventory.gst_value
-
+                                    'gst_amount': total_gst_amount
                                 }
                             )
 
                             if not created:
                                 Bill.objects.filter(id=bill.id).update(
-                                    gst_amount=F('gst_amount') + inventory.gst_value
+                                    gst_amount=F('gst_amount') + total_gst_amount
                                 )
                                 bill.refresh_from_db()
 
                             # bill items
                             BillItem.objects.bulk_create([
                                 BillItem(
-                                    bill=bill[0],
+                                    bill=bill,
                                     description=f"Purchase - {purchase.inventory_item.product_name}",
                                     item_type="Purchase",
                                     cost=purchase.total_price,
@@ -2112,7 +2117,7 @@ class TrialCompletionSerializer(serializers.Serializer):
     def validate(self, data):
         trial_decision = data.get('trial_decision')
         
-        if trial_decision == 'BOOK':
+        if trial_decision == 'BOOK - Device Allocated':
             if not data.get('booked_device_inventory'):
                 raise serializers.ValidationError({
                     'booked_device_inventory': 'Device inventory is required when booking a device'
@@ -2130,6 +2135,9 @@ class TrialCompletionSerializer(serializers.Serializer):
                 #     })
 
                 booked_device_serial = data.get('booked_device_serial')  # Store for use in view logic
+
+                print(booked_device_serial)
+                print(inventory_item.stock_type)
 
                 # For serialized items, validate the serial number exists and is in stock
                 if inventory_item.stock_type == 'Serialized' and booked_device_serial:

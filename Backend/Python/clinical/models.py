@@ -218,7 +218,7 @@ class Bill(models.Model):
             cost_taken_amount = Decimal(str(self.visit.cost_taken_amount or 0))
 
         self.total_amount = total + gst_amount
-        self.final_amount = total - self.discount_amount - cost_taken_amount
+        self.final_amount = total - self.discount_amount - cost_taken_amount + gst_amount
         self.save(update_fields=['total_amount', 'final_amount'])
 
     def generate_bill_number(self):

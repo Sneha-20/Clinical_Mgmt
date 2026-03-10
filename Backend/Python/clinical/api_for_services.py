@@ -9,6 +9,8 @@ from .models import PatientVisit, Patient, InventorySerial, PatientPurchase, Ser
 from django.utils import timezone
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django.db.models import Q
+from django.db.models import F
+
 
 
 
@@ -228,6 +230,18 @@ class ServiceVisitUpdateView(APIView):
                 # Add to bill if requested
                 bill_created = None
 
+                # Calculate total GST for parts used
+                parts_gst_total = 0
+                for part_data in parts_created:
+                    try:
+                        inv_item = InventoryItem.objects.get(id=part_data['inventory_item'])
+                        parts_gst_total += float(inv_item.gst_value or 0) * part_data['quantity']
+                    except InventoryItem.DoesNotExist:
+                        pass
+                
+                # Total GST = Service GST + Parts GST
+                total_gst = float(gst_value or 0) + parts_gst_total
+
                 # change
                 if add_to_bill and (charges_collected > 0.0 or parts_used):
                     # Get or create bill for the service visit
@@ -236,13 +250,13 @@ class ServiceVisitUpdateView(APIView):
                         defaults={
                             'clinic': service_visit.visit.clinic,
                             'created_by': request.user,
-                            'gst_amount':gst_value,                            
+                            'gst_amount': total_gst,                            
                         }
                     )
 
                     if not created:
                         Bill.objects.filter(id=bill.id).update(
-                            gst_amount=F('gst_amount') + gst_value
+                            gst_amount=F('gst_amount') + total_gst
                         )
                         bill.refresh_from_db()
                     
@@ -302,7 +316,7 @@ class ServiceVisitUpdateView(APIView):
             return Response({
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error updating service visit: {str(e)}',
-                'data': {}
+                'data': {}  
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -606,7 +620,7 @@ class PartsUsedListView(APIView):
             search_query = request.query_params.get('search', None)
             
             # Start with base queryset
-            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic).exclude(category='Hearing Aid').order_by('product_name')
+            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic, quantity_in_stock__gt=0).exclude(category='Hearing Aid').order_by('product_name')
             
             # Apply search filter if provided
             if search_query:
