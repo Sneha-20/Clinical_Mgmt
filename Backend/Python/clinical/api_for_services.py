@@ -175,6 +175,7 @@ class ServiceVisitUpdateView(APIView):
             rtc_date = request.data.get('rtc_date')  # Return to customer date
             status_update = request.data.get('status', 'Completed')
             add_to_bill = request.data.get('add_to_bill', True)
+            gst_value = request.data.get('gst_charges',0.00)
             
             with transaction.atomic():
                 # Update service visit
@@ -182,6 +183,7 @@ class ServiceVisitUpdateView(APIView):
                 service_visit.charges_collected = charges_collected
                 service_visit.status = status_update
                 service_visit.action_taken_on = timezone.now()
+                service_visit.gst_charges = gst_value
                 
                 if rtc_date:
                     service_visit.rtc_date = rtc_date
@@ -234,8 +236,15 @@ class ServiceVisitUpdateView(APIView):
                         defaults={
                             'clinic': service_visit.visit.clinic,
                             'created_by': request.user,
+                            'gst_amount':gst_value,                            
                         }
                     )
+
+                    if not created:
+                        Bill.objects.filter(id=bill.id).update(
+                            gst_amount=F('gst_amount') + gst_value
+                        )
+                        bill.refresh_from_db()
                     
                     # Add service charges to bill
                     if charges_collected > 0:
