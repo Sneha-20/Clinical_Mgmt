@@ -4,12 +4,11 @@ import { useFormik } from "formik";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { X } from "lucide-react";
+import { X, Plus, Trash2 } from "lucide-react";
 import DropDown from "@/components/ui/dropdown";
 import CommonDatePicker from "@/components/ui/CommonDatePicker";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
 import CommonRadio from "@/components/ui/CommonRadio";
-import { patientSchema } from "@/lib/utils/schema";
 import { showToast } from "@/components/ui/toast";
 import { format } from "date-fns";
 import TextArea from "@/components/ui/TextArea";
@@ -48,6 +47,7 @@ export default function PatientRegistrationForm({
     { label: "Clinic", value: "clinic" },
     { label: "Home", value: "home" },
   ];
+
   const newVisitTypeOptions = visitTypeOptions.filter(
     (option) => option.value !== "TGA",
   );
@@ -74,13 +74,12 @@ export default function PatientRegistrationForm({
           seen_by: "",
           test_requested: [],
           notes: "",
-          cost_taken_amount: null,
+          cost_taken_amount: "",
           mode_of_payment: "",
           purchase_items: [],
         },
       ],
     },
-    // validationSchema: patientSchema,
     onSubmit: (values) => {
       const filteredPayload = {
         ...values,
@@ -89,13 +88,14 @@ export default function PatientRegistrationForm({
             return {
               visit_type: visit.visit_type,
               purchase_items: visit.purchase_items.map((item) => {
+                // Destructure to remove helper UI fields before sending to API
                 const { serials, stock_type, ...itemData } = item;
-                if (stock_type === "Non-Serialized") {
-                  const { serial_numbers, ...cleanItem } = itemData;
-                  return cleanItem;
-                } else {
+                if (stock_type === "Serialized") {
                   const { quantity, ...cleanItem } = itemData;
-                  return cleanItem;
+                  return cleanItem; // Send serial_numbers
+                } else {
+                  const { serial_numbers, ...cleanItem } = itemData;
+                  return cleanItem; // Send quantity
                 }
               }),
             };
@@ -109,7 +109,8 @@ export default function PatientRegistrationForm({
     },
   });
 
-  /* ---------------- ADD MORE VISIT ---------------- */
+  /* ---------------- VISIT MANAGEMENT ---------------- */
+
   const handleAddMoreVisit = () => {
     const lastVisit =
       formik.values.visit_details[formik.values.visit_details.length - 1];
@@ -138,108 +139,75 @@ export default function PatientRegistrationForm({
         seen_by: "",
         test_requested: [],
         notes: "",
-        cost_taken_amount: null,
+        cost_taken_amount: "",
         mode_of_payment: "",
         purchase_items: [],
       },
     ]);
   };
 
-  /* ---------------- PURCHASE ITEM METHODS ---------------- */
+  /* ---------------- PURCHASE ITEM LOGIC ---------------- */
+
   const addPurchaseItem = (visitIndex) => {
-    const purchaseItems =
-      formik.values.visit_details[visitIndex].purchase_items || [];
-    purchaseItems.push({
+    const updatedVisits = [...formik.values.visit_details];
+    updatedVisits[visitIndex].purchase_items.push({
       inventory_item: "",
       quantity: 1,
       serial_numbers: [],
       stock_type: "",
       serials: [],
     });
-    formik.setFieldValue(
-      `visit_details.${visitIndex}.purchase_items`,
-      purchaseItems,
-    );
+    formik.setFieldValue("visit_details", updatedVisits);
   };
 
   const removePurchaseItem = (visitIndex, itemIndex) => {
-    const purchaseItems =
-      formik.values.visit_details[visitIndex].purchase_items || [];
-    const updated = purchaseItems.filter((_, i) => i !== itemIndex);
-    formik.setFieldValue(`visit_details.${visitIndex}.purchase_items`, updated);
+    const updatedVisits = [...formik.values.visit_details];
+    updatedVisits[visitIndex].purchase_items.splice(itemIndex, 1);
+    formik.setFieldValue("visit_details", updatedVisits);
   };
 
-  const updatePurchaseItem = (visitIndex, itemIndex, key, value) => {
-    const purchaseItems = [
-      ...(formik.values.visit_details[visitIndex].purchase_items || []),
-    ];
+  const updatePurchaseItem = async (visitIndex, itemIndex, key, value) => {
+    const updatedVisits = [...formik.values.visit_details];
+    const item = updatedVisits[visitIndex].purchase_items[itemIndex];
 
-    if (key === "serial_numbers") {
-      purchaseItems[itemIndex] = {
-        ...purchaseItems[itemIndex],
-        serial_numbers: value,
-      };
-    } else {
-      purchaseItems[itemIndex] = { ...purchaseItems[itemIndex], [key]: value };
-    }
+    if (key === "inventory_item") {
+      const selectedItem = inventoryItems.find((i) => i.value === value);
+      item.inventory_item = value;
+      item.stock_type = selectedItem?.stock_type || "Non-Serialized";
+      item.serial_numbers = [];
+      item.quantity = 1;
+      item.serials = [];
 
-    // Handle inventory item selection - set stock_type before updating formik
-    if (key === "inventory_item" && value) {
-      const selectedItem = inventoryItems.find((item) => item.value === value);
-      if (selectedItem) {
-        purchaseItems[itemIndex].stock_type = selectedItem.stock_type;
-        purchaseItems[itemIndex].serial_numbers = [];
-        if (selectedItem.stock_type === "Serialized") {
-          handleFetchSerialsForItem(value, visitIndex, itemIndex);
-        }
+      if (item.stock_type === "Serialized") {
+        const serials = await fetchSerialsForItem(value);
+        item.serials = serials || [];
       }
+    } else {
+      item[key] = value;
     }
 
-    formik.setFieldValue(
-      `visit_details.${visitIndex}.purchase_items`,
-      purchaseItems,
-    );
-  };
-
-  const handleFetchSerialsForItem = async (
-    inventoryItemId,
-    visitIndex,
-    itemIndex,
-  ) => {
-    const serials = await fetchSerialsForItem(inventoryItemId);
-    if (serials && serials.length > 0) {
-      const purchaseItems = [
-        ...(formik.values.visit_details[visitIndex].purchase_items || []),
-      ];
-      purchaseItems[itemIndex] = {
-        ...purchaseItems[itemIndex],
-        serials: serials,
-      };
-      formik.setFieldValue(
-        `visit_details.${visitIndex}.purchase_items`,
-        purchaseItems,
-      );
-    }
+    formik.setFieldValue("visit_details", updatedVisits);
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <Card className="w-full max-w-2xl max-h-[95vh] overflow-y-auto">
-        <CardHeader className="flex flex-row justify-between items-center">
-          <CardTitle className="text-lg">New Patient Registration</CardTitle>
+      <Card className="w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl">
+        <CardHeader className="flex flex-row justify-between items-center border-b sticky top-0 bg-white z-10">
+          <CardTitle className="text-lg font-bold">
+            New Patient Registration
+          </CardTitle>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-4 h-4" />
           </Button>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="mt-4">
           <form onSubmit={formik.handleSubmit} className="space-y-6">
             {/* PERSONAL INFO */}
-            <div>
-              <h3 className="font-semibold text-primary mb-3">
+            <section>
+              <h3 className="font-semibold text-primary mb-3 border-l-4 border-primary pl-2">
                 Personal Information
               </h3>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Name"
@@ -274,7 +242,6 @@ export default function PatientRegistrationForm({
                   error={formik.touched.age && formik.errors.age}
                   important
                 />
-
                 <DropDown
                   label="Gender"
                   name="gender"
@@ -284,62 +251,39 @@ export default function PatientRegistrationForm({
                   error={formik.touched.gender && formik.errors.gender}
                   important
                 />
-
                 <Input
                   label="Email"
                   name="email"
                   type="email"
                   value={formik.values.email}
                   onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
                   error={formik.touched.email && formik.errors.email}
                 />
-
                 <Input
                   label="Primary Phone"
                   name="phone_primary"
                   maxLength={10}
                   value={formik.values.phone_primary}
                   onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
                   error={
                     formik.touched.phone_primary && formik.errors.phone_primary
                   }
                   important
                 />
-
-                <Input
-                  label="Secondary Phone"
-                  name="phone_secondary"
-                  value={formik.values.phone_secondary}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={
-                    formik.touched.phone_secondary &&
-                    formik.errors.phone_secondary
-                  }
-                />
-
                 <Input
                   label="City"
                   name="city"
                   value={formik.values.city}
                   onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.city && formik.errors.city}
                   important
                 />
-
                 <Input
                   label="Address"
                   name="address"
                   value={formik.values.address}
                   onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.address && formik.errors.address}
                   important
                 />
-
                 <CommonDatePicker
                   label="Appointment Date"
                   selectedDate={
@@ -354,73 +298,69 @@ export default function PatientRegistrationForm({
                     )
                   }
                   minDate={new Date()}
-                  error={
-                    formik.touched.appointment_date &&
-                    formik.errors.appointment_date
-                  }
                 />
               </div>
-            </div>
+            </section>
 
-            {/* REFERRAL */}
-            <div>
-              <h3 className="font-semibold text-primary mb-3">Referral</h3>
+            {/* REFERRAL & SERVICE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <section>
+                <h3 className="font-semibold text-primary mb-3">Referral</h3>
+                <div className="flex flex-wrap gap-4">
+                  {referalTypeOptions.map((item) => (
+                    <CommonRadio
+                      key={item.value}
+                      label={item.label}
+                      value={item.value}
+                      name="referral_type"
+                      checked={formik.values.referral_type === item.value}
+                      onChange={() =>
+                        formik.setFieldValue("referral_type", item.value)
+                      }
+                    />
+                  ))}
+                </div>
+                {formik.values.referral_type === "doctor" && (
+                  <div className="mt-3">
+                    <Input
+                      label="Doctor Name"
+                      name="referral_doctor"
+                      value={formik.values.referral_doctor}
+                      onChange={formik.handleChange}
+                    />
+                  </div>
+                )}
+              </section>
 
-              <div className="flex gap-6">
-                {referalTypeOptions.map((item) => (
-                  <CommonRadio
-                    key={item.value}
-                    label={item.label}
-                    value={item.value}
-                    name="referral_type"
-                    checked={formik.values.referral_type === item.value}
-                    onChange={() =>
-                      formik.setFieldValue("referral_type", item.value)
-                    }
-                  />
-                ))}
-              </div>
-
-              {formik.values.referral_type === "doctor" && (
-                <Input
-                  label="Doctor Name"
-                  name="referral_doctor"
-                  value={formik.values.referral_doctor}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={
-                    formik.touched.referral_doctor &&
-                    formik.errors.referral_doctor
-                  }
-                />
-              )}
-            </div>
-
-            {/* SERVICE TYPE */}
-            <div>
-              <h3 className="font-semibold text-primary mb-3">Service Type</h3>
-
-              <div className="flex gap-6">
-                {serviceOption.map((item) => (
-                  <CommonRadio
-                    key={item.value}
-                    label={item.label}
-                    value={item.value}
-                    name="service_type"
-                    checked={formik.values.service_type === item.value}
-                    onChange={() =>
-                      formik.setFieldValue("service_type", item.value)
-                    }
-                  />
-                ))}
-              </div>
+              <section>
+                <h3 className="font-semibold text-primary mb-3">
+                  Service Type
+                </h3>
+                <div className="flex gap-6">
+                  {serviceOption.map((item) => (
+                    <CommonRadio
+                      key={item.value}
+                      label={item.label}
+                      value={item.value}
+                      name="service_type"
+                      checked={formik.values.service_type === item.value}
+                      onChange={() =>
+                        formik.setFieldValue("service_type", item.value)
+                      }
+                    />
+                  ))}
+                </div>
+              </section>
             </div>
 
             {/* VISIT DETAILS */}
             {formik.values.visit_details.map((visit, index) => (
-              <div key={index} className="border-t pt-4">
-                <h3 className="font-semibold text-primary mb-3">
-                  Visit Details {index + 1}
+              <div key={index} className="border-t pt-6 mt-6">
+                <h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2">
+                  <span className="bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                    {index + 1}
+                  </span>
+                  Visit Details
                 </h3>
 
                 <DropDown
@@ -430,12 +370,137 @@ export default function PatientRegistrationForm({
                   onChange={(n, v) =>
                     formik.setFieldValue(`visit_details.${index}.visit_type`, v)
                   }
-                  error={formik.errors.visit_details?.[index]?.visit_type}
                   important
                 />
 
-                {visit.visit_type !== "Purchase" && (
-                  <>
+                {visit.visit_type === "Purchase" ? (
+                  /* PURCHASE UI SECTION */
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Purchase Items
+                      </h4>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addPurchaseItem(index)}
+                        className="h-8 gap-1"
+                      >
+                        <Plus className="w-3 h-3" /> Add Item
+                      </Button>
+                    </div>
+
+                    {visit.purchase_items.map((item, itemIndex) => (
+                      <div
+                        key={itemIndex}
+                        className="bg-white border rounded-md p-4 mb-3 relative shadow-sm"
+                      >
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePurchaseItem(index, itemIndex)}
+                          className="absolute top-2 right-2 text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pr-8">
+                          <DropDown
+                            label="Inventory Item"
+                            options={inventoryItems}
+                            value={item.inventory_item}
+                            loading={loadingInventory}
+                            onChange={(n, v) =>
+                              updatePurchaseItem(
+                                index,
+                                itemIndex,
+                                "inventory_item",
+                                v,
+                              )
+                            }
+                            placeholder={
+                              loadingInventory ? "Loading..." : "Select product"
+                            }
+                          />
+
+                          {item.inventory_item && (
+                            <div className="animate-in fade-in duration-300">
+                              {item.stock_type === "Non-Serialized" ? (
+                                <Input
+                                  label="Quantity"
+                                  type="number"
+                                  min="1"
+                                  value={item.quantity}
+                                  onChange={(e) =>
+                                    updatePurchaseItem(
+                                      index,
+                                      itemIndex,
+                                      "quantity",
+                                      parseInt(e.target.value) || 0,
+                                    )
+                                  }
+                                />
+                              ) : (
+                                <div className="space-y-2">
+                                  <label className="text-xs font-bold text-gray-500 uppercase">
+                                    Serial Numbers
+                                  </label>
+                                  <div className="border rounded-md p-2 max-h-32 overflow-y-auto bg-gray-50">
+                                    {item.serials?.length > 0 ? (
+                                      item.serials.map((s) => (
+                                        <div
+                                          key={s.value}
+                                          className="flex items-center gap-2 py-1"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            id={`ser-${index}-${itemIndex}-${s.value}`}
+                                            checked={item.serial_numbers.includes(
+                                              s.value,
+                                            )}
+                                            onChange={(e) => {
+                                              const current =
+                                                item.serial_numbers;
+                                              const next = e.target.checked
+                                                ? [...current, s.value]
+                                                : current.filter(
+                                                    (id) => id !== s.value,
+                                                  );
+                                              updatePurchaseItem(
+                                                index,
+                                                itemIndex,
+                                                "serial_numbers",
+                                                next,
+                                              );
+                                            }}
+                                          />
+                                          <label
+                                            htmlFor={`ser-${index}-${itemIndex}-${s.value}`}
+                                            className="text-sm cursor-pointer"
+                                          >
+                                            {s.label}
+                                          </label>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <p className="text-xs text-gray-400 italic">
+                                        No available serials found
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* STANDARD VISIT UI SECTION */
+                  <div className="space-y-4 mt-4">
                     <DropDown
                       label="Present Complaint"
                       options={complaintOptions}
@@ -447,9 +512,7 @@ export default function PatientRegistrationForm({
                         )
                       }
                       important
-                      className="mt-3"
                     />
-
                     <DropDown
                       label="Assigned To"
                       options={doctorOption}
@@ -461,9 +524,9 @@ export default function PatientRegistrationForm({
                         )
                       }
                       important
-                      className="mt-3"
                     />
                     <TextArea
+                      label="Clinical Notes"
                       name={`visit_details.${index}.notes`}
                       value={visit.notes}
                       onChange={(e) =>
@@ -472,19 +535,14 @@ export default function PatientRegistrationForm({
                           e.target.value,
                         )
                       }
-                      className="w-full border rounded p-2 mt-2"
                     />
 
-                    {/* Tests Required */}
                     {visit.visit_type !== "Speech_therapy" && (
-                      <>
-                        <div className="mt-4">
-                          <label className="font-medium text-sm text-gray-700">
-                            Tests Required (Tick)
-                          </label>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                      <div className="p-3 bg-slate-50 rounded-md">
+                        <label className="font-semibold text-sm text-gray-700 block mb-2">
+                          Tests Required
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {testRequestedOptions.map((test) => (
                             <CommonCheckbox
                               key={test.value}
@@ -494,15 +552,14 @@ export default function PatientRegistrationForm({
                                 test.value,
                               )}
                               onChange={(e) => {
-                                const value = e.target.value;
+                                const val = e.target.value;
                                 const updated = visit.test_requested.includes(
-                                  value,
+                                  val,
                                 )
                                   ? visit.test_requested.filter(
-                                      (t) => t !== value,
+                                      (t) => t !== val,
                                     )
-                                  : [...visit.test_requested, value];
-
+                                  : [...visit.test_requested, val];
                                 formik.setFieldValue(
                                   `visit_details.${index}.test_requested`,
                                   updated,
@@ -511,191 +568,35 @@ export default function PatientRegistrationForm({
                             />
                           ))}
                         </div>
-                      </>
+                      </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
-                        label="Amount Taken From Patient"
-                        name="cost_taken_amount"
+                        label="Amount Taken"
                         type="number"
-                        step="0.01"
-                        placeholder="Enter Amount - 120.00"
+                        placeholder="0.00"
                         value={visit.cost_taken_amount}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                        onChange={(e) =>
                           formik.setFieldValue(
                             `visit_details.${index}.cost_taken_amount`,
-                            value === "" ? "" : parseFloat(value),
-                          );
-                        }}
+                            e.target.value,
+                          )
+                        }
                       />
-
                       <Input
                         label="Mode of Payment"
-                        name="mode_of_payment"
+                        placeholder="Cash/Online"
                         value={visit.mode_of_payment}
-                        onChange={(e) => {
-                          const value = e.target.value;
+                        onChange={(e) =>
                           formik.setFieldValue(
                             `visit_details.${index}.mode_of_payment`,
-                            value,
-                          );
-                        }}
+                            e.target.value,
+                          )
+                        }
                       />
                     </div>
-                  </>
-                )}
-
-                {/* Purchase Items Section */}
-                {visit.visit_type === "Purchase" && (
-                  <>
-                    <div className="mt-4">
-                      <h4 className="font-medium text-sm text-gray-700 mb-2">
-                        Purchase Items
-                      </h4>
-                      {visit.purchase_items &&
-                        visit.purchase_items.map((item, itemIndex) => (
-                          <div
-                            key={itemIndex}
-                            className="border rounded-lg p-4 mb-4 bg-gray-50"
-                          >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <DropDown
-                                label="Inventory Item"
-                                name={`inventory_item_${itemIndex}`}
-                                options={inventoryItems}
-                                value={item.inventory_item}
-                                onChange={(n, v) =>
-                                  updatePurchaseItem(
-                                    index,
-                                    itemIndex,
-                                    "inventory_item",
-                                    v,
-                                  )
-                                }
-                                disabled={loadingInventory}
-                                placeholder={
-                                  loadingInventory
-                                    ? "Loading items..."
-                                    : "Select item"
-                                }
-                              />
-                              {item.stock_type === "Non-Serialized" && (
-                                <Input
-                                  label="Quantity"
-                                  name={`quantity_${itemIndex}`}
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity || ""}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val === "") {
-                                      updatePurchaseItem(
-                                        index,
-                                        itemIndex,
-                                        "quantity",
-                                        "",
-                                      );
-                                    } else {
-                                      const num = parseInt(val);
-                                      if (!isNaN(num) && num >= 1) {
-                                        updatePurchaseItem(
-                                          index,
-                                          itemIndex,
-                                          "quantity",
-                                          num,
-                                        );
-                                      }
-                                    }
-                                  }}
-                                />
-                              )}
-                              {console.log("Item Stock Type:", item.stock_type)}
-                              {item.stock_type === "Serialized" && (
-                                <div className="mt-2">
-                                  <label className="text-sm font-medium mb-2 block">
-                                    Serial Numbers
-                                  </label>
-                                  <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-2 bg-white">
-                                    {item.serials && item.serials.length > 0 ? (
-                                      item.serials.map((serial) => (
-                                        <div
-                                          key={serial.value}
-                                          className="flex items-center"
-                                        >
-                                          <input
-                                            type="checkbox"
-                                            id={`serial_${itemIndex}_${serial.value}`}
-                                            checked={item.serial_numbers.includes(
-                                              serial.value,
-                                            )}
-                                            onChange={(e) => {
-                                              const currentSerials =
-                                                item.serial_numbers || [];
-                                              if (e.target.checked) {
-                                                updatePurchaseItem(
-                                                  index,
-                                                  itemIndex,
-                                                  "serial_numbers",
-                                                  [
-                                                    ...currentSerials,
-                                                    serial.value,
-                                                  ],
-                                                );
-                                              } else {
-                                                updatePurchaseItem(
-                                                  index,
-                                                  itemIndex,
-                                                  "serial_numbers",
-                                                  currentSerials.filter(
-                                                    (s) => s !== serial.value,
-                                                  ),
-                                                );
-                                              }
-                                            }}
-                                            className="rounded"
-                                          />
-                                          <label
-                                            htmlFor={`serial_${itemIndex}_${serial.value}`}
-                                            className="ml-2 text-sm cursor-pointer"
-                                          >
-                                            {serial.label}
-                                          </label>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <p className="text-xs text-gray-500">
-                                        Loading serial numbers...
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                removePurchaseItem(index, itemIndex)
-                              }
-                              className="mt-2"
-                            >
-                              Remove Item
-                            </Button>
-                          </div>
-                        ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => addPurchaseItem(index)}
-                        className="mt-2"
-                      >
-                        + Add Purchase Item
-                      </Button>
-                    </div>
-                  </>
+                  </div>
                 )}
               </div>
             ))}
@@ -703,20 +604,25 @@ export default function PatientRegistrationForm({
             <Button
               type="button"
               variant="outline"
+              className="w-full py-6 border-dashed"
               onClick={handleAddMoreVisit}
             >
-              + Add More Visit
+              <Plus className="mr-2 w-4 h-4" /> Add Another Visit
             </Button>
+
             {Object.keys(formik.errors).length > 0 && (
-              <p className="text-red-500 text-sm mb-2 font-medium">
-                Please fill all required fields correctly.
+              <p className="text-red-500 text-sm font-medium animate-pulse text-center">
+                Please review all required fields before submitting.
               </p>
             )}
-            <div className="flex justify-end gap-3 mt-6">
-              <Button variant="outline" onClick={onClose}>
+
+            <div className="flex justify-end gap-3 pt-4 border-t sticky bottom-0 bg-white pb-2">
+              <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">Register Patient</Button>
+              <Button type="submit" className="px-8">
+                Register Patient
+              </Button>
             </div>
           </form>
         </CardContent>
