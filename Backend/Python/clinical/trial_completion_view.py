@@ -87,8 +87,16 @@ class TrialCompletionView(APIView):
                         defaults={
                             'clinic': trial.clinic,
                             'created_by': request.user,
+                            'gst_amount':inventory_item.gst_value,
                         }
                     )
+
+                    if not created:
+                        Bill.objects.filter(id=bill.id).update(
+                            gst_amount=F('gst_amount') + inventory_item.gst_value
+                        )
+                        bill.refresh_from_db()
+
                     
                     # Add bill item for device
                     BillItem.objects.create(

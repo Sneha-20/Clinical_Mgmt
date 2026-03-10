@@ -201,17 +201,23 @@ class Bill(models.Model):
         )['total']
         if total is None:
             total = Decimal('0.00')
+
         if self.discount_amount is None:
             self.discount_amount = Decimal('0.00')
         elif not isinstance(self.discount_amount, Decimal):
             self.discount_amount = Decimal(str(self.discount_amount))
+
+        # 3️⃣ Normalize GST
+        gst_amount = self.gst_amount or Decimal('0.00')
+        if not isinstance(gst_amount, Decimal):
+            gst_amount = Decimal(str(gst_amount))
 
         # Deduct cost_taken_amount from PatientVisit if present
         cost_taken_amount = Decimal('0.00')
         if self.visit and getattr(self.visit, 'cost_taken_amount', None):
             cost_taken_amount = Decimal(str(self.visit.cost_taken_amount or 0))
 
-        self.total_amount = total
+        self.total_amount = total + gst_amount
         self.final_amount = total - self.discount_amount - cost_taken_amount
         self.save(update_fields=['total_amount', 'final_amount'])
 

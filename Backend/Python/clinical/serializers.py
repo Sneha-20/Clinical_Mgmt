@@ -514,21 +514,33 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                 defaults={
                                     'clinic': current_clinic or patient.clinic,
                                     'created_by': current_user,
-                                    'final_amount': sum(p.total_price for p in p_purchases),
-                                    'total_amount': sum(p.total_price for p in p_purchases),
-                                    'payment_status': 'Pending'
+                                    # 'final_amount': sum(p.total_price for p in p_purchases),
+                                    # 'total_amount': sum(p.total_price for p in p_purchases),
+                                    # 'payment_status': 'Pending',
+                                    'gst_amount': inventory_serial.inventory_item.gst_value
                                 }
                             )
 
+                            if not created:
+                                Bill.objects.filter(id=bill.id).update(
+                                    gst_amount=F('gst_amount') + inventory_serial.inventory_item.gst_value
+                                )
+                                bill.refresh_from_db()
+
+                        
                             # bill items
                             BillItem.objects.bulk_create([
                                 BillItem(
                                     bill=bill[0],
                                     description=f"Purchase - {purchase.inventory_item.product_name}",
+                                    item_type="Purchase",
                                     cost=purchase.total_price,
                                     # created_by=current_user
                                 ) for purchase in p_purchases
                             ])
+
+                            bill.calculate_total()
+
                                
 
         return patient
@@ -863,19 +875,31 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                     'created_by': current_user,
                                     'final_amount': sum(p.total_price for p in p_purchases),
                                     'total_amount': sum(p.total_price for p in p_purchases),
-                                    'payment_status': 'Pending'
+                                    'payment_status': 'Pending',
+                                    'gst_amount': inventory_serial.inventory_item.gst_value
+
                                 }
                             )
+
+                            if not created:
+                                Bill.objects.filter(id=bill.id).update(
+                                    gst_amount=F('gst_amount') + inventory_serial.inventory_item.gst_value
+                                )
+                                bill.refresh_from_db()
 
                             # bill items
                             BillItem.objects.bulk_create([
                                 BillItem(
                                     bill=bill[0],
                                     description=f"Purchase - {purchase.inventory_item.product_name}",
+                                    item_type="Purchase",
                                     cost=purchase.total_price,
                                     # created_by=current_user
                                 ) for purchase in p_purchases
                             ])
+
+                            bill.calculate_total()
+
                                
 
         return created_visits
@@ -1433,10 +1457,27 @@ class BillItemSerializer(serializers.ModelSerializer):
     trial_brand = serializers.CharField(source='trial.brand', read_only=True)
     trial_model = serializers.CharField(source='trial.model', read_only=True)
     item_total = serializers.SerializerMethodField()
+    gst_value = serializers.SerializerMethodField()
 
     def get_item_total(self, obj):
         """Calculate total for this item (cost * quantity)"""
         return float(obj.cost * obj.quantity)
+
+    def get_gst_value(self, obj):
+        if obj.item_type == 'Trial' and obj.trial and obj.trial.device_inventory_id:
+            return obj.trial.device_inventory_id.gst_value
+        
+        if obj.item_type == 'Purchase' and obj.bill and hasattr(obj.bill, 'visit') and obj.bill.visit:
+             purchases = obj.bill.visit.purchases.select_related('inventory_item').all()
+             
+             for p in purchases:
+                 if p.inventory_item.product_name and p.inventory_item.product_name in obj.description:
+                     return p.inventory_item.gst_value
+
+        if obj.item_type == 'Service' and obj.service_visit:
+            return obj.service_visit.gst_charges
+
+        return 0
 
     class Meta:
         model = BillItem
@@ -1454,6 +1495,7 @@ class BillItemSerializer(serializers.ModelSerializer):
             'quantity',
             'item_total',
             'created_at',
+            'gst_value',
         ]
 
 
@@ -1490,7 +1532,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
     # Calculated fields
     items_count = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
-
+    
     def get_items_count(self, obj):
         """Total number of items in the bill"""
         return obj.bill_items.count()
@@ -1547,6 +1589,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'subtotal',
             'cost_taken_amount',
             'cost_taken_amount_deducted',
+            'gst_amount',
         ]
 
 
@@ -1676,7 +1719,7 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
             'category', 'product_name', 'brand', 'model_type', 'description', 'gst_value',
             'stock_type', 'quantity_in_stock', 'reorder_level', 'location',
             'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers', 'sku',
-            'accessories_type','gst_value'
+            'c','gst_value'
         ]
         extra_kwargs = {
             'quantity_in_stock': {'required': False, 'allow_null': True}
