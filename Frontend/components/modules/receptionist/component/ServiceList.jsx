@@ -5,7 +5,7 @@ import { getTgaServiceList } from "@/lib/services/dashboard";
 import { showToast } from "@/components/ui/toast";
 import Pagination from "@/components/ui/Pagination";
 
-export default function ServiceList({ onViewDetails, onServiceUpdated }) {
+export default function ServiceList({ onViewDetails }) {
   const [pendingServices, setPendingServices] = useState([]);
   const [completedServices, setCompletedServices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -70,13 +70,14 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
     fetchServices(status, page, searchTerm);
   };
 
-  const currentServices = activeTab === "pending" ? pendingServices : completedServices;
-  const currentPagination = activeTab === "pending" ? pendingPagination : completedPagination;
+  const currentServices =
+    activeTab === "pending" ? pendingServices : completedServices;
+  const currentPagination =
+    activeTab === "pending" ? pendingPagination : completedPagination;
   const currentStatus = activeTab === "pending" ? "Pending" : "Completed";
 
   return (
     <div className="space-y-4">
-      {/* Search Bar */}
       <div className="flex items-center justify-between">
         <div className="flex-1 max-w-md">
           <input
@@ -121,9 +122,6 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Request ID
-                </th> */}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Patient Info
                 </th>
@@ -147,46 +145,58 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan="7"
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : currentServices.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                  <td
+                    colSpan="7"
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
                     No {currentStatus.toLowerCase()} services found
                   </td>
                 </tr>
               ) : (
                 currentServices.map((service) => (
                   <tr key={service.service_id} className="hover:bg-gray-50">
-                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{service.service_id}
-                    </td> */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {service.patient_name}
                       </div>
-                      <div className="text-sm text-gray-500">{service.phone_primary}</div>
+                      <div className="text-sm text-gray-500">
+                        {service.phone_primary}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {service.service_type}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{service.complaint}</div>
+                      <div className="text-sm text-gray-900">
+                        {service.complaint}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        service.status === "Completed"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}>
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          service.status === "Completed"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
                         {service.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {service.action_taken ? (
-                        <div className="max-w-xs truncate" title={service.action_taken}>
+                        <div
+                          className="max-w-xs truncate"
+                          title={service.action_taken}
+                        >
                           {service.action_taken}
                         </div>
                       ) : (
@@ -214,8 +224,12 @@ export default function ServiceList({ onViewDetails, onServiceUpdated }) {
         <Pagination
           page={currentPagination.currentPage}
           totalPages={currentPagination.totalPages}
-          onNext={() => handlePageChange(currentPagination.currentPage + 1, currentStatus)}
-          onPrev={() => handlePageChange(currentPagination.currentPage - 1, currentStatus)}
+          onNext={() =>
+            handlePageChange(currentPagination.currentPage + 1, currentStatus)
+          }
+          onPrev={() =>
+            handlePageChange(currentPagination.currentPage - 1, currentStatus)
+          }
         />
       )}
     </div>
