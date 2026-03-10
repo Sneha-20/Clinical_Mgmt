@@ -1719,7 +1719,7 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
             'category', 'product_name', 'brand', 'model_type', 'description', 'gst_value',
             'stock_type', 'quantity_in_stock', 'reorder_level', 'location',
             'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers', 'sku',
-            'c','gst_value'
+            'gst_value'
         ]
         extra_kwargs = {
             'quantity_in_stock': {'required': False, 'allow_null': True}
