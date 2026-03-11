@@ -20,6 +20,7 @@ import {
   testRequestedOptions,
   complaintOptions,
 } from "@/lib/utils/constants/staticValue";
+import { patientSchema } from "@/lib/utils/schema";
 
 export default function PatientRegistrationForm({
   onClose,
@@ -80,6 +81,7 @@ export default function PatientRegistrationForm({
         },
       ],
     },
+    validationSchema: patientSchema,
     onSubmit: (values) => {
       const filteredPayload = {
         ...values,
