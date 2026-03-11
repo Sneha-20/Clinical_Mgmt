@@ -387,9 +387,6 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                 for item in InventoryItem.objects.filter(id__in=inventory_ids)
             }
 
-            visit_instances = []
-            purchase_instances = []
-
             for visit_data in visits_data:
 
                 visit_type = visit_data.get("visit_type")
@@ -408,7 +405,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                 test_requested = visit_data.pop("test_requested", [])
                 test_requested = ",".join(test_requested) if test_requested else ""
 
-                visit = PatientVisit(
+                visit = PatientVisit.objects.create(
                     patient=patient,
                     clinic=patient.clinic,
                     status=status_value,
@@ -420,14 +417,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                     **visit_data
                 )
 
-                visit_instances.append(visit)
-
-            # Bulk create visits
-            created_visits = PatientVisit.objects.bulk_create(visit_instances)
-
-            for visit, visit_data in zip(created_visits, visits_data):
-
-                if visit.visit_type in ['Purchase', 'Purchase Accessories']:
+                # Process purchases for this visit (immediately, so purchase_items is correct)
+                if visit.visit_type in ['Purchase', 'Purchase Accessories'] and purchase_items:
 
                     purchase_instances = []
 
@@ -437,19 +428,13 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                         i.id: i for i in InventoryItem.objects.filter(id__in=inventory_ids)
                     }
 
-                    print(purchase_items)
-
                     for item in purchase_items:
 
                         inventory_id = item.get("inventory_item")
                         serial_numbers = item.get("serial_numbers", [])
                         quantity = len(serial_numbers) if serial_numbers else item.get("quantity")
 
-                        print(quantity)
-
-
                         inventory = inventory_map.get(inventory_id)
-
 
                         if not inventory:
                             continue
@@ -463,10 +448,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                             )
                             serial_obj_map = {s.serial_number: s for s in current_serials} 
 
-
                             for serial in serial_numbers:
                                 serial_obj = serial_obj_map.get(serial)
-
                                
                                 purchase_instances.append(
                                     PatientPurchase(
@@ -474,7 +457,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                         clinic=current_clinic or patient.clinic,
                                         visit=visit,
                                         inventory_item_id=inventory_id,
-                                        quantity=quantity,
+                                        quantity=1,
                                         inventory_serial=serial_obj,
                                         unit_price=inventory.unit_price,
                                         total_price=inventory.unit_price * 1,
@@ -501,9 +484,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                         inventory.quantity_in_stock = inventory.quantity_in_stock - quantity
                         inventory.save()
 
-
                     if purchase_instances:
-                       p_purchases =  PatientPurchase.objects.bulk_create(purchase_instances)
+                       p_purchases = PatientPurchase.objects.bulk_create(purchase_instances)
 
                        if p_purchases:
                             for purchase in p_purchases:
@@ -517,14 +499,11 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                             total_gst_amount = sum((inventory_map[p.inventory_item_id].gst_value * p.quantity) for p in p_purchases)
 
                             # add to bills for one visit 
-                            bill, created  = Bill.objects.get_or_create(
+                            bill, created = Bill.objects.get_or_create(
                                 visit=visit,
                                 defaults={
                                     'clinic': current_clinic or patient.clinic,
                                     'created_by': current_user,
-                                    # 'final_amount': sum(p.total_price for p in p_purchases),
-                                    # 'total_amount': sum(p.total_price for p in p_purchases),
-                                    # 'payment_status': 'Pending',
                                     'gst_amount': total_gst_amount
                                 }
                             )
@@ -535,12 +514,13 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                 )
                                 bill.refresh_from_db()
 
-                        
+                            print(p_purchases)
+
                             # bill items
                             BillItem.objects.bulk_create([
                                 BillItem(
                                     bill=bill,
-                                    description=f"Purchase - {purchase.inventory_item.product_name}",
+                                    description=f"Purchase - {purchase.inventory_item.product_name}" + (f" : {purchase.inventory_serial.serial_number}" if purchase.inventory_serial else ""),
                                     item_type="Purchase",
                                     cost=purchase.unit_price,
                                     quantity=purchase.quantity,
@@ -549,7 +529,6 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 
                             bill.calculate_total()
 
-                               
 
         return patient
 
@@ -900,7 +879,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                             BillItem.objects.bulk_create([
                                 BillItem(
                                     bill=bill,
-                                    description=f"Purchase - {purchase.inventory_item.product_name}",
+                                    description=f"Purchase - {purchase.inventory_item.product_name}" + (f" : {purchase.inventory_serial.serial_number}" if purchase.inventory_serial else ""),
                                     item_type="Purchase",
                                     cost=purchase.unit_price,
                                     quantity=purchase.quantity,
