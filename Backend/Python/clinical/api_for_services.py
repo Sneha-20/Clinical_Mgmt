@@ -218,11 +218,6 @@ class ServiceVisitUpdateView(APIView):
                                     'inventory_item': inventory_item.id,
                                     'quantity': quantity
                                 })
-                                
-                                # Update inventory quantity for non-serialized items
-                                if inventory_item.stock_type == 'Non-Serialized':
-                                    inventory_item.quantity_in_stock -= quantity
-                                    inventory_item.save()
                                     
                             except InventoryItem.DoesNotExist:
                                 continue
@@ -260,6 +255,12 @@ class ServiceVisitUpdateView(APIView):
                         )
                         bill.refresh_from_db()
                     
+                    # Delete existing service-related BillItems to avoid duplicates on re-submission
+                    BillItem.objects.filter(
+                        bill=bill,
+                        item_type__in=['Service', 'Part Used in Service']
+                    ).delete()
+
                     # Add service charges to bill
                     if charges_collected > 0:
                         BillItem.objects.create(
@@ -587,6 +588,7 @@ class ServiceDetailView(APIView):
                     'purchase_date': service_visit.device.purchased_at if service_visit.device else None
                 } if service_visit.device else None,
                 'parts_used': parts_used,
+                'gst_charges':service_visit.gst_charges,
                 'total_parts_cost': sum([part['total_cost'] for part in parts_used]),
                 'total_service_cost': float(service_visit.charges_collected) if service_visit.charges_collected else 0,
                 'grand_total': sum([part['total_cost'] for part in parts_used]) + (float(service_visit.charges_collected) if service_visit.charges_collected else 0)
