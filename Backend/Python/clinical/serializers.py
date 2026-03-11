@@ -136,7 +136,7 @@ class PurchaseItemSerializer(serializers.Serializer):
 
     def validate(self, data):
 
-        serial_numbers = data.get("serial_number")
+        serial_numbers = data.get("serial_numbers")
         quantity = data.get("quantity")
 
         # If serial numbers exist → quantity = len(serial_numbers)
@@ -441,6 +441,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 
                         inventory_id = item.get("inventory_item")
                         quantity = item.get("quantity")
+                        print(quantity)
                         serial_numbers = item.get("serial_number", [])
 
 
@@ -957,8 +958,8 @@ class TrialSerializer(serializers.ModelSerializer):
         if obj.device_inventory_id:
             return {
                 'id': obj.device_inventory_id.id,
-                'brand': obj.device_inventory_id.brand.name,
-                'model_type': obj.device_inventory_id.model_type.name,
+                'brand': obj.device_inventory_id.brand.name if obj.device_inventory_id.brand else None,
+                'model_type': obj.device_inventory_id.model_type.name if obj.device_inventory_id.model_type else None,
                 'category': obj.device_inventory_id.category
             }
         return None
@@ -1807,8 +1808,8 @@ class ServiceVisitListSerializer(serializers.ModelSerializer):
             item = obj.device.inventory_item
             return {
                 'name': item.product_name,
-                'brand': item.brand.name,
-                'model': item.model_type.name,
+                'brand': item.brand.name if item.brand else None,
+                'model': item.model_type.name if item.model_type else None,
                 'purchase_date': obj.device.purchased_at.date() if obj.device.purchased_at else None
             }
         return None
