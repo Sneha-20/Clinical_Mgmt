@@ -9,17 +9,24 @@ import { useApi } from '@/lib/hooks/useApi';
 import { toast } from 'react-hot-toast';
 import Backbutton from '@/components/ui/Backbutton';
 
+import CommonDatePicker from '@/components/ui/CommonDatePicker';
+import { format } from "date-fns";
+
 export default function TransactionHistory() {
   const [transactions, setTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [filterType, setFilterType] = useState('All');
+  const [transactionDate, setTransactionDate] = useState(null);
   const { execute: fetchTransactions, loading } = useApi();
 
   const loadTransactions = async () => {
     try {
       const params = {};
       if (filterType && filterType !== 'All') params.transaction_type = filterType;
+      console.log(transactionDate)
+      if (transactionDate) params.transaction_date = format(transactionDate, "yyyy-MM-dd");
+
       const result = await fetchTransactions(() => getTransactions(params));
       setTransactions(result.transactions);
     } catch (error) {
@@ -29,7 +36,7 @@ export default function TransactionHistory() {
 
   useEffect(() => {
     loadTransactions();
-  }, [filterType]);
+  }, [filterType, transactionDate]);
 
   const handleAdd = async (data) => {
     try {
@@ -92,19 +99,49 @@ export default function TransactionHistory() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex gap-4">
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="flex h-9 w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-          >
-            <option value="All">All</option>
-            <option value="Income">Income</option>
-            <option value="Expense">Expense</option>
-          </select>
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end justify-between bg-white p-4 rounded-lg border shadow-sm mb-6 mt-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end w-full sm:w-auto">
+          <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Transaction Type</label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="flex h-10 w-full sm:w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 shadow-sm transition-all text-slate-700"
+            >
+              <option value="All">All Transactions</option>
+              <option value="Income">Income</option>
+              <option value="Expense">Expense</option>
+            </select>
+          </div>
+          
+          <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Transaction Date</label>
+            <div className="flex flex-row items-center gap-2">
+              <div className="w-full sm:w-48">
+                <CommonDatePicker
+                  selectedDate={transactionDate}
+                  onChange={(date) => setTransactionDate(date)}
+                  placeholderText="Select date"
+                  className="h-10 w-full"
+                />
+              </div>
+              {transactionDate && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTransactionDate(null)}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50 h-10 px-3 shrink-0 transition-colors"
+                  title="Clear Date"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
-        <Button onClick={openAddModal}>Add Transaction</Button>
+        <Button onClick={openAddModal} className="h-10 w-full sm:w-auto mt-2 sm:mt-0 shadow-sm font-medium">
+          + Add Transaction
+        </Button>
       </div>
 
       <Table>
@@ -146,16 +183,16 @@ export default function TransactionHistory() {
               </TableRow>
             ))
           )}
-         
-            <div className='flex justify-end mt-4 w-full'>
-                <div>
-                {(filterType === 'Income' || filterType === 'All') && <p>  Total Income {transactions.reduce((sum, t) => sum + Number(t.amount) , 0)} </p>}
-                {(filterType === 'Expense' || filterType === 'All') && (<p>
-                Total Expense {transactions.reduce((sum, t) => sum + Number(t.amount) , 0)}
-                </p>)}
-                </div>
+
+          <div className='flex justify-end mt-4 w-full'>
+            <div>
+              {(filterType === 'Income' || filterType === 'All') && <p>  Total Income {transactions.reduce((sum, t) => sum + Number(t.amount), 0)} </p>}
+              {(filterType === 'Expense' || filterType === 'All') && (<p>
+                Total Expense {transactions.reduce((sum, t) => sum + Number(t.amount), 0)}
+              </p>)}
             </div>
-          
+          </div>
+
         </TableBody>
       </Table>
 

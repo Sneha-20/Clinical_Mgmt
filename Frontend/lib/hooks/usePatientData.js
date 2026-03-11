@@ -309,11 +309,11 @@ export default function usePatientData() {
     fetchInventoryItems();
   }, []);
 
-  const fetchSerialsForItem = async (inventoryItemId) => {
+  const fetchSerialsForItem = async (inventoryItemId, showAvailableOnly = false) => {
     try {
-      const response = await getInventorySerialList({
-        inventory_item: inventoryItemId,
-      });
+      console.log("showAvailableOnly", showAvailableOnly);
+      const params = { inventory_item: inventoryItemId, show_available_only: showAvailableOnly };
+      const response = await getInventorySerialList(params);
       const serialOptions = response.data.map((serial) => {
         const serialNumber =
           typeof serial === "string" ? serial : serial.serial_number;

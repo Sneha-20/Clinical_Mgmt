@@ -6,6 +6,7 @@ import {
   getInventoryItems,
   addInventoryStock,
   updateInventoryItem,
+  deleteInventoryItem,
   createBrand,
   createModel,
 } from "@/lib/services/inventory";
@@ -248,6 +249,33 @@ export default function useInventory() {
     [dispatch, fetchInventoryItems, pagination, filterStatus],
   );
 
+  // Delete inventory item
+  const deleteItem = useCallback(
+    async (itemId) => {
+      try {
+        dispatch(startLoading());
+        await deleteInventoryItem(itemId);
+        showToast({
+          type: "success",
+          message: "Inventory item deleted successfully",
+        });
+        await fetchInventoryItems(pagination.currentPage, filterStatus);
+        return true;
+      } catch (error) {
+        console.error("Error deleting inventory item:", error);
+        showToast({
+          type: "error",
+          message:
+            error?.response?.data?.error || "Failed to delete inventory item",
+        });
+        return false;
+      } finally {
+        dispatch(stopLoading());
+      }
+    },
+    [dispatch, fetchInventoryItems, pagination, filterStatus],
+  );
+
   // Create new brand
   const createNewBrand = useCallback(
     async (brandName, category, accessories_type) => {
@@ -325,6 +353,7 @@ export default function useInventory() {
     createItem,
     addStock,
     updateItem,
+    deleteItem,
     changeFilter,
     createNewBrand,
     createNewModel,

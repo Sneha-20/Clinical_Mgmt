@@ -179,7 +179,7 @@ export default function PatientRegistrationForm({
       item.serials = [];
 
       if (item.stock_type === "Serialized") {
-        const serials = await fetchSerialsForItem(value);
+        const serials = await fetchSerialsForItem(value, true);
         item.serials = serials || [];
       }
     } else {

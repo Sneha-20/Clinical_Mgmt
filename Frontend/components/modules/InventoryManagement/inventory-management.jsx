@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, AlertTriangle, TrendingDown, List } from "lucide-react";
+import { Plus, AlertTriangle, TrendingDown, List, Trash2 } from "lucide-react";
 import useInventory from "@/lib/hooks/useInventory";
 import AddProductModal from "./AddProductModal";
 import AddStockModal from "./AddStockModal";
@@ -37,6 +37,7 @@ export default function InventoryManagement() {
     createItem,
     addStock,
     updateItem,
+    deleteItem,
     fetchInventoryItems,
     changeFilter,
     createNewBrand,
@@ -113,6 +114,16 @@ export default function InventoryManagement() {
     if (pagination.currentPage > 1) {
       fetchInventoryItems(pagination.currentPage - 1);
     }
+  };
+
+  const handleDeleteClick = async (item) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${item.product_name}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+    setIsSubmitting(true);
+    await deleteItem(item.id);
+    setIsSubmitting(false);
   };
 
   return (
@@ -284,6 +295,9 @@ export default function InventoryManagement() {
                     <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium hidden md:table-cell">
                       Unit Price
                     </th>
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium hidden md:table-cell">
+                      GST Value
+                    </th>
                     <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
                       Status
                     </th>
@@ -333,15 +347,17 @@ export default function InventoryManagement() {
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3 hidden md:table-cell">
                           ₹{parseFloat(item.unit_price || 0).toFixed(2)}
                         </td>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3 hidden md:table-cell">
+                          ₹{item.gst_value || "0"}
+                        </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
-                              item.status === "Good"
-                                ? "bg-green-100 text-green-600"
-                                : item.status === "Low"
-                                  ? "bg-yellow-100 text-yellow-600"
-                                  : "bg-red-100 text-red-600"
-                            }`}
+                            className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${item.status === "Good"
+                              ? "bg-green-100 text-green-600"
+                              : item.status === "Low"
+                                ? "bg-yellow-100 text-yellow-600"
+                                : "bg-red-100 text-red-600"
+                              }`}
                           >
                             {item.status === "Good"
                               ? "Good"
@@ -351,23 +367,34 @@ export default function InventoryManagement() {
                           </span>
                         </td>
                         {isSelectedClinicMain && (
-                          <td className="text-center py-2 sm:py-3 px-2 sm:px-3 space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAddStockClick(item)}
-                              className="text-xs"
-                            >
-                              Add Stock
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditClick(item)}
-                              className="text-xs"
-                            >
-                              Edit
-                            </Button>
+                          <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddStockClick(item)}
+                                className="text-xs"
+                              >
+                                Add Stock
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditClick(item)}
+                                className="text-xs"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteClick(item)}
+                                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                disabled={isSubmitting}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </td>
                         )}
                       </tr>

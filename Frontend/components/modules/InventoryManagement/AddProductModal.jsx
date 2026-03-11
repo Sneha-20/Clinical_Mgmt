@@ -33,6 +33,7 @@ export default function AddProductModal({
     description: "",
     location: "",
     unit_price: "",
+    gst_value: "",
     use_in_trial: false,
     stock_type: false,
     serial_numbers: "",
@@ -47,9 +48,13 @@ export default function AddProductModal({
   const [creatingBrand, setCreatingBrand] = useState(false);
   const [creatingModel, setCreatingModel] = useState(false);
 
+  // Use a ref to track if we've already done the initial prefill so we don't wipe it out
+  const [hasPrefilled, setHasPrefilled] = useState(false);
+
   // Prefill when editing
   useEffect(() => {
     if (isOpen && isEdit && initialData) {
+      setHasPrefilled(false); // reset tracking when opened
       setFormData({
         category: initialData.category || "",
         brand: initialData.brand || "",
@@ -58,6 +63,7 @@ export default function AddProductModal({
         description: initialData.description || "",
         location: initialData.location || "",
         unit_price: initialData.unit_price || "",
+        gst_value: initialData.gst_value || "",
         use_in_trial: initialData.use_in_trial || false,
         stock_type: initialData.stock_type === "Serialized",
         serial_numbers: "",
@@ -75,14 +81,18 @@ export default function AddProductModal({
       }
       setShowAddBrand(false);
       setShowAddModel(false);
+      
+      // Delay setting hasPrefilled to true to allow the form to settle
+      setTimeout(() => setHasPrefilled(true), 500);
     }
-  }, [isOpen, isEdit, initialData, onCategoryChange, onBrandChange]);
+  }, [isOpen, isEdit, initialData]); // removed dependencies that cause loops
 
   const [errors, setErrors] = useState({});
 
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
+      setHasPrefilled(false);
       setFormData({
         category: "",
         brand: "",
@@ -91,6 +101,7 @@ export default function AddProductModal({
         description: "",
         location: "",
         unit_price: "",
+        gst_value: "",
         use_in_trial: false,
         stock_type: false,
         serial_numbers: "",
@@ -105,14 +116,19 @@ export default function AddProductModal({
     }
   }, [isOpen]);
 
+  // Handle category change (wipe brand/model ONLY if it's a manual user interaction, not prefill)
   useEffect(() => {
     if (!formData.category) return;
-    setFormData((prev) => ({
-      ...prev,
-      brand: "",
-      model_type: "",
-      accessories_type: "",
-    }));
+    
+    // If we've finished prefilling, or it's not an edit form, then clear dependents on category change
+    if (hasPrefilled || !isEdit) {
+      setFormData((prev) => ({
+        ...prev,
+        brand: "",
+        model_type: "",
+        accessories_type: "",
+      }));
+    }
 
     setShowAddBrand(false);
     setShowAddModel(false);
@@ -124,7 +140,9 @@ export default function AddProductModal({
 
   useEffect(() => {
     if (formData.category === "Accessories" && formData.accessories_type) {
-      onCategoryChange?.(formData.category, formData.accessories_type);
+      if (hasPrefilled || !isEdit) {
+        onCategoryChange?.(formData.category, formData.accessories_type);
+      }
     }
   }, [formData.accessories_type]);
 
@@ -132,10 +150,12 @@ export default function AddProductModal({
   useEffect(() => {
     if (formData.brand && formData.category) {
       onBrandChange?.(formData.category, formData.brand);
-      setFormData((prev) => ({ ...prev, model_type: "" }));
+      if (hasPrefilled || !isEdit) {
+        setFormData((prev) => ({ ...prev, model_type: "" }));
+      }
       setShowAddModel(false);
     }
-  }, [formData.brand, formData.category, onBrandChange]);
+  }, [formData.brand, formData.category]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -212,7 +232,9 @@ export default function AddProductModal({
     const newErrors = {};
     if (!formData.category) newErrors.category = "Category is required";
     if (!formData.brand) newErrors.brand = "Brand is required";
-    if (!formData.model_type) newErrors.model_type = "Model is required";
+    if (formData.category !== "Accessories" && !formData.model_type) {
+      newErrors.model_type = "Model is required";
+    }
     if (!formData.product_name)
       newErrors.product_name = "Product name is required";
     if (!formData.unit_price) newErrors.unit_price = "Unit price is required";
@@ -228,11 +250,14 @@ export default function AddProductModal({
       category: formData.category,
       product_name: formData.product_name,
       brand: parseInt(formData.brand) || formData.brand,
-      model_type: parseInt(formData.model_type) || formData.model_type,
+      ...(formData.category !== "Accessories" && formData.model_type 
+          ? { model_type: parseInt(formData.model_type) || formData.model_type } 
+          : {}),
       description: formData.description || "",
       stock_type: formData.stock_type ? "Serialized" : "Non-Serialized",
       location: formData.location,
       unit_price: formData.unit_price,
+      gst_value: formData.gst_value ? Number(formData.gst_value) : 0,
       use_in_trial: formData.use_in_trial,
       reorder_level: formData.reorder_level || 10,
     };
@@ -424,17 +449,32 @@ export default function AddProductModal({
             placeholder="Enter location"
           />
 
-          <Input
-            label="Unit Price"
-            name="unit_price"
-            type="number"
-            step="0.01"
-            value={formData.unit_price}
-            onChange={handleChange}
-            placeholder="Enter price"
-            error={errors.unit_price}
-            important
-          />
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <Input
+                label="Unit Price"
+                name="unit_price"
+                type="number"
+                step="0.01"
+                value={formData.unit_price}
+                onChange={handleChange}
+                placeholder="Enter price"
+                error={errors.unit_price}
+                important
+              />
+            </div>
+            <div className="flex-1">
+              <Input
+                label="GST Value (%)"
+                name="gst_value"
+                type="number"
+                step="0.01"
+                value={formData.gst_value}
+                onChange={handleChange}
+                placeholder="Ex. 18"
+              />
+            </div>
+          </div>
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer select-none text-sm">
@@ -447,11 +487,10 @@ export default function AddProductModal({
             className="hidden"
           />
           <div
-            className={`h-4 w-4 rounded-sm border flex items-center justify-center transition-all ${
-              formData.stock_type
-                ? "bg-[#1ba9c6] border-[#1ba9c6]"
-                : "border-gray-400"
-            }`}
+            className={`h-4 w-4 rounded-sm border flex items-center justify-center transition-all ${formData.stock_type
+              ? "bg-[#1ba9c6] border-[#1ba9c6]"
+              : "border-gray-400"
+              }`}
           >
             {formData.stock_type && (
               <svg
@@ -530,11 +569,10 @@ export default function AddProductModal({
               className="hidden"
             />
             <div
-              className={`h-4 w-4 rounded-sm border flex items-center justify-center transition-all ${
-                formData.use_in_trial
-                  ? "bg-[#1ba9c6] border-[#1ba9c6]"
-                  : "border-gray-400"
-              }`}
+              className={`h-4 w-4 rounded-sm border flex items-center justify-center transition-all ${formData.use_in_trial
+                ? "bg-[#1ba9c6] border-[#1ba9c6]"
+                : "border-gray-400"
+                }`}
             >
               {formData.use_in_trial && (
                 <svg

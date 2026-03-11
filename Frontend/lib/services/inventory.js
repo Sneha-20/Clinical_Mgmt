@@ -138,10 +138,14 @@ export const createModel = async (data) => {
  */
 export const getInventorySerialList = async (params = {}) => {
   try {
-    const { inventory_item } = params;
+    console.log("params", params);
+    const { inventory_item, show_available_only } = params;
     const queryParams = new URLSearchParams();
     if (inventory_item)
       queryParams.append("inventory_item", inventory_item.toString());
+    if (show_available_only) {
+      queryParams.append("show_available_only", show_available_only);
+    }
     const url = `clinical/inventory/serial/list/?${queryParams.toString()}`;
     const response = await apiClient.get(url);
     return response;
@@ -205,6 +209,21 @@ export const getTransferHisotry = async (params = {}) => {
     const url = routes.TransferHistory;
     const response = await apiClient.get(url);
     return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+/**
+ * Delete an inventory item
+ * @param {number|string} id - Inventory item id
+ * @returns {Promise<Object>} Response from the API
+ */
+export const deleteInventoryItem = async (id) => {
+  try {
+    const url = `clinical/inventory/item/${id}/destroy/`;
+    const response = await apiClient.delete(url);
+    return response;
   } catch (error) {
     throw error;
   }

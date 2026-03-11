@@ -149,6 +149,7 @@ export default function CommonDatePicker({
           )}
           onClick={() => setShowPicker(!showPicker)}
         >
+          <Calendar className="w-5 h-5 text-gray-400 pointer-events-none flex-shrink-0 mr-2" />
           <input
             type="text"
             value={toInputValue(selectedDate)}
@@ -156,12 +157,11 @@ export default function CommonDatePicker({
             readOnly
             className="flex-1 outline-none bg-transparent"
           />
-          <Calendar className="w-5 h-5 text-gray-400 pointer-events-none flex-shrink-0 ml-2" />
         </div>
 
         {/* Calendar Dropdown */}
         {showPicker && (
-          <div className="absolute top-full w-full max-w-[295px] left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-50 p-4">
+          <div className="absolute top-[calc(100%+4px)] min-w-[280px] w-auto left-0 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] p-4">
             {/* Header with Month/Year Selectors */}
             <div className="flex items-center justify-between mb-4 gap-2">
               <button
