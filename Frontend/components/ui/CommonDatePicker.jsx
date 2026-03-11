@@ -14,11 +14,10 @@ export default function CommonDatePicker({
   className,
   maxDate,
   minDate,
+  important = false,
 }) {
   const [showPicker, setShowPicker] = useState(false);
-  const [currentMonth, setCurrentMonth] = useState(
-    selectedDate || new Date()
-  );
+  const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
   const pickerRef = useRef(null);
 
   const toInputValue = (date) => {
@@ -86,25 +85,25 @@ export default function CommonDatePicker({
 
   const handlePrevMonth = () => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1),
     );
   };
 
   const handleNextMonth = () => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1),
     );
   };
 
   const handleMonthChange = (e) => {
     setCurrentMonth(
-      new Date(currentMonth.getFullYear(), parseInt(e.target.value), 1)
+      new Date(currentMonth.getFullYear(), parseInt(e.target.value), 1),
     );
   };
 
   const handleYearChange = (e) => {
     setCurrentMonth(
-      new Date(parseInt(e.target.value), currentMonth.getMonth(), 1)
+      new Date(parseInt(e.target.value), currentMonth.getMonth(), 1),
     );
   };
 
@@ -128,8 +127,18 @@ export default function CommonDatePicker({
   const days = renderCalendar();
   const monthDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December",
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
 
   return (
@@ -137,6 +146,7 @@ export default function CommonDatePicker({
       {label && (
         <label className="block text-sm font-medium mb-2 text-gray-700">
           {label}
+          {important && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <div className="relative" ref={pickerRef}>
@@ -145,7 +155,7 @@ export default function CommonDatePicker({
             `flex h-10 w-full items-center rounded-md border bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none cursor-pointer transition ${
               error ? "border-red-500" : "border-gray-300"
             }`,
-            className
+            className,
           )}
           onClick={() => setShowPicker(!showPicker)}
         >
@@ -254,13 +264,16 @@ export default function CommonDatePicker({
                     date ? "" : "bg-transparent",
                     date && isDateDisabled(date)
                       ? "text-gray-300 cursor-not-allowed"
-                      : date && selectedDate && date.toDateString() === selectedDate.toDateString()
-                      ? "bg-blue-500 text-white font-bold"
-                      : date && new Date().toDateString() === date.toDateString()
-                      ? "bg-blue-100 text-blue-600 font-semibold"
-                      : date && !isDateDisabled(date)
-                      ? "hover:bg-blue-50 text-gray-700 cursor-pointer"
-                      : "text-gray-300"
+                      : date &&
+                          selectedDate &&
+                          date.toDateString() === selectedDate.toDateString()
+                        ? "bg-blue-500 text-white font-bold"
+                        : date &&
+                            new Date().toDateString() === date.toDateString()
+                          ? "bg-blue-100 text-blue-600 font-semibold"
+                          : date && !isDateDisabled(date)
+                            ? "hover:bg-blue-50 text-gray-700 cursor-pointer"
+                            : "text-gray-300",
                   )}
                 >
                   {date ? date.getDate() : ""}

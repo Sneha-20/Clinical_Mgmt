@@ -60,7 +60,6 @@ export default function PatientRegistrationForm({
   const formik = useFormik({
     initialValues: {
       name: "",
-      // age: "",
       dob: "",
       email: "",
       gender: "",
@@ -226,8 +225,16 @@ export default function PatientRegistrationForm({
                   error={formik.touched.name && formik.errors.name}
                   important
                 />
+                <Input
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  error={formik.touched.email && formik.errors.email}
+                />
                 <CommonDatePicker
-                  label="Date of Birth"
+                  label="Date of Birth "
                   selectedDate={
                     formik.values.dob ? new Date(formik.values.dob) : null
                   }
@@ -239,17 +246,8 @@ export default function PatientRegistrationForm({
                   }
                   maxDate={new Date()}
                   error={formik.touched.dob && formik.errors.dob}
-                />
-                {/* <Input
-                  label="Age"
-                  name="age"
-                  type="number"
-                  value={formik.values.age}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.age && formik.errors.age}
                   important
-                /> */}
+                />
                 <DropDown
                   label="Gender"
                   name="gender"
@@ -259,14 +257,7 @@ export default function PatientRegistrationForm({
                   error={formik.touched.gender && formik.errors.gender}
                   important
                 />
-                <Input
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formik.values.email}
-                  onChange={formik.handleChange}
-                  error={formik.touched.email && formik.errors.email}
-                />
+
                 <Input
                   label="Primary Phone"
                   name="phone_primary"
@@ -312,6 +303,7 @@ export default function PatientRegistrationForm({
                     formik.touched.appointment_date &&
                     formik.errors.appointment_date
                   }
+                  important
                 />
               </div>
             </section>
