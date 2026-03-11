@@ -1285,16 +1285,31 @@ class PurchaseInventoryItemListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ['product_name', 'brand']
-    pagination_class = StandardResultsSetPagination
+    pagination_class = None
     serializer_class = InventoryItemSerializer
 
     def get_queryset(self):
         clinic = getattr(self.request.user, 'clinic', None)
         queryset = InventoryItem.objects.filter(
             use_in_trial=False,
+            quantity_in_stock__gt=0,
             clinic=clinic
         ).exclude(category__in=['Hearing Aid']).order_by('-id')
         return queryset.order_by('-id')
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            return Response({
+                'status': status.HTTP_200_OK,
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status': response.status_code,
+                'message': 'Error listing inventory items.',
+                'errors': response.data
+            }, status=response.status_code)
 
 
 # Wanted a api , for purchase the item with quantity and update the stock in inventory item
