@@ -256,7 +256,7 @@ class ServiceVisitUpdateView(APIView):
 
                     if not created:
                         Bill.objects.filter(id=bill.id).update(
-                            gst_amount=F('gst_amount') + total_gst
+                            gst_amount=total_gst
                         )
                         bill.refresh_from_db()
                     

@@ -529,7 +529,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 
                             if not created:
                                 Bill.objects.filter(id=bill.id).update(
-                                    gst_amount=F('gst_amount') + total_gst_amount
+                                    gst_amount=total_gst_amount
                                 )
                                 bill.refresh_from_db()
 
@@ -890,7 +890,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
 
                             if not created:
                                 Bill.objects.filter(id=bill.id).update(
-                                    gst_amount=F('gst_amount') + total_gst_amount
+                                    gst_amount=total_gst_amount
                                 )
                                 bill.refresh_from_db()
 

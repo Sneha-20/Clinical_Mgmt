@@ -94,7 +94,7 @@ class TrialCompletionView(APIView):
 
                     if not created:
                         Bill.objects.filter(id=bill.id).update(
-                            gst_amount=F('gst_amount') + inventory_item.gst_value
+                            gst_amount=inventory_item.gst_value
                         )
                         bill.refresh_from_db()
 
