@@ -437,11 +437,13 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                         i.id: i for i in InventoryItem.objects.filter(id__in=inventory_ids)
                     }
 
+                    print(purchase_items)
+
                     for item in purchase_items:
 
                         inventory_id = item.get("inventory_item")
                         serial_numbers = item.get("serial_numbers", [])
-                        quantity  = len(serial_numbers)
+                        quantity = len(serial_numbers) if serial_numbers else item.get("quantity")
 
                         print(quantity)
 
@@ -472,7 +474,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                         clinic=current_clinic or patient.clinic,
                                         visit=visit,
                                         inventory_item_id=inventory_id,
-                                        quantity=1,
+                                        quantity=quantity,
                                         inventory_serial=serial_obj,
                                         unit_price=inventory.unit_price,
                                         total_price=inventory.unit_price * 1,
@@ -540,8 +542,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                                     bill=bill,
                                     description=f"Purchase - {purchase.inventory_item.product_name}",
                                     item_type="Purchase",
-                                    cost=purchase.total_price,
-                                    # created_by=current_user
+                                    cost=purchase.unit_price,
+                                    quantity=purchase.quantity,
                                 ) for purchase in p_purchases
                             ])
 
@@ -809,7 +811,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
 
                         inventory_id = item.get("inventory_item")
                         serial_numbers = item.get("serial_numbers", [])
-                        quantity = len(serial_numbers)
+                        quantity = len(serial_numbers) if serial_numbers else item.get("quantity", 1)
 
                         inventory = inventory_map.get(inventory_id)
 
@@ -900,8 +902,8 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                                     bill=bill,
                                     description=f"Purchase - {purchase.inventory_item.product_name}",
                                     item_type="Purchase",
-                                    cost=purchase.total_price,
-                                    # created_by=current_user
+                                    cost=purchase.unit_price,
+                                    quantity=purchase.quantity,
                                 ) for purchase in p_purchases
                             ])
 
@@ -1471,18 +1473,31 @@ class BillItemSerializer(serializers.ModelSerializer):
         return float(obj.cost * obj.quantity)
 
     def get_gst_value(self, obj):
-        if obj.item_type == 'Trial' and obj.trial and obj.trial.device_inventory_id:
-            return obj.trial.device_inventory_id.gst_value
+        quantity = obj.quantity or 1
+        print(quantity)
+
+        # if obj.item_type == 'Trial' and obj.trial and obj.trial.device_inventory_id:
+        #     gst = obj.trial.device_inventory_id.gst_value or 0
+        #     return gst * quantity
+        if obj.item_type == 'Part Used in Service' and obj.bill and hasattr(obj.bill.visit, 'service'):
+            service = obj.bill.visit.service
+            parts = service.parts_used.select_related('inventory_item').all()
+            for part in parts:
+                if part.inventory_item.product_name and part.inventory_item.product_name in obj.description:
+                    gst = part.inventory_item.gst_value or 0
+                    return gst * quantity
         
         if obj.item_type == 'Purchase' and obj.bill and hasattr(obj.bill, 'visit') and obj.bill.visit:
              purchases = obj.bill.visit.purchases.select_related('inventory_item').all()
              
              for p in purchases:
                  if p.inventory_item.product_name and p.inventory_item.product_name in obj.description:
-                     return p.inventory_item.gst_value
+                     gst = p.inventory_item.gst_value or 0
+                     return gst * quantity
 
         if obj.item_type == 'Service' and obj.service_visit:
-            return obj.service_visit.gst_charges
+            gst = obj.service_visit.gst_charges or 0
+            return gst
 
         return 0
 
@@ -2228,11 +2243,11 @@ class ClinicTransactionCreateSerializer(serializers.ModelSerializer):
             total_expense = ClinicTransactions.objects.filter(clinic=clinic, transaction_type='Expense').aggregate(total=models.Sum('amount'))['total'] or 0
             available_balance = total_income - total_expense
 
-            if validated_data['amount'] > available_balance:
-                raise serializers.ValidationError({
-                        "status": status.HTTP_400_BAD_REQUEST,
-                        "error": "Expense amount cannot exceed available balance of {:.2f}".format(available_balance)
-                    }) 
+            # if validated_data['amount'] > available_balance:
+            #     raise serializers.ValidationError({
+            #             "status": status.HTTP_400_BAD_REQUEST,
+            #             "error": "Expense amount cannot exceed available balance of {:.2f}".format(available_balance)
+            #         }) 
         if not clinic:
             raise serializers.ValidationError({
                 "status": status.HTTP_400_BAD_REQUEST,

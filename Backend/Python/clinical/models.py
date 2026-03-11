@@ -217,7 +217,7 @@ class Bill(models.Model):
         if self.visit and getattr(self.visit, 'cost_taken_amount', None):
             cost_taken_amount = Decimal(str(self.visit.cost_taken_amount or 0))
 
-        self.total_amount = total + gst_amount
+        self.total_amount = total
         self.final_amount = total - self.discount_amount - cost_taken_amount + gst_amount
         self.save(update_fields=['total_amount', 'final_amount'])
 
