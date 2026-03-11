@@ -128,7 +128,7 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
 class PurchaseItemSerializer(serializers.Serializer):
     inventory_item = serializers.IntegerField()
     quantity = serializers.IntegerField(required=False)
-    serial_number = serializers.ListField(
+    serial_numbers = serializers.ListField(
         child=serializers.CharField(),
         required=False
     )
@@ -252,7 +252,7 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
             # Validate each purchase item
             for item in purchase_items:
 
-                serial_numbers = item.get("serial_number")
+                serial_numbers = item.get("serial_numbers")
                 quantity = item.get("quantity")
 
                 if serial_numbers:
@@ -440,9 +440,10 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
                     for item in purchase_items:
 
                         inventory_id = item.get("inventory_item")
-                        quantity = item.get("quantity")
+                        serial_numbers = item.get("serial_numbers", [])
+                        quantity  = len(serial_numbers)
+
                         print(quantity)
-                        serial_numbers = item.get("serial_number", [])
 
 
                         inventory = inventory_map.get(inventory_id)
@@ -807,8 +808,8 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     for item in purchase_items:
 
                         inventory_id = item.get("inventory_item")
-                        quantity = item.get("quantity", 1)
-                        serial_numbers = item.get("serial_number")
+                        serial_numbers = item.get("serial_numbers", [])
+                        quantity = len(serial_numbers)
 
                         inventory = inventory_map.get(inventory_id)
 
