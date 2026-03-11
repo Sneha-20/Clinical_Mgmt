@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   X,
-  Upload,
-  FileText,
   ArrowRight,
 } from "lucide-react";
 import useCaseHistory from "@/lib/hooks/useCaseHistory";
@@ -19,80 +18,72 @@ import {
   testRequestedOptions,
 } from "@/lib/utils/constants/staticValue";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
-import Modal from "@/components/ui/Modal";
-import { useRouter } from "next/navigation";
 import CaseHistoryStepper from "@/components/ui/CaseHistoryStepper";
 import TrialGivenForm from "./TrialGivenForm";
 import { getTestTypes } from "@/lib/services/dashboard";
-
-const STEP_KEY = "caseHistoryStep";
+import { current } from "@reduxjs/toolkit";
 
 export default function CaseHistoryForm({ patientId }) {
   const router = useRouter();
-  const [testTypes, setTestTypes] = useState([]);
-  const [loadingTestTypes, setLoadingTestTypes] = useState(false);
+
   const {
     patientsCaseHistory,
-    fileName,
-    testType,
-    testFileList,
     trialDeviceList,
     searchTerm,
     modalList,
     setSelectedModal,
     setSearchTerm,
-    handleDeleteReport,
-    setTestType,
-    setFile,
-    setFileName,
     fetchPatientFormData,
     registerCasehistory,
-    handleFileSubmit,
     registerTrialForm,
+    registerReports,
   } = useCaseHistory();
 
-  const [deleteFileModal, setDeleteFileModal] = useState(false);
-  const [selectedFileId, setSelectedFileId] = useState(null);
-  const [currentStep, setCurrentStep] = useState(1);
-
-  /* ---------------- STEP PERSISTENCE ---------------- */
-
-  useEffect(() => {
-    const savedStep = localStorage.getItem(STEP_KEY);
-    if (savedStep) {
-      setCurrentStep(Number(savedStep));
-    }
-    return () => {
-      localStorage.removeItem(STEP_KEY);
-    };
-  }, []);
-
+  const [testTypes, setTestTypes] = useState([]);
+  const [loadingTestTypes, setLoadingTestTypes] = useState(false);
+  const [currentStep, setCurrentStep] = useState(null); // null until initialized
+  const [reports, setReports] = useState([
+    { report_type: "", report_description: "" },
+  ]);
   const modalOptions = modalList?.map((modal) => ({
     label: modal.name,
     value: modal.id,
   }));
 
-  const handleNextStep = (step) => {
-    setTimeout(() => {
-      if (step === 2) {
-    fetchTestTypesForVisit(patientId);
-      }
-    }, 1000);
-    setCurrentStep(step);
-    localStorage.setItem(STEP_KEY, step);
-  };
-
   const goToDashboard = () => {
-    localStorage.removeItem(STEP_KEY);
     router.push("/dashboard/home");
   };
+
+  // advance to next step - only controlled by backend response
+  const handleNextStep = () => {
+    setCurrentStep((prev) => (typeof prev === "number" ? prev + 1 : prev));
+  };
+
+  // keep local step in sync when backend data arrives
+  useEffect(() => {
+    if (patientsCaseHistory && typeof patientsCaseHistory.step_process !== "undefined") {
+      setCurrentStep(patientsCaseHistory.step_process);
+    }
+  }, [patientsCaseHistory]);
+
 
   useEffect(() => {
     if (patientId) {
       fetchPatientFormData(patientId);
-      fetchTestTypesForVisit(patientId);
     }
-  }, [patientId]);
+  }, [patientId, fetchPatientFormData]);
+
+  // if we fetched existing case history and it contains reports, set them
+  useEffect(() => {
+    if (patientsCaseHistory?.reports && patientsCaseHistory.reports.length) {
+      setReports(
+        patientsCaseHistory.reports.map((r) => ({
+          report_type: r.report_type || "",
+          report_description: r.report_description || "",
+        }))
+      );
+    }
+  }, [patientsCaseHistory]);
 
   const fetchTestTypesForVisit = async (visitId) => {
     try {
@@ -112,6 +103,52 @@ export default function CaseHistoryForm({ patientId }) {
     }
   };
 
+  // handlers for dynamic report fields
+  const handleReportChange = (index, field, value) => {
+    setReports((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], [field]: value };
+      return copy;
+    });
+  };
+
+  const canAddMore = () => {
+    const last = reports[reports.length - 1];
+    return last.report_type && last.report_description;
+  };
+
+  const addMoreReport = () => {
+    if (canAddMore()) {
+      setReports((prev) => [...prev, { report_type: "", report_description: "" }]);
+    }
+  };
+
+  const removeReport = (idx) => {
+    setReports((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const submitReports = async () => {
+    if (reports.some((r) => !r.report_type || !r.report_description)) {
+      alert("Please fill all report fields before submitting.");
+      return;
+    }
+    try {
+      const res = await registerReports({
+        patient_visit: patientId,
+        reports,
+      });
+      setReports([{ report_type: "", report_description: "" }]);
+      // prefer backend-controlled step from response; fallback to refetch
+      if (res && typeof res.step_process !== "undefined") {
+        setCurrentStep(res.step_process);
+      } else {
+        fetchPatientFormData(patientId);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: {
@@ -122,17 +159,21 @@ export default function CaseHistoryForm({ patientId }) {
         patientsCaseHistory?.case_history?.previous_ha_experience || "no",
       red_flags: patientsCaseHistory?.case_history?.red_flags || "",
       test_requested: patientsCaseHistory?.test_requested || [],
+      report_description: patientsCaseHistory?.report_description || ""
     },
     validationSchema: CaseHistorySchema,
-    onSubmit: (values) => {
-      registerCasehistory({
+    onSubmit: async (values) => {
+      const res = await registerCasehistory({
         ...values,
         patientId,
         visit: patientsCaseHistory?.visit_id,
       });
-      handleNextStep(2);
+      fetchTestTypesForVisit(patientId);
+      setCurrentStep(res.step_process);
     },
   });
+
+  
 
   return (
     <Card className="w-full my-4">
@@ -141,9 +182,20 @@ export default function CaseHistoryForm({ patientId }) {
       </CardHeader>
       <CaseHistoryStepper currentStep={currentStep} />
       <CardContent>
+        {/* Show loader while initializing step */}
+        {currentStep === null && (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-slate-500">Loading case history...</p>
+          </div>
+        )}
+
         {/* ---------------- STEP 1 ---------------- */}
         {currentStep === 1 && (
           <form onSubmit={formik.handleSubmit} className="space-y-4">
+            {formik.submitCount > 0 && Object.keys(formik.errors).length > 0 && (
+              <p className="text-red-500">Please complete all required fields.</p>
+            )}
+
             <TextArea
               label="Medical History"
               name="medical_history"
@@ -162,15 +214,20 @@ export default function CaseHistoryForm({ patientId }) {
 
             <DropDown
               label="Experience"
+              name="previous_ha_experience"
               options={previousHearingAidsOptions}
               value={formik.values.previous_ha_experience}
               onChange={(n, v) =>
                 formik.setFieldValue("previous_ha_experience", v)
               }
+              onBlur={formik.handleBlur}
+              error={
+                formik.touched.previous_ha_experience &&
+                formik.errors.previous_ha_experience
+              }
             />
 
             <TextArea label="Red Flags" name="red_flags" formik={formik} />
-
             <div className="grid grid-cols-2 gap-2">
               {testRequestedOptions.map((test) => (
                 <CommonCheckbox
@@ -188,62 +245,54 @@ export default function CaseHistoryForm({ patientId }) {
                 />
               ))}
             </div>
-
             <Button type="submit">Save & Continue</Button>
           </form>
         )}
 
         {/* ---------------- STEP 2 ---------------- */}
         {currentStep === 2 && (
-          <div className="space-y-4">
-            <DropDown
-              label="Select Test Type"
-              name="testType"
-              options={testTypes}
-              value={testType}
-              onChange={(n, v) => setTestType(v)}
-              disabled={loadingTestTypes}
-              placeholder={loadingTestTypes ? "Loading test types..." : "Select test type"}
-            />
-
-            <FileUploadField
-              label="Select Test Report"
-              fileName={fileName}
-              setFileName={setFileName}
-              onFileChange={(file) => setFile(file)}
-            />
-
-            <Button variant="link" onClick={handleFileSubmit}>
-              <Upload className="h-4 w-4 mr-1" />
-              Upload Report
-            </Button>
-
-            {testFileList.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {testFileList.map((file) => (
-                  <div
-                    key={file.id}
-                    className="flex items-center gap-2 border p-2 rounded"
+          <div>
+            {reports.map((rep, idx) => (
+              <div key={idx} className="relative grid grid-cols-1 gap-6 items-end">
+                <DropDown
+                  label="Test Type"
+                  options={testTypes}
+                  value={rep.report_type}
+                  disabled={loadingTestTypes}
+                  placeholder={loadingTestTypes ? "Loading test types..." : "Select test type"}
+                  onChange={(n, v) => handleReportChange(idx, "report_type", v)}
+                />
+                <TextArea
+                  label="Description"
+                  value={rep.report_description}
+                  onChange={(e) => handleReportChange(idx, "report_description", e.target.value)}
+                />
+                {reports.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeReport(idx)}
+                    className="text-red-500 p-2 absolute right-[130px] bottom-[-38px] underline"
                   >
-                    <FileText className="h-4 w-4" />
-                    <a href={file.file_url} target="_blank">
-                      {file.file_type}
-                    </a>
-                    <X
-                      className="h-4 w-4 text-red-500 cursor-pointer"
-                      onClick={() => {
-                        setSelectedFileId(file.id);
-                        setDeleteFileModal(true);
-                      }}
-                    />
-                  </div>
-                ))}
+                   Remove
+                  </button>
+                 )} 
               </div>
-            )}
+            ))}
+
+            <div>
+              <Button
+                variant="link"
+                className="w-full justify-end"
+                onClick={addMoreReport}
+                disabled={!canAddMore()}
+              >
+                Add more reports
+              </Button>
+            </div>
 
             <div className="flex gap-3">
-              <Button onClick={() => handleNextStep(3)}>
-                Add Trial <ArrowRight className="ml-1 h-4 w-4" />
+              <Button onClick={submitReports}>
+                Submit Report <ArrowRight className="ml-1 h-4 w-4" />
               </Button>
 
               <Button variant="secondary" onClick={goToDashboard}>
@@ -270,39 +319,7 @@ export default function CaseHistoryForm({ patientId }) {
           </div>
         )}
       </CardContent>
-
-      <Modal
-        header="Delete test report"
-        isModalOpen={deleteFileModal}
-        onClose={() => setDeleteFileModal(false)}
-        onSubmit={() => {
-          handleDeleteReport(selectedFileId);
-          setDeleteFileModal(false);
-        }}
-      >
-        Are you sure?
-      </Modal>
     </Card>
   );
 }
 
-/* ---------------- FILE UPLOAD ---------------- */
-
-function FileUploadField({ fileName, setFileName, label, onFileChange }) {
-  return (
-    <label className="border-dashed border p-4 flex flex-col items-center cursor-pointer">
-      <Upload />
-      <span>{label}</span>
-      {fileName && <span className="text-xs">{fileName}</span>}
-      <input
-        type="file"
-        hidden
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          onFileChange(file);
-          setFileName(file?.name || "");
-        }}
-      />
-    </label>
-  );
-}

@@ -179,7 +179,6 @@ export default function TrialGivenForm({
             value={formik.values.srt_before}
             onChange={formik.handleChange}
             error={formik.errors.srt_before}
-            important
           />
 
           <Input
@@ -188,7 +187,6 @@ export default function TrialGivenForm({
             value={formik.values.sds_before}
             onChange={formik.handleChange}
             error={formik.errors.sds_before}
-            important
           />
 
           <Input
@@ -197,14 +195,13 @@ export default function TrialGivenForm({
             value={formik.values.ucl_before}
             onChange={formik.handleChange}
             error={formik.errors.ucl_before}
-            important
           />
         </div>
       </div>
 
       {/* Notes */}
       <div className="space-y-4">
-        <TextArea label="Gain Settings*" name="gain_settings" formik={formik} />
+        <TextArea label="Gain Settings" name="gain_settings" formik={formik} />
 
         <TextArea
           label="Patient Response*"
@@ -213,7 +210,7 @@ export default function TrialGivenForm({
         />
 
         <TextArea
-          label="Counselling Notes*"
+          label="Counselling Notes"
           name="counselling_notes"
           formik={formik}
         />
@@ -254,7 +251,7 @@ export default function TrialGivenForm({
           />
 
           <Input
-            label="Discount Offered (%)"
+            label="Discount Offered"
             name="discount_offered"
             value={formik.values.discount_offered}
             onChange={formik.handleChange}

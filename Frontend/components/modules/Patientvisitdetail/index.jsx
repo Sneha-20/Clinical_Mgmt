@@ -182,10 +182,10 @@ export default function PatientVisitDetail({ visitId }) {
               </p>
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          {/* <CardContent>
             {testReports.reports?.length > 0 ? (
               <div className="space-y-3">
-                {testReports.reports.map((report) => (
+                {testReports?.reports.map((report) => (
                   <div
                     key={report.id}
                     className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
@@ -221,7 +221,7 @@ export default function PatientVisitDetail({ visitId }) {
                 No reports uploaded yet
               </p>
             )}
-          </CardContent>
+          </CardContent> */}
         </Card>
       </div>
     </div>

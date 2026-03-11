@@ -3,14 +3,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import DropDown from "@/components/ui/dropdown";
-import { getTgaServiceDetails, updateTgaService, getPartsUsed } from "@/lib/services/dashboard";
+import {
+  getTgaServiceDetails,
+  updateTgaService,
+  getPartsUsed,
+} from "@/lib/services/dashboard";
 import { showToast } from "@/components/ui/toast";
-import { tgaServiceStatusOptions } from "@/lib/utils/constants/staticValue";
-import { routes } from "@/lib/utils/constants/route";
-import TextArea from '@/components/ui/TextArea'
+import TextArea from "@/components/ui/TextArea";
+import Backbutton from "@/components/ui/Backbutton";
 
-export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) {
+export default function ServiceDetails({ serviceId }) {
   const [service, setService] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -19,6 +21,7 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
     parts_used: [],
     charges_collect_for_service: "",
     rtc_date: "",
+    gst_charges: "",
   });
   const [partsOptions, setPartsOptions] = useState([]);
 
@@ -91,9 +94,13 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
     try {
       const payload = {
         action_taken: formData.action_taken,
-        parts_used: formData.parts_used.filter(part => part.inventory_item_id),
-        charges_collect_for_service: parseFloat(formData.charges_collect_for_service) || 0,
+        parts_used: formData.parts_used.filter(
+          (part) => part.inventory_item_id,
+        ),
+        charges_collect_for_service:
+          parseFloat(formData.charges_collect_for_service) || 0,
         rtc_date: formData.rtc_date,
+        gst_charges: parseFloat(formData.gst_charges) || 0,
       };
 
       await updateTgaService(serviceId, payload);
@@ -146,37 +153,21 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={onBack}>
-            ← Back to List
-          </Button>
+          <Backbutton />
           <div>
-            {/* <h2 className="text-xl font-semibold text-gray-900">
-              Service Request #{service.service_id}
-            </h2> */}
             <p className="text-gray-600">
-              Created on {new Date(service.action_taken_on).toLocaleDateString()}
+              Created on{" "}
+              {new Date(service.action_taken_on).toLocaleDateString()}
             </p>
           </div>
-        </div>
-        <div className="flex space-x-3">
-          {editing ? (
-            <>
-              <Button variant="outline" onClick={handleCancel} disabled={loading}>
-                Cancel
-              </Button>
-              <Button onClick={handleSave} disabled={loading}>
-                {loading ? "Saving..." : "Save Changes"}
-              </Button>
-            </>
-          ) : (
-            <Button onClick={() => setEditing(true)}>Update Service</Button>
-          )}
         </div>
       </div>
 
       {/* Service Information */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Service Information</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Service Information
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -218,7 +209,9 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
               Action Taken On
             </label>
             <div className="text-gray-900">
-              {service.action_taken_on ? new Date(service.action_taken_on).toLocaleDateString() : "Not yet"}
+              {service.action_taken_on
+                ? new Date(service.action_taken_on).toLocaleDateString()
+                : "Not yet"}
             </div>
           </div>
         </div>
@@ -227,13 +220,17 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
       {/* Device Information */}
       {service.device_info && (
         <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Device Information</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Device Information
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Product Name
               </label>
-              <div className="text-gray-900">{service.device_info.product_name}</div>
+              <div className="text-gray-900">
+                {service.device_info.product_name}
+              </div>
             </div>
 
             <div>
@@ -254,7 +251,9 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Serial Number
               </label>
-              <div className="text-gray-900">{service.device_info.serial_number}</div>
+              <div className="text-gray-900">
+                {service.device_info.serial_number}
+              </div>
             </div>
 
             <div>
@@ -262,44 +261,11 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
                 Purchase Date
               </label>
               <div className="text-gray-900">
-                {service.device_info.purchase_date 
-                  ? new Date(service.device_info.purchase_date).toLocaleDateString() 
+                {service.device_info.purchase_date
+                  ? new Date(
+                      service.device_info.purchase_date,
+                    ).toLocaleDateString()
                   : "Not available"}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cost Summary */}
-      {(service.total_parts_cost || service.total_service_cost || service.grand_total) && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Cost Summary</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Parts Cost
-              </label>
-              <div className="text-lg font-semibold text-gray-900">
-                ${service.total_parts_cost?.toFixed(2) || "0.00"}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Service Cost
-              </label>
-              <div className="text-lg font-semibold text-gray-900">
-                ${service.total_service_cost?.toFixed(2) || "0.00"}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Grand Total
-              </label>
-              <div className="text-lg font-bold text-blue-600">
-                ${service.grand_total?.toFixed(2) || "0.00"}
               </div>
             </div>
           </div>
@@ -308,13 +274,35 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
 
       {/* Service Update Form */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Service Update</h3>
-        
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Service Update
+          </h3>
+          <div className="flex space-x-3">
+            {editing ? (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? "Saving..." : "Save Changes"}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => setEditing(true)}>Update Service</Button>
+            )}
+          </div>
+        </div>
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Action Taken
             </label>
+
             {editing ? (
               <TextArea
                 className="w-full border border-gray-300 rounded-md p-2"
@@ -339,7 +327,7 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
                 {formData.parts_used.map((part, index) => (
                   <div key={index} className="flex items-center space-x-3">
                     <select
-                      className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                      className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-[40px]"
                       value={part.inventory_item_id}
                       onChange={(e) =>
                         updatePart(index, "inventory_item_id", e.target.value)
@@ -347,8 +335,12 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
                     >
                       <option value="">Select a part</option>
                       {partsOptions.map((option) => (
-                        <option key={option.inventory_item_id} value={option.inventory_item_id}>
-                          {option.product_name} - {option.brand} ({option.model_type}) - ₹{option.unit_price}
+                        <option
+                          key={option.inventory_item_id}
+                          value={option.inventory_item_id}
+                        >
+                          {option.product_name} - {option.brand} (
+                          {option.model_type}) - ₹{option.unit_price}
                         </option>
                       ))}
                     </select>
@@ -356,7 +348,13 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
                       type="number"
                       placeholder="Quantity"
                       value={part.quantity}
-                      onChange={(e) => updatePart(index, "quantity", parseInt(e.target.value) || 1)}
+                      onChange={(e) =>
+                        updatePart(
+                          index,
+                          "quantity",
+                          parseInt(e.target.value) || 1,
+                        )
+                      }
                       className="w-24"
                     />
                     <Button
@@ -383,29 +381,42 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
                 {service.parts_used && service.parts_used.length > 0 ? (
                   <div className="space-y-3">
                     {service.parts_used.map((part, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-3">
+                      <div
+                        key={index}
+                        className="border border-gray-200 rounded-lg p-3"
+                      >
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div>
-                            <span className="text-sm font-medium text-gray-500">Part Name:</span>
-                            <div className="text-gray-900">{part.inventory_item_name}</div>
-                          </div>
-                          <div>
-                            <span className="text-sm font-medium text-gray-500">Brand/Model:</span>
+                            <span className="text-sm font-medium text-gray-500">
+                              Part Name:
+                            </span>
                             <div className="text-gray-900">
-                              {part.inventory_item_brand} {part.inventory_item_model}
+                              {part.inventory_item_name}
                             </div>
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-gray-500">Quantity:</span>
+                            <span className="text-sm font-medium text-gray-500">
+                              Brand/Model:
+                            </span>
+                            <div className="text-gray-900">
+                              {part.inventory_item_brand}{" "}
+                              {part.inventory_item_model}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-gray-500">
+                              Quantity:
+                            </span>
                             <div className="text-gray-900">{part.quantity}</div>
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-gray-500">Total Cost:</span>
-                            <div className="text-gray-900">${part.total_cost?.toFixed(2)}</div>
+                            <span className="text-sm font-medium text-gray-500">
+                              Total Cost:
+                            </span>
+                            <div className="text-gray-900">
+                              {part.total_cost?.toFixed(2)}
+                            </div>
                           </div>
-                        </div>
-                        <div className="mt-2 text-xs text-gray-500">
-                          Inventory Item ID: {part.inventory_item_id} | Part ID: {part.part_id}
                         </div>
                       </div>
                     ))}
@@ -417,7 +428,7 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Charges Collected for Service
@@ -425,18 +436,35 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
               {editing ? (
                 <Input
                   type="number"
-                  step="0.01"
                   placeholder="0.00"
                   value={formData.charges_collect_for_service}
-                  onChange={(e) => updateField("charges_collect_for_service", e.target.value)}
+                  onChange={(e) =>
+                    updateField("charges_collect_for_service", e.target.value)
+                  }
                 />
               ) : (
                 <div className="text-gray-900">
-                  ${service.charges_collect_for_service || "0.00"}
+                  {service.charges_collected || "0.00"}
                 </div>
               )}
             </div>
-
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                GST Charge
+              </label>
+              {editing ? (
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={formData.gst_charges}
+                  onChange={(e) => updateField("gst_charges", e.target.value)}
+                />
+              ) : (
+                <div className="text-gray-900">
+                  {service.gst_charges || "0.00"}
+                </div>
+              )}
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 RTC Date
@@ -452,6 +480,38 @@ export default function ServiceDetails({ serviceId, onBack, onServiceUpdated }) 
                   {service.rtc_date || "Not set"}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Cost Summary</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Total Parts Cost
+            </label>
+            <div className="text-lg font-semibold text-gray-900">
+              {service.total_parts_cost?.toFixed(2) || "--"}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Total Service Cost
+            </label>
+            <div className="text-lg font-semibold text-gray-900">
+              {service.total_service_cost?.toFixed(2) || "--"}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Grand Total
+            </label>
+            <div className="text-lg font-bold text-blue-600">
+              {service.grand_total?.toFixed(2) || "--"}
             </div>
           </div>
         </div>

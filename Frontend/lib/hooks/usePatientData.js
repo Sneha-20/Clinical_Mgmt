@@ -13,13 +13,16 @@ import { startLoading, stopLoading } from "../redux/slice/uiSlice";
 import { showToast } from "@/components/ui/toast";
 import { useDispatch } from "react-redux";
 import { getDashboardStats } from "@/lib/services/dashboard";
+import {
+  getInventorySerialList,
+  getPurchaseInventoryItems,
+} from "../services/inventory";
 
 export default function usePatientData() {
-   const dispatch = useDispatch();
+  const dispatch = useDispatch();
   const router = useRouter();
 
   const userprofile = routes.pages.userptofile;
-
 
   // Stats
   const [stats, setStats] = useState({
@@ -41,6 +44,8 @@ export default function usePatientData() {
   const [patients, setPatients] = useState([]);
   const [todayPatients, setTodayPatients] = useState([]);
   const [doctorList, setDoctorList] = useState([]);
+  const [inventoryItems, setInventoryItems] = useState([]);
+  const [loadingInventory, setLoadingInventory] = useState(false);
 
   // Loading
   const [loadingToday, setLoadingToday] = useState(false);
@@ -52,29 +57,26 @@ export default function usePatientData() {
     total: { currentPage: 1, totalPages: 1, totalItems: 0 },
   });
 
-    const fetchStats = async () => {
-      try {
-        const data = await getDashboardStats();
-        console.log("Stats data:", data);
-        setStats({
-          totalPatients: data.total_patients || 0,
-          todayVisits: data.todays_visits || 0,
-          pendingServices: data.pending_services || 0,
-          followUpVisits: data.followup_visits || 0,
-        });
-  
-  
-      } catch (err) {
-        console.error("Stats fetch error:", err);
-        // setError(err.message || "Failed to fetch statistics");
-      }
-    };
+  const fetchStats = async () => {
+    try {
+      const data = await getDashboardStats();
+      console.log("Stats data:", data);
+      setStats({
+        totalPatients: data.total_patients || 0,
+        todayVisits: data.todays_visits || 0,
+        pendingServices: data.pending_services || 0,
+        followUpVisits: data.followup_visits || 0,
+      });
+    } catch (err) {
+      console.error("Stats fetch error:", err);
+      // setError(err.message || "Failed to fetch statistics");
+    }
+  };
 
-    useEffect(() => {
+  useEffect(() => {
     fetchStats();
   }, []);
 
-    
   // MAP
   const mapPatients = useCallback(
     (list = []) =>
@@ -88,7 +90,7 @@ export default function usePatientData() {
         status: p.status || "Test Pending",
         appointmentDate: p.appointment_date || "-",
       })),
-    []
+    [],
   );
 
   // ------------------------------------------
@@ -107,7 +109,7 @@ export default function usePatientData() {
   // FETCH TOTAL PATIENTS
   // ------------------------------------------
   const fetchTotalPatients = useCallback(
-    async ({ page = 1, search = "",service="",status="" } = {}) => {
+    async ({ page = 1, search = "", service = "", status = "" } = {}) => {
       setLoadingTotal(true);
       try {
         const res = await getPatientList({ page, search, service, status });
@@ -126,17 +128,22 @@ export default function usePatientData() {
         setLoadingTotal(false);
       }
     },
-    [mapPatients]
+    [mapPatients],
   );
 
   // ------------------------------------------
   // FETCH TODAY PATIENTS
   // ------------------------------------------
   const fetchTodayPatients = useCallback(
-    async ({ page = "", search = "", service= "",status="" } = {}) => {
+    async ({ page = "", search = "", service = "", status = "" } = {}) => {
       setLoadingToday(true);
       try {
-        const res = await getTodayPatientList({ page, search, service, status });
+        const res = await getTodayPatientList({
+          page,
+          search,
+          service,
+          status,
+        });
 
         setTodayPatients(mapPatients(res.patients || []));
 
@@ -154,7 +161,7 @@ export default function usePatientData() {
         setLoadingToday(false);
       }
     },
-    [mapPatients]
+    [mapPatients],
   );
   // ------------------------------------------
   // LOAD ON MOUNT
@@ -167,23 +174,43 @@ export default function usePatientData() {
   // ------------------------------------------
   // TAB SWITCH
   // ------------------------------------------
-useEffect(() => {
-  if (!serviceType) return;
-  if (activeTab === "today") {
-    fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus });
-  } else {
-    fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus });
-  }
-}, [serviceType,activeTab,visitStatus]);
+  useEffect(() => {
+    if (!serviceType) return;
+    if (activeTab === "today") {
+      fetchTodayPatients({
+        page: 1,
+        search: searchTerm,
+        service: serviceType,
+        status: visitStatus,
+      });
+    } else {
+      fetchTotalPatients({
+        page: 1,
+        search: searchTerm,
+        service: serviceType,
+        status: visitStatus,
+      });
+    }
+  }, [serviceType, activeTab, visitStatus]);
 
   // ------------------------------------------
   // SEARCH
   // ------------------------------------------
   useEffect(() => {
     if (activeTab === "today") {
-      fetchTodayPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus});
+      fetchTodayPatients({
+        page: 1,
+        search: searchTerm,
+        service: serviceType,
+        status: visitStatus,
+      });
     } else {
-      fetchTotalPatients({ page: 1, search: searchTerm, service:serviceType, status:visitStatus});
+      fetchTotalPatients({
+        page: 1,
+        search: searchTerm,
+        service: serviceType,
+        status: visitStatus,
+      });
     }
   }, [searchTerm]);
 
@@ -224,14 +251,14 @@ useEffect(() => {
         message: data.status || "Registration Successful",
       });
       fetchTodayPatients({ page: 1 });
-       dispatch(stopLoading());
+      dispatch(stopLoading());
     } catch (error) {
-      console.log("ttttt",error)
+      console.log("ttttt", error);
       showToast({
         type: "error",
         message: error?.error || "Registration Failed",
       });
-       dispatch(stopLoading());
+      dispatch(stopLoading());
     }
   };
 
@@ -239,10 +266,9 @@ useEffect(() => {
   // ADD VISIT
   // ------------------------------------------
   const handleAddVisit = async (data) => {
-    console.log("tttttt")
-     dispatch(startLoading());
+    dispatch(startLoading());
     try {
-     await addNewVisit(data);
+      await addNewVisit(data);
       showToast({
         type: "success",
         message: data.status || "Registration Successful",
@@ -250,14 +276,86 @@ useEffect(() => {
       fetchTodayPatients({ page: 1 });
       dispatch(stopLoading());
     } catch (error) {
-      console.log("ttttt",error)
+      console.log("ttttt", error);
       showToast({
         type: "error",
         message: error?.error || "Registration Failed",
       });
-       dispatch(stopLoading());
+      dispatch(stopLoading());
     }
-    
+  };
+
+  const fetchInventoryItems = async () => {
+    try {
+      setLoadingInventory(true);
+      const response = await getPurchaseInventoryItems();
+      const itemOptions = response.map((item) => ({
+        label: `${item.category} - ${item.product_name} (${item.brand_name})`,
+        value: item.id,
+        stock_type: item.stock_type,
+      }));
+      setInventoryItems(itemOptions);
+    } catch (error) {
+      console.error("Error fetching inventory items:", error);
+      showToast({
+        type: "error",
+        message: "Failed to fetch inventory items",
+      });
+    } finally {
+      setLoadingInventory(false);
+    }
+  };
+  useEffect(() => {
+    fetchInventoryItems();
+  }, []);
+
+  const fetchSerialsForItem = async (
+    inventoryItemId,
+    showAvailableOnly = false,
+  ) => {
+    try {
+      console.log("showAvailableOnly", showAvailableOnly);
+      const params = {
+        inventory_item: inventoryItemId,
+        show_available_only: showAvailableOnly,
+      };
+      const response = await getInventorySerialList(params);
+      const serialOptions = response.data.map((serial) => {
+        const serialNumber =
+          typeof serial === "string" ? serial : serial.serial_number;
+        return {
+          label: serialNumber,
+          value: serialNumber,
+        };
+      });
+      return serialOptions;
+    } catch (error) {
+      console.error("Error fetching serials:", error);
+      showToast({
+        type: "error",
+        message: "Failed to fetch serial numbers",
+      });
+      return [];
+    }
+  };
+
+  const calculateAgeFromDob = (dob) => {
+    if (!dob) return 0;
+
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age < 1 ? 0 : age;
   };
 
   // ------------------------------------------
@@ -283,6 +381,8 @@ useEffect(() => {
     patients,
     todayPatients,
     doctorList,
+    inventoryItems,
+    loadingInventory,
 
     loadingToday,
     loadingTotal,
@@ -292,10 +392,12 @@ useEffect(() => {
 
     goToNextPage,
     goToPreviousPage,
+    calculateAgeFromDob,
 
     handleAddPatient,
     handleAddVisit,
     handleViewProfile,
+    fetchSerialsForItem,
     refetch: fetchStats,
   };
 }

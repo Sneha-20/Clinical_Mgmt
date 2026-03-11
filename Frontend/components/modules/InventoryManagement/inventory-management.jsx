@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, AlertTriangle, TrendingDown, List } from "lucide-react";
+import { Plus, AlertTriangle, TrendingDown, List, Trash2 } from "lucide-react";
 import useInventory from "@/lib/hooks/useInventory";
 import AddProductModal from "./AddProductModal";
 import AddStockModal from "./AddStockModal";
@@ -28,8 +28,8 @@ export default function InventoryManagement() {
     criticalItemCount,
     lowItemCount,
     selectedClinic,
-     showTrial, 
-     setShowTrial,
+    showTrial,
+    setShowTrial,
     changeTab,
     changeClinic,
     fetchBrands,
@@ -37,12 +37,12 @@ export default function InventoryManagement() {
     createItem,
     addStock,
     updateItem,
+    deleteItem,
     fetchInventoryItems,
     changeFilter,
     createNewBrand,
     createNewModel,
   } = useInventory();
-
 
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showAddStockModal, setShowAddStockModal] = useState(false);
@@ -57,7 +57,7 @@ export default function InventoryManagement() {
       value: clinic.id,
     })) || []),
   ];
-  
+
   const isSelectedClinicMain =
     clinics?.find((clinic) => clinic.id === selectedClinic)
       ?.is_main_inventory == true
@@ -116,6 +116,16 @@ export default function InventoryManagement() {
     }
   };
 
+  const handleDeleteClick = async (item) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${item.product_name}"? This action cannot be undone.`,
+    );
+    if (!confirmed) return;
+    setIsSubmitting(true);
+    await deleteItem(item.id);
+    setIsSubmitting(false);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
@@ -166,7 +176,7 @@ export default function InventoryManagement() {
             <List className="w-5 sm:w-6 h-5 sm:h-6 text-sky-500 flex-shrink-0" />
             <div>
               <p className="font-semibold text-xs sm:text-sm text-sky-900">
-                {pagination.totalItems || inventoryItems.length} Items
+                {criticalItemCount + lowItemCount} Items
               </p>
               <p className="text-xs text-sky-700">View all inventory items</p>
             </div>
@@ -221,8 +231,12 @@ export default function InventoryManagement() {
         <CardHeader className="pb-3 sm:pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg sm:text-xl">Inventory Items</CardTitle>
-              <CardDescription className="text-xs sm:text-sm">Current stock status and product information</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">
+                Inventory Items
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm">
+                Current stock status and product information
+              </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -232,17 +246,19 @@ export default function InventoryManagement() {
                 //   setShowTrial(false);
                 //   await fetchInventoryItems(1, filterStatus, selectedClinic, false);
                 // }}
-                className={`px-3 py-1 rounded-t-md border-b-2 ${!showTrial ? 'border-primary bg-white' : 'border-transparent bg-transparent text-muted-foreground'}`}>
+                className={`px-3 py-1 rounded-t-md border-b-2 ${!showTrial ? "border-primary bg-white" : "border-transparent bg-transparent text-muted-foreground"}`}
+              >
                 Inventory
               </button>
               <button
                 type="button"
-                 onClick={() => changeTab(true)}
+                onClick={() => changeTab(true)}
                 // onClick={async () => {
                 //   setShowTrial(true);
                 //   await fetchInventoryItems(1, filterStatus, selectedClinic, true);
                 // }}
-                className={`px-3 py-1 rounded-t-md border-b-2 ${showTrial ? 'border-primary bg-white' : 'border-transparent bg-transparent text-muted-foreground'}`}>
+                className={`px-3 py-1 rounded-t-md border-b-2 ${showTrial ? "border-primary bg-white" : "border-transparent bg-transparent text-muted-foreground"}`}
+              >
                 Trial Items
               </button>
             </div>
@@ -279,6 +295,9 @@ export default function InventoryManagement() {
                     <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium hidden md:table-cell">
                       Unit Price
                     </th>
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium hidden md:table-cell">
+                      GST Value
+                    </th>
                     <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
                       Status
                     </th>
@@ -287,7 +306,6 @@ export default function InventoryManagement() {
                         Actions
                       </th>
                     )}
-                   
                   </tr>
                 </thead>
                 <tbody>
@@ -329,6 +347,9 @@ export default function InventoryManagement() {
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3 hidden md:table-cell">
                           ₹{parseFloat(item.unit_price || 0).toFixed(2)}
                         </td>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3 hidden md:table-cell">
+                          ₹{item.gst_value || "0"}
+                        </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
@@ -347,23 +368,34 @@ export default function InventoryManagement() {
                           </span>
                         </td>
                         {isSelectedClinicMain && (
-                          <td className="text-center py-2 sm:py-3 px-2 sm:px-3 space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAddStockClick(item)}
-                              className="text-xs"
-                            >
-                              Add Stock
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditClick(item)}
-                              className="text-xs"
-                            >
-                              Edit
-                            </Button>
+                          <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleAddStockClick(item)}
+                                className="text-xs"
+                              >
+                                Add Stock
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditClick(item)}
+                                className="text-xs"
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteClick(item)}
+                                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                disabled={isSubmitting}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
                           </td>
                         )}
                       </tr>

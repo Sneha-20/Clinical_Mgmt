@@ -1,13 +1,11 @@
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "../redux/slice/uiSlice";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { showToast } from "@/components/ui/toast";
 import {
   addCaseHistory,
-  addTestFile,
   addTrialForm,
-  deleteTestReport,
-  getAllTestFile,
+  createReports,
   getModalList,
   getpatientHistoryById,
   getTrialDevice,
@@ -18,19 +16,14 @@ export default function useCaseHistory() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [patientsCaseHistory, setPatientCaseHistory] = useState(null);
-  const [testType, setTestType] = useState(null);
-  const [file, setFile] = useState(null);
-  const [fileName, setFileName] = useState(null);
-  const [testFileList, setTestFileList] = useState([]);
-  const [visitId, setVisitId] = useState(null);
+  const [testReports, setTestReports] = useState([]);
   const [trialDeviceList, setTrialDeviceList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalList, setModalList] = useState([]);
   const [selectedModal, setSelectedModal] = useState(null);
 
-  const fetchPatientFormData = async (id) => {
+  const fetchPatientFormData = useCallback(async (id) => {
     if (!id) return;
-    setVisitId(id);
     dispatch(startLoading());
     try {
       const res = await getpatientHistoryById(id);
@@ -40,9 +33,9 @@ export default function useCaseHistory() {
     } finally {
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
-  const fetchModalList = async () => {
+  const fetchModalList = useCallback(async () => {
     try {
       const res = await getModalList();
       console.log("Modal List Response:", res);
@@ -50,21 +43,19 @@ export default function useCaseHistory() {
     } catch (e) {
       console.log("Total fetch error:", e);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchModalList();
   }, []);
   
 
-  const fetchTrialDeviceList = async ({ search }) => {
-    console.log("searchhhhh", search)
+  const fetchTrialDeviceList = useCallback(async ({ search }) => {
     try {
       const res = await getTrialDevice({
         serial_number: search,
         modal_id: selectedModal,
       });
-      console.log("Trial Device List Response:", res);
       setTrialDeviceList(res);
     } catch (err) {
       showToast({
@@ -72,7 +63,7 @@ export default function useCaseHistory() {
         message: "Failed to fetch trial device list",
       });
     }
-  };
+  }, [selectedModal]);
 
   useEffect(() => {
     if (selectedModal) {
@@ -80,7 +71,7 @@ export default function useCaseHistory() {
     }
   }, [searchTerm, selectedModal]);
 
-  const registerTrialForm = async (data) => {
+  const registerTrialForm = useCallback(async (data) => {
     dispatch(startLoading());
     try {
       await addTrialForm(data);
@@ -96,17 +87,18 @@ export default function useCaseHistory() {
       });
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
-  const registerCasehistory = async (data) => {
+  const registerCasehistory = useCallback(async (data) => {
     dispatch(startLoading());
     try {
-      await addCaseHistory(data);
+      const res = await addCaseHistory(data);
       showToast({
         type: "success",
         message: data.status || "Registration Successful",
       });
       dispatch(stopLoading());
+      return res;
     } catch (err) {
       showToast({
         type: "error",
@@ -114,96 +106,40 @@ export default function useCaseHistory() {
       });
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
-  const handleFileSubmit = async () => {
-    if (!file || !testType) {
-      showToast({
-        type: "error",
-        message: "Please select test type and file",
-      });
-      return;
-    }
+  const registerReports = useCallback(async (data) => {
     dispatch(startLoading());
     try {
-      const formData = new FormData();
-      formData.append("patient_visit", visitId);
-      formData.append("file_type", testType);
-      formData.append("file", file);
-      const res = await addTestFile(formData);
+      const res = await createReports(data);
       showToast({
         type: "success",
-        message: res?.message || "File uploaded successfully",
+        message: "Reports saved successfully",
       });
-
-      // Reset
-      setFile(null);
-      setFileName(null);
-      setTestType(null);
-      setIsModalOpen(false);
-      fetchTestFile();
+      dispatch(stopLoading());
+      return res;
     } catch (err) {
       showToast({
         type: "error",
-        message: err?.error || "Upload failed",
+        message: err?.error || "Failed to save reports",
       });
-    } finally {
       dispatch(stopLoading());
     }
-  };
+  }, [dispatch]);
 
-  const fetchTestFile = async () => {
-    if (!visitId) return;
-    try {
-      const res = await getAllTestFile(visitId);
-      setTestFileList(res);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  const handleDeleteReport = async (fileId) => {
-    try {
-      const res = await deleteTestReport(fileId);
-      showToast({
-        type: "success",
-        message: res?.message || "File deleted successfully",
-      });
-      fetchTestFile();
-    } catch (err) {
-      showToast({
-        type: "error",
-        message: err?.message || "Failed to delete file ",
-      });
-      console.log(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchTestFile();
-  }, []);
-  console.log("selected Modal", selectedModal);
 
   return {
     patientsCaseHistory,
-    fileName,
-    file,
-    testType,
     isModalOpen,
-    testFileList,
     trialDeviceList,
     searchTerm,
     modalList,
     setSearchTerm,
     setSelectedModal,
-    handleDeleteReport,
     setIsModalOpen,
-    setTestType,
-    setFile,
-    handleFileSubmit,
-    setFileName,
     fetchPatientFormData,
     registerCasehistory,
     registerTrialForm,
+    registerReports,
   };
 }

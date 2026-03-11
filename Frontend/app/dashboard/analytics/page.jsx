@@ -93,14 +93,14 @@ export default function AnalyticsPage() {
         </div>
 
         <div className="flex items-end gap-3">
-          <div className="w-44">
+          <div className="w-[280px]">
             <CommonDatePicker
               selectedDate={startDate ? new Date(startDate) : null}
               onChange={(d) => setStartDate(d ? format(d, 'yyyy-MM-dd') : '')}
               maxDate={new Date()}
             />
           </div>
-          <div className="w-44">
+          <div className="w-[280px]">
             <CommonDatePicker
               selectedDate={endDate ? new Date(endDate) : null}
               onChange={(d) => setEndDate(d ? format(d, 'yyyy-MM-dd') : '')}

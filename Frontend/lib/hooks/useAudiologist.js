@@ -74,8 +74,7 @@ export default function useAudiologist() {
     if (completedtestPage > 1) setcompletedTestPage((p) => p - 1);
   };
 
-  const showCaseHistoryform = (visitId, step) => {
-    localStorage.setItem("caseHistoryStep", step);
+  const showCaseHistoryform = (visitId) => {
     router.push(`${caseHistory}/${visitId}`);
   };
 

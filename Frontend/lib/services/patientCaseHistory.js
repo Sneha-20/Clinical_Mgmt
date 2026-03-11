@@ -5,7 +5,6 @@ export const getpatientHistoryById = async (visitId) => {
   try {
    const url = `${routes.audiologist.patientCaseHistory}${visitId}`;
     const response = await apiClient.get(url);
-    // Handle nested response structure
     const caseHistory = response?.data || response;
     
     return caseHistory;
@@ -39,51 +38,19 @@ export const addTrialForm = async (trialFormData) => {
    }
 }
 
-export const addTestFile = async (file) => {
-   try{
-     const response = await apiClient.postMultipart(routes.audiologist.uploadFile, file);
-     const caseHistoryResponse = response?.data?.data || response?.data || response;
-     return caseHistoryResponse
-   }catch(err){
-    throw err?.response?.data || "failed to add test report"
-   }
+// endpoint for creating one or more reports for a visit
+export const createReports = async (reportData) => {
+  try {
+    // payload expected { patient_visit: <id>, reports: [{report_type, report_description}, ...] }
+    const response = await apiClient.post(routes.audiologist.reportCreate, reportData);
+    const reportResponse = response?.data?.data || response?.data || response;
+    return reportResponse;
+  } catch (err) {
+    // propagate useful message
+    throw err?.response?.data || "failed to create reports";
+  }
 }
 
-export const getAllTestFile = async (visitId) => {
-   try{
-     const response = await apiClient.get(`${routes.audiologist.getTestFile}${visitId}/`);
-     const testFileList = response?.data?.data || response?.data || response;
-     return testFileList;
-   }catch(err){
-    throw err?.response?.data || "Failed to fetch test report list"
-   }
-}
-
-export const deleteTestReport = async (fileId) => {
-   try{
-     const response = await apiClient.delete(`${routes.audiologist.deleteTestFile}${fileId}/delete/`);
-     const deleteResponse = response?.data?.data || response?.data || response;
-     return deleteResponse;
-   }catch(err){
-    throw err?.response?.data || "Failed to fetch test report list"
-   }
-}
-
-// export const getTrialDevice = async ({}) => {
-//   try {
-//    const url = `${routes.audiologist.trialDeviceList}`;
-//     const response = await apiClient.get(url);
-//     // Handle nested response structure
-//     const trialDeviceList = response?.data || response;
-//     return trialDeviceList;
-//   } catch (error) {
-//     console.error("❌ failed to fetch trial device list", {
-//       status: error?.response?.status,
-//       message: error?.message,
-//     });
-//     throw error;
-//   }
-// };
 export const getTrialDevice = async ({ serial_number = "", modal_id = ""}) => {
    const queryParams = new URLSearchParams();
     if (modal_id) queryParams.append("model_type_id", modal_id);

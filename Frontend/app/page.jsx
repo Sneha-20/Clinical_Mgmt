@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import MedicalBanner from "@/public/icon/medicalBanner.png";
 import Image from "next/image";
 import { Header } from "@/components/layout/Header";
@@ -198,6 +200,19 @@ const ContactSection = () => (
 );
 
 export default function Home() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect logged-in users to dashboard
+    const token = document.cookie.split("; ").find((row) => row.startsWith("token="));
+    const userRole = localStorage.getItem("userRole");
+
+    if (token && userRole) {
+      // User is already logged in, redirect to dashboard
+      router.push("/dashboard/home");
+    }
+  }, [router]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
