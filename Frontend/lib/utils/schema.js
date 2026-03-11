@@ -40,7 +40,7 @@ export const registerSchema = Yup.object({
 
 export const patientSchema = Yup.object({
   name: Yup.string().required("Name is required"),
-  age: Yup.number().required("Age is required"),
+  // age: Yup.number().required("Age is required"),
   dob: Yup.string().required("Date of birth is required"),
 
   gender: Yup.string().required("Gender is required"),

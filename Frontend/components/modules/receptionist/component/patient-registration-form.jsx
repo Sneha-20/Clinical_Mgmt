@@ -27,8 +27,12 @@ export default function PatientRegistrationForm({
   onSubmit,
   doctorList,
 }) {
-  const { inventoryItems, loadingInventory, fetchSerialsForItem } =
-    usePatientData();
+  const {
+    inventoryItems,
+    loadingInventory,
+    calculateAgeFromDob,
+    fetchSerialsForItem,
+  } = usePatientData();
 
   const doctors = doctorList.map((d) => ({
     label: d.name,
@@ -56,7 +60,7 @@ export default function PatientRegistrationForm({
   const formik = useFormik({
     initialValues: {
       name: "",
-      age: "",
+      // age: "",
       dob: "",
       email: "",
       gender: "",
@@ -83,8 +87,10 @@ export default function PatientRegistrationForm({
     },
     validationSchema: patientSchema,
     onSubmit: (values) => {
+      const age = calculateAgeFromDob(values.dob);
       const filteredPayload = {
         ...values,
+        age,
         visit_details: values.visit_details.map((visit) => {
           if (visit.visit_type === "Purchase") {
             return {
@@ -234,7 +240,7 @@ export default function PatientRegistrationForm({
                   maxDate={new Date()}
                   error={formik.touched.dob && formik.errors.dob}
                 />
-                <Input
+                {/* <Input
                   label="Age"
                   name="age"
                   type="number"
@@ -243,7 +249,7 @@ export default function PatientRegistrationForm({
                   onBlur={formik.handleBlur}
                   error={formik.touched.age && formik.errors.age}
                   important
-                />
+                /> */}
                 <DropDown
                   label="Gender"
                   name="gender"

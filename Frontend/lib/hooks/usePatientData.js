@@ -309,10 +309,16 @@ export default function usePatientData() {
     fetchInventoryItems();
   }, []);
 
-  const fetchSerialsForItem = async (inventoryItemId, showAvailableOnly = false) => {
+  const fetchSerialsForItem = async (
+    inventoryItemId,
+    showAvailableOnly = false,
+  ) => {
     try {
       console.log("showAvailableOnly", showAvailableOnly);
-      const params = { inventory_item: inventoryItemId, show_available_only: showAvailableOnly };
+      const params = {
+        inventory_item: inventoryItemId,
+        show_available_only: showAvailableOnly,
+      };
       const response = await getInventorySerialList(params);
       const serialOptions = response.data.map((serial) => {
         const serialNumber =
@@ -331,6 +337,25 @@ export default function usePatientData() {
       });
       return [];
     }
+  };
+
+  const calculateAgeFromDob = (dob) => {
+    if (!dob) return 0;
+
+    const birthDate = new Date(dob);
+    const today = new Date();
+
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
+      age--;
+    }
+
+    return age < 1 ? 0 : age;
   };
 
   // ------------------------------------------
@@ -367,6 +392,7 @@ export default function usePatientData() {
 
     goToNextPage,
     goToPreviousPage,
+    calculateAgeFromDob,
 
     handleAddPatient,
     handleAddVisit,
