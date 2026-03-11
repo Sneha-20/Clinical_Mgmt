@@ -57,7 +57,7 @@ export default function PatientRegistrationForm({
     initialValues: {
       name: "",
       age: "",
-      dob: null,
+      dob: "",
       email: "",
       gender: "",
       phone_primary: "",
@@ -277,6 +277,7 @@ export default function PatientRegistrationForm({
                   name="city"
                   value={formik.values.city}
                   onChange={formik.handleChange}
+                  error={formik.touched.city && formik.errors.city}
                   important
                 />
                 <Input
@@ -284,6 +285,7 @@ export default function PatientRegistrationForm({
                   name="address"
                   value={formik.values.address}
                   onChange={formik.handleChange}
+                  error={formik.touched.address && formik.errors.address}
                   important
                 />
                 <CommonDatePicker
@@ -300,6 +302,10 @@ export default function PatientRegistrationForm({
                     )
                   }
                   minDate={new Date()}
+                  error={
+                    formik.touched.appointment_date &&
+                    formik.errors.appointment_date
+                  }
                 />
               </div>
             </section>

@@ -41,7 +41,7 @@ export const registerSchema = Yup.object({
 export const patientSchema = Yup.object({
   name: Yup.string().required("Name is required"),
   age: Yup.number().required("Age is required"),
-  dob: Yup.string().nullable(),
+  dob: Yup.string().required("Date of birth is required"),
 
   gender: Yup.string().required("Gender is required"),
 
@@ -59,16 +59,16 @@ export const patientSchema = Yup.object({
   appointment_date: Yup.string().required("Appointment date is required"),
 
   referral_doctor: Yup.string().when("referral_type", {
-    is: (val) => val === "doctor",   // <-- MUST be a function
+    is: (val) => val === "doctor", // <-- MUST be a function
     then: (schema) => schema.required("Doctor name is required"),
     otherwise: (schema) => schema.nullable(),
   }),
 
-     visit_details: Yup.array()
+  visit_details: Yup.array()
     .of(
       Yup.object({
         visit_type: Yup.string().required("Visit type is required"),
-      })
+      }),
     )
     .min(1, "At least one visit detail is required"),
 });
@@ -76,19 +76,16 @@ export const patientSchema = Yup.object({
 export const visitPatientSchema = Yup.object({
   service_type: Yup.string().required("Service type is required"),
   appointment_date: Yup.string().required("Appointment date is required"),
-
 });
 
 export const CaseHistorySchema = Yup.object({
-  medical_history: Yup.string().required('Medical history is required'),
-  family_history: Yup.string().required('Family history is required'),
-  noise_exposure: Yup.string().required('This firld is required'),
-  previous_ha_experience: Yup.string().required('This firld is required'),
-  red_flags: Yup.string('This firld is required'),
-  test_requested: Yup.array().min(1, 'Select at least one test'),
- 
-})
-
+  medical_history: Yup.string().required("Medical history is required"),
+  family_history: Yup.string().required("Family history is required"),
+  noise_exposure: Yup.string().required("This firld is required"),
+  previous_ha_experience: Yup.string().required("This firld is required"),
+  red_flags: Yup.string("This firld is required"),
+  test_requested: Yup.array().min(1, "Select at least one test"),
+});
 
 export const trialGivenSchema = Yup.object({
   serial_number: Yup.string().required("Serial number is required"),
@@ -108,24 +105,22 @@ export const trialGivenSchema = Yup.object({
     .typeError("Cost must be a number")
     .required("Cost is required"),
 
-  discount_offered: Yup.number()
-    .typeError("Discount must be a number"),
-    // .max(100, "Discount cannot exceed 100"),
+  discount_offered: Yup.number().typeError("Discount must be a number"),
+  // .max(100, "Discount cannot exceed 100"),
 
   trial_start_date: Yup.date().required("Start date required"),
   trial_end_date: Yup.date()
-    .min(
-      Yup.ref("trial_start_date"),
-      "End date must be after start date"
-    )
+    .min(Yup.ref("trial_start_date"), "End date must be after start date")
     .required("End date required"),
 });
 
 export const transactionSchema = Yup.object({
-  transaction_type: Yup.string().oneOf(['Income', 'Expense'], 'Invalid transaction type').required('Transaction type is required'),
-  person_name: Yup.string().required('Person name is required'),
-  category: Yup.string().required('Category is required'),
-  amount: Yup.number().positive('Amount must be positive').required('Amount is required'),
+  transaction_type: Yup.string()
+    .oneOf(["Income", "Expense"], "Invalid transaction type")
+    .required("Transaction type is required"),
+  person_name: Yup.string().required("Person name is required"),
+  category: Yup.string().required("Category is required"),
+  amount: Yup.number()
+    .positive("Amount must be positive")
+    .required("Amount is required"),
 });
-
-
