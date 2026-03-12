@@ -33,27 +33,41 @@ class InventoryItemListView(ListAPIView):
 
         # Always compute counts on the full unfiltered list
         all_items = list(items)
-        low_count = sum(1 for item in all_items if item.status.lower() == 'low')
-        critical_count = sum(1 for item in all_items if item.status.lower() == 'critical')
-
+        
         status_param = request.query_params.get('status')
         use_in_trial = request.query_params.get('use_in_trial') # true or false
-        if status_param:
-            items = [item for item in all_items if item.status.lower() == status_param.lower()]
+         
+        # Determine base items for counting based on conditions
         if use_in_trial is not None:
+            # With use_in_trial param: counts should reflect filtered items
             use_in_trial_bool = use_in_trial.lower() == 'true'
-            items = [item for item in items if item.use_in_trial == use_in_trial_bool]
-
+            base_items = [item for item in all_items if item.use_in_trial == use_in_trial_bool]
+        else:
+            # No params: counts should reflect all items
+            base_items = all_items
+        
+        # Calculate counts based on determined base items
+        total_count = len(base_items)
+        low_count = sum(1 for item in base_items if item.status.lower() == 'low')
+        critical_count = sum(1 for item in base_items if item.status.lower() == 'critical')
+        
+        # Apply additional filters
+        items = base_items
+        if status_param:
+            items = [item for item in items if item.status.lower() == status_param.lower()]
+        
         page = self.paginate_queryset(items)
 
         if page is not None:
             serializer = InventoryItemSerializer(page, many=True)
             response = self.get_paginated_response(serializer.data)
+            response.data['total_count'] = total_count
             response.data['low_count'] = low_count
             response.data['critical_count'] = critical_count
             return response
         serializer = InventoryItemSerializer(items, many=True)
         return Response({
+            'total_count': total_count,
             'low_count': low_count,
             'critical_count': critical_count,
             'results': serializer.data
