@@ -148,7 +148,7 @@ class InventoryTransferView(APIView):
                     item_name=source_item.product_name,
                     category=source_item.category,
                     brand=source_item.brand,
-                    model=source_item.model_type,
+                    model=source_item.model_type.name if source_item.model_type else '',
                     from_clinic=source_item.clinic,
                     to_clinic=to_clinic,
                     quantity=transfer_qty,
@@ -198,16 +198,25 @@ class InventoryFlatListView(APIView): # For dropdowns and quick access
     def get(self, request):
         clinic = Clinic.objects.filter(is_main_inventory=True).first()
 
-        queryset = InventoryItem.objects.select_related('clinic').filter(clinic=clinic, quantity_in_stock__gt=0).distinct()
-        data = queryset.values('id', 'product_name', 'brand__name', 'model_type__name', 'stock_type', 'quantity_in_stock')
-        return Response({"status": 200, "data": list(data)}, status=status.HTTP_200_OK)
-    
-
-
-
-
-
-       
+        queryset = InventoryItem.objects.select_related('clinic', 'brand', 'model_type').filter(clinic=clinic, quantity_in_stock__gt=0).distinct()
         
+        # Calculate quantity_in_stock based on stock type
+        data = []
+        for item in queryset:
+            if item.stock_type == 'Serialized':
+                # For serialized items, count only serial numbers with 'In Stock' status
+                quantity = item.serials.filter(status='In Stock').count()
+            else:
+                # For non-serialized items, use the stored quantity
+                quantity = item.quantity_in_stock
+            
+            data.append({
+                'id': item.id,
+                'product_name': item.product_name,
+                'brand__name': item.brand.name if item.brand else None,
+                'model_type__name': item.model_type.name if item.model_type else None,
+                'stock_type': item.stock_type,
+                'quantity_in_stock': quantity
+            })
 
-        
+        return Response({"status": 200, "data": data}, status=status.HTTP_200_OK)
