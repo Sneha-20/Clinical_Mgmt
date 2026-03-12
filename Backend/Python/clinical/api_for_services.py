@@ -94,7 +94,8 @@ class DeviceNeedService(APIView):
             # Get all purchases for this patient
             purchases = PatientPurchase.objects.filter(
                 patient=patient,
-                clinic=getattr(request.user, 'clinic', None)
+                clinic=getattr(request.user, 'clinic', None), 
+                inventory_serial__isnull=False
             ).select_related(
                 'inventory_item', 
                 'inventory_serial',
