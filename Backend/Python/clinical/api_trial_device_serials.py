@@ -22,6 +22,7 @@ class TrialAvailableModelsView(APIView):
         model_type_ids = InventoryItem.objects.filter(
             category='Hearing Aid',
             use_in_trial=True,
+            is_approved=True,
             model_type__isnull=False
         ).annotate(
             available_serials=Count('serials', filter=Q(serials__status='In Stock'))
