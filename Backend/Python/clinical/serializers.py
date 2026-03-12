@@ -1640,11 +1640,20 @@ class ModelTypeSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'brand', 'brand_name']
 
 
-
 class InventoryItemSerializer(serializers.ModelSerializer):
     brand_name = serializers.CharField(source='brand.name', read_only=True)
     model_type_name = serializers.CharField(source='model_type.name', read_only=True)
     clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    quantity_in_stock = serializers.SerializerMethodField()
+    
+    def get_quantity_in_stock(self, obj):
+        """Calculate quantity_in_stock based on stock type."""
+        if obj.stock_type == 'Serialized':
+            # For serialized items, count only serial numbers with 'In Stock' status
+            return obj.serials.filter(status='In Stock').count()
+        else:
+            # For non-serialized items, use the stored quantity
+            return obj.quantity_in_stock
 
     class Meta:
         model = InventoryItem
