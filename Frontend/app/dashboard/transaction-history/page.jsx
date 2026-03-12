@@ -113,7 +113,7 @@ export default function TransactionHistory() {
               <option value="Expense">Expense</option>
             </select>
           </div>
-          
+
           <div className="flex flex-col gap-1.5 w-full sm:w-auto">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Transaction Date</label>
             <div className="flex flex-row items-center gap-2">
@@ -184,17 +184,25 @@ export default function TransactionHistory() {
             ))
           )}
 
-          <div className='flex justify-end mt-4 w-full'>
-            <div>
-              {(filterType === 'Income' || filterType === 'All') && <p>  Total Income {transactions.reduce((sum, t) => sum + Number(t.amount), 0)} </p>}
-              {(filterType === 'Expense' || filterType === 'All') && (<p>
-                Total Expense {transactions.reduce((sum, t) => sum + Number(t.amount), 0)}
-              </p>)}
-            </div>
-          </div>
-
         </TableBody>
       </Table>
+
+      {!loading && transactions.length > 0 && (
+        <div className='flex justify-end mt-4 w-full bg-white p-4 rounded-lg border shadow-sm'>
+          <div className="flex gap-6">
+            {(filterType === 'Income' || filterType === 'All') && (
+              <p className="text-green-600 font-semibold">
+                Total Income: ₹{transactions.filter(t => t.transaction_type === 'Income').reduce((sum, t) => sum + Number(t.amount), 0)}
+              </p>
+            )}
+            {(filterType === 'Expense' || filterType === 'All') && (
+              <p className="text-red-500 font-semibold">
+                Total Expense: ₹{transactions.filter(t => t.transaction_type === 'Expense').reduce((sum, t) => sum + Number(t.amount), 0)}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
 
       <TransactionForm
         isModalOpen={isModalOpen}
