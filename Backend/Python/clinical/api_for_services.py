@@ -623,7 +623,7 @@ class PartsUsedListView(APIView):
             search_query = request.query_params.get('search', None)
             
             # Start with base queryset
-            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic, quantity_in_stock__gt=0).exclude(category='Hearing Aid').order_by('product_name')
+            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic, quantity_in_stock__gt=0).exclude(category='Hearing Aid',stock_type='Serialized').order_by('product_name')
             
             # Apply search filter if provided
             if search_query:
