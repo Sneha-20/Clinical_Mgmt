@@ -409,7 +409,7 @@ ACCESSORIES_TYPE_CHOICES = [
 class Brand(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES, help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
