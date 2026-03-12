@@ -28,6 +28,7 @@ export default function useInventory() {
   const [models, setModels] = useState([]);
   const [lowItemCount, setLowItemCount] = useState(0);
   const [criticalItemCount, setCriticalItemCount] = useState(0);
+  const [totalItem, settotalItem] = useState(0)
   const [clinics, setClinics] = useState([]);
   // Current status filter (All | Critical | Low)
   const [selectedClinic, setSelectedClinic] = useState(null);
@@ -62,6 +63,7 @@ export default function useInventory() {
         setInventoryItems(data.items || []);
         setLowItemCount(data.lowItem || 0);
         setCriticalItemCount(data.criticalItem || 0);
+        settotalItem(data.totalItem || 0);
 
         setPagination({
           currentPage: data.currentPage || page,
@@ -338,6 +340,7 @@ export default function useInventory() {
     brands,
     models,
     filterStatus,
+    totalItem,
     criticalItemCount,
     lowItemCount,
     selectedClinic,

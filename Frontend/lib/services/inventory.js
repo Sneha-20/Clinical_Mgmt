@@ -63,7 +63,7 @@ export const getInventoryItems = async (params = {}) => {
       items: response?.data || [],
       totalPages: response?.totalPages || 1,
       currentPage: response?.currentPage || page,
-      totalItems: response?.totalItems || 0,
+      totalItem: response?.total_count || 0,
       lowItem: response?.low_count || 0,
       criticalItem: response?.critical_count || 0,
     };
