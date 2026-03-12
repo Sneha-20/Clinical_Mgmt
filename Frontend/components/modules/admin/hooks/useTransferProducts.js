@@ -41,24 +41,24 @@ export default function useTransferProducts() {
     };
     fetch();
   }, []);
-  
 
- 
-    const fetchLogs = async () => {
-      try {
-        const data = await getTransferHisotry();
-        if (data) {
-          setLogs(data);
-        }
-      } catch (error) {
-        console.error("Error loading transfer history", error);
-      } finally {
-        setLoading(false);
+
+
+  const fetchLogs = async () => {
+    try {
+      const data = await getTransferHisotry();
+      if (data) {
+        setLogs(data);
       }
-    };
+    } catch (error) {
+      console.error("Error loading transfer history", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     fetchLogs();
-  },[]);
+  }, []);
 
   const selectedItem = inventoryItems.find(
     (i) => i.id === Number(selectedItemId),
@@ -115,8 +115,8 @@ export default function useTransferProducts() {
     setTempSerials([]);
   };
 
-  const removeProduct = (id) =>  setProducts((p) => p.filter((x) => x.item.id !== id));
-   
+  const removeProduct = (id) => setProducts((p) => p.filter((x) => x.item.id !== id));
+
   const updateQuantity = (id, delta) => {
     setProducts((p) =>
       p.map((pr) => {
@@ -134,15 +134,15 @@ export default function useTransferProducts() {
         pr.item.id !== id
           ? pr
           : {
-              ...pr,
-              quantity: Math.max(
-                1,
-                Math.min(
-                  pr.item.stock ?? Number.MAX_SAFE_INTEGER,
-                  Number(value),
-                ),
+            ...pr,
+            quantity: Math.max(
+              1,
+              Math.min(
+                pr.item.stock ?? Number.MAX_SAFE_INTEGER,
+                Number(value),
               ),
-            },
+            ),
+          },
       ),
     );
   };
@@ -164,16 +164,17 @@ export default function useTransferProducts() {
       try {
         const res = await getInventorySerialList({
           inventory_item: product.id,
+          show_available_only: true,
         });
         const list = res?.data || res?.data?.results || [];
         const serials = Array.isArray(list)
           ? list
-              .map((it) =>
-                typeof it === "string"
-                  ? it
-                  : it.serial_number || it.sn || it.name || String(it),
-              )
-              .filter(Boolean)
+            .map((it) =>
+              typeof it === "string"
+                ? it
+                : it.serial_number || it.sn || it.name || String(it),
+            )
+            .filter(Boolean)
           : [];
         setAvailableSerials(serials);
       } catch (err) {
@@ -208,7 +209,7 @@ export default function useTransferProducts() {
       });
       return;
     }
-       if (products.length === 0) {
+    if (products.length === 0) {
       showToast({
         type: "error",
         message:
