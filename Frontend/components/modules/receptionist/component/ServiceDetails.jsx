@@ -117,12 +117,14 @@ export default function ServiceDetails({ serviceId }) {
         quantity: value.length
       };
     } else if (field === "quantity") {
-      const qty = parseInt(value) || 0;
+      const qtyStr = value.toString();
+      const qty = qtyStr === "" ? "" : parseInt(qtyStr);
+
       const inStock = updatedParts[index].quantity_in_stock || 0;
       updatedParts[index] = {
         ...updatedParts[index],
         [field]: qty,
-        stockError: qty > inStock
+        stockError: (qty || 0) > inStock
       };
     } else {
       updatedParts[index] = { ...updatedParts[index], [field]: value };
