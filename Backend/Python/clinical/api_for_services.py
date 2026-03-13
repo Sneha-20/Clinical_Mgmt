@@ -203,22 +203,55 @@ class ServiceVisitUpdateView(APIView):
                     for part_data in parts_used:
                         inventory_item_id = part_data.get('inventory_item_id')
                         quantity = part_data.get('quantity', 1)
+                        serial_numbers = part_data.get('serial_numbers', [])
                         
                         if inventory_item_id and quantity > 0:
                             try:
                                 inventory_item = InventoryItem.objects.get(id=inventory_item_id)
                                 
-                                # Create service part record
-                                service_part = ServicePartUsed.objects.create(
-                                    service=service_visit,
-                                    inventory_item=inventory_item,
-                                    quantity=quantity
-                                )
-                                parts_created.append({
-                                    'part_id': service_part.id,
-                                    'inventory_item': inventory_item.id,
-                                    'quantity': quantity
-                                })
+                                if inventory_item.stock_type == 'Serialized':
+                                    # For serialized items, create one record per serial number
+                                    for serial_number in serial_numbers:
+                                        try:
+                                            inventory_serial = InventorySerial.objects.get(
+                                                inventory_item=inventory_item,
+                                                serial_number=serial_number,
+                                                status='In Stock'
+                                            )
+                                            
+                                            # Create service part record with serial
+                                            service_part = ServicePartUsed.objects.create(
+                                                service=service_visit,
+                                                inventory_item=inventory_item,
+                                                quantity=1,
+                                                inventory_serial=inventory_serial
+                                            )
+                                            
+                                            # Update serial status to 'Used'
+                                            inventory_serial.status = 'Sold'
+                                            inventory_serial.save(update_fields=['status'])
+                                            
+                                            parts_created.append({
+                                                'part_id': service_part.id,
+                                                'inventory_item': inventory_item.id,
+                                                'quantity': 1,
+                                                'serial_number': serial_number
+                                            })
+                                            
+                                        except InventorySerial.DoesNotExist:
+                                            continue
+                                else:
+                                    # For non-serialized items, create single record with quantity
+                                    service_part = ServicePartUsed.objects.create(
+                                        service=service_visit,
+                                        inventory_item=inventory_item,
+                                        quantity=quantity
+                                    )
+                                    parts_created.append({
+                                        'part_id': service_part.id,
+                                        'inventory_item': inventory_item.id,
+                                        'quantity': quantity
+                                    })
                                     
                             except InventoryItem.DoesNotExist:
                                 continue
@@ -273,14 +306,20 @@ class ServiceVisitUpdateView(APIView):
                             quantity=1,
                         )
                     
-                    # Add parts to bill
+                    # Add parts to D
                     if len(parts_created) > 0:
                         for part_data in parts_created:
                             inventory_item = InventoryItem.objects.get(id=part_data['inventory_item'])
+                            
+                            # Build description with serial number if available
+                            description = f"{inventory_item.product_name} (Qty: {part_data['quantity']})"
+                            if part_data.get('serial_number'):
+                                description += f" - SN: {part_data['serial_number']}"
+                            
                             BillItem.objects.create(
                                 bill=bill,
                                 item_type='Part Used in Service',
-                                description=f"{inventory_item.product_name} (Qty: {part_data['quantity']})",
+                                description=description,
                                 cost=inventory_item.unit_price * part_data['quantity'],
                                 quantity=part_data['quantity'],
                             )
@@ -538,7 +577,7 @@ class ServiceDetailView(APIView):
                 'device__inventory_serial',
                 'device_serial',
                 'created_by'
-            ).prefetch_related('parts_used__inventory_item').first()
+            ).prefetch_related('parts_used__inventory_item' , 'parts_used__inventory_serial').first()
             
             if not service_visit:
                 return Response({
@@ -557,6 +596,8 @@ class ServiceDetailView(APIView):
                     'inventory_item_brand': part.inventory_item.brand.name if part.inventory_item.brand else None,
                     'inventory_item_model': part.inventory_item.model_type.name if part.inventory_item.model_type else None,
                     'quantity': part.quantity,
+                    'stock_type': part.inventory_item.stock_type,
+                    'serial_number': part.inventory_serial.serial_number if part.inventory_serial else None,
                     'unit_price': float(part.inventory_item.unit_price) if part.inventory_item.unit_price else 0,
                     'total_cost': float(part.inventory_item.unit_price * part.quantity) if part.inventory_item.unit_price else 0
                 })
@@ -570,7 +611,7 @@ class ServiceDetailView(APIView):
                 # 'phone_secondary': service_visit.visit.patient.phone_secondary if service_visit.visit and service_visit.visit.patient else None,
                 # 'email': service_visit.visit.patient.email if service_visit.visit and service_visit.visit.patient else None,
                 'service_type': service_visit.service_type,
-                'status': service_visit.status,
+                'status': service_visit.visit.status,
                 'complaint': service_visit.complaint,
                 'action_taken': service_visit.action_taken,
                 'action_taken_on': service_visit.action_taken_on,
@@ -623,7 +664,7 @@ class PartsUsedListView(APIView):
             search_query = request.query_params.get('search', None)
             
             # Start with base queryset
-            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic, quantity_in_stock__gt=0, stock_type='Non-Serialized', is_approved=True).exclude(category='Hearing Aid').order_by('product_name')
+            inventory_items = InventoryItem.objects.filter(clinic=self.request.user.clinic, quantity_in_stock__gt=0, is_approved=True).exclude(category='Hearing Aid').order_by('product_name')
             
             # Apply search filter if provided
             if search_query:
@@ -640,8 +681,9 @@ class PartsUsedListView(APIView):
                     'brand': item.brand.name if item.brand else None,
                     'model_type': item.model_type.name if item.model_type else None,
                     'unit_price': float(item.unit_price) if item.unit_price else 0,
-                    'accessories_type': item.accessories_type if item.category == 'Accessories' else None 
-                    # 'quantity_in_stock': item.quantity_in_stock or 0,
+                    'accessories_type': item.accessories_type if item.category == 'Accessories' else None,
+                    'quantity_in_stock': item.quantity_in_stock or 0,
+                    'stock_type': item.stock_type,
                     # 'category': item.category if hasattr(item, 'category') else None
                 }
                 parts_data.append(part_data)

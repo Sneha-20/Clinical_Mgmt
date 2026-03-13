@@ -579,14 +579,15 @@ class ServicePartUsed(models.Model):
     )
     inventory_item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
+    inventory_serial = models.ForeignKey(InventorySerial,on_delete=models.CASCADE,null=True,blank=True)
     
 
-    def clean(self):
-        """Ensure that serialized items are not used as service parts."""
-        if self.inventory_item.stock_type == 'Serialized':
-            raise ValidationError(
-                f"Serialized items like '{self.inventory_item}' cannot be used as service parts."
-            )
+    # def clean(self):
+    #     """Ensure that serialized items are not used as service parts."""
+    #     if self.inventory_item.stock_type == 'Serialized':
+    #         raise ValidationError(
+    #             f"Serialized items like '{self.inventory_item}' cannot be used as service parts."
+    #         )
 
     def save(self, *args, **kwargs):
         """
