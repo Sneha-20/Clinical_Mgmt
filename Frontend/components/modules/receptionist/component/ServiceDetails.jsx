@@ -117,14 +117,12 @@ export default function ServiceDetails({ serviceId }) {
         quantity: value.length
       };
     } else if (field === "quantity") {
-      const qtyStr = value.toString();
-      const qty = qtyStr === "" ? "" : parseInt(qtyStr);
-
+      const qty = parseInt(value) || 0;
       const inStock = updatedParts[index].quantity_in_stock || 0;
       updatedParts[index] = {
         ...updatedParts[index],
         [field]: qty,
-        stockError: (qty || 0) > inStock
+        stockError: qty > inStock
       };
     } else {
       updatedParts[index] = { ...updatedParts[index], [field]: value };
@@ -327,7 +325,7 @@ export default function ServiceDetails({ serviceId }) {
                     </Button>
                   </>
                 ) : (
-                  service?.status !== "Service Completed" && (
+                  service?.status !== "Service Completed" && service?.status !== "Completed with payment" && (
                     <Button size="sm" onClick={() => setEditing(true)} className="bg-red-600 text-white hover:bg-red-700">
                       Update Service
                     </Button>
