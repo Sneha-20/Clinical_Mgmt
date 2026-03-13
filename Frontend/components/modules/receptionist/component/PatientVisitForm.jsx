@@ -135,22 +135,36 @@ export default function PatientVisitForm({
       purchaseItems[itemIndex] = {
         ...purchaseItems[itemIndex],
         serial_numbers: value,
+        quantity: value.length,
+        stockError: value.length > (purchaseItems[itemIndex].quantity_in_stock || 0)
+      };
+    } else if (key === "quantity") {
+      const qty = parseInt(value) || 0;
+      const inStock = purchaseItems[itemIndex].quantity_in_stock || 0;
+      purchaseItems[itemIndex] = { 
+        ...purchaseItems[itemIndex], 
+        [key]: qty,
+        stockError: qty > inStock
       };
     } else {
       purchaseItems[itemIndex] = { ...purchaseItems[itemIndex], [key]: value };
     }
-    updatedVisit[visitIndex].purchase_items = purchaseItems;
-    setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
+
     if (key === "inventory_item" && value) {
       const selectedItem = inventoryItems.find((item) => item.value === value);
       if (selectedItem) {
         purchaseItems[itemIndex].stock_type = selectedItem.stock_type;
+        purchaseItems[itemIndex].quantity_in_stock = selectedItem.quantity_in_stock;
         purchaseItems[itemIndex].serial_numbers = [];
+        purchaseItems[itemIndex].stockError = false;
         if (selectedItem.stock_type === "Serialized") {
           handleFetchSerialsForItem(value, visitIndex, itemIndex, true);
         }
       }
     }
+
+    updatedVisit[visitIndex].purchase_items = purchaseItems;
+    setFormData((prev) => ({ ...prev, visit_details: updatedVisit }));
   };
 
   const handleFetchSerialsForItem = async (
@@ -231,6 +245,18 @@ export default function PatientVisitForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const hasStockError = formData.visit_details.some(visit => 
+      visit.purchase_items?.some(item => item.stockError)
+    );
+
+    if (hasStockError) {
+      return showToast({
+        type: "error",
+        message: "Insufficient stock for one or more purchase items.",
+      });
+    }
+
     try {
       await visitPatientSchema.validate(formData, { abortEarly: false });
       setErrors({});
@@ -527,34 +553,27 @@ export default function PatientVisitForm({
                             }
                           />
                           {item.stock_type === "Non-Serialized" && (
-                            <Input
-                              label="Quantity"
-                              name={`quantity_${itemIndex}`}
-                              type="number"
-                              min="1"
-                              value={item.quantity || ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === "") {
+                            <div className="flex flex-col">
+                              <Input
+                                label={`Quantity (In Stock: ${item.quantity_in_stock || 0})`}
+                                name={`quantity_${itemIndex}`}
+                                type="number"
+                                min="1"
+                                value={item.quantity || ""}
+                                onChange={(e) => {
                                   updatePurchaseItem(
                                     index,
                                     itemIndex,
                                     "quantity",
-                                    "",
+                                    e.target.value
                                   );
-                                } else {
-                                  const num = parseInt(val);
-                                  if (!isNaN(num) && num >= 1) {
-                                    updatePurchaseItem(
-                                      index,
-                                      itemIndex,
-                                      "quantity",
-                                      num,
-                                    );
-                                  }
-                                }
-                              }}
-                            />
+                                }}
+                                className={item.stockError ? "border-red-500" : ""}
+                              />
+                              {item.stockError && (
+                                <p className="text-red-500 text-xs mt-1">Insufficient stock</p>
+                              )}
+                            </div>
                           )}
                           {item.stock_type === "Serialized" && (
                             <div className="mt-2">
