@@ -139,7 +139,7 @@ export default function SignupComponent() {
       await registerSchema.validate(formData, { abortEarly: false });
       setErrors({});
       const payload = {
-        clinic_id: formData.clinic_id,
+        clinic_ids: formData.clinic_id,
         role_id: formData.role_id,
         name: formData.fullName,
         email: formData.email,
