@@ -60,7 +60,8 @@ export default function PatientRegistrationForm({
   const formik = useFormik({
     initialValues: {
       name: "",
-      dob: "",
+      age: "",
+      dob: null,
       email: "",
       gender: "",
       phone_primary: "",
@@ -86,10 +87,10 @@ export default function PatientRegistrationForm({
     },
     validationSchema: patientSchema,
     onSubmit: (values) => {
-      const age = calculateAgeFromDob(values.dob);
+      // const age = calculateAgeFromDob(values.dob);
       const filteredPayload = {
         ...values,
-        age,
+        // age,
         visit_details: values.visit_details.map((visit) => {
           if (visit.visit_type === "Purchase") {
             return {
@@ -246,8 +247,18 @@ export default function PatientRegistrationForm({
                   }
                   maxDate={new Date()}
                   error={formik.touched.dob && formik.errors.dob}
+                />
+                <Input
+                  label="Age"
+                  name="age"
+                  type="number"
+                  value={formik.values.age}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.age && formik.errors.age}
                   important
                 />
+
                 <DropDown
                   label="Gender"
                   name="gender"
