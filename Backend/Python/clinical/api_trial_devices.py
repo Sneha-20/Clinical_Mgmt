@@ -15,7 +15,7 @@ class TrialDeviceListView(generics.ListAPIView):
 
     def get_queryset(self):
         """Only return items that are marked for trial use."""
-        return InventoryItem.objects.filter(use_in_trial=True).prefetch_related('serials').order_by('product_name')
+        return InventoryItem.objects.filter(use_in_trial=True, is_approved=True).prefetch_related('serials').order_by('product_name')
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

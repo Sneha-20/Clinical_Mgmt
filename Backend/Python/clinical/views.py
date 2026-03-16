@@ -902,6 +902,7 @@ class DeviceBookingDropdownView(generics.ListAPIView):
         queryset = InventoryItem.objects.filter(
             category='Hearing Aid',
             use_in_trial=False, 
+            is_approved=True,
             clinic=getattr(self.request.user, 'clinic', None)  # Filter by clinic for multi-tenant support
             
         )
@@ -1293,6 +1294,7 @@ class PurchaseInventoryItemListView(generics.ListAPIView):
         queryset = InventoryItem.objects.filter(
             use_in_trial=False,
             quantity_in_stock__gt=0,
+            is_approved=True,
             clinic=clinic
         ).exclude(category__in=['Hearing Aid']).order_by('-id')
         return queryset.order_by('-id')
@@ -1331,7 +1333,7 @@ class PurchaseInventoryItemCreateView(generics.CreateAPIView):
 
     def get_queryset(self):
         clinic = getattr(self.request.user, 'clinic', None)
-        return InventoryItem.objects.filter(clinic=clinic, use_in_trial=False).exclude(category__in=['Hearing Aid'])
+        return InventoryItem.objects.filter(clinic=clinic, use_in_trial=False, is_approved=True).exclude(category__in=['Hearing Aid'])
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})   

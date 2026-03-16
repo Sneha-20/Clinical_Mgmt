@@ -293,6 +293,7 @@ export default function usePatientData() {
         label: `${item.category} - ${item.product_name} (${item.brand_name})`,
         value: item.id,
         stock_type: item.stock_type,
+        quantity_in_stock: item.quantity_in_stock,
       }));
       setInventoryItems(itemOptions);
     } catch (error) {

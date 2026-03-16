@@ -409,7 +409,7 @@ ACCESSORIES_TYPE_CHOICES = [
 class Brand(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES, help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
-    name = models.CharField(max_length=50, unique=True)
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
@@ -579,14 +579,15 @@ class ServicePartUsed(models.Model):
     )
     inventory_item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
+    inventory_serial = models.ForeignKey(InventorySerial,on_delete=models.CASCADE,null=True,blank=True)
     
 
-    def clean(self):
-        """Ensure that serialized items are not used as service parts."""
-        if self.inventory_item.stock_type == 'Serialized':
-            raise ValidationError(
-                f"Serialized items like '{self.inventory_item}' cannot be used as service parts."
-            )
+    # def clean(self):
+    #     """Ensure that serialized items are not used as service parts."""
+    #     if self.inventory_item.stock_type == 'Serialized':
+    #         raise ValidationError(
+    #             f"Serialized items like '{self.inventory_item}' cannot be used as service parts."
+    #         )
 
     def save(self, *args, **kwargs):
         """

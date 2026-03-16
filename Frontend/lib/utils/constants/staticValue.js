@@ -39,14 +39,15 @@ export const complaintOptions = [
 
 export const testRequestedOptions = [
   { label: "Pure Tone Audiometry", value: "pta" },
-  { label: "Tympanometry", value: "tymp" },
-  { label: "SRT / SDS", value: "srt" },
-  { label: "SDS", value: "sds" },
-  { label: "UCL", value: "ucl" },
-  { label: "Free Field", value: "free_field" },
+  { label: "Impedance", value: "impedance" },
+  { label: "SRT / SDS", value: "srt_sds" },
+  { label: "PTA / SDS", value: "pta_sds" },
+  { label: "BERA", value: "bera" },
+  { label: "ASSR", value: "assr" },
   { label: "BERA / ASSR", value: "bera_assr" },
-  { label: "OAE", value: "oae" },
-  { label: "Immittance", value: "Immittance" },
+  { label: "Speech Assessment", value: "speec_assessment" },
+  { label: "Impedance/ETF", value: "impdeance_etf" },
+  { label: "Special Tests", value: "speech_tests" },
 ];
 
 export const visitTypeOptions = [

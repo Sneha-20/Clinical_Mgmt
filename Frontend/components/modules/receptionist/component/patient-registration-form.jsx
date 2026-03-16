@@ -87,7 +87,18 @@ export default function PatientRegistrationForm({
     },
     validationSchema: patientSchema,
     onSubmit: (values) => {
-      // const age = calculateAgeFromDob(values.dob);
+      const hasStockError = values.visit_details.some((visit) =>
+        visit.purchase_items?.some((item) => item.stockError),
+      );
+
+      if (hasStockError) {
+        return showToast({
+          type: "error",
+          message: "Insufficient stock for one or more purchase items.",
+        });
+      }
+
+      const age = calculateAgeFromDob(values.dob);
       const filteredPayload = {
         ...values,
         // age,
@@ -182,14 +193,26 @@ export default function PatientRegistrationForm({
       const selectedItem = inventoryItems.find((i) => i.value === value);
       item.inventory_item = value;
       item.stock_type = selectedItem?.stock_type || "Non-Serialized";
+      item.quantity_in_stock = selectedItem?.quantity_in_stock || 0;
       item.serial_numbers = [];
       item.quantity = 1;
       item.serials = [];
+      item.stockError = false;
 
       if (item.stock_type === "Serialized") {
         const serials = await fetchSerialsForItem(value, true);
         item.serials = serials || [];
+        // For serialized, the stock is count of available serials
+        item.quantity_in_stock = serials.length;
       }
+    } else if (key === "serial_numbers") {
+      item.serial_numbers = value;
+      item.quantity = value.length;
+      item.stockError = value.length > (item.quantity_in_stock || 0);
+    } else if (key === "quantity") {
+      const qty = parseInt(value) || 0;
+      item.quantity = qty;
+      item.stockError = qty > (item.quantity_in_stock || 0);
     } else {
       item[key] = value;
     }
@@ -445,20 +468,30 @@ export default function PatientRegistrationForm({
                           {item.inventory_item && (
                             <div className="animate-in fade-in duration-300">
                               {item.stock_type === "Non-Serialized" ? (
-                                <Input
-                                  label="Quantity"
-                                  type="number"
-                                  min="1"
-                                  value={item.quantity}
-                                  onChange={(e) =>
-                                    updatePurchaseItem(
-                                      index,
-                                      itemIndex,
-                                      "quantity",
-                                      parseInt(e.target.value) || 0,
-                                    )
-                                  }
-                                />
+                                <div className="flex flex-col">
+                                  <Input
+                                    label={`Quantity (In Stock: ${item.quantity_in_stock || 0})`}
+                                    type="number"
+                                    min="1"
+                                    value={item.quantity}
+                                    onChange={(e) =>
+                                      updatePurchaseItem(
+                                        index,
+                                        itemIndex,
+                                        "quantity",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className={
+                                      item.stockError ? "border-red-500" : ""
+                                    }
+                                  />
+                                  {item.stockError && (
+                                    <p className="text-red-500 text-[10px] mt-1 font-medium">
+                                      Insufficient stock
+                                    </p>
+                                  )}
+                                </div>
                               ) : (
                                 <div className="space-y-2">
                                   <label className="text-xs font-bold text-gray-500 uppercase">

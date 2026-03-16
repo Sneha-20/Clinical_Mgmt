@@ -25,6 +25,7 @@ export default function InventoryManagement() {
     brands,
     models,
     filterStatus,
+    totalItem,
     criticalItemCount,
     lowItemCount,
     selectedClinic,
@@ -176,7 +177,7 @@ export default function InventoryManagement() {
             <List className="w-5 sm:w-6 h-5 sm:h-6 text-sky-500 flex-shrink-0" />
             <div>
               <p className="font-semibold text-xs sm:text-sm text-sky-900">
-                {criticalItemCount + lowItemCount} Items
+                {totalItem} Items
               </p>
               <p className="text-xs text-sky-700">View all inventory items</p>
             </div>
@@ -352,13 +353,12 @@ export default function InventoryManagement() {
                         </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${
-                              item.status === "Good"
-                                ? "bg-green-100 text-green-600"
-                                : item.status === "Low"
-                                  ? "bg-yellow-100 text-yellow-600"
-                                  : "bg-red-100 text-red-600"
-                            }`}
+                            className={`px-2 py-1 rounded-full text-xs font-medium inline-block ${item.status === "Good"
+                              ? "bg-green-100 text-green-600"
+                              : item.status === "Low"
+                                ? "bg-yellow-100 text-yellow-600"
+                                : "bg-red-100 text-red-600"
+                              }`}
                           >
                             {item.status === "Good"
                               ? "Good"
