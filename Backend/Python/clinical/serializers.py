@@ -2022,7 +2022,8 @@ class TrialListSerializer(serializers.ModelSerializer):
             'patient_response',
             'trial_decision',
             'completion_notes',
-            'customization_notes',
+            'need_customization',
+            'is_customization_completed',
             'device_condition_on_return',
             'extended_trial'
         ]
@@ -2138,12 +2139,12 @@ class TrialCompletionSerializer(serializers.Serializer):
         help_text="Serial number of device to book (required only for serialized items)"
     )
     
-    customization_notes = serializers.CharField(
+    need_customization = serializers.BooleanField(
         required=False,
-        allow_blank=True,
-        help_text="Notes about customization needed (tips and molds)"
+        default=False,
+        help_text="Whether customization is needed"
     )
-    
+
     completion_notes = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -2229,13 +2230,7 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
     device_serial_no = serializers.CharField(source='booked_device_serial.serial_number', read_only=True)
     trial_completed_at = serializers.DateTimeField(source='completed_at', read_only=True)
     completion_notes = serializers.CharField(source='return_notes', read_only=True)
-    customization_notes = serializers.SerializerMethodField()
-
-    def get_customization_notes(self, obj):
-        """Show customization notes only for BOOK - With Customization trials"""
-        if obj.trial_decision == 'BOOK - With Customization':
-            return obj.customization_notes
-        return None
+    
 
     class Meta:
         model = Trial
@@ -2253,7 +2248,8 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
             'trial_completed_at',
             'trial_decision',
             'completion_notes',
-            'customization_notes',
+            'need_customization',
+            'is_customization_completed',
             'device_condition_on_return',
             'extended_trial'
         ]

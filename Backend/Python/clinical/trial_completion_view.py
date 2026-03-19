@@ -135,7 +135,7 @@ class TrialCompletionView(APIView):
                 elif trial_decision == 'BOOK - With Customization':
                     # Scenario 1c: Device in stock but needs customization (tips and molds)
                     booked_inventory_id = serializer.validated_data['booked_device_inventory']
-                    customization_notes = serializer.validated_data.get('customization_notes', '')
+                    need_customization = serializer.validated_data.get('need_customization', False)
                     booked_serial = serializer.validated_data.get('validated_serial')
 
                     print("validated_serial", booked_serial)
@@ -147,7 +147,7 @@ class TrialCompletionView(APIView):
                     trial.booked_device_inventory = inventory_item
                     if booked_serial:
                         trial.booked_device_serial = booked_serial
-                    trial.customization_notes = customization_notes
+                    trial.need_customization = need_customization
                     trial.save()
 
                     if trial.booked_device_serial:
@@ -162,50 +162,10 @@ class TrialCompletionView(APIView):
                         inventory_item.quantity_in_stock -= 1
                         inventory_item.save()
                     
-                    # Create purchase record
-                    # unit_price = inventory_item.unit_price
-                    # PatientPurchase.objects.create(
-                    #     clinic=trial.clinic,
-                    #     patient=trial.assigned_patient,
-                    #     visit=trial.visit,
-                    #     inventory_item=inventory_item,
-                    #     inventory_serial=None,  # Will be assigned after customization
-                    #     quantity=1,
-                    #     unit_price=unit_price,
-                    #     total_price=unit_price
-                    # )
-                    
-                    # Create bill for device purchase
-                    # bill, created = Bill.objects.get_or_create(
-                    #     visit=trial.visit,
-                    #     defaults={
-                    #         'clinic': trial.clinic,
-                    #         'created_by': request.user,
-                    #         'gst_amount': inventory_item.gst_value,
-                    #     }
-                    # )
-
-                    # if not created:
-                    #     Bill.objects.filter(id=bill.id).update(
-                    #         gst_amount=inventory_item.gst_value
-                    #     )
-                    #     bill.refresh_from_db()
-                    
-                    # # Add bill item for device with customization
-                    # BillItem.objects.create(
-                    #     bill=bill,
-                    #     item_type='Purchase',
-                    #     description=f"Purchase of {inventory_item.product_name} ({inventory_item.brand} {inventory_item.model_type}) - With Customization",
-                    #     cost=unit_price,
-                    #     quantity=1,
-                    # )
-                    
-                    # # Recalculate bill totals
-                    # bill.calculate_total()
-                    
+                
                     # Update visit status
                     trial.visit.status = 'Book - With Customization'
-                    trial.visit.status_note = f'Trial completed , Device booked with customization: {customization_notes}'
+                    trial.visit.status_note = 'Trial completed , Device booked with customization'
                     trial.visit.save()
                     
                 elif trial_decision == 'TRIAL ACTIVE':
@@ -236,7 +196,7 @@ class TrialCompletionView(APIView):
                 elif trial_decision == 'TRIAL ACTIVE':
                     message = f"Trial completed successfully. Follow-up scheduled in {followup_days} days."
                 elif trial_decision == 'BOOK - With Customization':
-                    message = f"Trial completed successfully. Device booked with customization: {customization_notes}"
+                    message = "Trial completed successfully. Device booked with customization"
                 elif trial_decision == 'DECLINE':
                     message = "Trial completed successfully. Patient declined device booking."
                 
@@ -303,7 +263,7 @@ class AllocateSerialNumber(generics.UpdateAPIView):
     """API endpoint to allocate a serial number to a trial that is awaiting stock."""
     
     permission_classes = [IsAuthenticated]
-    queryset = Trial.objects.filter(trial_decision='BOOK - Awaiting Stock')
+    queryset = Trial.objects.filter(trial_decision__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
     lookup_field = 'id'
     lookup_url_kwarg = 'trial_id'
 
@@ -311,6 +271,7 @@ class AllocateSerialNumber(generics.UpdateAPIView):
         instance = self.get_object()
         trial_decision = instance.trial_decision
         booked_device_serial = request.data.get('booked_device_serial')
+        is_customization_completed = request.data.get('is_customization_completed',False)
         serial_obj = None
         with transaction.atomic():
             # For serialized items, validate the serial number exists and is in stock
@@ -327,6 +288,8 @@ class AllocateSerialNumber(generics.UpdateAPIView):
                         "status": "error",
                         "message": f"Serial number {booked_device_serial} is not available in stock for the selected inventory item."
                     }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Handle different trial decisions
             if trial_decision == 'BOOK - Awaiting Stock' and serial_obj:
                 instance.booked_device_serial = serial_obj
                 instance.trial_decision = 'BOOK - Device Allocated'
@@ -366,12 +329,73 @@ class AllocateSerialNumber(generics.UpdateAPIView):
                 instance.visit.status = 'Book - Device Allocated'
                 instance.visit.status_note = 'Trial completed , Device Allocated for booking'
                 instance.visit.save()
+                
+            elif trial_decision == 'BOOK - With Customization':
+                # Handle completion notes for customization trials
+                if is_customization_completed:
+                    instance.is_customization_completed = is_customization_completed
+                    instance.need_customization = False
+                    instance.trial_decision = 'BOOK - Device Allocated'
+                    instance.save()
+                    
+                    # Create purchase record if not already created
+                    if not PatientPurchase.objects.filter(visit=instance.visit, inventory_item=instance.booked_device_inventory).exists():
+                        unit_price = instance.booked_device_inventory.unit_price
+                        PatientPurchase.objects.create(
+                            clinic=instance.clinic,
+                            patient=instance.assigned_patient,
+                            visit=instance.visit,
+                            inventory_item=instance.booked_device_inventory,
+                            inventory_serial=serial_obj if serial_obj else None,
+                            quantity=1,
+                            unit_price=unit_price,
+                            total_price=unit_price
+                        )
+                        
+                        # Create bill for device purchase
+                        bill, created = Bill.objects.get_or_create(
+                            visit=instance.visit,
+                            defaults={
+                                'clinic': instance.clinic,
+                                'created_by': request.user,
+                                'gst_amount': instance.booked_device_inventory.gst_value,
+                            }
+                        )
+                        if not created:
+                            Bill.objects.filter(id=bill.id).update(
+                                gst_amount=instance.booked_device_inventory.gst_value
+                            )
+                            bill.refresh_from_db()
+                        
+                        # Add bill item for device with customization
+                        BillItem.objects.create(
+                            bill=bill,
+                            item_type='Purchase',
+                            description=f"Purchase of {instance.booked_device_inventory.product_name} ({instance.booked_device_inventory.brand} {instance.booked_device_inventory.model_type}) - With Customization",
+                            cost=unit_price,
+                            quantity=1,
+                        )
+                        bill.calculate_total()
+                        
+                        # Update inventory if serial allocated
+                        if serial_obj:
+                            serial_obj.status = 'Sold'
+                            serial_obj.save()
+                            instance.booked_device_serial = serial_obj
+                            instance.booked_device_inventory.update_quantity_from_serials()
+                    
+                    instance.visit.status = 'Book - Device Allocated'
+                    instance.visit.status_note = 'Trial completed , Device Allocated with customization'
+                    instance.visit.save()
+                else:
+                    return Response({
+                        "status": "error",
+                        "message": "completion_notes is required for BOOK - With Customization trials"
+                    }, status=status.HTTP_400_BAD_REQUEST)
         return Response({
             "status": "success",
-            "message": f"Serial number {booked_device_serial} allocated successfully and trial updated to BOOK - Device Allocated."
+            "message": f"Processing Completed and trial updated to BOOK - Device Allocated."
         })
-
-
 
        
     

@@ -96,7 +96,6 @@ class TrialCompletionNotesUpdateView(generics.UpdateAPIView):
             "data": {
                 "trial_id": instance.id,
                 "completion_notes": instance.return_notes,
-                "customization_notes": instance.customization_notes,
                 "trial_decision": instance.trial_decision
             }
         }, status=status.HTTP_200_OK)
