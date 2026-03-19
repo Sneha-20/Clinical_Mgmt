@@ -4,17 +4,19 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.core.exceptions import ValidationError
 from accounts.models import User,Clinic
 from django.utils import timezone
+
+
 class Patient(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
     name = models.CharField(max_length=255)
-    age = models.IntegerField()
-    dob = models.DateField()
+    age = models.IntegerField(null=True, blank=True)
+    dob = models.DateField(null=True, blank=True)
     email = models.EmailField(blank=True, null=True)
     gender = models.CharField(max_length=50)
     phone_primary = models.CharField(max_length=50)
     phone_secondary = models.CharField(max_length=50, blank=True, null=True)
     city = models.CharField(max_length=255)
-    address = models.TextField()
+    address = models.TextField(null=True, blank=True)
     referral_type = models.CharField(max_length=255, blank=True, null=True)
     referral_doctor = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -31,7 +33,6 @@ class PatientVisit(models.Model):
     present_complaint = models.CharField(max_length=255, blank=True, null=True)
     test_requested = models.CharField(max_length=255, blank=True, null=True) # it will be dropdown in frontend
     notes = models.TextField(blank=True, null=True)
-    # created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50,null=True)  #  ( Test Pending / Trial active/ Booked / Follow-up)
     status_note = models.TextField(blank=True, null=True)
     contacted = models.BooleanField(default=False)  # Track if patient has been contacted for follow-up
@@ -41,7 +42,8 @@ class PatientVisit(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     step_process = models.IntegerField(default=1)  # Track the current step in the process (1-Case History, 2-Tests, 3-Trial, 4-Booking)
-
+    cost_taken_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    mode_of_payment = models.CharField(max_length=50, blank=True, null=True)
 
 
 class AudiologistCaseHistory(models.Model):
@@ -67,24 +69,23 @@ class AudiologistCaseHistory(models.Model):
 
 class VisitTestPerformed(models.Model):
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
-    # test_code = models.CharField(max_length=100)
-    # required = models.BooleanField(default=False)
     pta = models.BooleanField(default=False)
-    typm = models.BooleanField(default=False) # Tympanometry
-    immittance = models.BooleanField(default=False)
-    oae = models.BooleanField(default=False)
+    srt_sds = models.BooleanField(default=False)  # Combined field for SRT and SDS since they often go together
+    pta_sds = models.BooleanField(default=False)
+    special_tests = models.TextField(blank=True, null=True)
+    impedance  = models.BooleanField(default=False)  # Impedance testing (Tympanometry + Reflexes)
+    impedance_etf = models.BooleanField(default=False)  # Eustachian Tube Function test
+    bera = models.BooleanField(default=False)  # BERA/ABR
+    assr = models.BooleanField(default=False)  # ASSR
     bera_assr = models.BooleanField(default=False)
-    srt = models.BooleanField(default=False)
-    sds = models.BooleanField(default=False)
-    ucl = models.BooleanField(default=False)
-    free_field = models.BooleanField(default=False)
-    other_test = models.CharField(max_length=255, blank=True, null=True)
+    speech_assessment = models.BooleanField(default=False)  # Speech assessment (SRT/SDS)
 
 
 class TestUpload(models.Model):
     visit = models.ForeignKey(VisitTestPerformed, on_delete=models.CASCADE)
-    file_type = models.CharField(max_length=100)
-    file_path = models.TextField()
+    report_type = models.CharField(max_length=100)
+    report_description = models.TextField(blank=True, null=True)
+    file_path = models.TextField(null=True, blank=True)  # Store file path or URL to the uploaded report
     created_at = models.DateTimeField(auto_now_add=True)
 
 
@@ -101,7 +102,7 @@ class Trial(models.Model):
     sds_before = models.CharField(max_length=255, blank=True, null=True)
     ucl_before = models.CharField(max_length=255, blank=True, null=True)
     patient_response = models.CharField(max_length=255, blank=True, null=True)
-    counselling_notes = models.TextField()
+    counselling_notes = models.TextField(null=True, blank=True)
     discount_offered = models.IntegerField(blank=True, null=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="Cost associated with the trial")
     followup_date = models.DateField(blank=True, null=True)
@@ -116,7 +117,7 @@ class Trial(models.Model):
     TRIAL_DECISION_CHOICES = [
         ('TRIAL_ACTIVE', 'Trial Active'),
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
-        ('BOOK - Allocated', 'Book Device Allocated' ),
+        ('BOOK - Device Allocated', 'Book Device Allocated' ),
         ('FOLLOWUP', 'Need Time - Not Booked'),
         ('DECLINE', 'Decline Device Booking'),
     ]
@@ -165,6 +166,7 @@ class Bill(models.Model):
     bill_number = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text="Auto-generated bill number")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total amount (auto-calculated from bill items)")
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total discount applied")
+    gst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="GST amount applied")
     final_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Final amount after discount")
     payment_status = models.CharField(
         max_length=50,
@@ -190,23 +192,33 @@ class Bill(models.Model):
         return f"Bill {self.bill_number or self.id} - {self.visit.patient.name}"
 
     def calculate_total(self):
-        """Calculate total from all bill items (fix Decimal/float subtraction)"""
+        """Calculate total from all bill items, deduct cost_taken_amount from PatientVisit."""
         from django.db.models import F, Sum, DecimalField
         from decimal import Decimal
 
-        # Aggregate will always return Decimal or None; ensure default is Decimal
         total = self.bill_items.aggregate(
             total=Sum(F('cost') * F('quantity'), output_field=DecimalField())
         )['total']
         if total is None:
             total = Decimal('0.00')
-        # Ensure discount_amount is Decimal, not float (avoid subtraction error)
+
         if self.discount_amount is None:
             self.discount_amount = Decimal('0.00')
         elif not isinstance(self.discount_amount, Decimal):
-            self.discount_amount = Decimal(str(self.discount_amount))  # Convert float to str then Decimal, safe for .00
+            self.discount_amount = Decimal(str(self.discount_amount))
+
+        # 3️⃣ Normalize GST
+        gst_amount = self.gst_amount or Decimal('0.00')
+        if not isinstance(gst_amount, Decimal):
+            gst_amount = Decimal(str(gst_amount))
+
+        # Deduct cost_taken_amount from PatientVisit if present
+        cost_taken_amount = Decimal('0.00')
+        if self.visit and getattr(self.visit, 'cost_taken_amount', None):
+            cost_taken_amount = Decimal(str(self.visit.cost_taken_amount or 0))
+
         self.total_amount = total
-        self.final_amount = total - self.discount_amount
+        self.final_amount = total - self.discount_amount - cost_taken_amount + gst_amount
         self.save(update_fields=['total_amount', 'final_amount'])
 
     def generate_bill_number(self):
@@ -359,10 +371,10 @@ class PatientPurchase(models.Model):
 
     def clean(self):
         """Ensure that a serial number is provided for serialized items."""
-        if self.inventory_item.stock_type == 'Serialized' and not self.inventory_serial:
-            raise ValidationError(
-                f"A serial number must be provided for serialized items like '{self.inventory_item}'."
-            )
+        # if self.inventory_item.stock_type == 'Serialized' and not self.inventory_serial:
+        #     raise ValidationError(
+        #         f"A serial number must be provided for serialized items like '{self.inventory_item}'."
+        #     )
         if self.inventory_item.stock_type == 'Non-Serialized' and self.inventory_serial:
             raise ValidationError(
                 f"A serial number should not be provided for non-serialized items like '{self.inventory_item}'."
@@ -378,19 +390,26 @@ from django.utils import timezone
 
 # Choices for category
 CATEGORY_CHOICES = [
+    ('Hearing Aid', 'Hearing Aid'),
+    ('Speech Material', 'Speech Material'),
+    ("Cochlear Implant", "Cochlear Implant"),
+    ("Accessories",'Accessories'),
+]
+
+ACCESSORIES_TYPE_CHOICES = [
     ('Battery', 'Battery'),
     ('Dome', 'Dome'),
     ('Receiver', 'Receiver'),
     ('Mold', 'Mold'),
-    ('Tube', 'Tube'),
-    ('Hearing Aid', 'Hearing Aid'),
-    ('Trial Stock', 'Trial Stock'),
-    ('Speech Material', 'Speech Material'),
+     ('Tube', 'Tube'),
+    ('Charger', 'Charger'),
 ]
+
 
 class Brand(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    name = models.CharField(max_length=50, unique=True)
+    accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES, help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
+    name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
@@ -409,6 +428,7 @@ class ModelType(models.Model):
 class InventoryItem(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True, blank=True)
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES,help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)  # Brand
     model_type = models.ForeignKey(ModelType, on_delete=models.SET_NULL, null=True, blank=True)  # Model / Type
@@ -427,6 +447,7 @@ class InventoryItem(models.Model):
     use_in_trial = models.BooleanField(default=False)
     unit_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_approved = models.BooleanField(default=False)
+    gst_value = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="GST percentage applicable to this item")
 
     master_item = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='distributed_copies', help_text="Link to the main inventory item if this is a distributed copy")
 
@@ -538,16 +559,14 @@ class ServiceVisit(models.Model):
     )
 
     service_type = models.CharField(max_length=50, choices=SERVICE_TYPE_CHOICES)
-
     complaint = models.TextField()
     action_taken = models.TextField() 
     action_taken_on = models.DateTimeField(auto_now_add=True)
 
     warranty_applicable = models.BooleanField(default=False)
     charges_collected = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    gst_charges = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     rtc_date = models.DateField(blank=True, null=True)
-
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -560,14 +579,15 @@ class ServicePartUsed(models.Model):
     )
     inventory_item = models.ForeignKey(InventoryItem, on_delete=models.CASCADE)
     quantity = models.IntegerField()
+    inventory_serial = models.ForeignKey(InventorySerial,on_delete=models.CASCADE,null=True,blank=True)
     
 
-    def clean(self):
-        """Ensure that serialized items are not used as service parts."""
-        if self.inventory_item.stock_type == 'Serialized':
-            raise ValidationError(
-                f"Serialized items like '{self.inventory_item}' cannot be used as service parts."
-            )
+    # def clean(self):
+    #     """Ensure that serialized items are not used as service parts."""
+    #     if self.inventory_item.stock_type == 'Serialized':
+    #         raise ValidationError(
+    #             f"Serialized items like '{self.inventory_item}' cannot be used as service parts."
+    #         )
 
     def save(self, *args, **kwargs):
         """
@@ -657,3 +677,19 @@ class InventoryTransfer(models.Model):
         to_name = self.to_clinic.name if self.to_clinic else "Unknown"
         
         return f"[{date_str}] {user_name} transferred {self.quantity} x {self.item_name} ({self.brand} {self.model}) from {from_name} to {to_name}."
+
+
+class ClinicTransactions(models.Model):
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=50, choices=[('Income', 'Income'), ('Expense', 'Expense')])    # Income , expenses
+    category = models.CharField(max_length=50)  # e.g., 'Inventory Transfer', 'Purchase', 'Sale'
+    person_name = models.CharField(max_length=255, blank=True, null=True)  # Name of person involved in transaction (supplier/customer)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_date = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        ordering = ['-transaction_date']
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.amount} on {self.transaction_date.strftime('%Y-%m-%d')}"

@@ -11,11 +11,18 @@ class InventoryDropdownsView(APIView):
     def get(self, request, format=None):
         category = request.query_params.get('category')
         brand = request.query_params.get('brand')
+        accessories_type = request.query_params.get('accessories_type')
         # No params: return all categories
         if not category and not brand:
             categories = list(CATEGORY_CHOICES)  # Use the imported CATEGORY_CHOICES directly
             return Response({'categories': [cat[1] for cat in categories]}, status=status.HTTP_200_OK)
         # category only: return brands for that category
+
+        if accessories_type: # use only when category is Accessroies
+            brands = Brand.objects.filter(category=category, accessories_type=accessories_type).distinct()
+            unique_brands = BrandSerializer(brands, many=True).data
+            return Response({'brands': unique_brands}, status=status.HTTP_200_OK)
+        
         if category and not brand:
             brands = Brand.objects.filter(category=category).distinct()
             unique_brands = BrandSerializer(brands, many=True).data

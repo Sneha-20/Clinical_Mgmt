@@ -14,7 +14,8 @@ from .models import (
     TestUpload,
     InventoryTransfer, 
     Brand,  
-    ModelType
+    ModelType,
+    ClinicTransactions
 
 )
 
@@ -26,6 +27,11 @@ from datetime import timedelta
 from accounts.models import User
 from accounts.serializers import RoleSimpleSerializer
 from rest_framework import status
+from django.utils import timezone
+from django.db import models
+from django.db.models import F
+
+
 
 
 class PatientAllVisitSerializer(serializers.ModelSerializer):
@@ -118,6 +124,37 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
         )
         return data
 
+
+class PurchaseItemSerializer(serializers.Serializer):
+    inventory_item = serializers.IntegerField()
+    quantity = serializers.IntegerField(required=False)
+    serial_numbers = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+
+
+    def validate(self, data):
+
+        serial_numbers = data.get("serial_numbers")
+        quantity = data.get("quantity")
+
+        # If serial numbers exist → quantity = len(serial_numbers)
+        if serial_numbers:
+            data["quantity"] = len(serial_numbers)
+
+    
+        # # If neither serial_number nor quantity
+        # if not serial_numbers and not quantity:
+        #     raise serializers.ValidationError(
+        #         "Either serial_number or quantity must be provided"
+        #     )
+
+        return data
+
+
+
+
 class PatientVisitRegistrationSerializer(serializers.Serializer):
     """
     Nested serializer used only during Patient registration to accept
@@ -125,6 +162,11 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     """
 
     visit_type = serializers.CharField()
+    # TGA-specific fields
+    tga_service_type = serializers.CharField(required=False, allow_blank=True)
+    device_serial_need_service = serializers.CharField(required=False, allow_blank=True)
+    complaint = serializers.CharField(required=False, allow_blank=True)
+    # General fields (for non-TGA)
     present_complaint = serializers.CharField(required=False, allow_blank=True)
     test_requested = serializers.ListField(
         child=serializers.CharField(),
@@ -132,6 +174,118 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     )
     notes = serializers.CharField(required=False, allow_blank=True)
     seen_by = serializers.IntegerField(required=False, allow_null=True)
+    cost_taken_amount = serializers.FloatField(required=False, default=0)   
+    mode_of_payment = serializers.CharField(required=False, allow_blank=True)
+
+    purchase_items = PurchaseItemSerializer(
+        many=True,
+        required=False
+    )
+
+    def validate(self, data):
+
+        visit_type = data.get('visit_type')
+
+        # -------------------------
+        # TGA VISIT
+        # -------------------------
+        if visit_type in ['Troubleshooting General Adjustment', 'TGA']:
+
+            data.pop('cost_taken_amount', None)
+            data.pop('mode_of_payment', None)
+            data.pop('purchase_items', None)
+
+            allowed = {
+                'visit_type',
+                'seen_by',
+                'tga_service_type',
+                'device_serial_need_service',
+                'complaint'
+            }
+
+            extra = set(data.keys()) - allowed
+            if extra:
+                raise serializers.ValidationError(
+                    f"For TGA visits, only these fields are allowed: {', '.join(allowed)}. "
+                    f"Extra fields: {', '.join(extra)}"
+                )
+
+            required = ['tga_service_type', 'device_serial_need_service', 'complaint']
+
+            missing = [f for f in required if not data.get(f)]
+            if missing:
+                raise serializers.ValidationError(
+                    f"Missing required TGA fields: {', '.join(missing)}"
+                )
+
+        # -------------------------
+        # PURCHASE VISIT
+        # -------------------------
+        elif visit_type in ['Purchase Accessories', 'Purchase']:
+
+            data.pop('tga_service_type', None)
+            data.pop('device_serial_need_service', None)
+            data.pop('complaint', None)
+
+            allowed = {
+                'visit_type',
+                'seen_by',
+                'purchase_items',
+                'cost_taken_amount',
+                'mode_of_payment'
+            }
+
+            extra = set(data.keys()) - allowed
+            if extra:
+                raise serializers.ValidationError(
+                    f"For Purchase visits, only these fields are allowed: {', '.join(allowed)}. "
+                    f"Extra fields: {', '.join(extra)}"
+                )
+
+            purchase_items = data.get('purchase_items')
+
+            if not purchase_items:
+                raise serializers.ValidationError(
+                    "purchase_items is required for Purchase visits"
+                )
+
+            # Validate each purchase item
+            for item in purchase_items:
+
+                serial_numbers = item.get("serial_numbers")
+                quantity = item.get("quantity")
+
+                if serial_numbers:
+                    item["quantity"] = len(serial_numbers)
+
+                # elif not quantity:
+                #     raise serializers.ValidationError(
+                #         "Either serial_number or quantity must be provided in purchase_items"
+                #     )
+
+        # -------------------------
+        # OTHER VISITS
+        # -------------------------
+        else:
+
+            allowed = {
+                'visit_type',
+                'seen_by',
+                'present_complaint',
+                'test_requested',
+                'notes',
+                'cost_taken_amount',
+                'mode_of_payment'
+            }
+
+            extra = set(data.keys()) - allowed
+            if extra:
+                raise serializers.ValidationError(
+                    f"For this visit type, only these fields are allowed: {', '.join(allowed)}. "
+                    f"Extra fields: {', '.join(extra)}"
+                )
+
+        return data
 
     def validate_seen_by(self, value):
         print(value)
@@ -141,7 +295,6 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
             return User.objects.get(pk=value)
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid 'seen_by' user id.")
-
 
 # 2. Main Serializer for Registration
 class PatientRegistrationSerializer(serializers.ModelSerializer):
@@ -169,7 +322,8 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             'phone_primary', 'phone_secondary', 'city', 'address',
             'referral_type', 'referral_doctor',
             'service_type', 'appointment_date',
-            'visit_details'  # Include the nested field
+            'visit_details'
+              # Include the nested field
         ]
         read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic']
 
@@ -196,60 +350,187 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        # A. Extract visit list and common visit fields from the payload
         visits_data = validated_data.pop('visit_details', [])
         service_type = validated_data.pop('service_type', None)
         appointment_date = validated_data.pop('appointment_date', None)
 
-        # B. Get User and Clinic info from the request context (passed from View)
         request = self.context.get('request')
         current_user = request.user if request else None
-        # For this example, we assume the logged-in user belongs to a clinic.
-        current_clinic = getattr(request.user, 'clinic', None)
+        current_clinic = getattr(current_user, 'clinic', None)
 
-        # C. Atomic Transaction
+        # Status mapping (faster than if-else chain)
+        STATUS_MAP = {
+            'TGA': ('Pending for Service', 'Waiting for service to be completed'),
+            'Troubleshooting General Adjustment': ('Pending for Service', 'Waiting for service to be completed'),
+            'Purchase': ('Pending', 'Pending Purchase'),
+            'Purchase Accessories': ('Pending', 'Pending Purchase'),
+        }
+
         with transaction.atomic():
-            # 1. Create the Patient
-            # We manually add created_by here since it's read_only in the serializer
+
+            # Create patient
             patient = Patient.objects.create(
                 created_by=current_user,
-                clinic=current_clinic,  # Inherit clinic from logged-in user
+                clinic=current_clinic,
                 **validated_data
             )
 
-            # 2. Create one PatientVisit per item in visits_data
+            # Pre-fetch inventory items for purchase visits
+            inventory_ids = [
+                v.get("inventory_item")
+                for v in visits_data
+                if v.get("inventory_item")
+            ]
+
+            inventory_map = {
+                item.id: item
+                for item in InventoryItem.objects.filter(id__in=inventory_ids)
+            }
+
             for visit_data in visits_data:
-                visit_type = visit_data.get('visit_type')
-                if visit_type in ['Troubleshooting General Adjustment','TGA']:
-                    status_value = 'Pending for Service'
-                    status_note = 'Waiting for service to be completed'
-                else:
-                    status_value = 'Test pending'
-                    status_note = 'Waiting for audiologist availability'
 
-                # Map seen_by (User instance) and test_requested (list -> CSV string)
-                
-                seen_by_user = visit_data.pop('seen_by') # 0 is the default value if seen_by is not provided
-                if seen_by_user == 0:
-                    seen_by_user = current_user
-                test_requested = visit_data.pop('test_requested', [])
-                if isinstance(test_requested, list):
-                    test_requested = ",".join(test_requested) if test_requested else ""
+                visit_type = visit_data.get("visit_type")
 
-                PatientVisit.objects.create(
+                status_value, status_note = STATUS_MAP.get(
+                    visit_type,
+                    ('Test pending', 'Waiting for audiologist availability')
+                )
+
+                # REMOVE purchase_items before creating visit
+                purchase_items = visit_data.pop("purchase_items", [])
+
+                seen_by_user = visit_data.pop("seen_by", 0)
+                seen_by_user = current_user if seen_by_user == 0 else seen_by_user
+
+                test_requested = visit_data.pop("test_requested", [])
+                test_requested = ",".join(test_requested) if test_requested else ""
+
+                visit = PatientVisit.objects.create(
                     patient=patient,
-                    clinic=patient.clinic,  # Inherit clinic from patient
+                    clinic=patient.clinic,
                     status=status_value,
                     status_note=status_note,
-                    service_type=service_type or None,
+                    service_type=service_type,
                     appointment_date=appointment_date,
                     seen_by=seen_by_user,
                     test_requested=test_requested,
                     **visit_data
                 )
 
+                # Process purchases for this visit (immediately, so purchase_items is correct)
+                if visit.visit_type in ['Purchase', 'Purchase Accessories'] and purchase_items:
+
+                    purchase_instances = []
+
+                    inventory_ids = [item["inventory_item"] for item in purchase_items]
+
+                    inventory_map = {
+                        i.id: i for i in InventoryItem.objects.filter(id__in=inventory_ids)
+                    }
+
+                    for item in purchase_items:
+
+                        inventory_id = item.get("inventory_item")
+                        serial_numbers = item.get("serial_numbers", [])
+                        quantity = len(serial_numbers) if serial_numbers else item.get("quantity")
+
+                        inventory = inventory_map.get(inventory_id)
+
+                        if not inventory:
+                            continue
+
+                        if serial_numbers:
+                           
+                            # Fetch serial objects
+                            current_serials = InventorySerial.objects.filter(
+                                inventory_item_id=inventory_id,
+                                serial_number__in=serial_numbers
+                            )
+                            serial_obj_map = {s.serial_number: s for s in current_serials} 
+
+                            for serial in serial_numbers:
+                                serial_obj = serial_obj_map.get(serial)
+                               
+                                purchase_instances.append(
+                                    PatientPurchase(
+                                        patient=patient,
+                                        clinic=current_clinic or patient.clinic,
+                                        visit=visit,
+                                        inventory_item_id=inventory_id,
+                                        quantity=1,
+                                        inventory_serial=serial_obj,
+                                        unit_price=inventory.unit_price,
+                                        total_price=inventory.unit_price * 1,
+                                        purchased_at=timezone.now()
+                                    )
+                                )
+
+                        else:
+
+                            purchase_instances.append(
+                                PatientPurchase(
+                                    patient=patient,
+                                    clinic=current_clinic or patient.clinic,
+                                    visit=visit,
+                                    inventory_item_id=inventory_id,
+                                    quantity=quantity,
+                                    unit_price=inventory.unit_price,
+                                    total_price=inventory.unit_price * quantity,
+                                    purchased_at=timezone.now()
+                                )
+                            )
+                        
+                        # reduce stock quantity in inventory
+                        inventory.quantity_in_stock = inventory.quantity_in_stock - quantity
+                        inventory.save()
+
+                    if purchase_instances:
+                       p_purchases = PatientPurchase.objects.bulk_create(purchase_instances)
+
+                       if p_purchases:
+                            for purchase in p_purchases:
+                                if not purchase.inventory_serial:
+                                    continue
+
+                                inventory_serial = InventorySerial.objects.get(serial_number=purchase.inventory_serial.serial_number)
+                                inventory_serial.status = 'Sold'
+                                inventory_serial.save()
+
+                            total_gst_amount = sum((inventory_map[p.inventory_item_id].gst_value * p.quantity) for p in p_purchases)
+
+                            # add to bills for one visit 
+                            bill, created = Bill.objects.get_or_create(
+                                visit=visit,
+                                defaults={
+                                    'clinic': current_clinic or patient.clinic,
+                                    'created_by': current_user,
+                                    'gst_amount': total_gst_amount
+                                }
+                            )
+
+                            if not created:
+                                Bill.objects.filter(id=bill.id).update(
+                                    gst_amount=total_gst_amount
+                                )
+                                bill.refresh_from_db()
+
+                            print(p_purchases)
+
+                            # bill items
+                            BillItem.objects.bulk_create([
+                                BillItem(
+                                    bill=bill,
+                                    description=f"Purchase - {purchase.inventory_item.product_name}" + (f" : {purchase.inventory_serial.serial_number}" if purchase.inventory_serial else ""),
+                                    item_type="Purchase",
+                                    cost=purchase.unit_price,
+                                    quantity=purchase.quantity,
+                                ) for purchase in p_purchases
+                            ])
+
+                            bill.calculate_total()
+
+
         return patient
-    
 
 # Edit Patient record 
 class PatientDetailSerializer(serializers.ModelSerializer):
@@ -397,35 +678,60 @@ class PatientVisitCreateSerializer(serializers.Serializer):
     appointment_date = serializers.DateField(write_only=True, required=False)
     visit_details = PatientVisitRegistrationSerializer(many=True, write_only=True)
 
-    def create(self, validated_data):
-        request = self.context.get('request')
-        current_clinic = getattr(request.user, 'clinic', None) if request else None
-        current_user = request.user if request else None
+    
 
-        patient = validated_data.get('patient')
-        service_type = validated_data.get('service_type')
-        appointment_date = validated_data.get('appointment_date')
-        visits_data = validated_data.get('visit_details', [])
+    def create(self, validated_data):
+
+        request = self.context.get('request')
+        current_user = request.user if request else None
+        current_clinic = getattr(current_user, 'clinic', None)
+
+        patient = validated_data.get("patient")
+        service_type = validated_data.get("service_type")
+        appointment_date = validated_data.get("appointment_date")
+        visits_data = validated_data.get("visit_details", [])
 
         created_visits = []
 
         with transaction.atomic():
+
             for visit_data in visits_data:
-                visit_type = visit_data.get('visit_type')
-                if visit_type in ['Battery Purchase', 'Tip / Dome Change', 'TGA']:
-                    status_value = 'Pending for Service'
-                else: #  For new test , followup tests
-                    status_value = 'Test pending'
 
-                # `seen_by` has already been validated by PatientVisitRegistrationSerializer
-                seen_by_user = visit_data.pop('seen_by', 0)
+                visit_type = visit_data.get("visit_type")
+
+                if visit_type in [
+                    'Battery Purchase',
+                    'Tip / Dome Change',
+                    'TGA',
+                    'Troubleshooting General Adjustment'
+                ]:
+                    status_value = "Pending for Service"
+
+                elif visit_type in ['Purchase Accessories', 'Purchase']:
+                    status_value = "Pending"
+
+                else:
+                    status_value = "Test pending"
+
+
+                seen_by_user = visit_data.pop("seen_by", 0)
+
                 if seen_by_user == 0:
-                    seen_by_user=current_user
+                    seen_by_user = current_user
 
-                # Convert list of tests to CSV string for storage on the model
-                test_requested = visit_data.pop('test_requested', [])
+
+                test_requested = visit_data.pop("test_requested", [])
                 if isinstance(test_requested, list):
                     test_requested = ",".join(test_requested) if test_requested else ""
+
+
+                purchase_items = visit_data.pop("purchase_items", [])
+
+
+                tga_service_type = visit_data.pop("tga_service_type", None)
+                device_serial_need_service = visit_data.pop("device_serial_need_service", None)
+                complaint = visit_data.pop("complaint", None)
+
 
                 visit = PatientVisit.objects.create(
                     patient=patient,
@@ -438,11 +744,155 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     step_process=1,
                     **visit_data
                 )
+
                 created_visits.append(visit)
 
-        # View does not use serializer.data, so returning list is fine
+
+                # --------------------
+                # TGA Service Visit
+                # --------------------
+
+                if visit_type in ['Troubleshooting General Adjustment', 'TGA']:
+
+                    inventory_device = PatientPurchase.objects.get(
+                        inventory_serial__serial_number=device_serial_need_service
+                    )
+
+                    ServiceVisit.objects.create(
+                        visit=visit,
+                        service_type=tga_service_type,
+                        complaint=complaint,
+                        device=inventory_device,
+                        device_serial=inventory_device.inventory_serial,
+                        created_by=current_user,
+                        created_at=timezone.now()
+                    )
+
+
+                # --------------------
+                # Purchase Visit
+                # --------------------
+
+                if visit_type in ['Purchase', 'Purchase Accessories']:
+
+                    purchase_instances = []
+
+                    inventory_ids = [
+                        item["inventory_item"] for item in purchase_items
+                    ]
+
+                    inventory_map = {
+                        item.id: item
+                        for item in InventoryItem.objects.filter(id__in=inventory_ids)
+                    }
+
+                    for item in purchase_items:
+
+                        inventory_id = item.get("inventory_item")
+                        serial_numbers = item.get("serial_numbers", [])
+                        quantity = len(serial_numbers) if serial_numbers else item.get("quantity", 1)
+
+                        inventory = inventory_map.get(inventory_id)
+
+                        if not inventory:
+                            continue
+
+                        if serial_numbers:
+                            current_serials = InventorySerial.objects.filter(
+                                inventory_item_id=inventory_id,
+                                serial_number__in=serial_numbers
+                            )
+                            serial_obj_map = {s.serial_number: s for s in current_serials}
+
+                            for serial in serial_numbers:
+                                serial_obj = serial_obj_map.get(serial)
+
+                                purchase_instances.append(
+                                    PatientPurchase(
+                                        patient=patient,
+                                        clinic=current_clinic or patient.clinic,
+                                        visit=visit,
+                                        inventory_item_id=inventory_id,
+                                        quantity=1,
+                                        inventory_serial=serial_obj,
+                                        unit_price=inventory.unit_price,
+                                        total_price=inventory.unit_price * 1,
+                                        purchased_at=timezone.now()
+                                    )
+                                )
+
+                        else:
+
+                            purchase_instances.append(
+                                PatientPurchase(
+                                    patient=patient,
+                                    clinic=current_clinic or patient.clinic,
+                                    visit=visit,
+                                    inventory_item_id=inventory_id,
+                                    quantity=quantity,
+                                    unit_price=inventory.unit_price,
+                                    total_price=inventory.unit_price * quantity,
+                                    purchased_at=timezone.now()
+                                )
+                            )
+                        
+                        # reduce stock quantity in inventory
+                        inventory.quantity_in_stock = inventory.quantity_in_stock - quantity
+                        inventory.save()
+
+
+
+                    if purchase_instances:
+                       p_purchases =  PatientPurchase.objects.bulk_create(purchase_instances)
+
+                       if p_purchases:
+                            for purchase in p_purchases:
+                                if not purchase.inventory_serial:
+                                    continue
+
+                                inventory_serial = InventorySerial.objects.get(serial_number=purchase.inventory_serial.serial_number)
+                                inventory_serial.status = 'Sold'
+                                inventory_serial.save()
+
+                            total_gst_amount = sum((inventory_map[p.inventory_item_id].gst_value * p.quantity) for p in p_purchases)
+
+                            # add to bills for one visit 
+                            bill, created = Bill.objects.get_or_create(
+                                visit=visit,
+                                defaults={
+                                    'clinic': current_clinic or patient.clinic,
+                                    'created_by': current_user,
+                                    'final_amount': sum(p.total_price for p in p_purchases),
+                                    'total_amount': sum(p.total_price for p in p_purchases),
+                                    'payment_status': 'Pending',
+                                    'gst_amount': total_gst_amount
+                                }
+                            )
+
+                            if not created:
+                                Bill.objects.filter(id=bill.id).update(
+                                    gst_amount=total_gst_amount
+                                )
+                                bill.refresh_from_db()
+
+                            # bill items
+                            BillItem.objects.bulk_create([
+                                BillItem(
+                                    bill=bill,
+                                    description=f"Purchase - {purchase.inventory_item.product_name}" + (f" : {purchase.inventory_serial.serial_number}" if purchase.inventory_serial else ""),
+                                    item_type="Purchase",
+                                    cost=purchase.unit_price,
+                                    quantity=purchase.quantity,
+                                ) for purchase in p_purchases
+                            ])
+
+                            bill.calculate_total()
+
+                               
+
         return created_visits
-    
+
+
 # Edit Patient Visit Serializer (used in Update View)
 class PatientVisitUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -481,7 +931,7 @@ class TestUploadSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = TestUpload
-        fields = ['id', 'file_type', 'file_url', 'created_at']
+        fields = ['id', 'report_type', 'report_description', 'file_url', 'created_at']
 
 class TrialSerializer(serializers.ModelSerializer):
     device_details = serializers.SerializerMethodField()
@@ -490,8 +940,8 @@ class TrialSerializer(serializers.ModelSerializer):
         if obj.device_inventory_id:
             return {
                 'id': obj.device_inventory_id.id,
-                'brand': obj.device_inventory_id.brand.name,
-                'model_type': obj.device_inventory_id.model_type.name,
+                'brand': obj.device_inventory_id.brand.name if obj.device_inventory_id.brand else None,
+                'model_type': obj.device_inventory_id.model_type.name if obj.device_inventory_id.model_type else None,
                 'category': obj.device_inventory_id.category
             }
         return None
@@ -708,7 +1158,8 @@ class PatientVisitWithCaseHistorySerializer(serializers.ModelSerializer):
             'referral_type',
             'referral_doctor',
             'service_type',
-            'case_history'
+            'case_history',
+            'step_process'
         ]
 
 
@@ -819,27 +1270,29 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         # Valid test field names (case-insensitive mapping)
         valid_test_fields = {
             'pta': 'pta',
-            'immittance': 'immittance',
-            'oae': 'oae',
+            'impedance': 'impedance',
+            'srt_sds': 'srt_sds',
+            'pta_sds' :'pta_sds',
+            'special_tests': 'special_tests',
+            'impedance_etf': 'impedance_etf',
+            'bera': 'bera',
+            'assr': 'assr',
             'bera_assr': 'bera_assr',
-            'bera/assr': 'bera_assr',  # Allow alternative format
-            'srt': 'srt',
-            'sds': 'sds',
-            'ucl': 'ucl',
-            'free_field': 'free_field',
-            'freefield': 'free_field',  # Allow alternative format
-        }
-        
+            'speech_assessment': 'speech_assessment',
+        } 
         # Convert test_requested list to boolean fields
         test_performed_data = {
             'pta': False,
-            'immittance': False,
-            'oae': False,
+            'impedance': False,
+            'bera': False,
+            'assr': False,
             'bera_assr': False,
-            'srt': False,
-            'sds': False,
-            'ucl': False,
-            'free_field': False,
+            'srt_sds': False,
+            'pta_sds': False,
+            'impedance_etf': False,
+            'special_tests': False,
+            'speech_assessment': False,
+                
         }
         
         # Set True for tests in the test_requested list
@@ -853,20 +1306,22 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         # Map VisitTestPerformed boolean fields -> TestType names
         flag_to_testtype_name = {
             'pta': 'PTA',
-            'immittance': 'Immittance',
-            'oae': 'OAE',
+            'impedance': 'Impedance',
+            'special_tests': 'Special Tests',
+            'speech_assessment': 'Speech Assessment',
+            'srt_sds': 'SRT/SDS',
+            'pta_sds': 'PTA/SDS',
+            'impedance_etf': 'Impedance/ETF',
+            'bera': 'BERA',
+            'assr': 'ASSR',
             'bera_assr': 'BERA/ASSR',
-            'srt': 'SRT',
-            'sds': 'SDS',
-            'ucl': 'UCL',
-            'free_field': 'Free Field',
+           
         }
 
         request = self.context.get('request')
 
         with transaction.atomic():
             # 1. Create or update AudiologistCaseHistory instance (one per patient)
-            # Use get_or_create since case history should be one per patient
             case_history, created = AudiologistCaseHistory.objects.get_or_create(
                 patient=patient,
                 defaults={
@@ -874,8 +1329,6 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                     **validated_data
                 }
             )
-            
-            # If case history already exists, update only the specified fields
             if not created:
                 fields_to_update = [
                     'medical_history',
@@ -890,46 +1343,36 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                 case_history.save(update_fields=fields_to_update)
 
             # 2. Create or update VisitTestPerformed only if something meaningful is set
-            # Check if any boolean test field is True, or if other_test is provided
-            boolean_test_fields = ['pta', 'immittance', 'oae', 'bera_assr', 'srt', 'sds', 'ucl', 'free_field']
-            has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields) or bool(test_performed_data.get('other_test'))
+            boolean_test_fields = ['pta', 'impedance', 'special_tests', 'speech_assessment', 'srt_sds', 'pta_sds', 'impedance_etf', 'bera', 'assr', 'bera_assr']
+            has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields)
             test_performed_instance = None
             if has_any_test:
-                # Check if VisitTestPerformed already exists for this visit
                 if VisitTestPerformed.objects.filter(visit=visit).exists():
-
                     raise serializers.ValidationError({
                         "status": status.HTTP_400_BAD_REQUEST,
                         "error": "Test record already exists for this visit"
                     })
-                
                 test_performed_instance = VisitTestPerformed.objects.create(
-                    visit=visit,  # Use the extracted visit, not case_history.visit
+                    visit=visit,
                     **test_performed_data
                 )
 
             # 3. Billing: create / update Bill and BillItems for each test
             if test_performed_instance:
                 clinic = getattr(visit, 'clinic', None)
-
-                # Get or create a Bill for this visit
                 bill, _ = Bill.objects.get_or_create(
-                    visit=visit,  # Use the extracted visit
+                    visit=visit,
                     defaults={
                         'clinic': clinic,
                         'created_by': getattr(request, 'user', None) if request else None,
                     },
                 )
-
-                # For each True flag in VisitTestPerformed, add a BillItem
                 for field_name, testtype_name in flag_to_testtype_name.items():
                     if getattr(test_performed_instance, field_name, False):
                         try:
                             test_type = TestType.objects.get(name__iexact=testtype_name)
                         except TestType.DoesNotExist:
-                            # Skip if no configured TestType for this test
                             continue
-
                         BillItem.objects.create(
                             bill=bill,
                             item_type='Test',
@@ -938,35 +1381,20 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                             cost=test_type.cost,
                             quantity=1,
                         )
-
-                # Also handle "other_test" if you have a configured TestType with that name
-                other_test_name = test_performed_instance.other_test
-                if other_test_name:
-                    try:
-                        other_test_type = TestType.objects.get(name__iexact=other_test_name)
-                        BillItem.objects.create(
-                            bill=bill,
-                            item_type='Test',
-                            test_type=other_test_type,
-                            description=other_test_type.name,
-                            cost=other_test_type.cost,
-                            quantity=1,
-                        )
-                    except TestType.DoesNotExist:
-                        # If no TestType exists for this free-text test, skip billing
-                        pass
-
-                # Recalculate totals explicitly (BillItem.save also does this, but this is safe)
                 bill.calculate_total()
 
             # 4. Update PatientVisit status to 'test_performed'
             if test_performed_instance:
                 visit.status = 'Test Performed'
                 visit.status_note = 'Test Performed by Audiologist'
-                visit.step_process = 2  # Move to next step in workflow
+                visit.step_process = 2
                 visit.save(update_fields=['status', 'status_note', 'step_process'])
 
-        return case_history
+        # Return both case_history and step_process for response
+        return {
+            'case_history': case_history,
+            'step_process': visit.step_process if test_performed_instance else visit.step_process
+        }
 
 
 # ============================================================================
@@ -1017,10 +1445,40 @@ class BillItemSerializer(serializers.ModelSerializer):
     trial_brand = serializers.CharField(source='trial.brand', read_only=True)
     trial_model = serializers.CharField(source='trial.model', read_only=True)
     item_total = serializers.SerializerMethodField()
+    gst_value = serializers.SerializerMethodField()
 
     def get_item_total(self, obj):
         """Calculate total for this item (cost * quantity)"""
         return float(obj.cost * obj.quantity)
+
+    def get_gst_value(self, obj):
+        quantity = obj.quantity or 1
+        print(quantity)
+
+        # if obj.item_type == 'Trial' and obj.trial and obj.trial.device_inventory_id:
+        #     gst = obj.trial.device_inventory_id.gst_value or 0
+        #     return gst * quantity
+        if obj.item_type == 'Part Used in Service' and obj.bill and hasattr(obj.bill.visit, 'service'):
+            service = obj.bill.visit.service
+            parts = service.parts_used.select_related('inventory_item').all()
+            for part in parts:
+                if part.inventory_item.product_name and part.inventory_item.product_name in obj.description:
+                    gst = part.inventory_item.gst_value or 0
+                    return gst * quantity
+        
+        if obj.item_type == 'Purchase' and obj.bill and hasattr(obj.bill, 'visit') and obj.bill.visit:
+             purchases = obj.bill.visit.purchases.select_related('inventory_item').all()
+             
+             for p in purchases:
+                 if p.inventory_item.product_name and p.inventory_item.product_name in obj.description:
+                     gst = p.inventory_item.gst_value or 0
+                     return gst * quantity
+
+        if obj.item_type == 'Service' and obj.service_visit:
+            gst = obj.service_visit.gst_charges or 0
+            return gst
+
+        return 0
 
     class Meta:
         model = BillItem
@@ -1038,11 +1496,16 @@ class BillItemSerializer(serializers.ModelSerializer):
             'quantity',
             'item_total',
             'created_at',
+            'gst_value',
         ]
 
 
 class BillDetailSerializer(serializers.ModelSerializer):
-    """Complete bill serializer with all details for frontend display"""
+    # Amount taken at visit
+    cost_taken_amount = serializers.DecimalField(source='visit.cost_taken_amount', max_digits=10, decimal_places=2, read_only=True)
+    # Amount deducted from total
+    cost_taken_amount_deducted = serializers.SerializerMethodField()
+
     # Patient information
     patient_id = serializers.IntegerField(source='visit.patient.id', read_only=True)
     patient_name = serializers.CharField(source='visit.patient.name', read_only=True)
@@ -1057,6 +1520,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
     visit_date = serializers.DateTimeField(source='visit.created_at', read_only=True)
     appointment_date = serializers.DateField(source='visit.appointment_date', read_only=True)
     service_type = serializers.CharField(source='visit.service_type', read_only=True)
+    doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
 
     # Clinic information
     clinic_name = serializers.CharField(source='clinic.name', read_only=True)
@@ -1069,7 +1533,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
     # Calculated fields
     items_count = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
-
+    
     def get_items_count(self, obj):
         """Total number of items in the bill"""
         return obj.bill_items.count()
@@ -1078,12 +1542,17 @@ class BillDetailSerializer(serializers.ModelSerializer):
         """Subtotal before discount (same as total_amount)"""
         return float(obj.total_amount)
 
+    def get_cost_taken_amount_deducted(self, obj):
+        # Returns the deducted amount for clarity
+        return float(getattr(obj.visit, 'cost_taken_amount', 0) or 0)
+
     class Meta:
         model = Bill
         fields = [
             # Bill basic info
             'id',
             'bill_number',
+            'gst_amount',
             'created_at',
             'updated_at',
             'payment_status',
@@ -1103,6 +1572,7 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'visit_date',
             'appointment_date',
             'service_type',
+            'doctor_name',
             
             # Clinic info
             'clinic_name',
@@ -1118,9 +1588,16 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'discount_amount',
             'final_amount',
             'subtotal',
+            'cost_taken_amount',
+            'cost_taken_amount_deducted',
+            'gst_amount',
         ]
 
 
+class TestTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TestType
+        fields = '__all__'
 
 class InventorySerialDetailSerializer(serializers.ModelSerializer):
     """Serializer for detailed inventory serial information."""
@@ -1136,7 +1613,7 @@ class InventoryUpdateItemSerializer(serializers.ModelSerializer):
         fields = [
             'category', 'product_name', 'brand', 'model_type', 'description',
             'quantity_in_stock', 'reorder_level', 'location',
-            'notes', 'use_in_trial', 'unit_price', 'sku'
+            'notes', 'use_in_trial', 'unit_price', 'sku','accessories_type','gst_value'
         ]
 
     def validate_quantity_in_stock(self, value):
@@ -1150,7 +1627,7 @@ class InventoryUpdateItemSerializer(serializers.ModelSerializer):
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = ['id', 'name','category']
+        fields = ['id', 'name','category', 'accessories_type']
 
     
 
@@ -1163,11 +1640,20 @@ class ModelTypeSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'brand', 'brand_name']
 
 
-
 class InventoryItemSerializer(serializers.ModelSerializer):
     brand_name = serializers.CharField(source='brand.name', read_only=True)
     model_type_name = serializers.CharField(source='model_type.name', read_only=True)
     clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    quantity_in_stock = serializers.SerializerMethodField()
+    
+    def get_quantity_in_stock(self, obj):
+        """Calculate quantity_in_stock based on stock type."""
+        if obj.stock_type == 'Serialized':
+            # For serialized items, count only serial numbers with 'In Stock' status
+            return obj.serials.filter(status='In Stock').count()
+        else:
+            # For non-serialized items, use the stored quantity
+            return obj.quantity_in_stock
 
     class Meta:
         model = InventoryItem
@@ -1186,7 +1672,9 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'unit_price',
             'status', 
             'clinic_id',
-            'clinic_name'
+            'clinic_name',
+            'accessories_type',
+            'gst_value',
         ]
 
 
@@ -1238,9 +1726,10 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryItem
         fields = [
-            'category', 'product_name', 'brand', 'model_type', 'description',
+            'category', 'product_name', 'brand', 'model_type', 'description', 'gst_value',
             'stock_type', 'quantity_in_stock', 'reorder_level', 'location',
-            'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers', 'sku'
+            'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers', 'sku',
+            'gst_value'
         ]
         extra_kwargs = {
             'quantity_in_stock': {'required': False, 'allow_null': True}
@@ -1323,8 +1812,8 @@ class ServiceVisitListSerializer(serializers.ModelSerializer):
             item = obj.device.inventory_item
             return {
                 'name': item.product_name,
-                'brand': item.brand.name,
-                'model': item.model_type.name,
+                'brand': item.brand.name if item.brand else None,
+                'model': item.model_type.name if item.model_type else None,
                 'purchase_date': obj.device.purchased_at.date() if obj.device.purchased_at else None
             }
         return None
@@ -1433,6 +1922,7 @@ class TrialCreateSerializer(serializers.ModelSerializer):
         # Update the status of Patient visit ( Trial Active )
         visit.status = 'Trial Active'
         visit.status_note = 'Trial is in progress'
+        visit.step_process = 4  # Move to next step in workflow
         visit.save()
 
         validated_data['device_inventory_id'] = serial.inventory_item
@@ -1466,11 +1956,9 @@ class TrialCreateSerializer(serializers.ModelSerializer):
                 
                 # Apply trial discount to bill if offered (as percentage)
                 if trial.discount_offered and trial.discount_offered > 0:
-                    # Calculate discount as percentage of total bill amount
+                    # Apply discount as a fixed amount
                     from decimal import Decimal
-                    discount_percentage = Decimal(trial.discount_offered) / 100
-                    discount_amount = bill.total_amount * discount_percentage
-                    bill.discount_amount = discount_amount
+                    bill.discount_amount = Decimal(trial.discount_offered)
                     bill.save()
                 
                 # Recalculate bill totals
@@ -1566,6 +2054,8 @@ class ProductInfoBySerialSerializer(serializers.ModelSerializer):
             'brand': item.brand,
             'model_type': item.model_type,
             'category': item.category,
+            'accessories_type': item.accessories_type,
+            'gst_value': item.gst_value,
             'stock_type': item.stock_type,
             'description': item.description,
             'unit_price': item.unit_price,
@@ -1602,7 +2092,7 @@ class TrialCompletionSerializer(serializers.Serializer):
 
         ('TRIAL_ACTIVE', 'Trial Active'),
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
-        ('BOOK - Allocated', 'Book Device Allocated' ),
+        ('BOOK - Device Allocated', 'Book Device Allocated' ),
         ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
@@ -1632,7 +2122,7 @@ class TrialCompletionSerializer(serializers.Serializer):
     def validate(self, data):
         trial_decision = data.get('trial_decision')
         
-        if trial_decision == 'BOOK':
+        if trial_decision == 'BOOK - Device Allocated':
             if not data.get('booked_device_inventory'):
                 raise serializers.ValidationError({
                     'booked_device_inventory': 'Device inventory is required when booking a device'
@@ -1650,6 +2140,9 @@ class TrialCompletionSerializer(serializers.Serializer):
                 #     })
 
                 booked_device_serial = data.get('booked_device_serial')  # Store for use in view logic
+
+                print(booked_device_serial)
+                print(inventory_item.stock_type)
 
                 # For serialized items, validate the serial number exists and is in stock
                 if inventory_item.stock_type == 'Serialized' and booked_device_serial:
@@ -1721,3 +2214,107 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
             'trial_decision',
 
         ]
+
+
+class ClinicTransactionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClinicTransactions
+        fields = ['transaction_type', 'amount', 'person_name','category']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        clinic = getattr(request.user, 'clinic', None)
+
+        # The amount should be less than the total amount of  transaction type Income if the transaction type is Expense
+        if validated_data['transaction_type'] == 'Expense':
+            total_income = ClinicTransactions.objects.filter(clinic=clinic, transaction_type='Income').aggregate(total=models.Sum('amount'))['total'] or 0
+            total_expense = ClinicTransactions.objects.filter(clinic=clinic, transaction_type='Expense').aggregate(total=models.Sum('amount'))['total'] or 0
+            available_balance = total_income - total_expense
+
+            # if validated_data['amount'] > available_balance:
+            #     raise serializers.ValidationError({
+            #             "status": status.HTTP_400_BAD_REQUEST,
+            #             "error": "Expense amount cannot exceed available balance of {:.2f}".format(available_balance)
+            #         }) 
+        if not clinic:
+            raise serializers.ValidationError({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "error": "User does not belong to any clinic."
+            })
+        
+        transaction = ClinicTransactions.objects.create(
+            clinic=clinic,
+            created_by=request.user,
+            **validated_data
+        )
+        return transaction
+
+class ClinicTransactionListSerializer(serializers.ModelSerializer):
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.name', read_only=True)
+
+    class Meta:
+        model = ClinicTransactions
+        fields = ['id', 'clinic_name', 'transaction_type', 'amount', 'person_name', 'category', 'created_by_name','transaction_date']
+
+
+
+class PurchaseInventoryItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PatientPurchase
+        fields = ['inventory_item','quantity', 'visit', ]
+
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        clinic = getattr(request.user, 'clinic', None)
+
+        if not clinic:
+            raise serializers.ValidationError({
+                "status": status.HTTP_400_BAD_REQUEST,
+                "error": "User does not belong to any clinic."
+            })
+        
+        visit = validated_data['visit']
+        inventoryitem = validated_data['inventory_item']
+        quantity = validated_data['quantity']
+
+        patient_purchase = PatientPurchase.objects.create(
+                clinic=clinic,
+                patient=visit.patient,
+                visit=visit,
+                inventory_item=inventoryitem,
+                quantity=quantity,  # Assuming you want to purchase the available stock quantity
+                unit_price=inventoryitem.unit_price,
+                total_price=inventoryitem.unit_price * quantity
+                )
+        # reduce the stock quantity of the inventory item
+        inventoryitem.quantity_in_stock -= patient_purchase.quantity
+        inventoryitem.save()
+
+        # add it to the bill 
+        bill, _ = Bill.objects.get_or_create(
+                    visit=visit,
+                    defaults={
+                        'clinic': clinic,
+                        'created_by': request.user,
+                    }
+                )
+        
+        BillItem.objects.create(
+                    bill=bill,
+                    item_type='Purchase',
+                    # patient_purchase=patient_purchase,
+                    description=f"Purchase of {inventoryitem.product_name}",
+                    cost=patient_purchase.total_price,
+                    quantity=patient_purchase.quantity,
+                )
+        
+        # Recalculate bill totals
+        bill.calculate_total()
+        return patient_purchase
+
+
+        
+       

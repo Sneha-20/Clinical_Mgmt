@@ -21,7 +21,7 @@ class PatientPurchaseHistoryView(ListAPIView):
     def get_queryset(self):
         patient_id = self.kwargs.get('patient_id')
         patient = get_object_or_404(Patient, id=patient_id)
-        return PatientPurchase.objects.filter(patient=patient).order_by('-purchased_at')
+        return PatientPurchase.objects.filter(patient=patient,visit__status='Completed with payment').order_by('-purchased_at')
 
 
 class PatientServiceVisitHistoryView(ListAPIView):

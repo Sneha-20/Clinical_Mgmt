@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status, generics, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db import models
+from django.db.models import Q
 from .serializers import (
     PatientRegistrationSerializer,
     PatientAllVisitSerializer,
@@ -21,9 +22,14 @@ from .serializers import (
     PatientVisitWithCaseHistorySerializer,
     TrialDeviceReturnSerializer,
     TrialCompletionSerializer,
-    PatientVisitFullDetailsSerializer
+    PatientVisitFullDetailsSerializer,
+    TestTypeSerializer,
+    ClinicTransactionCreateSerializer,
+    ClinicTransactionListSerializer,
+    InventoryItemSerializer,
+    PurchaseInventoryItemSerializer
 )
-from .models import Patient, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem
+from .models import Patient, PatientPurchase, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType,ClinicTransactions
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django_filters.rest_framework import DjangoFilterBackend
@@ -76,17 +82,20 @@ class PatientUpdateView(generics.UpdateAPIView):
     permission_classes = [IsAuthenticated,ReceptionistPermission]
     lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial, context={'request': request})
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
-            return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        self.perform_update(serializer)
-        return Response({"status": 200, "message": "Patient details updated successfully"},
-                                status=status.HTTP_200_OK)
-
-
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        result = serializer.save()
+        # result is a dict with 'case_history' and 'step_process'
+        return Response(
+            {
+                "status": 200,
+                "message": "Audiologist case history, test performed, and reports saved successfully",
+                "step_process": result.get("step_process"),
+            },
+            status=status.HTTP_200_OK,
+        )
 class PatientVisitListView(generics.ListAPIView): # Show all Recent Visits
     ''' 
     List all Patient Visits 
@@ -422,9 +431,13 @@ class AudiologistCaseHistoryCreateView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data, context={'request': request})
         if not serializer.is_valid():
             return Response({"status": 400, "error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        self.perform_create(serializer)
+        result = serializer.save()
         return Response(
-            {"status": 200, "message": "Audiologist case history, test performed, and reports saved successfully"},
+            {
+                "status": 200,
+                "message": "Audiologist case history, test performed, and reports saved successfully",
+                "step_process": result.get("step_process"),
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -686,8 +699,8 @@ class TestResultListView(APIView):
             for test_file in test_results:
                 result_data.append({
                     'id': test_file.id,
-                    'file_type': test_file.file_type,
-                    # 'file_path': test_file.file_path,
+                    'report_type': test_file.report_type,
+                    'report_description': test_file.report_description,
                     'file_url': test_file.file_path,  # For frontend convenience
                     'created_at': test_file.created_at,
                     # 'uploaded_by': test_file.uploaded_by.username if test_file.uploaded_by else None
@@ -722,20 +735,22 @@ class VisitTestTypesView(APIView):
             
             test_mapping = [
                 (test_performed.pta, "PTA"),
-                (test_performed.immittance, "Immittance"),
-                (test_performed.typm,"Tympanometry"),
-                (test_performed.oae, "OAE"),
+                (test_performed.speech_assessment, "Speech Assessment"),
                 (test_performed.bera_assr, "BERA/ASSR"),
-                (test_performed.srt, "SRT"),
-                (test_performed.sds, "SDS"),
-                (test_performed.ucl, "UCL"),
-                (test_performed.free_field, "Free Field")
+                (test_performed.impedance, "Impedance"),
+                (test_performed.impedance_etf, "Impedance/ETF"),
+                (test_performed.pta_sds, "PTA/SDS"),
+                (test_performed.srt_sds, "SRT/SDS"),
+                (test_performed.bera, "BERA"),
+                (test_performed.assr, "ASSR"),
+                (test_performed.special_tests, "Special Tests"),
+               
             ]
             
             test_types = [name for flag, name in test_mapping if flag]
             
-            if test_performed.other_test:
-                test_types.append(test_performed.other_test)
+            # if test_performed.other_test:
+            #     test_types.append(test_performed.other_test)
                 
             return Response({"status": 200, "data": test_types}, status=status.HTTP_200_OK)
             
@@ -886,7 +901,10 @@ class DeviceBookingDropdownView(generics.ListAPIView):
         """
         queryset = InventoryItem.objects.filter(
             category='Hearing Aid',
-            use_in_trial=False
+            use_in_trial=False, 
+            is_approved=True,
+            clinic=getattr(self.request.user, 'clinic', None)  # Filter by clinic for multi-tenant support
+            
         )
         
         # Apply search filter from query parameters
@@ -1068,3 +1086,332 @@ class MarkPatientContactedView(APIView):
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error updating contact status: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class TestTypeUpdateListView(generics.ListAPIView):
+    """
+    API to get list of available test types for dropdowns (GET) and update in bulk (PATCH).
+    Returns all test types defined in the system.
+    PATCH expects a list of test types with id and name.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = TestTypeSerializer
+    queryset = TestType.objects.all().order_by('-id')  # Assuming newer test types are more relevant for dropdowns
+
+    def get(self, request, *args, **kwargs):
+        try:
+            queryset = self.get_queryset()
+            data = self.get_serializer(queryset, many=True).data
+            return Response({
+                'status': status.HTTP_200_OK,
+                'data': data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error fetching test types: {str(e)}',
+                'data': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def patch(self, request, *args, **kwargs):
+        """
+        Update a single TestType by id using serializer validation. Expects: {"id": 1, ...fields...}
+        You can update any field of TestType.
+        """
+        try:
+            data = request.data
+            test_type_id = data.get('id')
+            if not test_type_id:
+                return Response({
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'message': 'TestType id is required.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                test_type = TestType.objects.get(id=test_type_id)
+            except TestType.DoesNotExist:
+                return Response({
+                    'status': status.HTTP_404_NOT_FOUND,
+                    'message': 'TestType not found.'
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            serializer = TestTypeSerializer(test_type, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    'status': status.HTTP_200_OK,
+                    'message': 'TestType updated successfully.',
+                    # 'data': serializer.data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'message': 'Validation error.',
+                    'errors': serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error updating test type: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ===========================================================================================
+#                       CLINIC TRANSACTIONS
+# ===========================================================================================   
+
+class ClinicTransactionView(generics.CreateAPIView):
+    """
+    API to record a financial transaction for a clinic.
+    POST /api/clinical/transactions/
+    
+    Payload:
+    {
+        "amount": 100.00,
+        "transaction_type": "Credit",
+        "description": "Payment received for bill #123"
+    }
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ClinicTransactionCreateSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        if not serializer.is_valid():
+            return Response({
+                'status': status.HTTP_400_BAD_REQUEST,
+                'message': 'Validation error.',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Save the transaction with the current user's clinic
+        transaction = serializer.save()
+        return Response({
+            'status': status.HTTP_200_OK,
+            'message': 'Transaction recorded successfully.',
+            # 'data': ClinicTransactionSerializer(transaction).data
+        }, status=status.HTTP_200_OK)
+
+import django_filters
+
+class ClinicTransactionFilter(django_filters.FilterSet):
+
+    transaction_date = django_filters.DateFilter(
+        field_name="transaction_date",
+        lookup_expr="date"
+    )
+
+    class Meta:
+        model = ClinicTransactions
+        fields = ['transaction_type', 'transaction_date']
+
+class ClinicTransactionListView(generics.ListAPIView):
+    """
+    API to list all financial transactions for the clinic.
+    GET /api/clinical/transactions/
+    
+    Supports pagination and filtering by transaction type (?transaction_type=Credit/Debit).
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ClinicTransactionListSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ClinicTransactionFilter
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+
+        return ClinicTransactions.objects.filter(
+            clinic=clinic
+        ).order_by('-id')
+    
+class ClinicTransactionUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API to retrieve, update, or delete a specific clinic transaction by ID.
+    GET /api/clinical/transactions/<id>/
+    PATCH /api/clinical/transactions/<id>/
+    DELETE /api/clinical/transactions/<id>/
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ClinicTransactionListSerializer
+    lookup_field = 'id'
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        return ClinicTransactions.objects.filter(clinic=clinic)
+    
+    def patch(self, request, *args, **kwargs):
+        response = super().patch(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            return Response({
+                'status': status.HTTP_200_OK,
+                'message': 'Transaction updated successfully.',
+                # 'data': response.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status': response.status_code,
+                'message': 'Error updating transaction.',
+                'errors': response.data
+            }, status=response.status_code)
+
+    def delete(self, request, *args, **kwargs):
+        response = super().delete(request, *args, **kwargs)
+        if response.status_code == status.HTTP_204_NO_CONTENT:
+            return Response({
+                'status': status.HTTP_200_OK,
+                'message': 'Transaction deleted successfully.'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status':
+                response.status_code,
+                'message': 'Error deleting transaction.',
+                'errors': response.data
+            }, status=response.status_code)
+
+# ===========================================================================================
+ # Puchase Page APIs
+# ============================================================================================
+
+class PurchaseInventoryItemListView(generics.ListAPIView):
+    """
+    API to list inventory items available for purchase.
+    GET /api/clinical/purchase/inventory-items/
+    
+    Returns inventory items that are either Hearing Aids or Cochlear Implants, and not used in trials.
+    Supports search by product name and brand.
+    """
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ['product_name', 'brand']
+    pagination_class = None
+    serializer_class = InventoryItemSerializer
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        queryset = InventoryItem.objects.filter(
+            use_in_trial=False,
+            quantity_in_stock__gt=0,
+            is_approved=True,
+            clinic=clinic
+        ).exclude(category__in=['Hearing Aid']).order_by('-id')
+        return queryset.order_by('-id')
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            return Response({
+                'status': status.HTTP_200_OK,
+                'data': response.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status': response.status_code,
+                'message': 'Error listing inventory items.',
+                'errors': response.data
+            }, status=response.status_code)
+
+
+# Wanted a api , for purchase the item with quantity and update the stock in inventory item
+class PurchaseInventoryItemCreateView(generics.CreateAPIView):
+    """
+    API to purchase inventory items and update stock.
+    POST /api/clinical/purchase/inventory-items/<item_id>/
+    
+    Payload:
+    {
+        "quantity": 10,
+        "unit_price": 100.00
+    }
+    
+    This will create a patient purchase record and update the inventory item stock.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = PurchaseInventoryItemSerializer
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        return InventoryItem.objects.filter(clinic=clinic, use_in_trial=False, is_approved=True).exclude(category__in=['Hearing Aid'])
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})   
+        if not serializer.is_valid():
+            return Response({
+                'status': status.HTTP_400_BAD_REQUEST,
+                'message': 'Validation error.',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        purchase = serializer.save()
+
+        return Response({
+            'status': status.HTTP_200_OK,
+            'message': 'Purchase recorded and inventory updated successfully.',
+            # 'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+
+class CustomerNeedPurchase(APIView):
+    """
+    API to get patients whose visit status is 'Purchase'.
+    Returns patient name and phone number for service queue.
+    """
+    
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, *args, **kwargs):
+        try:
+            # Get patient visits with status 'Pending for Service' that don't have service visits yet
+            # Use values to get unique patients with their latest visit
+            service_visits = PatientVisit.objects.filter(
+                visit_type__in=['Purchase','Purchase Accessories'],
+                clinic=getattr(request.user, 'clinic', None)
+            ).exclude(
+                id__in=PatientPurchase.objects.values_list('visit_id', flat=True)
+            ).select_related('patient').order_by('patient_id', '-created_at')
+
+
+            search_query = request.query_params.get('search', None)
+            if search_query:
+                service_visits = service_visits.filter(
+                    Q(patient__name__icontains=search_query) |
+                    Q(patient__phone_primary__icontains=search_query)
+                )
+            
+            # Get unique patients (latest visit per patient)
+            unique_patients = {}
+            for visit in service_visits:
+                if visit.patient_id not in unique_patients:
+                    unique_patients[visit.patient_id] = visit
+            
+            # Prepare patient data
+            patients_data = []
+            for patient_id, visit in unique_patients.items():
+                patient_data = {
+                    'visit_id': visit.id,
+                    'patient_id': visit.patient.id,
+                    'patient_name': visit.patient.name,
+                    'phone_primary': visit.patient.phone_primary
+                }
+                patients_data.append(patient_data)
+            
+            return Response({
+                'status': status.HTTP_200_OK,
+                'data': patients_data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'message': f'Error fetching service queue: {str(e)}',
+                'data': []
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    
+
+
+
+
+        

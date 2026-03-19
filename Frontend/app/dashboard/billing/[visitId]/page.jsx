@@ -236,16 +236,13 @@ export default function BillingDetailPage() {
                       <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-center w-20">
                         Qty
                       </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-center w-28">
-                        Rate
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-28">
+                        Item Total
                       </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-center w-24">
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-24">
                         GST
                       </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-center w-32">
-                        Cost
-                      </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-center w-32">
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-32">
                         Discount
                       </th>
                     </tr>
@@ -262,25 +259,16 @@ export default function BillingDetailPage() {
                         <td className="px-5 py-4 text-center text-slate-600 bg-slate-50/30 group-hover:bg-slate-100/50">
                           {item.quantity}
                         </td>
-                        <td className="px-5 py-4 text-center text-slate-600">
-                          ₹{Number(item.cost || 0).toFixed(2)}
+                        <td className="px-5 py-4 text-right text-slate-600">
+                          ₹{Number(item.item_total || 0).toFixed(2)}
                         </td>
-                        <td className="px-5 py-4 text-center text-slate-500 text-xs">
+                        <td className="px-5 py-4 text-right text-slate-500 text-xs">
                           {Number(item.gst_value) > 0
                             ? `₹${Number(item.gst_value).toFixed(2)}`
                             : "-"}
                         </td>
-                        <td className="px-5 py-4 text-center font-bold text-slate-800">
-                          ₹{Number(item.item_total || 0).toFixed(2)}
-                        </td>
-                        <td className="px-5 py-4 text-center font-bold text-slate-800">
-                          {Number(item?.discount_amount) > 0 ? (
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-50 text-green-600 text-xs font-bold">
-                              -₹{Number(item.discount_amount).toFixed(2)}
-                            </div>
-                          ) : (
-                            "-"
-                          )}
+                        <td className="px-5 py-4 text-right font-bold text-slate-800">
+                          ₹{Number(item.discount_amount || 0).toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -338,6 +326,15 @@ export default function BillingDetailPage() {
                       </span>
                     </div>
 
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 font-medium">
+                        Total Discount
+                      </span>
+                      <span className="font-bold text-slate-800">
+                        ₹{Number(billingDetail.discounts || 0).toFixed(2)}
+                      </span>
+                    </div>
+
                     {Number(billingDetail.discount_amount) > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500 font-medium">
@@ -351,6 +348,13 @@ export default function BillingDetailPage() {
                         </span>
                       </div>
                     )}
+
+                    {/* {Number(billingDetail.cost_taken_amount_deducted) > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500 font-medium">Advance Given </span>
+                        <span className="font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">-₹{Number(billingDetail.cost_taken_amount_deducted || 0).toFixed(2)}</span>
+                      </div>
+                    )} */}
                   </div>
 
                   <div className="bg-slate-100 p-5 border-t border-b border-slate-200">
@@ -359,12 +363,7 @@ export default function BillingDetailPage() {
                         Total Amount
                       </span>
                       <span className="font-black text-2xl text-slate-800">
-                        ₹
-                        {Number(
-                          billingDetail.final_amount ||
-                            billingDetail.total_amount ||
-                            0,
-                        ).toFixed(2)}
+                        ₹{Number(billingDetail.total_amount || 0).toFixed(2)}
                       </span>
                     </div>
                   </div>

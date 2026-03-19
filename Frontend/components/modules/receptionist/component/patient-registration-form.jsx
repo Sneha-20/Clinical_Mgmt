@@ -60,8 +60,8 @@ export default function PatientRegistrationForm({
   const formik = useFormik({
     initialValues: {
       name: "",
-      // age: "",
-      dob: "",
+      age: "",
+      dob: null,
       email: "",
       gender: "",
       phone_primary: "",
@@ -87,8 +87,8 @@ export default function PatientRegistrationForm({
     },
     validationSchema: patientSchema,
     onSubmit: (values) => {
-      const hasStockError = values.visit_details.some(visit => 
-        visit.purchase_items?.some(item => item.stockError)
+      const hasStockError = values.visit_details.some((visit) =>
+        visit.purchase_items?.some((item) => item.stockError),
       );
 
       if (hasStockError) {
@@ -101,7 +101,7 @@ export default function PatientRegistrationForm({
       const age = calculateAgeFromDob(values.dob);
       const filteredPayload = {
         ...values,
-        age,
+        // age,
         visit_details: values.visit_details.map((visit) => {
           if (visit.visit_type === "Purchase") {
             return {
@@ -249,8 +249,16 @@ export default function PatientRegistrationForm({
                   error={formik.touched.name && formik.errors.name}
                   important
                 />
+                <Input
+                  label="Email"
+                  name="email"
+                  type="email"
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
+                  error={formik.touched.email && formik.errors.email}
+                />
                 <CommonDatePicker
-                  label="Date of Birth"
+                  label="Date of Birth "
                   selectedDate={
                     formik.values.dob ? new Date(formik.values.dob) : null
                   }
@@ -263,7 +271,7 @@ export default function PatientRegistrationForm({
                   maxDate={new Date()}
                   error={formik.touched.dob && formik.errors.dob}
                 />
-                {/* <Input
+                <Input
                   label="Age"
                   name="age"
                   type="number"
@@ -272,7 +280,8 @@ export default function PatientRegistrationForm({
                   onBlur={formik.handleBlur}
                   error={formik.touched.age && formik.errors.age}
                   important
-                /> */}
+                />
+
                 <DropDown
                   label="Gender"
                   name="gender"
@@ -282,14 +291,7 @@ export default function PatientRegistrationForm({
                   error={formik.touched.gender && formik.errors.gender}
                   important
                 />
-                <Input
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formik.values.email}
-                  onChange={formik.handleChange}
-                  error={formik.touched.email && formik.errors.email}
-                />
+
                 <Input
                   label="Primary Phone"
                   name="phone_primary"
@@ -335,6 +337,7 @@ export default function PatientRegistrationForm({
                     formik.touched.appointment_date &&
                     formik.errors.appointment_date
                   }
+                  important
                 />
               </div>
             </section>
@@ -479,10 +482,14 @@ export default function PatientRegistrationForm({
                                         e.target.value,
                                       )
                                     }
-                                    className={item.stockError ? "border-red-500" : ""}
+                                    className={
+                                      item.stockError ? "border-red-500" : ""
+                                    }
                                   />
                                   {item.stockError && (
-                                    <p className="text-red-500 text-[10px] mt-1 font-medium">Insufficient stock</p>
+                                    <p className="text-red-500 text-[10px] mt-1 font-medium">
+                                      Insufficient stock
+                                    </p>
                                   )}
                                 </div>
                               ) : (
