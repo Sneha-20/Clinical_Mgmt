@@ -78,13 +78,50 @@ class VisitTestPerformed(models.Model):
     bera = models.BooleanField(default=False)  # BERA/ABR
     assr = models.BooleanField(default=False)  # ASSR
     bera_assr = models.BooleanField(default=False)
-    speech_assessment = models.BooleanField(default=False)  # Speech assessment (SRT/SDS)
+    speech_assessment = models.BooleanField(default=False) 
+
+    # Test metadata
+    test_date = models.DateField(auto_now_add=True)
 
 
 class TestUpload(models.Model):
     visit = models.ForeignKey(VisitTestPerformed, on_delete=models.CASCADE)
     report_type = models.CharField(max_length=100)
     report_description = models.TextField(blank=True, null=True)
+     # Right Ear (RT) - Air Conduction (AC)
+    # rt_ac_250 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 250Hz")
+    # rt_ac_500 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 500Hz")
+    # rt_ac_1000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 1000Hz")
+    # rt_ac_2000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 2000Hz")
+    # rt_ac_4000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 4000Hz")
+    # rt_ac_8000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 8000Hz")
+    
+    # # Left Ear (LT) - Air Conduction (AC)
+    # lt_ac_250 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 250Hz")
+    # lt_ac_500 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 500Hz")
+    # lt_ac_1000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 1000Hz")
+    # lt_ac_2000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 2000Hz")
+    # lt_ac_4000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 4000Hz")
+    # lt_ac_8000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 8000Hz")
+    
+    # # Right Ear (RT) - Bone Conduction (BC)
+    # rt_bc_250 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 250Hz")
+    # rt_bc_500 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 500Hz")
+    # rt_bc_1000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 1000Hz")
+    # rt_bc_2000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 2000Hz")
+    # rt_bc_4000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 4000Hz")
+    # rt_bc_8000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 8000Hz")
+
+    
+    # # Left Ear (LT) - Bone Conduction (BC)
+    # lt_bc_250 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 250Hz")
+    # lt_bc_500 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 500Hz")
+    # lt_bc_1000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 1000Hz")
+    # lt_bc_2000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 2000Hz")
+    # lt_bc_4000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 4000Hz")
+    # lt_bc_8000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 8000Hz")
+
+   
     file_path = models.TextField(null=True, blank=True)  # Store file path or URL to the uploaded report
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -165,7 +202,7 @@ class Bill(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
     bill_number = models.CharField(max_length=100, unique=True, blank=True, null=True, help_text="Auto-generated bill number")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total amount (auto-calculated from bill items)")
-    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total discount applied")
+    # discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total discount applied")
     gst_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="GST amount applied")
     final_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Final amount after discount")
     payment_status = models.CharField(
@@ -196,30 +233,41 @@ class Bill(models.Model):
         from django.db.models import F, Sum, DecimalField
         from decimal import Decimal
 
-        total = self.bill_items.aggregate(
-            total=Sum(F('cost') * F('quantity'), output_field=DecimalField())
-        )['total']
-        if total is None:
-            total = Decimal('0.00')
+        # Prevent infinite recursion
+        if hasattr(self, '_is_calculating_total') and self._is_calculating_total:
+            return
+        
+        self._is_calculating_total = True
+        
+        try:
+            # Calculate items total without discounts
+            items_total = self.bill_items.aggregate(
+                total=Sum(F('cost') * F('quantity'), output_field=DecimalField())
+            )['total']
+            if items_total is None:
+                items_total = Decimal('0.00')
 
-        if self.discount_amount is None:
-            self.discount_amount = Decimal('0.00')
-        elif not isinstance(self.discount_amount, Decimal):
-            self.discount_amount = Decimal(str(self.discount_amount))
+            # Calculate total discount from BillItem records (item-level discounts only)
+            item_discount_total = self.bill_items.aggregate(
+                total=Sum('discount_amount', output_field=DecimalField())
+            )['total']
+            if item_discount_total is None:
+                item_discount_total = Decimal('0.00')
 
-        # 3️⃣ Normalize GST
-        gst_amount = self.gst_amount or Decimal('0.00')
-        if not isinstance(gst_amount, Decimal):
-            gst_amount = Decimal(str(gst_amount))
+            # Total discount is now only from item-level discounts
+            total_discount = item_discount_total
 
-        # Deduct cost_taken_amount from PatientVisit if present
-        cost_taken_amount = Decimal('0.00')
-        if self.visit and getattr(self.visit, 'cost_taken_amount', None):
-            cost_taken_amount = Decimal(str(self.visit.cost_taken_amount or 0))
+            # 3️⃣ Normalize GST
+            gst_amount = self.gst_amount or Decimal('0.00')
+            if not isinstance(gst_amount, Decimal):
+                gst_amount = Decimal(str(gst_amount))
 
-        self.total_amount = total
-        self.final_amount = total - self.discount_amount - cost_taken_amount + gst_amount
-        self.save(update_fields=['total_amount', 'final_amount'])
+            self.total_amount = max(Decimal('0.00'), (items_total + gst_amount) - total_discount)
+            self.save(update_fields=['total_amount'])
+            
+        finally:
+            # Clear the flag to allow future calculations
+            self._is_calculating_total = False
 
     def generate_bill_number(self):
         if not self.bill_number:
@@ -231,7 +279,7 @@ class Bill(models.Model):
         return self.bill_number
 
     def save(self, *args, **kwargs):
-        """Override save to auto-generate bill number if not provided"""
+        """Override save to auto-generate bill number and handle cost_taken_amount"""
         if not self.bill_number:
             self.generate_bill_number()
         super().save(*args, **kwargs)
@@ -279,6 +327,8 @@ class BillItem(models.Model):
     description = models.CharField(max_length=255, help_text="Description of the item")
     cost = models.DecimalField(max_digits=10, decimal_places=2, help_text="Cost of this item")
     quantity = models.IntegerField(default=1, help_text="Quantity (usually 1 for tests/trials)")
+    discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Discount amount for this item")
+    # discount_reason = models.CharField(max_length=255, blank=True, null=True, help_text="Reason for item discount")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -286,6 +336,20 @@ class BillItem(models.Model):
 
     def __str__(self):
         return f"{self.item_type} - {self.description} - ₹{self.cost}"
+
+    def get_item_total(self):
+        """Calculate total for this item (cost * quantity)"""
+        return float(self.cost * self.quantity)
+    
+    def get_item_total_after_discount(self):
+        """Calculate total for this item after discount"""
+        return float((self.cost * self.quantity) - self.discount_amount)
+    
+    def get_effective_cost(self):
+        """Get effective cost per unit after discount"""
+        if self.quantity > 0:
+            return float((self.cost * self.quantity - self.discount_amount) / self.quantity)
+        return float(self.cost)
 
     def clean(self):
         """Validate correct linkage based on item_type."""

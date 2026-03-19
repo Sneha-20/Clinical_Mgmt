@@ -16,7 +16,6 @@ from .models import (
     Brand,  
     ModelType,
     ClinicTransactions
-
 )
 
 from accounts.models import Clinic
@@ -1045,7 +1044,6 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
                 'bill_id': bill.id,
                 'bill_number': bill.bill_number,
                 'total_amount': bill.total_amount,
-                'discount_amount': bill.discount_amount,
                 'final_amount': bill.final_amount,
                 'payment_status': bill.payment_status,
                 'payment_method': bill.payment_method if bill.payment_status in ['Paid', 'Partially Paid'] else None,
@@ -1497,12 +1495,12 @@ class BillItemSerializer(serializers.ModelSerializer):
             'item_total',
             'created_at',
             'gst_value',
+            'discount_amount'
         ]
 
-
 class BillDetailSerializer(serializers.ModelSerializer):
-    # Amount taken at visit
-    cost_taken_amount = serializers.DecimalField(source='visit.cost_taken_amount', max_digits=10, decimal_places=2, read_only=True)
+    # Amount taken at visit (shown as advance payment)
+    # cost_taken_amount = serializers.DecimalField(source='visit.cost_taken_amount', max_digits=10, decimal_places=2, read_only=True)
     # Amount deducted from total
     cost_taken_amount_deducted = serializers.SerializerMethodField()
 
@@ -1529,23 +1527,45 @@ class BillDetailSerializer(serializers.ModelSerializer):
 
     # Bill items
     bill_items = BillItemSerializer(many=True, read_only=True)
+    
+    # Discount information
+    discounts = serializers.SerializerMethodField()
 
     # Calculated fields
     items_count = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
+    
+    def get_discounts(self, obj):
+        """Calculate total discount amount from all BillItems"""
+        from django.db.models import Sum, DecimalField
+        from decimal import Decimal
+        
+        total = obj.bill_items.aggregate(
+            total=Sum('discount_amount', output_field=DecimalField())
+        )['total']
+        return float(total) if total is not None else 0.0 
     
     def get_items_count(self, obj):
         """Total number of items in the bill"""
         return obj.bill_items.count()
 
     def get_subtotal(self, obj):
-        """Subtotal before discount (same as total_amount)"""
-        return float(obj.total_amount)
+        """Subtotal before discount and GST (just the items total)"""
+        from django.db.models import F, Sum, DecimalField
+        from decimal import Decimal
+        
+        # Calculate items total without GST
+        items_total = obj.bill_items.aggregate(
+            total=Sum(F('cost') * F('quantity'), output_field=DecimalField())
+        )['total']
+        if items_total is None:
+            items_total = Decimal('0.00')
+        
+        return float(items_total)
 
     def get_cost_taken_amount_deducted(self, obj):
         # Returns the deducted amount for clarity
         return float(getattr(obj.visit, 'cost_taken_amount', 0) or 0)
-
     class Meta:
         model = Bill
         fields = [
@@ -1583,13 +1603,18 @@ class BillDetailSerializer(serializers.ModelSerializer):
             'bill_items',
             'items_count',
             
+            # Discount information
+            'discounts',
+            
             # Financial summary
             'total_amount',
-            'discount_amount',
-            'final_amount',
+            # 'discount_amount',
+            # 'final_amount',
             'subtotal',
-            'cost_taken_amount',
+            # 'cost_taken_amount',
             'cost_taken_amount_deducted',
+            # 'amount_paid',
+            # 'balance_due',
             'gst_amount',
         ]
 
@@ -1955,11 +1980,11 @@ class TrialCreateSerializer(serializers.ModelSerializer):
                 )
                 
                 # Apply trial discount to bill if offered (as percentage)
-                if trial.discount_offered and trial.discount_offered > 0:
-                    # Apply discount as a fixed amount
-                    from decimal import Decimal
-                    bill.discount_amount = Decimal(trial.discount_offered)
-                    bill.save()
+                # if trial.discount_offered and trial.discount_offered > 0:
+                #     # Apply discount as a fixed amount
+                #     from decimal import Decimal
+                #     bill.discount_amount = Decimal(trial.discount_offered)
+                #     bill.save()
                 
                 # Recalculate bill totals
                 bill.calculate_total()
@@ -2315,6 +2340,3 @@ class PurchaseInventoryItemSerializer(serializers.ModelSerializer):
         bill.calculate_total()
         return patient_purchase
 
-
-        
-       

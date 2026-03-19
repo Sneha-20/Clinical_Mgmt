@@ -1,9 +1,9 @@
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
-from .models import InventoryItem, Brand,ModelType
+from .models import InventoryItem, Brand,ModelType,Clinic
 from .serializers import InventoryItemCreateSerializer, InventoryItemSerializer, BrandSerializer, ModelTypeSerializer
 from .models import DeletedRecordLog,ContentType
-from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission
+from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission,ClinicManagerPermission
 from django.contrib.contenttypes.models import ContentType
 from django_filters.rest_framework import DjangoFilterBackend 
 
@@ -21,7 +21,7 @@ class BrandListView(generics.ListAPIView):
 class BrandCreateView(generics.CreateAPIView):
     # queryset = Brand.objects.all()
     serializer_class = BrandSerializer
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -51,7 +51,7 @@ class ModelListView(generics.ListAPIView):
 class ModelCreateView(generics.CreateAPIView):  
     queryset = ModelType.objects.all()
     serializer_class = ModelTypeSerializer
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission]
 
 
     def create(self, request, *args, **kwargs):
@@ -72,7 +72,7 @@ class InventoryItemCreateView(generics.CreateAPIView):
     """Create a new Inventory Item (Serialized or Non-Serialized)."""
     queryset = InventoryItem.objects.all()
     serializer_class = InventoryItemCreateSerializer
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission ]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission ]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -87,7 +87,19 @@ class InventoryItemCreateView(generics.CreateAPIView):
             return Response({"status": 400, "error": error_message}, status=status.HTTP_400_BAD_REQUEST)
         
         # Assign the item to the user's clinic (Admin's clinic acts as Main Inventory)
-        if request.user.clinic:
+        if request.user.role.name == 'Clinic Manager':
+            # Clinic Managers can only create items for their managed clinics
+            managed_clinics = request.user.managed_clinics_assignments.values_list('clinic', flat=True)
+
+            if not managed_clinics:
+                return Response({"status": 403, "error": "You do not have permission to create items for any clinic"}, status=status.HTTP_403_FORBIDDEN)
+
+            # Check if main inventory clinic exists
+            main_inventory_clinic = Clinic.objects.filter(is_main_inventory=True).first()
+            if main_inventory_clinic and main_inventory_clinic.id in managed_clinics:
+                serializer.validated_data['clinic'] = main_inventory_clinic
+            
+        elif request.user.clinic:
             serializer.validated_data['clinic'] = request.user.clinic
             
         inventory_item = serializer.save()
