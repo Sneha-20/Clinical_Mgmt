@@ -31,6 +31,15 @@ class PatientVisit(models.Model):
     visit_type = models.CharField(max_length=255)  # e.g., New, Follow-up, Service
     service_type = models.CharField(max_length=255, blank=True, null=True) # Clinic / Home
     present_complaint = models.CharField(max_length=255, blank=True, null=True)
+    duration_of_problem = models.CharField(max_length=255, blank=True, null=True, help_text="Duration of the hearing problem")
+    ear_side = models.CharField(
+        max_length=10, 
+        choices=[('right', 'Right'), ('left', 'Left'), ('both', 'Both')], 
+        blank=True, 
+        null=True,
+        help_text="Affected ear side"
+    )
+    previous_test_done = models.BooleanField(default=False, help_text="Previous hearing test done?") 
     test_requested = models.CharField(max_length=255, blank=True, null=True) # it will be dropdown in frontend
     notes = models.TextField(blank=True, null=True)
     status = models.CharField(max_length=50,null=True)  #  ( Test Pending / Trial active/ Booked / Follow-up)
@@ -69,6 +78,30 @@ class AudiologistCaseHistory(models.Model):
 
 class VisitTestPerformed(models.Model):
     visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE)
+    
+    # Hearing symptoms choices
+    HEARING_SYMPTOMS_CHOICES = [
+        ('aural_fullness', 'Aural fullness'),
+        ('aural_discharge', 'Aural discharge'),
+        ('aural_pain', 'Aural Pain/otalgia'),
+        ('tinnitus', 'Tinnitus'),
+        ('decreased_hearing', 'Decreased hearing'),
+        ('mental_fatigue', 'Mental fatigue'),
+        ('vertigo', 'Vertigo'),
+        ('others', 'Others'),
+    ]
+    
+    hearing_symptoms = models.JSONField(
+        default=list, 
+        blank=True, 
+        help_text="List of selected hearing symptoms"
+    )
+    other_symptoms = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Specify other symptoms if 'Others' is selected"
+    )
+    
     pta = models.BooleanField(default=False)
     srt_sds = models.BooleanField(default=False)  # Combined field for SRT and SDS since they often go together
     pta_sds = models.BooleanField(default=False)
