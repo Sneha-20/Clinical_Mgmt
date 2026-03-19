@@ -1413,7 +1413,7 @@ class BillListSerializer(serializers.ModelSerializer):
             'id',
             'bill_number',
             'payment_status',
-            'final_amount',
+            'total_amount',
             'created_at',
             'patient_id',
             'patient_name',
@@ -2004,7 +2004,6 @@ class TrialListSerializer(serializers.ModelSerializer):
     # status = serializers.CharField(source='visit.status', read_only=True)
     completion_notes = serializers.CharField(source='return_notes', read_only=True)
 
-
     class Meta:
         model = Trial
         fields = [
@@ -2023,6 +2022,7 @@ class TrialListSerializer(serializers.ModelSerializer):
             'patient_response',
             'trial_decision',
             'completion_notes',
+            'customization_notes',
             'device_condition_on_return',
             'extended_trial'
         ]
@@ -2114,15 +2114,17 @@ class TrialCompletionSerializer(serializers.Serializer):
     trial_decision = serializers.ChoiceField(
         
         choices=[
-
+        
         ('TRIAL_ACTIVE', 'Trial Active'),
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
         ('BOOK - Device Allocated', 'Book Device Allocated' ),
+        ('BOOK - With Customization', 'Book With Customization'),
         ('DECLINE', 'Decline Device Booking')],
         required=True,
         help_text="Patient decision after trial completion"
     )
     
+    # ... (rest of the code remains the same)
     booked_device_inventory = serializers.IntegerField(
         required=False,
         allow_null=True,
@@ -2136,6 +2138,12 @@ class TrialCompletionSerializer(serializers.Serializer):
         help_text="Serial number of device to book (required only for serialized items)"
     )
     
+    customization_notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Notes about customization needed (tips and molds)"
+    )
+    
     completion_notes = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -2147,7 +2155,7 @@ class TrialCompletionSerializer(serializers.Serializer):
     def validate(self, data):
         trial_decision = data.get('trial_decision')
         
-        if trial_decision == 'BOOK - Device Allocated':
+        if trial_decision == 'BOOK - Device Allocated' or trial_decision == 'BOOK - With Customization':
             if not data.get('booked_device_inventory'):
                 raise serializers.ValidationError({
                     'booked_device_inventory': 'Device inventory is required when booking a device'
@@ -2218,9 +2226,16 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
     device_name = serializers.CharField(source='booked_device_inventory.product_name', read_only=True)
     device_brand = serializers.CharField(source='booked_device_inventory.brand.name', read_only=True)
     device_model = serializers.CharField(source='booked_device_inventory.model_type.name', read_only=True)
-    # trial_decision = serializers.CharField(source='trial_decision', read_only=True)
-    # visit_id = serializers.IntegerField(source='visit.id', read_only=True)
+    device_serial_no = serializers.CharField(source='booked_device_serial.serial_number', read_only=True)
     trial_completed_at = serializers.DateTimeField(source='completed_at', read_only=True)
+    completion_notes = serializers.CharField(source='return_notes', read_only=True)
+    customization_notes = serializers.SerializerMethodField()
+
+    def get_customization_notes(self, obj):
+        """Show customization notes only for BOOK - With Customization trials"""
+        if obj.trial_decision == 'BOOK - With Customization':
+            return obj.customization_notes
+        return None
 
     class Meta:
         model = Trial
@@ -2233,12 +2248,32 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
             'device_name',
             'device_brand',
             'device_model',
-            # 'visit_id',
+            'device_serial_no',
             'trial_end_date',
             'trial_completed_at',
             'trial_decision',
-
+            'completion_notes',
+            'customization_notes',
+            'device_condition_on_return',
+            'extended_trial'
         ]
+
+
+class TrialCompletionNotesUpdateSerializer(serializers.Serializer):
+    """Serializer for updating completion notes of trials with BOOK - With Customization decision."""
+    
+    completion_notes = serializers.CharField(
+        required=True,
+        help_text="Completion notes for the trial"
+    )
+    
+    def validate(self, data):
+        completion_notes = data.get('completion_notes')
+        if not completion_notes or completion_notes.strip() == '':
+            raise serializers.ValidationError({
+                'completion_notes': 'Completion notes cannot be empty'
+            })
+        return data
 
 
 class ClinicTransactionCreateSerializer(serializers.ModelSerializer):
