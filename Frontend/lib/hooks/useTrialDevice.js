@@ -13,6 +13,7 @@ import {
 const INITIAL_BOOK_FORM = {
   deviceId: null,
   serialId: null,
+  isCustomization: false,
   notes: "",
 };
 
@@ -111,48 +112,110 @@ export default function () {
     }
   };
 
+  // const handleChange = async (name, value) => {
+  //   setForm((prev) => ({ ...prev, [name]: value }));
+  //   if (name === "deviceId") {
+  //     setForm((prev) => ({ ...prev, serialId: null }));
+  //     const selected = inventoryDevice.find((d) => d.value === value);
+  //     if (selected?.qty === 0) {
+  //       showToast({
+  //         type: "warning",
+  //         message:
+  //           "Selected device is out of stock – booking will be marked as awaiting stock.",
+  //       });
+  //       setSerials([]);
+  //     } else {
+  //       await fetchSerialsByDevice(value);
+  //     }
+  //   }
+  // };
   const handleChange = async (name, value) => {
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (name === "deviceId") {
-      setForm((prev) => ({ ...prev, serialId: null }));
-      const selected = inventoryDevice.find((d) => d.value === value);
-      // if the device has no stock show a warning and don't fetch serials
-      if (selected?.qty === 0) {
-        showToast({
-          type: "warning",
-          message:
-            "Selected device is out of stock – booking will be marked as awaiting stock.",
-        });
-        setSerials([]);
-      } else {
-        await fetchSerialsByDevice(value);
-      }
-    }
-  };
+    setForm((prev) => {
+      let updated = { ...prev, [name]: value };
 
+      // 🔹 Device change logic
+      if (name === "deviceId") {
+        updated.serialId = null;
+
+        const selected = inventoryDevice.find((d) => d.value === value);
+
+        if (selected?.qty === 0) {
+          showToast({
+            type: "warning",
+            message:
+              "Selected device is out of stock – booking will be marked as awaiting stock.",
+          });
+          setSerials([]);
+        } else {
+          fetchSerialsByDevice(value);
+        }
+      }
+
+      // 🔹 Checkbox (Customization) logic
+      if (name === "isCustomization") {
+        if (!value) {
+          // ❌ When unchecked → reset related data (if any)
+          // (use this if you later add customType field)
+          // updated.customType = "";
+
+          showToast({
+            type: "info",
+            message: "Customization removed.",
+          });
+        } else {
+          // ✅ When checked
+          showToast({
+            type: "info",
+            message: "Customization enabled for this booking.",
+          });
+        }
+      }
+
+      return updated;
+    });
+  };
   const handleCompleteTrials = async () => {
     let payload = {};
 
     if (selectedAction === "BOOK") {
       const selected = inventoryDevice.find((d) => d.value === form.deviceId);
-      if (selected?.qty > 0) {
+
+      const isOutOfStock = selected?.qty === 0;
+
+      // 🔴 CASE 1: OUT OF STOCK
+      if (isOutOfStock) {
+        payload = {
+          trial_decision: "BOOK - Awaiting Stock",
+          booked_device_inventory: form.deviceId,
+          completion_notes: form.notes || "Product not available",
+        };
+
+        showToast({
+          type: "info",
+          message: "Device is out of stock; booking marked as awaiting stock.",
+        });
+      }
+
+      // 🟡 CASE 2: AVAILABLE + CUSTOMIZATION
+      else if (form.isCustomization) {
+        payload = {
+          trial_decision: "BOOK - With Customization",
+          need_customization: true,
+          booked_device_inventory: form.deviceId,
+          booked_device_serial: form.serialId, // optional
+          completion_notes:
+            form.notes || "Customization required (earmold/tips)",
+        };
+      }
+
+      // 🟢 CASE 3: AVAILABLE + NO CUSTOMIZATION
+      else {
         payload = {
           trial_decision: "BOOK - Device Allocated",
           booked_device_inventory: form.deviceId,
           booked_device_serial: form.serialId,
           completion_notes: form.notes || "",
         };
-      } else {
-        payload = {
-          trial_decision: "BOOK - Awaiting Stock",
-          booked_device_inventory: form.deviceId,
-          completion_notes: form.notes || "",
-        };
-        showToast({
-          type: "info",
-          message:
-            "Device is out of stock; booking will be recorded as awaiting stock.",
-        });
       }
     }
 
@@ -170,17 +233,20 @@ export default function () {
         completion_notes: extendForm.reason,
       };
     }
-
+    console.log("Payload for Trial Completion:", payload);
     try {
       const res = await bookedDeviceForm(selectedTrialId, payload);
-      const returnDeviceResponse = await returnTrialDevice(
+
+      await returnTrialDevice(
         selectedTrial?.serial_number,
         "Device returned after trial completion",
       );
+
       showToast({
         type: "success",
         message: res?.message || "Trial completed successfully",
       });
+
       fetchTrialDevice({ page: currentPage });
       handleCloseDialog();
     } catch (err) {
@@ -221,6 +287,7 @@ export default function () {
     notBookReason,
     extendForm,
     selectedAction,
+
     setSelectedAction,
     handleExtendChange,
     setExtendForm,
