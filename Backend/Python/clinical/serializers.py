@@ -167,6 +167,14 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
     complaint = serializers.CharField(required=False, allow_blank=True)
     # General fields (for non-TGA)
     present_complaint = serializers.CharField(required=False, allow_blank=True)
+    # Hearing test specific fields
+    duration_of_problem = serializers.CharField(required=False, allow_blank=True)
+    ear_side = serializers.ChoiceField(
+        choices=[('right', 'Right'), ('left', 'Left'), ('both', 'Both')],
+        required=False,
+        allow_blank=True
+    )
+    previous_test_done = serializers.BooleanField(required=False, default=False)
     test_requested = serializers.ListField(
         child=serializers.CharField(),
         required=False
@@ -261,6 +269,49 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
                 #     raise serializers.ValidationError(
                 #         "Either serial_number or quantity must be provided in purchase_items"
                 #     )
+
+        # -------------------------
+        # HEARING-RELATED VISITS
+        # -------------------------
+        elif visit_type in [
+            'Hearing Test', 
+            'Hearing Aids Trial', 
+            'Hearing Aids Test & Trial', 
+            'Hearing Aids Consultation'
+        ]:
+
+            # Remove TGA and Purchase specific fields
+            data.pop('tga_service_type', None)
+            data.pop('device_serial_need_service', None)
+            data.pop('complaint', None)
+            data.pop('purchase_items', None)
+
+            allowed = {
+                'visit_type',
+                'seen_by',
+                'present_complaint',
+                'duration_of_problem',
+                'ear_side',
+                'previous_test_done',
+                'referral_type_hearing_test',
+                'test_requested',
+                'notes',
+                'cost_taken_amount',
+                'mode_of_payment'
+            }
+
+            extra = set(data.keys()) - allowed
+            if extra:
+                raise serializers.ValidationError(
+                    f"For hearing-related visits, only these fields are allowed: {', '.join(allowed)}. "
+                    f"Extra fields: {', '.join(extra)}"
+                )
+
+            # Require chief complaint (present_complaint) for hearing visits
+            if not data.get('present_complaint'):
+                raise serializers.ValidationError(
+                    "Chief complaint (present_complaint) is required for hearing-related visits"
+                )
 
         # -------------------------
         # OTHER VISITS
@@ -360,9 +411,17 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
         # Status mapping (faster than if-else chain)
         STATUS_MAP = {
             'TGA': ('Pending for Service', 'Waiting for service to be completed'),
-            'Troubleshooting General Adjustment': ('Pending for Service', 'Waiting for service to be completed'),
+            # 'Troubleshooting General Adjustment': ('Pending for Service', 'Waiting for service to be completed'),
             'Purchase': ('Pending', 'Pending Purchase'),
-            'Purchase Accessories': ('Pending', 'Pending Purchase'),
+            # 'Purchase Accessories': ('Pending', 'Pending Purchase'),
+            'Hearing Test':('Test Pending', 'Test Pending'),
+            'Hearing Aids Trial':('Pending', 'Pending'),
+            'Hearing Aids Test & Trial':('Test and Trial Pending','Test and Trial Pending'),
+            'Hearing Aids Consultation':('Consultation Pending','Consultation Pending'),
+            'Follow-up':('Pending','Followup Pending'),
+            'Speech Therapy Assessment':('Pending','Pending'),
+            'Cochlear implant Consultation':('Pending','Pending'),
+            'Cochlear implant mapping check':('Pending','Pending'),
         }
 
         with transaction.atomic():
@@ -390,10 +449,10 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
 
                 visit_type = visit_data.get("visit_type")
 
-                status_value, status_note = STATUS_MAP.get(
-                    visit_type,
-                    ('Test pending', 'Waiting for audiologist availability')
-                )
+                status_value, status_note = STATUS_MAP.get(visit_type)
+
+                print(status_value)
+                print(status_note)
 
                 # REMOVE purchase_items before creating visit
                 purchase_items = visit_data.pop("purchase_items", [])
@@ -627,7 +686,14 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             'status_note',
             'patient_id',
             'patient_name',
-            'patient_phone'
+            'patient_phone',
+            'present_complaint',
+            'duration_of_problem',
+            'ear_side',
+            'previous_test_done',
+            'test_requested',
+            'notes',
+            'step_process'
         ] 
 
 
@@ -690,6 +756,22 @@ class PatientVisitCreateSerializer(serializers.Serializer):
         appointment_date = validated_data.get("appointment_date")
         visits_data = validated_data.get("visit_details", [])
 
+        # Status mapping (same as PatientRegistrationSerializer)
+        STATUS_MAP = {
+            'TGA': ('Pending for Service', 'Waiting for service to be completed'),
+            # 'Troubleshooting General Adjustment': ('Pending for Service', 'Waiting for service to be completed'),
+            'Purchase': ('Pending', 'Pending Purchase'),
+            # 'Purchase Accessories': ('Pending', 'Pending Purchase'),
+            'Hearing Test':('Test Pending', 'Test Pending'),
+            'Hearing Aids Trial':('Pending', 'Pending'),
+            'Hearing Aids Test & Trial':('Test and Trial Pending','Test and Trial Pending'),
+            'Hearing Aids Consultation':('Consultation Pending','Consultation Pending'),
+            'Follow-up':('Pending','Followup Pending'),
+            'Speech Therapy Assessment':('Pending','Pending'),
+            'Cochlear implant Consultation':('Pending','Pending'),
+            'Cochlear implant mapping check':('Pending','Pending'),
+        }
+
         created_visits = []
 
         with transaction.atomic():
@@ -698,19 +780,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
 
                 visit_type = visit_data.get("visit_type")
 
-                if visit_type in [
-                    'Battery Purchase',
-                    'Tip / Dome Change',
-                    'TGA',
-                    'Troubleshooting General Adjustment'
-                ]:
-                    status_value = "Pending for Service"
-
-                elif visit_type in ['Purchase Accessories', 'Purchase']:
-                    status_value = "Pending"
-
-                else:
-                    status_value = "Test pending"
+                status_value, status_note = STATUS_MAP.get(visit_type, ("Test pending", "Test pending"))
 
 
                 seen_by_user = visit_data.pop("seen_by", 0)
@@ -736,6 +806,7 @@ class PatientVisitCreateSerializer(serializers.Serializer):
                     patient=patient,
                     clinic=current_clinic or patient.clinic,
                     status=status_value,
+                    status_note=status_note,
                     service_type=service_type or None,
                     appointment_date=appointment_date,
                     seen_by=seen_by_user,
@@ -921,6 +992,26 @@ class AudiologistCaseHistorySerializer(serializers.ModelSerializer):
         # read_only_fields = ['created_by']
 
 class VisitTestPerformedSerializer(serializers.ModelSerializer):
+    def validate_hearing_symptoms(self, value):
+        """Validate that only valid hearing symptoms are selected"""
+        if not value:
+            return value
+            
+        valid_symptoms = [
+            'aural_fullness', 'aural_discharge', 'aural_pain', 
+            'tinnitus', 'decreased_hearing', 'mental_fatigue', 
+            'vertigo', 'others'
+        ]
+        
+        for symptom in value:
+            if symptom not in valid_symptoms:
+                raise serializers.ValidationError(
+                    f"Invalid hearing symptom: {symptom}. "
+                    f"Valid options are: {', '.join(valid_symptoms)}"
+                )
+        
+        return value
+    
     class Meta:
         model = VisitTestPerformed
         fields = '__all__'
@@ -1228,6 +1319,22 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
         help_text="List of test flags performed, e.g., ['pta', 'oae', 'srt']. Valid values: pta, immittance, oae, bera_assr, srt, sds, ucl, free_field"
     )
     
+    # Hearing symptoms fields - will be saved to VisitTestPerformed
+    hearing_symptoms = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        write_only=True,
+        help_text="List of hearing symptoms. Valid values: aural_fullness, aural_discharge, aural_pain, tinnitus, decreased_hearing, mental_fatigue, vertigo, others"
+    )
+    
+    other_symptoms = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        write_only=True,
+        help_text="Specify other symptoms if 'Others' is selected"
+    )
+    
     class Meta:
         model = AudiologistCaseHistory
         fields = [
@@ -1239,7 +1346,9 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             'previous_ha_experience',
             'red_flags',
             # VisitTestPerformed fields
-            'test_requested'  # List of test flags
+            'test_requested',  # List of test flags
+            'hearing_symptoms',  # List of hearing symptoms
+            'other_symptoms'  # Other symptoms details
         ]
 
     def create(self, validated_data):
@@ -1264,6 +1373,25 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
 
         # Extract test_requested list and convert to boolean fields for VisitTestPerformed
         test_requested = validated_data.pop('test_requested', [])
+        
+        # Extract hearing symptoms for VisitTestPerformed
+        hearing_symptoms = validated_data.pop('hearing_symptoms', [])
+        other_symptoms = validated_data.pop('other_symptoms', '')
+        
+        # Validate hearing symptoms
+        if hearing_symptoms:
+            valid_symptoms = [
+                'aural_fullness', 'aural_discharge', 'aural_pain', 
+                'tinnitus', 'decreased_hearing', 'mental_fatigue', 
+                'vertigo', 'others'
+            ]
+            
+            for symptom in hearing_symptoms:
+                if symptom not in valid_symptoms:
+                    raise serializers.ValidationError(
+                        f"Invalid hearing symptom: {symptom}. "
+                        f"Valid options are: {', '.join(valid_symptoms)}"
+                    )
         
         # Valid test field names (case-insensitive mapping)
         valid_test_fields = {
@@ -1298,6 +1426,10 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             test_key = valid_test_fields.get(test_name.lower().strip())
             if test_key:
                 test_performed_data[test_key] = True
+        
+        # Add hearing symptoms to test_performed_data
+        test_performed_data['hearing_symptoms'] = hearing_symptoms
+        test_performed_data['other_symptoms'] = other_symptoms
         
     
 
@@ -1343,8 +1475,10 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
             # 2. Create or update VisitTestPerformed only if something meaningful is set
             boolean_test_fields = ['pta', 'impedance', 'special_tests', 'speech_assessment', 'srt_sds', 'pta_sds', 'impedance_etf', 'bera', 'assr', 'bera_assr']
             has_any_test = any(test_performed_data.get(field, False) for field in boolean_test_fields)
+            has_hearing_symptoms = bool(test_performed_data.get('hearing_symptoms', []))
+            
             test_performed_instance = None
-            if has_any_test:
+            if has_any_test or has_hearing_symptoms:
                 if VisitTestPerformed.objects.filter(visit=visit).exists():
                     raise serializers.ValidationError({
                         "status": status.HTTP_400_BAD_REQUEST,

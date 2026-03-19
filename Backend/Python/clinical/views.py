@@ -353,16 +353,18 @@ class AudiologistPatientQueueView(generics.ListAPIView):
         Return a queryset of PatientVisit records for the audiologist queue after applying filters.
         """
         excluded_types = [
-            'Battery Purchase',
-            'Tip / Dome Change',
-            'Speech Assessment',
-            'Speech Therapy Follow-up'
+            'TGA',
+            'Purchase',
+            'Cochlear implant Consultation',
+            'Cochlear implant mapping check',
+            'Speech Therapy Assessment',
+
         ]
 
         queryset = PatientVisit.objects.filter(
             clinic=getattr(self.request.user, 'clinic', None),
             seen_by=self.request.user,
-            status='Test pending'
+            status__in=['Test pending','Pending','Test and Trial Pending','Followup Pending']
         ).exclude(visit_type__in=excluded_types)
 
         # Support direct filtering by GET parameters if provided
@@ -388,8 +390,8 @@ class AudiologistPatientQueueView(generics.ListAPIView):
 class PatientVisitDetailView(generics.RetrieveAPIView):
     ''' Retrieve details of a Patient Visit by Visit ID '''
     queryset = PatientVisit.objects.all()
-    serializer_class = PatientVisitWithCaseHistorySerializer
-    permission_classes = [IsAuthenticated,AuditorPermission]
+    serializer_class = PatientVisitSerializer
+    permission_classes = [IsAuthenticated,AuditorPermission | ReceptionistPermission]
     lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/
 
     def retrieve(self, request, *args, **kwargs):
