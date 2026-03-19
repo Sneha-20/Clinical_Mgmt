@@ -38,23 +38,22 @@ export default function () {
   const [extendForm, setExtendForm] = useState(INITIAL_EXTEND_FORM);
   const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
 
-  
-    const fetchTrialDevice = async ({ page = 1 } = {}) => {
-      try {
-        dispatch(startLoading());
-        const response = await getActiveTrialDeviceList({ page });
-        const resData = response.data;
-        setActiveTrialDeviceList(resData);
-        setTotalpage(response.totalPages);
-      } catch (error) {
-        showToast({
-          type: "error",
-          message: "Failed to fetch active trial device List",
-        });
-      } finally {
-        dispatch(stopLoading());
-      }
-    };
+  const fetchTrialDevice = async ({ page = 1 } = {}) => {
+    try {
+      dispatch(startLoading());
+      const response = await getActiveTrialDeviceList({ page });
+      const resData = response.data;
+      setActiveTrialDeviceList(resData);
+      setTotalpage(response.totalPages);
+    } catch (error) {
+      showToast({
+        type: "error",
+        message: "Failed to fetch active trial device List",
+      });
+    } finally {
+      dispatch(stopLoading());
+    }
+  };
   useEffect(() => {
     fetchTrialDevice({ page: currentPage });
   }, [currentPage]);
@@ -70,8 +69,8 @@ export default function () {
             value: item.id,
             brand: item.brand,
             price: item.unit_price,
-            qty :  item.quantity_in_stock,
-          }))
+            qty: item.quantity_in_stock,
+          })),
         );
       } catch (err) {
         console.log("Error", err);
@@ -80,8 +79,8 @@ export default function () {
     getInventoryDevice();
   }, []);
 
-    const openDecisionDialog = (trial) => {
-      console.log("Selected Trial:", trial.id);
+  const openDecisionDialog = (trial) => {
+    console.log("Selected Trial:", trial.id);
     setCompleteTrialDialogOpen(true);
     setSelectedTrial(trial);
     setSelectedTrialId(trial.id);
@@ -96,10 +95,12 @@ export default function () {
       dispatch(startLoading());
       const response = await fetchSerialList({ deviceId });
       const resData = response.data;
-      setSerials(resData.map((item) => ({
-        label:item,
-        value:item
-      })));
+      setSerials(
+        resData.map((item) => ({
+          label: item,
+          value: item,
+        })),
+      );
     } catch (error) {
       showToast({
         type: "error",
@@ -110,7 +111,7 @@ export default function () {
     }
   };
 
-    const handleChange = async (name, value) => {
+  const handleChange = async (name, value) => {
     setForm((prev) => ({ ...prev, [name]: value }));
     if (name === "deviceId") {
       setForm((prev) => ({ ...prev, serialId: null }));
@@ -133,26 +134,25 @@ export default function () {
     let payload = {};
 
     if (selectedAction === "BOOK") {
-      // determine if the chosen inventory item is out of stock
       const selected = inventoryDevice.find((d) => d.value === form.deviceId);
-      if (selected?.qty === 0) {
-        payload = {
-          trial_decision: "BOOK - Awaiting Stock",
-          booked_device_inventory: form.deviceId,
-          completion_notes: form.notes || "",
-        };
-        // inform user pre-submission
-        showToast({
-          type: "info",
-          message: "Device is out of stock; booking will be recorded as awaiting stock.",
-        });
-      } else {
+      if (selected?.qty > 0) {
         payload = {
           trial_decision: "BOOK - Device Allocated",
           booked_device_inventory: form.deviceId,
           booked_device_serial: form.serialId,
           completion_notes: form.notes || "",
         };
+      } else {
+        payload = {
+          trial_decision: "BOOK - Awaiting Stock",
+          booked_device_inventory: form.deviceId,
+          completion_notes: form.notes || "",
+        };
+        showToast({
+          type: "info",
+          message:
+            "Device is out of stock; booking will be recorded as awaiting stock.",
+        });
       }
     }
 
@@ -171,32 +171,35 @@ export default function () {
       };
     }
 
-    try{
-      const res = await bookedDeviceForm(selectedTrialId,payload)
-      const returnDeviceResponse = await returnTrialDevice(selectedTrial?.serial_number,"Device returned after trial completion");
+    try {
+      const res = await bookedDeviceForm(selectedTrialId, payload);
+      const returnDeviceResponse = await returnTrialDevice(
+        selectedTrial?.serial_number,
+        "Device returned after trial completion",
+      );
       showToast({
         type: "success",
         message: res?.message || "Trial completed successfully",
       });
       fetchTrialDevice({ page: currentPage });
-      handleCloseDialog()
-    }catch(err){
-       handleCloseDialog()
-       console.log("Error:",err)
-    }finally{
-    setForm(INITIAL_BOOK_FORM);
-    setExtendForm(INITIAL_EXTEND_FORM);
-    setNotBookReason(INITIAL_NOT_BOOK_REASON);
-    setSelectedAction("BOOK");
+      handleCloseDialog();
+    } catch (err) {
+      handleCloseDialog();
+      console.log("Error:", err);
+    } finally {
+      setForm(INITIAL_BOOK_FORM);
+      setExtendForm(INITIAL_EXTEND_FORM);
+      setNotBookReason(INITIAL_NOT_BOOK_REASON);
+      setSelectedAction("BOOK");
     }
-  }
+  };
 
   const handleExtendChange = (name, value) => {
-  setExtendForm((prev) => ({
-    ...prev,
-    [name]: value,
-  }));
-};
+    setExtendForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const nextPage = () => {
     if (currentPage < totalPage) setCurrenPage((p) => p + 1);
