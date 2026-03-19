@@ -128,6 +128,8 @@ export default function CaseHistoryForm({ patientId }) {
 
   // keep local step in sync when backend data arrives
   useEffect(() => {
+
+    console.log(patientsCaseHistory, "patientsCaseHistory")
     if (
       patientsCaseHistory &&
       typeof patientsCaseHistory.step_process !== "undefined"
@@ -232,14 +234,22 @@ export default function CaseHistoryForm({ patientId }) {
       red_flags: patientsCaseHistory?.case_history?.red_flags || "",
       test_requested: patientsCaseHistory?.test_requested || [],
       report_description: patientsCaseHistory?.report_description || "",
+      hearing_symptoms: patientsCaseHistory?.case_history?.hearing_symptoms || [],
+      other_symptoms: patientsCaseHistory?.case_history?.other_symptoms || "",
     },
     validationSchema: CaseHistorySchema,
     onSubmit: async (values) => {
-      const res = await registerCasehistory({
+      const payload = {
         ...values,
         patientId,
         visit: patientsCaseHistory?.visit_id,
-      });
+      };
+
+      if (!payload.hearing_symptoms.includes("others")) {
+        payload.other_symptoms = "";
+      }
+
+      const res = await registerCasehistory(payload);
       fetchTestTypesForVisit(patientId);
       setCurrentStep(res.step_process);
     },
@@ -256,6 +266,65 @@ export default function CaseHistoryForm({ patientId }) {
         {currentStep === null && (
           <div className="flex items-center justify-center py-8">
             <p className="text-slate-500">Loading case history...</p>
+          </div>
+        )}
+
+        {/* Patient Visit Details Block */}
+        {patientsCaseHistory && Object.keys(patientsCaseHistory).length > 0 && currentStep !== null && (
+          <div className="bg-indigo-50/40 border border-indigo-100 rounded-lg p-3 sm:p-4 mb-4 shadow-sm">
+            <h3 className="font-bold text-indigo-900 mb-2.5 pb-2 border-b border-indigo-100/60 uppercase tracking-wider text-[11px]">
+              Initial Visit Record
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4">
+              <div>
+                <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Patient Name</p>
+                <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory?.patient_name || "-"}</p>
+              </div>
+              <div>
+                <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Visit Type</p>
+                <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory?.visit_type || "-"}</p>
+              </div>
+              <div>
+                <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Present Complaint</p>
+                <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory?.present_complaint || "-"}</p>
+              </div>
+              {/* <div>
+                <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Appointment Date</p>
+                <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                  {patientsCaseHistory?.appointment_date
+                    ? new Date(patientsCaseHistory.appointment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : "-"}
+                </p>
+              </div> */}
+
+              {patientsCaseHistory?.duration_of_problem && (
+                <div>
+                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Duration</p>
+                  <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory.duration_of_problem}</p>
+                </div>
+              )}
+              {patientsCaseHistory?.ear_side && (
+                <div>
+                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Ear Side</p>
+                  <p className="font-semibold text-slate-800 capitalize text-xs sm:text-sm">{patientsCaseHistory.ear_side}</p>
+                </div>
+              )}
+              {patientsCaseHistory?.previous_test_done !== undefined && patientsCaseHistory?.previous_test_done !== null && (
+                <div>
+                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Previous Test</p>
+                  <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory.previous_test_done ? "Yes, Done" : "Not Done"}</p>
+                </div>
+              )}
+
+              {(patientsCaseHistory?.notes) && (
+                <div className="sm:col-span-2 md:col-span-3 mt-0.5 pt-2.5 border-t border-indigo-100/60">
+                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Clinical Notes</p>
+                  <p className="font-medium text-slate-700 text-xs sm:text-sm leading-snug">
+                    {patientsCaseHistory.notes}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -301,6 +370,49 @@ export default function CaseHistoryForm({ patientId }) {
             />
 
             <TextArea label="Red Flags" name="red_flags" formik={formik} />
+
+            {/* Hearing Problem Symptoms */}
+            <div className="border rounded-lg p-4 bg-slate-50">
+              <h3 className="font-semibold text-lg mb-4">Hearing Problem Symptoms</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { label: "Aural fullness", value: "aural_fullness" },
+                  { label: "Aural discharge", value: "aural_discharge" },
+                  { label: "Aural Pain / otalgia", value: "aural_pain" },
+                  { label: "Tinnitus", value: "tinnitus" },
+                  { label: "Decreased hearing", value: "decreased_hearing" },
+                  { label: "Mental fatigue", value: "mental_fatigue" },
+                  { label: "Vertigo", value: "vertigo" },
+                  { label: "Others", value: "others" },
+                ].map((symptom) => (
+                  <CommonCheckbox
+                    key={symptom.value}
+                    label={symptom.label}
+                    checked={formik.values.hearing_symptoms?.includes(symptom.value)}
+                    onChange={(e) => {
+                      const isChecked = e.target.checked;
+                      const currentSymptoms = formik.values.hearing_symptoms || [];
+                      let newSymptoms;
+                      if (isChecked) {
+                        newSymptoms = [...currentSymptoms, symptom.value];
+                      } else {
+                        newSymptoms = currentSymptoms.filter((s) => s !== symptom.value);
+                      }
+                      formik.setFieldValue("hearing_symptoms", newSymptoms);
+                    }}
+                  />
+                ))}
+              </div>
+              {formik.values.hearing_symptoms?.includes("others") && (
+                <div className="mt-4">
+                  <TextArea
+                    label="Other Symptoms"
+                    name="other_symptoms"
+                    formik={formik}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Test Requested Section */}
             <div className="border rounded-lg p-4 bg-slate-50">

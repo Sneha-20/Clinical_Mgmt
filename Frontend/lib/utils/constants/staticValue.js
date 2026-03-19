@@ -25,11 +25,11 @@ export const visitStatusOptions = [
 ];
 
 export const complaintOptions = [
-  { label: "Hearing problem", value: "Hearing" },
+  { label: "Hearing problem", value: "Hearing Problem" },
   // { label: "Speech delay", value: "Speech" },
   // { label: "Cell/battery", value: "cell_battery" },
   // { label: "Machine cleaning", value: "machine_cleaning" },
-  { label: "Follow-up", value: "follow_up" },
+  { label: "Follow-up", value: "Follow-up" },
   // { label: "TGA", value: "tga" },
   { label: "Service/Repair", value: "repair" },
   { label: "Speech Therapy", value: "speech_therapy" },
@@ -51,11 +51,16 @@ export const testRequestedOptions = [
 ];
 
 export const visitTypeOptions = [
-  { label: "Hearing Test", value: "New Test" },
+  { label: "Hearing Test", value: "Hearing Test" },
+  { label: "Hearing  Aids Trial", value: "'Hearing Aids Trial" },
+  { label: "Hearing Aids Test & Trial", value: "Hearing Aids Test & Trial" },
+  { label: "Hearing Aid Consultation", value: "Hearing Aid Consultation" },
+  { label: "Hearing Aids Repair/Service", value: "TGA" },
   { label: "Follow-up for Test ", value: "Follow-up" },
-  { label: "TGA / Machine Check", value: "TGA" },
-  { label: "Purchase", value: "Purchase" },
-  { label: "Speech Therapy", value: "Speech_therapy" },
+  { label: "Purchase Accessories", value: "Purchase" },
+  { label: "Speech Therapy Assessment", value: "Speech Therapy Assessment" },
+  { label: "Cochlear implant Consultation", value: "Cochlear implant Consultation" },
+  { label: "Cochlear implant mapping check", value: "Cochlear implant mapping check" },
 ];
 
 export const previousHearingAidsOptions = [
