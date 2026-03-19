@@ -24,8 +24,7 @@ from .admin_services import (AdminRevenueReportsView,AdminClinicReportView,Docto
 from .admin_staff_performance import AdminStaffPerformanceAPIView
 from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
 from .api_inventory_transfer import InventoryTransferView, InventoryTransferHistoryView,InventoryFlatListView
-
-
+from .api_bill_item_discount import BillItemDiscountUpdateView, BillItemBulkDiscountUpdateView
 urlpatterns = [
       # Awaiting stock trial endpoints
       path('trials/awaiting-stock/', AwaitingStockListView.as_view(), name='trials_awaiting_stock'),
@@ -96,6 +95,10 @@ urlpatterns = [
    path('visit/<int:visit_id>/test-types/', VisitTestTypesView.as_view(), name='visit_test_types'),
    path('test-upload/<int:file_id>/delete/', TestUploadDeleteView.as_view(), name='test-upload-delete'),
    path('test-types/', TestTypeUpdateListView.as_view(), name='test-type-update-list'),
+
+   # Bill item discount management
+   path('bill-items/<int:item_id>/discount/', BillItemDiscountUpdateView.as_view(), name='bill-item-discount-update'),
+   path('bills/<int:bill_id>/items/discount/', BillItemBulkDiscountUpdateView.as_view(), name='bill-item-bulk-discount-update'),
 
    path('mark-bill-paid/<int:bill_id>/', MarkAsPaidView.as_view(), name='mark-bill-paid'),
 
