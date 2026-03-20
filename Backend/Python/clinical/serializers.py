@@ -277,7 +277,8 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
             'Hearing Test', 
             'Hearing Aids Trial', 
             'Hearing Aids Test & Trial', 
-            'Hearing Aids Consultation'
+            'Hearing Aids Consultation',
+            'Follow-up'
         ]:
 
             # Remove TGA and Purchase specific fields
