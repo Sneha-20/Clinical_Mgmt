@@ -101,7 +101,8 @@ const AwaitingDeviceList = () => {
                     <TableHead>Doctor</TableHead>
                     <TableHead>Device Details</TableHead>
                     <TableHead>Trial End Date</TableHead>
-                    {/* <TableHead>Status</TableHead> */}
+                    <TableHead>Decision</TableHead>
+                    <TableHead>Notes</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -150,14 +151,21 @@ const AwaitingDeviceList = () => {
                           </span>
                         </div>
                       </TableCell>
-                      {/* <TableCell>{getStatusBadge(trial.trial_decision)}</TableCell> */}
+                      <TableCell>
+                        {getStatusBadge(trial.trial_decision)}
+                      </TableCell>
+                      <TableCell>
+                        <p className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]" title={trial.completion_notes}>
+                          {trial.completion_notes || "-"}
+                        </p>
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           size="sm"
                           onClick={() => openCompleteDialog(trial)}
                           className="bg-primary hover:bg-primary/90"
                         >
-                          Complete Trial
+                          Complete Booking
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -169,7 +177,7 @@ const AwaitingDeviceList = () => {
               {totalPage > 1 && (
                 <div className="p-4 border-t border-border">
                   <Pagination
-                    currentPage={currentPage}
+                    page={currentPage}
                     totalPages={totalPage}
                     onNext={nextPage}
                     onPrev={prevPage}
