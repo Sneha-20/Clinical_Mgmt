@@ -105,7 +105,7 @@ export const trialGivenSchema = Yup.object({
     .typeError("Cost must be a number")
     .required("Cost is required"),
 
-  discount_offered: Yup.number().typeError("Discount must be a number"),
+  // discount_offered: Yup.number().typeError("Discount must be a number"),
   // .max(100, "Discount cannot exceed 100"),
 
   trial_start_date: Yup.date().required("Start date required"),

@@ -10,6 +10,7 @@ import {
 
 const INITIAL_COMPLETE_FORM = {
   serialId: "",
+  is_customization_completed: false, // For customization trials
 };
 
 export default function useAwaitingDevices() {
@@ -55,7 +56,11 @@ export default function useAwaitingDevices() {
     setForm(INITIAL_COMPLETE_FORM);
     setSerials([]);
 
-    if (trial.booked_device_inventory) {
+    const isCustomization = 
+      trial?.trial_decision === "BOOK - With Customization" && 
+      trial?.device_serial_no !== null;
+
+    if (!isCustomization && trial.booked_device_inventory) {
       fetchSerialsByDevice(trial.booked_device_inventory);
     }
   };
@@ -92,7 +97,11 @@ export default function useAwaitingDevices() {
   };
 
   const handleCompleteTrial = async () => {
-    if (!selectedTrial || !form.serialId) {
+    const isCustomization =
+      selectedTrial?.trial_decision === "BOOK - With Customization" &&
+      selectedTrial?.device_serial_no !== null;
+
+    if (!isCustomization && (!selectedTrial || !form.serialId)) {
       showToast({
         type: "error",
         message: "Please select a serial number",
@@ -100,19 +109,24 @@ export default function useAwaitingDevices() {
       return;
     }
 
+    if (isCustomization && form.is_customization_completed === undefined) {
+      showToast({ type: "error", message: "Please select customization status" });
+      return;
+    }
+
     try {
       setIsCompleting(true);
       dispatch(startLoading());
 
-      const payload = {
-        booked_device_serial: form.serialId,
-      };
+      const payload = isCustomization
+        ? { is_customization_completed: form.is_customization_completed }
+        : { booked_device_serial: form.serialId };
 
       await allocateTrialSerial(selectedTrial.id, payload);
 
       showToast({
         type: "success",
-        message: "Device allocated successfully",
+        message: "Status updated successfully",
       });
 
       handleCloseDialog();

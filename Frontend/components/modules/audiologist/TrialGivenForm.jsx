@@ -57,7 +57,7 @@ export default function TrialGivenForm({
       cost: "",
       trial_start_date: "",
       trial_end_date: "",
-      discount_offered: "",
+      // discount_offered: "",
     },
     validationSchema: trialGivenSchema,
     onSubmit: async (values) => {
@@ -73,18 +73,18 @@ export default function TrialGivenForm({
   };
 
   useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-      setShowDropdown(false);
-    }
-  };
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
 
-  document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
 
-  return () => {
-    document.removeEventListener("mousedown", handleClickOutside);
-  };
-}, []);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   return (
     <form onSubmit={formik.handleSubmit} className="space-y-6">
       {/* Device Info */}
@@ -96,7 +96,7 @@ export default function TrialGivenForm({
             label="Select Modal"
             options={modalOptions}
             value={formik.values.model_name}
-            onChange={(n, v) => {formik.setFieldValue("model_name", v),setSelectedModal(v)}}
+            onChange={(n, v) => { formik.setFieldValue("model_name", v), setSelectedModal(v) }}
             error={formik.errors.model_name}
             important
           />
@@ -250,14 +250,14 @@ export default function TrialGivenForm({
             important
           />
 
-          <Input
+          {/* <Input
             label="Discount Offered"
             name="discount_offered"
             value={formik.values.discount_offered}
             onChange={formik.handleChange}
             error={formik.errors.discount_offered}
             important
-          />
+          /> */}
         </div>
       </div>
 

@@ -81,7 +81,7 @@ export default function AddProductModal({
       }
       setShowAddBrand(false);
       setShowAddModel(false);
-      
+
       // Delay setting hasPrefilled to true to allow the form to settle
       setTimeout(() => setHasPrefilled(true), 500);
     }
@@ -119,7 +119,7 @@ export default function AddProductModal({
   // Handle category change (wipe brand/model ONLY if it's a manual user interaction, not prefill)
   useEffect(() => {
     if (!formData.category) return;
-    
+
     // If we've finished prefilling, or it's not an edit form, then clear dependents on category change
     if (hasPrefilled || !isEdit) {
       setFormData((prev) => ({
@@ -250,9 +250,9 @@ export default function AddProductModal({
       category: formData.category,
       product_name: formData.product_name,
       brand: parseInt(formData.brand) || formData.brand,
-      ...(formData.category !== "Accessories" && formData.model_type 
-          ? { model_type: parseInt(formData.model_type) || formData.model_type } 
-          : {}),
+      ...(formData.category !== "Accessories" && formData.model_type
+        ? { model_type: parseInt(formData.model_type) || formData.model_type }
+        : {}),
       description: formData.description || "",
       stock_type: formData.stock_type ? "Serialized" : "Non-Serialized",
       location: formData.location,
@@ -381,8 +381,8 @@ export default function AddProductModal({
             )}
           </div>
 
-          <div className="space-y-2">
-            {formData.category !== "Accessories" && (
+          {formData.category !== "Accessories" && (
+            <div className="space-y-2">
               <DropDown
                 label="Model"
                 name="model_type"
@@ -394,42 +394,42 @@ export default function AddProductModal({
                 isDisabled={!formData.brand}
                 important
               />
-            )}
 
-            {formData.brand && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddModel(!showAddModel)}
-                className="w-full"
-              >
-                {showAddModel ? "Cancel Add Model" : "Add New Model"}
-              </Button>
-            )}
-            {showAddModel && formData.brand && (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter model name"
-                  value={newModelName}
-                  onChange={(e) => {
-                    setNewModelName(e.target.value);
-                    if (errors.newModelName)
-                      setErrors((prev) => ({ ...prev, newModelName: "" }));
-                  }}
-                  error={errors.newModelName}
-                />
+              {formData.brand && (
                 <Button
                   type="button"
-                  onClick={handleAddModel}
-                  disabled={creatingModel || loading}
+                  variant="outline"
                   size="sm"
+                  onClick={() => setShowAddModel(!showAddModel)}
+                  className="w-full"
                 >
-                  {creatingModel ? "Creating..." : "Add"}
+                  {showAddModel ? "Cancel Add Model" : "Add New Model"}
                 </Button>
-              </div>
-            )}
-          </div>
+              )}
+              {showAddModel && formData.brand && (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter model name"
+                    value={newModelName}
+                    onChange={(e) => {
+                      setNewModelName(e.target.value);
+                      if (errors.newModelName)
+                        setErrors((prev) => ({ ...prev, newModelName: "" }));
+                    }}
+                    error={errors.newModelName}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddModel}
+                    disabled={creatingModel || loading}
+                    size="sm"
+                  >
+                    {creatingModel ? "Creating..." : "Add"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
           <Input
             label="Product Name"
@@ -465,7 +465,7 @@ export default function AddProductModal({
             </div>
             <div className="flex-1">
               <Input
-                label="GST Value (%)"
+                label="GST Value (Rs)"
                 name="gst_value"
                 type="number"
                 step="0.01"

@@ -31,49 +31,65 @@ export default function AppoinmentListCard({
             {appoinementList?.map((patient, index) => (
               <div
                 key={patient.visit_id}
-                className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 border border-slate-200 rounded-lg hover:bg-slate-50"
+                className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 border border-slate-100 rounded-xl hover:bg-slate-50 bg-white shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] mb-3"
               >
-                <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center font-bold text-teal-600 flex-shrink-0">
+                <div className="w-12 h-12 bg-teal-50 rounded-full flex items-center justify-center font-bold text-teal-600 flex-shrink-0 text-base">
                   {index + 1}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-semibold text-sm sm:text-base">
-                    {patient.patient_name}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-slate-600">
-                    {patient.present_complaint}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    {patient.appointment_date}
-                  </div>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {patient.test_requested?.map((test, index) => (
-                      <span
-                        key={index}
-                        className="text-xs px-2 py-0.5 bg-teal-100 text-teal-700 rounded-full"
-                      >
-                        {test.toUpperCase()}
+
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5 ml-1">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-bold text-sm sm:text-base text-slate-800 uppercase tracking-wide">
+                      {patient.patient_name}
+                    </h4>
+                    {patient.visit_type && (
+                      <span className="text-[11px] sm:text-xs font-medium px-3 py-0.5 bg-indigo-50/70 text-indigo-700 rounded-full">
+                        {patient.visit_type}
                       </span>
-                    ))}
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 text-[13px] sm:text-sm text-slate-500">
+                    <span>{patient.present_complaint}</span>
+                    <span className="text-slate-300">•</span>
+                    <span>
+                      {patient.appointment_date
+                        ? new Date(patient.appointment_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : ""}
+                    </span>
+
+                    {patient.test_requested && patient.test_requested.length > 0 && (
+                      <div className="flex items-center gap-2 sm:ml-2">
+                        {patient.test_requested.map((test, idx) => (
+                          <span
+                            key={idx}
+                            className={`text-[10px] sm:text-[11px] font-semibold px-3 py-0.5 rounded-full uppercase tracking-wide ${test.toLowerCase() === 'new test'
+                              ? 'bg-indigo-50 text-indigo-600'
+                              : 'bg-teal-50/70 text-teal-600'
+                              }`}
+                          >
+                            {test}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
+
                 <Button
-                  className="gap-2 text-sm w-full sm:w-auto"
+                  className="w-full sm:w-auto bg-[#53a6a3] hover:bg-[#438a87] text-white rounded-md px-5 mt-3 sm:mt-0 shadow-none font-medium h-9"
                   onClick={() => handleViewPatient(patient.visit_id)}
                 >
-                  Start Test
+                  Start Test <span className="ml-1.5 text-lg leading-none">&rarr;</span>
                 </Button>
               </div>
             ))}
           </div>
-           <Pagination
-          page={page}
-          totalPages={totalPages}
-          onNext={onNext}
-          onPrev={onPrev}
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onNext={onNext}
+            onPrev={onPrev}
           />
         </CardContent>
       </Card>

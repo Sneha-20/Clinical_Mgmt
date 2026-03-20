@@ -31,7 +31,6 @@ export default function CompleteTrialModal({
     { label: "14 days (2 weeks)", value: 14 },
   ];
 
-  
   return (
     <Modal
       header="Complete Trial"
@@ -72,9 +71,7 @@ export default function CompleteTrialModal({
               <span className="text-xs">Book Device</span>
             </Button>
             <Button
-              variant={
-                selectedAction === "DECLINE" ? "destructive" : "outline"
-              }
+              variant={selectedAction === "DECLINE" ? "destructive" : "outline"}
               onClick={() => setSelectedAction("DECLINE")}
               className={`h-auto py-3 flex flex-col gap-1 `}
             >
@@ -109,7 +106,7 @@ export default function CompleteTrialModal({
                   formatOptionLabel={(opt) => (
                     <div className="flex flex-col">
                       <p className="flex items-center">
-                      <span className="font-medium">{opt.label} </span>
+                        <span className="font-medium">{opt.label} </span>
                         <span className="text-xs text-muted-foreground ml-2">
                           Stock : {opt.qty}
                         </span>
@@ -121,7 +118,7 @@ export default function CompleteTrialModal({
                   )}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <DropDown
                   label="Select Serial Number"
@@ -129,8 +126,36 @@ export default function CompleteTrialModal({
                   options={serialOption}
                   value={form.serialId}
                   onChange={handleChange}
-                  isDisabled={!form.deviceId || (inventoryDevice.find(d => d.value === form.deviceId)?.qty === 0)}
+                  isDisabled={
+                    !form.deviceId ||
+                    inventoryDevice.find((d) => d.value === form.deviceId)
+                      ?.qty === 0
+                  }
                 />
+              </div>
+              <div>
+                {(form.deviceId ||
+                  inventoryDevice.find((d) => d.value === form.deviceId)?.qty >
+                    0) && (
+                  <div className="flex items-center">
+                    <input
+                      id="customization"
+                      name="isCustomization"
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={form.isCustomization}
+                      onChange={(e) =>
+                        handleChange("isCustomization", e.target.checked)
+                      }
+                    />
+                    <label
+                      htmlFor="customization"
+                      className="ml-2 block text-sm text-gray-900"
+                    >
+                      Is Customization Required
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -141,13 +166,13 @@ export default function CompleteTrialModal({
                   onChange={(e) => handleChange("notes", e.target.value)}
                 />
               </div>
-               {inventoryDevice?.find(d => d.value === form.deviceId)?.qty === 0 && (
+              {inventoryDevice?.find((d) => d.value === form.deviceId)?.qty ===
+                0 && (
                 <p className="text-xs text-destructive mt-[2px]">
-                  Selected device is currently out of stock – booking will be marked
-                  as <span className="text-sm">"Awaiting Stock"</span>.
+                  Selected device is currently out of stock – booking will be
+                  marked as <span className="text-sm">"Awaiting Stock"</span>.
                 </p>
               )}
-             
             </div>
           )}
 
@@ -216,9 +241,7 @@ export default function CompleteTrialModal({
           </Button>
 
           {selectedAction === "BOOK" && (
-            <Button
-              onClick={() => handleCompleteTrials()}
-            >
+            <Button onClick={() => handleCompleteTrials()}>
               Confirm Booking
             </Button>
           )}
@@ -234,10 +257,7 @@ export default function CompleteTrialModal({
           )}
 
           {selectedAction === "FOLLOWUP" && (
-            <Button
-              onClick={() => handleCompleteTrials()}
-              variant="extend"
-            >
+            <Button onClick={() => handleCompleteTrials()} variant="extend">
               Extend Trial
             </Button>
           )}

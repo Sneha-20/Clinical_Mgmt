@@ -45,12 +45,15 @@ export default function PatientVisitForm({
     seen_by: "",
     test_requested: [],
     notes: "",
-    cost_taken_amount: "",
+    cost_taken_amount: 0,
     mode_of_payment: "",
     tga_service_type: "",
     device_serial_number: "",
     complaint: "",
     purchase_items: [],
+    duration_of_problem: "",
+    ear_side: "",
+    previous_test_done: false,
   };
 
   const getInitialFormState = (patientId) => ({
@@ -141,8 +144,8 @@ export default function PatientVisitForm({
     } else if (key === "quantity") {
       const qty = parseInt(value) || 0;
       const inStock = purchaseItems[itemIndex].quantity_in_stock || 0;
-      purchaseItems[itemIndex] = { 
-        ...purchaseItems[itemIndex], 
+      purchaseItems[itemIndex] = {
+        ...purchaseItems[itemIndex],
         [key]: qty,
         stockError: qty > inStock
       };
@@ -238,6 +241,9 @@ export default function PatientVisitForm({
           test_requested: [],
           notes: "",
           purchase_items: [],
+          duration_of_problem: "",
+          ear_side: "",
+          previous_test_done: false,
         },
       ],
     }));
@@ -245,8 +251,8 @@ export default function PatientVisitForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const hasStockError = formData.visit_details.some(visit => 
+
+    const hasStockError = formData.visit_details.some(visit =>
       visit.purchase_items?.some(item => item.stockError)
     );
 
@@ -373,6 +379,38 @@ export default function PatientVisitForm({
 
             {visit.visit_type !== "TGA" && visit.visit_type !== "Purchase" && (
               <>
+                {["Hearing Test", "'Hearing Aids Trial", "Hearing Aids Test & Trial"].includes(visit.visit_type) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-teal-50/50 p-4 rounded-lg border border-teal-100 mb-4">
+                    <Input
+                      label="Duration of Problem"
+                      placeholder="e.g. 6 months"
+                      value={visit.duration_of_problem}
+                      onChange={(e) =>
+                        updateVisitDetails(index, "duration_of_problem", e.target.value)
+                      }
+                    />
+                    <DropDown
+                      label="Ear Side"
+                      name="ear_side"
+                      options={[
+                        { label: "Both", value: "both" },
+                        { label: "Left", value: "left" },
+                        { label: "Right", value: "right" },
+                      ]}
+                      value={visit.ear_side}
+                      onChange={(n, v) => updateVisitDetails(index, "ear_side", v)}
+                    />
+                    <div className="flex items-center pt-5">
+                      <CommonCheckbox
+                        label="Previous Test Done"
+                        checked={visit.previous_test_done}
+                        onChange={(e) =>
+                          updateVisitDetails(index, "previous_test_done", e.target.checked)
+                        }
+                      />
+                    </div>
+                  </div>
+                )}
                 <DropDown
                   label="Assigned To"
                   name="seen_by"
@@ -446,7 +484,7 @@ export default function PatientVisitForm({
                     name="cost_taken_amount"
                     type="number"
                     placeholder="Enter Amount"
-                    value={visit.cost_taken_amount}
+                    value={visit.cost_taken_amount || 0}
                     onChange={(e) =>
                       updateVisitDetails(
                         index,

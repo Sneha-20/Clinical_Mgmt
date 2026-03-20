@@ -15,6 +15,9 @@ export default function AwaitingDeviceModal({
   fetchSerialsByDevice,
   isCompleting,
 }) {
+  const isCustomization =
+    selectedTrial?.trial_decision === "BOOK - With Customization" &&
+    selectedTrial?.device_serial_no !== null;
 
   return (
     <Modal
@@ -65,31 +68,69 @@ export default function AwaitingDeviceModal({
             </div>
           </div>
 
-          {/* Serial Number Selection */}
-          <div className="space-y-4 p-4 border rounded-lg bg-green-50/50 border-green-200">
-            <p className="text-sm text-muted-foreground">
-              Choose an available serial number to allocate for the patient's trial.
-            </p>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Serial Number <span className="text-red-500">*</span>
-              </label>
-              <DropDown
-                name="serialId"
-                options={serials}
-                value={form.serialId}
-                onChange={handleChange}
-                placeholder="Select serial..."
-                isDisabled={serials.length === 0}
-              />
-              {serials.length === 0 && (
-                <p className="text-xs text-muted-foreground">
-                  No serials available for this device
-                </p>
-              )}
+          {/* Action Selection based on Decision */}
+          {isCustomization ? (
+            <div className="space-y-4 p-4 border rounded-lg bg-indigo-50/50 border-indigo-200">
+              <p className="text-sm text-muted-foreground">
+                This trial was booked with customization. Has the customization process been completed?
+              </p>
+              
+              <div className="space-y-2 mt-2">
+                <label className="text-sm font-medium">
+                  Is Customization completed? <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-4 items-center mt-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input
+                      type="radio"
+                      name="is_customization_completed"
+                      value="true"
+                      checked={form.is_customization_completed === true}
+                      onChange={() => handleChange("is_customization_completed", true)}
+                      className="w-4 h-4 text-indigo-600"
+                    />
+                    Yes
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-sm">
+                    <input
+                      type="radio"
+                      name="is_customization_completed"
+                      value="false"
+                      checked={form.is_customization_completed === false}
+                      onChange={() => handleChange("is_customization_completed", false)}
+                      className="w-4 h-4 text-indigo-600"
+                    />
+                    No
+                  </label>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-4 p-4 border rounded-lg bg-green-50/50 border-green-200">
+              <p className="text-sm text-muted-foreground">
+                Choose an available serial number to allocate for the patient's trial.
+              </p>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Serial Number <span className="text-red-500">*</span>
+                </label>
+                <DropDown
+                  name="serialId"
+                  options={serials}
+                  value={form.serialId}
+                  onChange={handleChange}
+                  placeholder="Select serial..."
+                  isDisabled={serials.length === 0}
+                />
+                {serials.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No serials available for this device
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
@@ -99,10 +140,16 @@ export default function AwaitingDeviceModal({
           </Button>
           <Button
             onClick={handleCompleteTrial}
-            disabled={!form.serialId || isCompleting}
+            disabled={
+              isCompleting || 
+              (!isCustomization && !form.serialId) || 
+              (isCustomization && form.is_customization_completed === undefined)
+            }
             className="bg-green-600 hover:bg-green-700"
           >
-            {isCompleting ? "Allocating..." : "Allocate Device"}
+            {isCompleting 
+              ? (isCustomization ? "Saving..." : "Allocating...") 
+              : (isCustomization ? "Complete Customization" : "Allocate Device")}
           </Button>
         </div>
       </div>

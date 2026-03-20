@@ -20,6 +20,7 @@ const TrialList = () => {
     notBookReason,
     extendForm,
     selectedAction,
+
     setSelectedAction,
     handleExtendChange,
     setExtendForm,
@@ -44,17 +45,21 @@ const TrialList = () => {
             In Trial
           </p>
         );
-      
+
       case "BOOK - Awaiting Stock":
         return (
-          <p className={`${baseClass} bg-blue-100 text-blue-600 border-blue-300`}>
+          <p
+            className={`${baseClass} bg-blue-100 text-blue-600 border-blue-300`}
+          >
             Awaiting Stock
           </p>
         );
 
       case "Follow up":
         return (
-          <p className={`${baseClass} bg-orange-100 text-orange-700 border-orange-300`}>
+          <p
+            className={`${baseClass} bg-orange-100 text-orange-700 border-orange-300`}
+          >
             Follow up
           </p>
         );
@@ -70,9 +75,7 @@ const TrialList = () => {
 
       case "DECLINE":
         return (
-          <p
-            className={`${baseClass} bg-red-200 text-red-700 border-red-300`}
-          >
+          <p className={`${baseClass} bg-red-200 text-red-700 border-red-300`}>
             Not Booked
           </p>
         );
@@ -111,73 +114,70 @@ const TrialList = () => {
                 className="border-border/50 hover:border-primary/30 transition-colors"
               >
                 <CardContent className="p-5">
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
-                       <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-lg bg-cyan-500/10">
-                          <User className="h-5 w-5 text-cyan-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Patient
-                          </p>
-                          <p className="font-medium text-foreground">
-                            {trial.assigned_patient}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Phone: {trial.assigned_patient_phone}
-                          </p>
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-cyan-500/10">
+                        <User className="h-5 w-5 text-cyan-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Patient</p>
+                        <p className="font-medium text-foreground">
+                          {trial.assigned_patient}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Phone: {trial.assigned_patient_phone}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-cyan-500/10">
+                        <Package className="h-5 w-5 text-cyan-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Device</p>
+                        <p className="font-medium text-foreground">
+                          {trial.device_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          <Hash className="h-3 w-3 inline mr-1" />
+                          {trial.serial_number}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-cyan-500/10">
+                        <Calendar className="h-5 w-5 text-cyan-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          Trial Period
+                        </p>
+                        <p className="font-medium text-foreground">
+                          {new Date(
+                            trial.trial_start_date,
+                          ).toLocaleDateString()}{" "}
+                          -{" "}
+                          {new Date(trial.trial_end_date).toLocaleDateString()}
+                        </p>
+                        <div className="flex items-center">
+                          {getStatusBadge(trial.trial_decision)}
                         </div>
                       </div>
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-lg bg-cyan-500/10">
-                            <Package className="h-5 w-5 text-cyan-500" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">
-                              Device
-                            </p>
-                            <p className="font-medium text-foreground">
-                              {trial.device_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              <Hash className="h-3 w-3 inline mr-1" />
-                              {trial.serial_number}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="p-2 rounded-lg bg-cyan-500/10">
-                            <Calendar className="h-5 w-5 text-cyan-500" />
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">
-                              Trial Period
-                            </p>
-                            <p className="font-medium text-foreground">
-                              {new Date(
-                                trial.trial_start_date
-                              ).toLocaleDateString()}{" "}
-                              -{" "}
-                              {new Date(
-                                trial.trial_end_date
-                              ).toLocaleDateString()}
-                            </p>
-                            <div className="flex items-center">
-                              {getStatusBadge(trial.trial_decision)}
-                            </div>
-                          </div>
-                        </div>
-                       <div className="flex items-center justify-end gap-2 ml-4">
-                        <Button
-                          size="sm"
-                          disabled={trial.trial_decision !== "Follow up" && trial.trial_decision !== "TRIAL_ACTIVE"}
-                          onClick={() => openDecisionDialog(trial)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Complete Trial
-                        </Button>
                     </div>
+                    <div className="flex items-center justify-end gap-2 ml-4">
+                      <Button
+                        size="sm"
+                        disabled={
+                          trial.trial_decision !== "Follow up" &&
+                          trial.trial_decision !== "TRIAL_ACTIVE"
+                        }
+                        onClick={() => openDecisionDialog(trial)}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Complete Trial
+                      </Button>
                     </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}

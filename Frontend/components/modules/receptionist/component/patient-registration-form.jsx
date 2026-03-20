@@ -39,7 +39,7 @@ export default function PatientRegistrationForm({
     value: d.id,
   }));
 
-  const doctorOption = [{ label: "Receptionist", value: 0 }, ...doctors];
+  const doctorOption = [...doctors];
 
   const referalTypeOptions = [
     { label: "Self", value: "Self" },
@@ -79,9 +79,12 @@ export default function PatientRegistrationForm({
           seen_by: "",
           test_requested: [],
           notes: "",
-          cost_taken_amount: "",
+          cost_taken_amount: 0,
           mode_of_payment: "",
           purchase_items: [],
+          duration_of_problem: "",
+          ear_side: "",
+          previous_test_done: false,
         },
       ],
     },
@@ -103,9 +106,11 @@ export default function PatientRegistrationForm({
         ...values,
         // age,
         visit_details: values.visit_details.map((visit) => {
+          const enforcedCost = visit.cost_taken_amount ? Number(visit.cost_taken_amount) : 0;
           if (visit.visit_type === "Purchase") {
             return {
               visit_type: visit.visit_type,
+              cost_taken_amount: enforcedCost,
               purchase_items: visit.purchase_items.map((item) => {
                 // Destructure to remove helper UI fields before sending to API
                 const { serials, stock_type, ...itemData } = item;
@@ -120,6 +125,7 @@ export default function PatientRegistrationForm({
             };
           } else {
             const { purchase_items, ...rest } = visit;
+            rest.cost_taken_amount = enforcedCost;
             return rest;
           }
         }),
@@ -158,9 +164,12 @@ export default function PatientRegistrationForm({
         seen_by: "",
         test_requested: [],
         notes: "",
-        cost_taken_amount: "",
+        cost_taken_amount: 0,
         mode_of_payment: "",
         purchase_items: [],
+        duration_of_problem: "",
+        ear_side: "",
+        previous_test_done: false,
       },
     ]);
   };
@@ -516,8 +525,8 @@ export default function PatientRegistrationForm({
                                               const next = e.target.checked
                                                 ? [...current, s.value]
                                                 : current.filter(
-                                                    (id) => id !== s.value,
-                                                  );
+                                                  (id) => id !== s.value,
+                                                );
                                               updatePurchaseItem(
                                                 index,
                                                 itemIndex,
@@ -551,6 +560,48 @@ export default function PatientRegistrationForm({
                 ) : (
                   /* STANDARD VISIT UI SECTION */
                   <div className="space-y-4 mt-4">
+                    {["Hearing Test", "'Hearing Aids Trial", "Hearing Aids Test & Trial"].includes(visit.visit_type) && (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-teal-50/50 p-4 rounded-lg border border-teal-100">
+                        <Input
+                          label="Duration of Problem"
+                          placeholder="e.g. 6 months"
+                          value={visit.duration_of_problem}
+                          onChange={(e) =>
+                            formik.setFieldValue(
+                              `visit_details.${index}.duration_of_problem`,
+                              e.target.value,
+                            )
+                          }
+                        />
+                        <DropDown
+                          label="Ear Side"
+                          options={[
+                            { label: "Both", value: "both" },
+                            { label: "Left", value: "left" },
+                            { label: "Right", value: "right" },
+                          ]}
+                          value={visit.ear_side}
+                          onChange={(n, v) =>
+                            formik.setFieldValue(
+                              `visit_details.${index}.ear_side`,
+                              v,
+                            )
+                          }
+                        />
+                        <div className="flex items-center pt-5">
+                          <CommonCheckbox
+                            label="Previous Test Done"
+                            checked={visit.previous_test_done}
+                            onChange={(e) =>
+                              formik.setFieldValue(
+                                `visit_details.${index}.previous_test_done`,
+                                e.target.checked,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
                     <DropDown
                       label="Present Complaint"
                       options={complaintOptions}
@@ -607,8 +658,8 @@ export default function PatientRegistrationForm({
                                   val,
                                 )
                                   ? visit.test_requested.filter(
-                                      (t) => t !== val,
-                                    )
+                                    (t) => t !== val,
+                                  )
                                   : [...visit.test_requested, val];
                                 formik.setFieldValue(
                                   `visit_details.${index}.test_requested`,
@@ -626,13 +677,14 @@ export default function PatientRegistrationForm({
                         label="Amount Taken"
                         type="number"
                         placeholder="0.00"
-                        value={visit.cost_taken_amount}
-                        onChange={(e) =>
+                        value={visit.cost_taken_amount === 0 ? "" : visit.cost_taken_amount}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? 0 : Number(e.target.value);
                           formik.setFieldValue(
                             `visit_details.${index}.cost_taken_amount`,
-                            e.target.value,
+                            val,
                           )
-                        }
+                        }}
                       />
                       <Input
                         label="Mode of Payment"
