@@ -387,11 +387,7 @@ class AllocateSerialNumber(generics.UpdateAPIView):
                     instance.visit.status = 'Book - Device Allocated'
                     instance.visit.status_note = 'Trial completed , Device Allocated with customization'
                     instance.visit.save()
-                else:
-                    return Response({
-                        "status": "error",
-                        "message": "completion_notes is required for BOOK - With Customization trials"
-                    }, status=status.HTTP_400_BAD_REQUEST)
+                
         return Response({
             "status": "success",
             "message": f"Processing Completed and trial updated to BOOK - Device Allocated."

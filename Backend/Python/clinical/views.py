@@ -364,7 +364,7 @@ class AudiologistPatientQueueView(generics.ListAPIView):
         queryset = PatientVisit.objects.filter(
             clinic=getattr(self.request.user, 'clinic', None),
             seen_by=self.request.user,
-            status__in=['Test pending','Pending','Test and Trial Pending','Followup Pending']
+            status__in=['Test pending','Pending','Test and Trial Pending','Followup Pending','Test Pending']
         ).exclude(visit_type__in=excluded_types)
 
         # Support direct filtering by GET parameters if provided
