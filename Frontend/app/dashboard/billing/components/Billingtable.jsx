@@ -67,7 +67,7 @@ export default function BillingTable({
               <TableCell>{b.visit_date}</TableCell>
               <TableCell className="text-right font-semibold">
                 {" "}
-                ₹{b.final_amount}{" "}
+                ₹{b.total_amount}{" "}
               </TableCell>
 
               <TableCell className="text-right">

@@ -15,6 +15,8 @@ export default function CommonDatePicker({
   maxDate,
   minDate,
   important = false,
+  minYear = 1950,
+  maxYear = new Date().getFullYear() + 10,
 }) {
   const [showPicker, setShowPicker] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(selectedDate || new Date());
@@ -210,8 +212,8 @@ export default function CommonDatePicker({
                 onChange={handleYearChange}
                 className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {Array.from({ length: 100 }, (_, i) => {
-                  const year = new Date().getFullYear() - 50 + i;
+                {Array.from({ length: maxYear - minYear + 1 }, (_, i) => {
+                  const year = minYear + i;
                   return (
                     <option key={year} value={year}>
                       {year}

@@ -79,6 +79,7 @@ export default function CaseHistoryForm({ patientId }) {
   const handleSaveEditedTests = () => {
     formik.setFieldValue("test_requested", tempSelectedTests);
     setIsEditTestMode(false);
+    setTempSelectedTests([]);
   };
 
   // Handle Cancel edit
@@ -94,7 +95,7 @@ export default function CaseHistoryForm({ patientId }) {
 
   // Handle Add Tests from Modal
   const handleAddTests = () => {
-    const newTests = [...formik.values.test_requested, ...tempSelectedTests];
+    const newTests = Array.from(new Set([...formik.values.test_requested, ...tempSelectedTests]));
     formik.setFieldValue("test_requested", newTests);
     setShowAddTestModal(false);
     setTempSelectedTests([]);
@@ -232,7 +233,7 @@ export default function CaseHistoryForm({ patientId }) {
       previous_ha_experience:
         patientsCaseHistory?.case_history?.previous_ha_experience || "no",
       red_flags: patientsCaseHistory?.case_history?.red_flags || "",
-      test_requested: patientsCaseHistory?.test_requested || [],
+      test_requested: Array.from(new Set((typeof patientsCaseHistory?.test_requested === "string" ? patientsCaseHistory.test_requested.split(",") : (patientsCaseHistory?.test_requested || [])).map(t => typeof t === "string" ? t.trim() : t).filter(Boolean).map(t => { const found = testRequestedOptions.find(opt => opt.label === t || opt.value === t); return found ? found.value : t; }))),
       report_description: patientsCaseHistory?.report_description || "",
       hearing_symptoms: patientsCaseHistory?.case_history?.hearing_symptoms || [],
       other_symptoms: patientsCaseHistory?.case_history?.other_symptoms || "",
@@ -268,6 +269,7 @@ export default function CaseHistoryForm({ patientId }) {
             <p className="text-slate-500">Loading case history...</p>
           </div>
         )}
+
 
         {/* Patient Visit Details Block */}
         {patientsCaseHistory && Object.keys(patientsCaseHistory).length > 0 && currentStep !== null && (
@@ -327,6 +329,7 @@ export default function CaseHistoryForm({ patientId }) {
             </div>
           </div>
         )}
+
 
         {/* ---------------- STEP 1 ---------------- */}
         {currentStep === 1 && (

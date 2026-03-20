@@ -39,7 +39,7 @@ export default function PatientRegistrationForm({
     value: d.id,
   }));
 
-  const doctorOption = [{ label: "Receptionist", value: 0 }, ...doctors];
+  const doctorOption = [...doctors];
 
   const referalTypeOptions = [
     { label: "Self", value: "Self" },
@@ -79,7 +79,7 @@ export default function PatientRegistrationForm({
           seen_by: "",
           test_requested: [],
           notes: "",
-          cost_taken_amount: "",
+          cost_taken_amount: 0,
           mode_of_payment: "",
           purchase_items: [],
           duration_of_problem: "",
@@ -106,9 +106,11 @@ export default function PatientRegistrationForm({
         ...values,
         // age,
         visit_details: values.visit_details.map((visit) => {
+          const enforcedCost = visit.cost_taken_amount ? Number(visit.cost_taken_amount) : 0;
           if (visit.visit_type === "Purchase") {
             return {
               visit_type: visit.visit_type,
+              cost_taken_amount: enforcedCost,
               purchase_items: visit.purchase_items.map((item) => {
                 // Destructure to remove helper UI fields before sending to API
                 const { serials, stock_type, ...itemData } = item;
@@ -123,6 +125,7 @@ export default function PatientRegistrationForm({
             };
           } else {
             const { purchase_items, ...rest } = visit;
+            rest.cost_taken_amount = enforcedCost;
             return rest;
           }
         }),
@@ -161,7 +164,7 @@ export default function PatientRegistrationForm({
         seen_by: "",
         test_requested: [],
         notes: "",
-        cost_taken_amount: "",
+        cost_taken_amount: 0,
         mode_of_payment: "",
         purchase_items: [],
         duration_of_problem: "",
@@ -522,8 +525,8 @@ export default function PatientRegistrationForm({
                                               const next = e.target.checked
                                                 ? [...current, s.value]
                                                 : current.filter(
-                                                    (id) => id !== s.value,
-                                                  );
+                                                  (id) => id !== s.value,
+                                                );
                                               updatePurchaseItem(
                                                 index,
                                                 itemIndex,
@@ -655,8 +658,8 @@ export default function PatientRegistrationForm({
                                   val,
                                 )
                                   ? visit.test_requested.filter(
-                                      (t) => t !== val,
-                                    )
+                                    (t) => t !== val,
+                                  )
                                   : [...visit.test_requested, val];
                                 formik.setFieldValue(
                                   `visit_details.${index}.test_requested`,
@@ -674,13 +677,14 @@ export default function PatientRegistrationForm({
                         label="Amount Taken"
                         type="number"
                         placeholder="0.00"
-                        value={visit.cost_taken_amount}
-                        onChange={(e) =>
+                        value={visit.cost_taken_amount === 0 ? "" : visit.cost_taken_amount}
+                        onChange={(e) => {
+                          const val = e.target.value === "" ? 0 : Number(e.target.value);
                           formik.setFieldValue(
                             `visit_details.${index}.cost_taken_amount`,
-                            e.target.value,
+                            val,
                           )
-                        }
+                        }}
                       />
                       <Input
                         label="Mode of Payment"

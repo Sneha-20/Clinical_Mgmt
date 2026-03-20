@@ -45,7 +45,7 @@ export default function PatientVisitForm({
     seen_by: "",
     test_requested: [],
     notes: "",
-    cost_taken_amount: "",
+    cost_taken_amount: 0,
     mode_of_payment: "",
     tga_service_type: "",
     device_serial_number: "",
@@ -144,8 +144,8 @@ export default function PatientVisitForm({
     } else if (key === "quantity") {
       const qty = parseInt(value) || 0;
       const inStock = purchaseItems[itemIndex].quantity_in_stock || 0;
-      purchaseItems[itemIndex] = { 
-        ...purchaseItems[itemIndex], 
+      purchaseItems[itemIndex] = {
+        ...purchaseItems[itemIndex],
         [key]: qty,
         stockError: qty > inStock
       };
@@ -251,8 +251,8 @@ export default function PatientVisitForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const hasStockError = formData.visit_details.some(visit => 
+
+    const hasStockError = formData.visit_details.some(visit =>
       visit.purchase_items?.some(item => item.stockError)
     );
 
@@ -484,7 +484,7 @@ export default function PatientVisitForm({
                     name="cost_taken_amount"
                     type="number"
                     placeholder="Enter Amount"
-                    value={visit.cost_taken_amount}
+                    value={visit.cost_taken_amount || 0}
                     onChange={(e) =>
                       updateVisitDetails(
                         index,

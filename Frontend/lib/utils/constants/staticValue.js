@@ -52,7 +52,7 @@ export const testRequestedOptions = [
 
 export const visitTypeOptions = [
   { label: "Hearing Test", value: "Hearing Test" },
-  { label: "Hearing  Aids Trial", value: "'Hearing Aids Trial" },
+  { label: "Hearing  Aids Trial", value: "Hearing Aids Trial" },
   { label: "Hearing Aids Test & Trial", value: "Hearing Aids Test & Trial" },
   { label: "Hearing Aid Consultation", value: "Hearing Aid Consultation" },
   { label: "Hearing Aids Repair/Service", value: "TGA" },
