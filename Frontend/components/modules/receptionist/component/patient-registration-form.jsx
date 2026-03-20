@@ -560,7 +560,7 @@ export default function PatientRegistrationForm({
                 ) : (
                   /* STANDARD VISIT UI SECTION */
                   <div className="space-y-4 mt-4">
-                    {["Hearing Test", "'Hearing Aids Trial", "Hearing Aids Test & Trial"].includes(visit.visit_type) && (
+                    {["Hearing Test", "Hearing Aids Trial", "Hearing Aids Test & Trial"].includes(visit.visit_type) && (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-teal-50/50 p-4 rounded-lg border border-teal-100">
                         <Input
                           label="Duration of Problem"
