@@ -747,7 +747,7 @@ class VisitTestTypesView(APIView):
                 (test_performed.srt_sds, "SRT/SDS"),
                 (test_performed.bera, "BERA"),
                 (test_performed.assr, "ASSR"),
-                (test_performed.special_tests, "Special Tests"),
+                (test_performed.special_tests and test_performed.special_tests.strip() and test_performed.special_tests.strip().lower() != 'false', "Special Tests"),
                
             ]
             
