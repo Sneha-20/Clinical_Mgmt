@@ -154,6 +154,8 @@ class CompletedTestDetailView(APIView):
                     'id': file.id,
                     'report_type': file.report_type,
                     'report_description': file.report_description,
+                    'pta_data': file.pta_data,
+                    'impedance_data': file.impedance_data
                     # 'file_url': file.file_path,
                     # 'file_name': file.file_path.split('/')[-1] if file.file_path else 'Unknown',
                     # 'created_at': file.created_at,

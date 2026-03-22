@@ -4,7 +4,7 @@ from django.urls import path
 from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailView,PatientVisitsView,PatientVisitCreateView,TodayPatientVisitsView,
                     PatientVisitUpdateView,PatientUpdateView,PatientFlatListView,DashboardStatsView,DoctorFlatListView,AudiologistPatientQueueView,
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
-                    TestResultListView,TestUploadDeleteView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,
+                    TestResultListView,TestUploadDeleteView,TestUploadCreateView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,
                     MarkPatientContactedView, VisitTestTypesView,TestTypeUpdateListView,ClinicTransactionListView,ClinicTransactionView,ClinicTransactionUpdateDeleteView,
                     PurchaseInventoryItemListView,PurchaseInventoryItemCreateView,CustomerNeedPurchase)
 
@@ -82,7 +82,8 @@ urlpatterns = [
    path('inventory/trial-devices-in-use/', TrialDeviceInUseListView.as_view(), name='trial_devices_in_use'),
 
    path('report-upload/<int:id>/', ReportUploadView.as_view(), name='report-upload'), # Endpoint for uploading files to existing TestUpload records
-   path('report-create/', ReportTestCreateView.as_view(), name='report-create'), #
+   # path('report-create/', ReportTestCreateView.as_view(), name='report-create'), #
+   path('report-create/', TestUploadCreateView.as_view(), name='test-upload-create'), # Create new test upload records
    path('test-uploads/list/', TestUploadListView.as_view(), name='test-upload-list'), # List and create test upload records
 
 

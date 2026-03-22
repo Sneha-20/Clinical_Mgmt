@@ -658,6 +658,14 @@ class PatientVisitSerializer(serializers.ModelSerializer):
     patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
     visit_id = serializers.IntegerField(source='id', read_only=True)
     seen_by = serializers.SerializerMethodField()
+    case_history = serializers.SerializerMethodField()
+
+    def get_case_history(self, obj):
+        try:
+            case_history = AudiologistCaseHistory.objects.get(patient=obj.patient)
+            return AudiologistCaseHistorySerializer(case_history).data
+        except AudiologistCaseHistory.DoesNotExist:
+            return None
 
     def get_seen_by(self, obj):
         if obj.seen_by is None:
@@ -700,7 +708,8 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             'previous_test_done',
             'test_requested',
             'notes',
-            'step_process'
+            'step_process',
+            'case_history'
         ] 
 
 
@@ -1026,9 +1035,78 @@ class VisitTestPerformedSerializer(serializers.ModelSerializer):
 class TestUploadSerializer(serializers.ModelSerializer):
     file_url = serializers.CharField(source='file_path', read_only=True)
     
+    def validate(self, data):
+        report_type = data.get('report_type')
+        
+        # Validate PTA data structure
+        if report_type == 'PTA' and data.get('pta_data'):
+            pta_data = data['pta_data']
+            if not isinstance(pta_data, dict):
+                raise serializers.ValidationError({
+                    'pta_data': 'PTA data must be a valid JSON object'
+                })
+            
+            # Validate required structure
+            required_ears = ['right_ear', 'left_ear']
+            for ear in required_ears:
+                if ear not in pta_data:
+                    raise serializers.ValidationError({
+                        'pta_data': f'Missing {ear} data'
+                    })
+                
+                ear_data = pta_data[ear]
+                if not isinstance(ear_data, dict):
+                    raise serializers.ValidationError({
+                        'pta_data': f'{ear} data must be a valid JSON object'
+                    })
+                
+                # Validate AC/BC structure
+                required_types = ['AC', 'BC']
+                for test_type in required_types:
+                    if test_type not in ear_data:
+                        raise serializers.ValidationError({
+                            'pta_data': f'Missing {test_type} data in {ear}'
+                        })
+        
+        # Validate Impedance data structure
+        elif report_type == 'Impedance' and data.get('impedance_data'):
+            impedance_data = data['impedance_data']
+            if not isinstance(impedance_data, dict):
+                raise serializers.ValidationError({
+                    'impedance_data': 'Impedance data must be a valid JSON object'
+                })
+            
+            # Validate required structure
+            required_ears = ['right_ear', 'left_ear']
+            for ear in required_ears:
+                if ear not in impedance_data:
+                    raise serializers.ValidationError({
+                        'impedance_data': f'Missing {ear} data'
+                    })
+                
+                ear_data = impedance_data[ear]
+                if not isinstance(ear_data, dict):
+                    raise serializers.ValidationError({
+                        'impedance_data': f'{ear} data must be a valid JSON object'
+                    })
+                
+                # Validate required fields
+                required_fields = ['volume', 'pressure', 'compliance', 'gradient']
+                for field in required_fields:
+                    if field not in ear_data:
+                        raise serializers.ValidationError({
+                            'impedance_data': f'Missing {field} in {ear}'
+                        })
+        
+        return data
+    
     class Meta:
         model = TestUpload
-        fields = ['id', 'report_type', 'report_description', 'file_url', 'created_at']
+        fields = [
+            'id', 'visit', 'report_type', 'report_description', 
+            'pta_data', 'impedance_data', 'test_data', 
+            'file_url', 'created_at'
+        ]
 
 class TrialSerializer(serializers.ModelSerializer):
     device_details = serializers.SerializerMethodField()
