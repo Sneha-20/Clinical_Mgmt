@@ -18,14 +18,15 @@ export default function TransactionHistory() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [filterType, setFilterType] = useState('All');
   const [transactionDate, setTransactionDate] = useState(null);
+  const [transactionMonth, setTransactionMonth] = useState('All');
   const { execute: fetchTransactions, loading } = useApi();
 
   const loadTransactions = async () => {
     try {
       const params = {};
       if (filterType && filterType !== 'All') params.transaction_type = filterType;
-      console.log(transactionDate)
       if (transactionDate) params.transaction_date = format(transactionDate, "yyyy-MM-dd");
+      if (transactionMonth && transactionMonth !== 'All') params.transaction_month = transactionMonth;
 
       const result = await fetchTransactions(() => getTransactions(params));
       setTransactions(result.transactions);
@@ -36,7 +37,7 @@ export default function TransactionHistory() {
 
   useEffect(() => {
     loadTransactions();
-  }, [filterType, transactionDate]);
+  }, [filterType, transactionDate, transactionMonth]);
 
   const handleAdd = async (data) => {
     try {
@@ -115,6 +116,22 @@ export default function TransactionHistory() {
           </div>
 
           <div className="flex flex-col gap-1.5 w-full sm:w-auto">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Filter by Month</label>
+            <select
+              value={transactionMonth}
+              onChange={(e) => setTransactionMonth(e.target.value)}
+              className="flex h-10 w-full sm:w-48 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-1 shadow-sm transition-all text-slate-700"
+             >
+              <option value="All">All Months</option>
+              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                <option key={month} value={month}>
+                  {new Date(0, month - 1).toLocaleString('en', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-full sm:w-auto">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Transaction Date</label>
             <div className="flex flex-row items-center gap-2">
               <div className="w-full sm:w-48">
@@ -148,6 +165,7 @@ export default function TransactionHistory() {
         <TableHeader>
           <TableRow>
             <TableHead>Type</TableHead>
+            <TableHead>Transaction Date</TableHead>
             <TableHead>Person Name</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Amount</TableHead>
@@ -157,16 +175,17 @@ export default function TransactionHistory() {
         <TableBody>
           {loading ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+              <TableCell colSpan={6} className="text-center">Loading...</TableCell>
             </TableRow>
           ) : transactions.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="text-center">No transactions found</TableCell>
+              <TableCell colSpan={6} className="text-center">No transactions found</TableCell>
             </TableRow>
           ) : (
             transactions.map((transaction) => (
               <TableRow key={transaction.id}>
                 <TableCell>{transaction.transaction_type}</TableCell>
+                <TableCell>{transaction.transaction_date ? new Date(transaction.transaction_date).toLocaleDateString() : '—'}</TableCell>
                 <TableCell>{transaction.person_name}</TableCell>
                 <TableCell>{transaction.category}</TableCell>
                 <TableCell className={transaction.transaction_type === 'Expense' ? 'text-red-500' : 'text-green-500'}>{transaction.amount}</TableCell>

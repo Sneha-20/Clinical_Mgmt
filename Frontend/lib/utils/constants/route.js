@@ -147,6 +147,7 @@ export const roleRoutesAccess = {
     "/dashboard/home",
     "/dashboard/profile",
     "/dashboard/userprofile",
+    "/dashboard/patient/visit-details",
     "/dashboard/pending-item",
     "/dashboard/inventory",
     "/dashboard/billing",

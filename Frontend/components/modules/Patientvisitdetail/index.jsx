@@ -20,7 +20,7 @@ import {
 
 export default function PatientVisitDetail({ visitId }) {
   const { patientVisitdetails } = usePatientVisitdata(visitId);
- const { showCaseHistoryform } = useAudiologist();
+  const { showCaseHistoryform } = useAudiologist();
 
   // ✅ Destructured & renamed variables
   const {
@@ -35,26 +35,26 @@ export default function PatientVisitDetail({ visitId }) {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4">
 
-          <Backbutton />
-          <div className="flex gap-3">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-primaryText">
-                Visit Details
-              </h1>
-               <p className="text-muted-foreground">
-              Visit ID: #{visitInfo.visit_id}
-            </p>
-            </div>
-            <div className="pt-2.5">
+            <Backbutton />
+            <div className="flex gap-3">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-primaryText">
+                  Visit Details
+                </h1>
+                <p className="text-muted-foreground">
+                  Visit ID: #{visitInfo.visit_id}
+                </p>
+              </div>
+              <div className="pt-2.5">
 
-              <CommonBadge title={visitInfo.status} status="Completed" />
+                <CommonBadge title={visitInfo.status} status="Completed" />
+              </div>
+
             </div>
-           
           </div>
-            </div>
-          <div>view profile</div>
+          {/* <div>view profile</div> */}
         </div>
 
         {/* Patient Info Card */}
@@ -127,22 +127,22 @@ export default function PatientVisitDetail({ visitId }) {
               <div className="space-y-3">
                 <div>
 
-                <div>
-                  <p className="text-sm text-muted-foreground">Service Type</p>
-                  <p className="font-medium capitalize">
-                    {visitInfo.service_type}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Present Complaint
-                  </p>
-                  <p className="font-medium">{visitInfo.present_complaint}</p>
-                </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Service Type</p>
+                    <p className="font-medium capitalize">
+                      {visitInfo.service_type}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Present Complaint
+                    </p>
+                    <p className="font-medium">{visitInfo.present_complaint}</p>
+                  </div>
 
                 </div>
-              <Button variant="link" onClick={() => showCaseHistoryform(visitInfo.visit_id, 2)}>Add reports</Button>
-                
+                <Button variant="link" onClick={() => showCaseHistoryform(visitInfo.visit_id, 2)}>Add reports</Button>
+
 
               </div>
             </div>
@@ -177,51 +177,58 @@ export default function PatientVisitDetail({ visitId }) {
             <CardTitle className="flex items-center gap-2 text-lg">
               <ClipboardList className="h-5 w-5 text-primary" />
               Test Reports
-              <p className="rounded-full px-2 py-1 bg-teal-100 text-xs text-teal-700">
-                {testReports.files_count} file(s)
-              </p>
+              {/* <p className="rounded-full px-2 py-1 bg-teal-100 text-xs text-teal-700">
+                {testReports.reports?.length || testReports.files_count || 0} file(s)
+              </p> */}
             </CardTitle>
           </CardHeader>
-          {/* <CardContent>
+          <CardContent>
             {testReports.reports?.length > 0 ? (
               <div className="space-y-3">
-                {testReports?.reports.map((report) => (
+                {testReports.reports.map((report) => (
                   <div
                     key={report.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                    className="flex flex-col p-3 bg-muted/50 rounded-lg border"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <FileText className="h-5 w-5 text-primary" />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm text-slate-800">
+                            {report.report_type}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {report.created_at ? new Date(report.created_at).toLocaleDateString() : ""}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-sm">
-                          {report.file_type.toUpperCase()} Report
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Uploaded on{" "}
-                          {new Date(report.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
+                      {report.file_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(report.file_url, "_blank")}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      )}
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(report.file_url, "_blank")}
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
+                    <div className="border-t pt-2">
+                      <p className="text-sm text-slate-600 italic">
+                        "{report.report_description || "No description provided."}"
+                      </p>
+                    </div>
                   </div>
                 ))}
-
               </div>
             ) : (
               <p className="text-muted-foreground text-center py-4">
                 No reports uploaded yet
               </p>
             )}
-          </CardContent> */}
+          </CardContent>
         </Card>
       </div>
     </div>

@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Eye, Printer } from "lucide-react";
+import { Eye, Printer, User, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { routes } from "@/lib/utils/constants/route";
 import { getPatientById } from "@/lib/services/patientProfile";
 import CaseHistoryFormModal from "./CaseHistoryFormModal";
+import FullVisitModal from "./FullVisitModal";
 
 export default function AppointmentList({
   loading,
@@ -16,6 +17,7 @@ export default function AppointmentList({
   const router = useRouter();
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedFullVisitId, setSelectedFullVisitId] = useState(null);
   const [isFetchingPatient, setIsFetchingPatient] = useState(false);
   const [printData, setPrintData] = useState({
     name: "",
@@ -116,9 +118,16 @@ export default function AppointmentList({
                     </td>
                   )}
                   <td className="py-2 px-3">
-                    <span className="px-2 py-1 bg-teal-100 text-teal-700 rounded-full text-xs">
-                      {p.status}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="px-2 py-1 bg-teal-100 text-teal-700 rounded-full text-xs">
+                        {p.status}
+                      </span>
+                      {p.statusNote && (
+                        <span className="text-[10px] text-muted-foreground break-words max-w-[150px]">
+                          {p.statusNote}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   <td className="py-2 px-3 text-center">
@@ -134,21 +143,43 @@ export default function AppointmentList({
                     </Button>
                   </td>
                   <td className="py-2 px-3 text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1 text-xs"
-                      onMouseEnter={() => {
-                        if (p?.id)
-                          router.prefetch(
-                            `${routes.pages.userptofile}/${p.id}`,
-                          );
-                      }}
-                      onClick={() => onViewProfile && onViewProfile(p.id)}
-                    >
-                      <Eye className="w-3 h-3" />
-                      <span className="hidden sm:inline">View</span>
-                    </Button>
+                    <div className="flex justify-center items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs px-2"
+                        title="View Profile"
+                        onMouseEnter={() => {
+                          if (p?.id)
+                            router.prefetch(
+                              `${routes.pages.userptofile}/${p.id}`,
+                            );
+                        }}
+                        onClick={() => onViewProfile && onViewProfile(p.id)}
+                      >
+                        <User className="w-4 h-4 text-blue-600" />
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1 text-xs px-2"
+                        title="View Visit Details"
+                        onMouseEnter={() => {
+                          if (p?.visitId)
+                            router.prefetch(
+                              `${routes.pages.patientVisitdetail}/${p.visitId}`,
+                            );
+                        }}
+                        onClick={() => {
+                          if (p?.visitId) {
+                            setSelectedFullVisitId(p.visitId);
+                          }
+                        }}
+                      >
+                        <FileText className="w-4 h-4 text-teal-600" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -162,6 +193,12 @@ export default function AppointmentList({
         closePrintModal={closePrintModal}
         printData={printData}
         handlePrint={handlePrint}
+      />
+      
+      <FullVisitModal 
+        visitId={selectedFullVisitId} 
+        open={!!selectedFullVisitId} 
+        onClose={() => setSelectedFullVisitId(null)} 
       />
     </div>
   );

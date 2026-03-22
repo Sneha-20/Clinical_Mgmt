@@ -40,9 +40,11 @@ export const getCompleteTest = async (params = {}) => {
 
 export const getActiveTrialDeviceList = async (params = {}) => {
   try {
-    const { page = 1 } = params;
+    const { page = 1, search = "", decision = "" } = params;
     const queryParams = new URLSearchParams();
     queryParams.append("page", page.toString());
+    if (search) queryParams.append("search", search);
+    if (decision && decision !== "All") queryParams.append("trial_decision", decision);
     const url = `${
       routes.audiologist.activeTrialDevice
     }?${queryParams.toString()}`;
