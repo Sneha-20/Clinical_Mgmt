@@ -5,6 +5,72 @@ import { apiClient } from "@/lib/api";
 import CommonBadge from "@/components/ui/badge";
 import { User, Phone, Stethoscope, Calendar, FileText, Activity, ClipboardList, Download, ShoppingCart, Wrench } from "lucide-react";
 
+const RenderPTATable = ({ ptaData }) => {
+  if (!ptaData || Object.keys(ptaData).length === 0) return null;
+  const frequencies = ["250", "500", "1K", "2K", "4K", "8K"];
+  return (
+    <div className="overflow-x-auto mt-3 mb-2 border border-slate-200 rounded-md">
+      <table className="w-full text-[10px] sm:text-xs text-center border-collapse">
+        <thead className="bg-slate-100/75 border-b border-slate-200 text-slate-700">
+          <tr>
+            <th className="border-r border-slate-200 p-1 font-bold w-12">RT</th>
+            <th className="border-r border-slate-200 p-1 w-8"></th>
+            {frequencies.map(f => <th key={f} className="border-r border-slate-200 p-1 font-semibold">{f}</th>)}
+            <th className="border-r border-slate-200 p-1 font-bold w-12">LT</th>
+            <th className="border-r border-slate-200 p-1 w-8"></th>
+            {frequencies.map(f => <th key={f} className="border-r border-slate-200 p-1 font-semibold">{f}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-200">
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-1 font-semibold bg-slate-50/50 text-slate-600">AC</td>
+            {frequencies.map(f => <td key={f} className="border-r border-slate-200 p-1 font-medium text-blue-700">{ptaData.right_ear?.AC?.[f] || "—"}</td>)}
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-1 font-semibold bg-slate-50/50 text-slate-600">AC</td>
+            {frequencies.map(f => <td key={f} className="border-r border-slate-200 p-1 font-medium text-blue-700">{ptaData.left_ear?.AC?.[f] || "—"}</td>)}
+          </tr>
+          <tr>
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-1 font-semibold bg-slate-50/50 text-slate-600">BC</td>
+            {frequencies.map(f => <td key={f} className="border-r border-slate-200 p-1 font-medium text-blue-700">{ptaData.right_ear?.BC?.[f] || "—"}</td>)}
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-1 font-semibold bg-slate-50/50 text-slate-600">BC</td>
+            {frequencies.map(f => <td key={f} className="border-r border-slate-200 p-1 font-medium text-blue-700">{ptaData.left_ear?.BC?.[f] || "—"}</td>)}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const RenderImpedanceTable = ({ impData }) => {
+  if (!impData || Object.keys(impData).length === 0) return null;
+  const fields = ["volume", "pressure", "compliance", "gradient"];
+  return (
+    <div className="overflow-x-auto mt-3 mb-2 border border-slate-200 rounded-md">
+      <table className="w-full text-xs text-center border-collapse">
+        <thead className="bg-slate-100/75 border-b border-slate-200 text-slate-700">
+          <tr>
+            <th className="border-r border-slate-200 p-2 font-bold w-20 bg-slate-100">EAR</th>
+            {fields.map(f => <th key={f} className="border-r border-slate-200 p-2 font-semibold uppercase">{f}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-200">
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">RIGHT</td>
+            {fields.map(f => <td key={f} className="border-r border-slate-200 p-2 font-medium text-blue-700">{impData.right_ear?.[f] || "—"}</td>)}
+          </tr>
+          <tr>
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">LEFT</td>
+            {fields.map(f => <td key={f} className="border-r border-slate-200 p-2 font-medium text-blue-700">{impData.left_ear?.[f] || "—"}</td>)}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 export default function FullVisitModal({ visitId, open, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -121,7 +187,9 @@ export default function FullVisitModal({ visitId, open, onClose }) {
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm text-slate-600 italic">
+                        {report.pta_data && Object.keys(report.pta_data).length > 0 && <RenderPTATable ptaData={report.pta_data} />}
+                        {report.impedance_data && Object.keys(report.impedance_data).length > 0 && <RenderImpedanceTable impData={report.impedance_data} />}
+                        <p className="text-sm text-slate-600 italic mt-2">
                           "{report.report_description || "No description provided."}"
                         </p>
                       </div>
