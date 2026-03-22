@@ -1201,19 +1201,28 @@ class ClinicTransactionFilter(django_filters.FilterSet):
 
     transaction_date = django_filters.DateFilter(
         field_name="transaction_date",
-        lookup_expr="date"
+        lookup_expr="exact"
     )
+    
+    transaction_month = django_filters.NumberFilter(
+        field_name="transaction_date",
+        lookup_expr="month",
+        label="Filter by month (1-12)"
+    )
+    
 
     class Meta:
         model = ClinicTransactions
-        fields = ['transaction_type', 'transaction_date']
+        fields = ['transaction_type', 'transaction_date', 'transaction_month']
 
 class ClinicTransactionListView(generics.ListAPIView):
     """
     API to list all financial transactions for the clinic.
     GET /api/clinical/transactions/
     
-    Supports pagination and filtering by transaction type (?transaction_type=Credit/Debit).
+    Supports pagination and filtering by:
+    - Transaction type (?transaction_type=Income/Expense)
+    - Exact date (?transaction_date=2026-03-22)
     """
     permission_classes = [IsAuthenticated]
     serializer_class = ClinicTransactionListSerializer

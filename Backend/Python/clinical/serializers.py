@@ -198,6 +198,12 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
         # -------------------------
         if visit_type in ['Troubleshooting General Adjustment', 'TGA']:
 
+            # Remove hearing-specific fields
+            data.pop('duration_of_problem', None)
+            data.pop('ear_side', None)
+            data.pop('previous_test_done', None)
+            data.pop('referral_type_hearing_test', None)
+            
             data.pop('cost_taken_amount', None)
             data.pop('mode_of_payment', None)
             data.pop('purchase_items', None)
@@ -1048,26 +1054,29 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
     """Comprehensive serializer for patient visit details including tests performed and trials"""
     
     # Patient information
-    # patient_id = serializers.IntegerField(source='patient.id', read_only=True)
-    # patient_name = serializers.CharField(source='patient.name', read_only=True)
-    # patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
-    # patient_email = serializers.EmailField(source='patient.email', read_only=True)
-    # patient_age = serializers.IntegerField(source='patient.age', read_only=True)
-    # patient_gender = serializers.CharField(source='patient.gender', read_only=True)
-    # patient_address = serializers.CharField(source='patient.address', read_only=True)
-    # patient_city = serializers.CharField(source='patient.city', read_only=True)
+    patient_id = serializers.IntegerField(source='patient.id', read_only=True)
+    patient_name = serializers.CharField(source='patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    patient_email = serializers.EmailField(source='patient.email', read_only=True)
+    patient_age = serializers.IntegerField(source='patient.age', read_only=True)
+    patient_gender = serializers.CharField(source='patient.gender', read_only=True)
+    patient_address = serializers.CharField(source='patient.address', read_only=True)
+    patient_city = serializers.CharField(source='patient.city', read_only=True)
     
     # Seen by doctor information
     seen_by_name = serializers.CharField(source='seen_by.name', read_only=True)
     
     # Case history
-    # case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
+    case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
     
     # Conditional data based on visit type
     tests_performed = serializers.SerializerMethodField()
     test_uploads = serializers.SerializerMethodField()
     trials = serializers.SerializerMethodField()
     service_visit = serializers.SerializerMethodField()
+
+    # Purchase records for this visit 
+    purchase_records = serializers.SerializerMethodField()
     
     # Bill information
     bill_details = serializers.SerializerMethodField()
@@ -1144,6 +1153,14 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
         except Bill.DoesNotExist:
             return None
     
+    def get_purchase_records(self, obj):
+        """Get purchase records for this visit"""
+        try:
+            purchase_records = PatientPurchase.objects.filter(visit=obj)
+            return PatientPurchaseSerializer(purchase_records, many=True).data
+        except PatientPurchase.DoesNotExist:
+            return None
+    
     def to_representation(self, instance):
         """Convert test_requested string to list"""
         data = super().to_representation(instance)
@@ -1158,13 +1175,15 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'visit_type', 'service_type', 'present_complaint', 'test_requested',
             'notes', 'status', 'status_note', 'appointment_date',
+            'case_history',
             # # Patient information
-            # 'patient_id', 'patient_name', 'patient_phone', 'patient_email', 
-            # 'patient_age', 'patient_gender', 'patient_address', 'patient_city',
+            'patient_id', 'patient_name', 'patient_phone', 'patient_email', 
+            'patient_age', 'patient_gender', 'patient_address', 'patient_city',
             # Doctor information
             'seen_by_name',
             # Clinical data (conditional based on visit type)
-             'tests_performed', 'test_uploads', 'trials', 'service_visit',
+             'tests_performed', 'test_uploads','trials', 'service_visit',
+             'purchase_records',
             # Billing
             'bill_details'
         ]
@@ -2408,13 +2427,16 @@ class TrialCompletionNotesUpdateSerializer(serializers.Serializer):
 
 
 class ClinicTransactionCreateSerializer(serializers.ModelSerializer):
+    transaction_date = serializers.DateField(required=False, allow_null=True)
+    
     class Meta:
         model = ClinicTransactions
-        fields = ['transaction_type', 'amount', 'person_name','category']
+        fields = ['transaction_type', 'amount', 'person_name','category', 'transaction_date']
 
     def create(self, validated_data):
         request = self.context.get('request')
         clinic = getattr(request.user, 'clinic', None)
+        
 
         # The amount should be less than the total amount of  transaction type Income if the transaction type is Expense
         if validated_data['transaction_type'] == 'Expense':

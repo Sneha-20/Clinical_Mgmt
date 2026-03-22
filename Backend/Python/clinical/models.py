@@ -189,7 +189,7 @@ class Trial(models.Model):
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
         ('BOOK - Device Allocated', 'Book Device Allocated' ),
         ('BOOK - With Customization', 'Book With Customization'),
-        ('FOLLOWUP', 'Need Time - Not Booked'),
+        ('Follow up', 'Need Time - Not Booked'),
         ('DECLINE', 'Decline Device Booking'),
     ]
     trial_decision = models.CharField(max_length=50, choices=TRIAL_DECISION_CHOICES, blank=True, null=True, help_text="Patient decision after trial completion", default='TRIAL_ACTIVE')
@@ -785,7 +785,7 @@ class ClinicTransactions(models.Model):
     category = models.CharField(max_length=50)  # e.g., 'Inventory Transfer', 'Purchase', 'Sale'
     person_name = models.CharField(max_length=255, blank=True, null=True)  # Name of person involved in transaction (supplier/customer)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    transaction_date = models.DateTimeField(auto_now_add=True)
+    transaction_date = models.DateField(default=timezone.now, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     class Meta:

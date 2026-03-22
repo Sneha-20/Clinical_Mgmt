@@ -152,12 +152,12 @@ class CompletedTestDetailView(APIView):
             for file in test_files:
                 files_details.append({
                     'id': file.id,
-                    'file_type': file.report_type,
-                    'file_description': file.report_description,
-                    'file_url': file.file_path,
-                    'file_name': file.file_path.split('/')[-1] if file.file_path else 'Unknown',
-                    'created_at': file.created_at,
-                    'file_size': 'N/A'  # You could add file size if stored
+                    'report_type': file.report_type,
+                    'report_description': file.report_description,
+                    # 'file_url': file.file_path,
+                    # 'file_name': file.file_path.split('/')[-1] if file.file_path else 'Unknown',
+                    # 'created_at': file.created_at,
+                    # 'file_size': 'N/A'  # You could add file size if stored
                 })
             
             # Get all visits for this patient (for context)
@@ -213,8 +213,7 @@ class CompletedTestDetailView(APIView):
                     # 'created_at': test_performed.created_at
                 },
                 'test_reports': {
-                    'reports': files_details,
-                    'files_count': len(files_details),
+                    'reports': files_details
                     # 'has_files': len(files_details) > 0
                 },
                 # 'patient_visit_history': patient_visit_history
