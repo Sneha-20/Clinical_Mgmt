@@ -33,10 +33,11 @@ class TrialListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['ear_fitted', 'patient_response', 'visit__status']
+    filterset_fields = ['trial_decision']
     search_fields = [
         'assigned_patient__name', 
-        'visit__seen_by__name', 
+        'assigned_patient__phone_primary',
+        # 'visit__seen_by__name', 
         'device_inventory_id__product_name', 
         'serial_number'
     ]

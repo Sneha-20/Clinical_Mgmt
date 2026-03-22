@@ -119,44 +119,51 @@ class VisitTestPerformed(models.Model):
 
 class TestUpload(models.Model):
     visit = models.ForeignKey(VisitTestPerformed, on_delete=models.CASCADE)
-    report_type = models.CharField(max_length=100)
+    report_type = models.CharField(max_length=100, choices=[
+        ('PTA', 'PTA - Pure Tone Audiometry'),
+        ('Impedance', 'Impedance - Tympanometry'),
+        ('SRT', 'SRT - Speech Reception Threshold'),
+        ('SDS', 'SDS - Speech Discrimination Score'),
+        ('BERA', 'BERA - Brainstem Evoked Response'),
+        ('OAE', 'OAE - Otoacoustic Emissions'),
+        ('ASSR', 'ASSR - Auditory Steady State Response'),
+        ('Free_Field', 'Free Field Testing'),
+        ('Special_Test', 'Special Tests')
+    ])
     report_description = models.TextField(blank=True, null=True)
-     # Right Ear (RT) - Air Conduction (AC)
-    # rt_ac_250 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 250Hz")
-    # rt_ac_500 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 500Hz")
-    # rt_ac_1000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 1000Hz")
-    # rt_ac_2000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 2000Hz")
-    # rt_ac_4000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 4000Hz")
-    # rt_ac_8000 = models.IntegerField(null=True, blank=True, help_text="Right Ear AC 8000Hz")
     
-    # # Left Ear (LT) - Air Conduction (AC)
-    # lt_ac_250 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 250Hz")
-    # lt_ac_500 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 500Hz")
-    # lt_ac_1000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 1000Hz")
-    # lt_ac_2000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 2000Hz")
-    # lt_ac_4000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 4000Hz")
-    # lt_ac_8000 = models.IntegerField(null=True, blank=True, help_text="Left Ear AC 8000Hz")
+    # PTA Data - Stored as JSON for structured data
+    pta_data = models.JSONField(
+        default=dict, 
+        blank=True, 
+        null=True,
+        help_text="PTA test data with ear and frequency breakdown"
+    )
     
-    # # Right Ear (RT) - Bone Conduction (BC)
-    # rt_bc_250 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 250Hz")
-    # rt_bc_500 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 500Hz")
-    # rt_bc_1000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 1000Hz")
-    # rt_bc_2000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 2000Hz")
-    # rt_bc_4000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 4000Hz")
-    # rt_bc_8000 = models.IntegerField(null=True, blank=True, help_text="Right Ear BC 8000Hz")
-
+    # Impedance Data - Stored as JSON
+    impedance_data = models.JSONField(
+        default=dict, 
+        blank=True, 
+        null=True,
+        help_text="Impedance test data with volume, pressure, compliance, gradient"
+    )
     
-    # # Left Ear (LT) - Bone Conduction (BC)
-    # lt_bc_250 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 250Hz")
-    # lt_bc_500 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 500Hz")
-    # lt_bc_1000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 1000Hz")
-    # lt_bc_2000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 2000Hz")
-    # lt_bc_4000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 4000Hz")
-    # lt_bc_8000 = models.IntegerField(null=True, blank=True, help_text="Left Ear BC 8000Hz")
-
-   
+    # Other test data - Generic JSON field for other report types
+    test_data = models.JSONField(
+        default=dict, 
+        blank=True, 
+        null=True,
+        help_text="Generic test data for other report types"
+    )
+    
     file_path = models.TextField(null=True, blank=True)  # Store file path or URL to the uploaded report
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.report_type} - {self.visit.visit.patient.name if self.visit.visit.patient else 'Unknown'}"
+
+    class Meta:
+        ordering = ['-created_at']
 
 
 class Trial(models.Model):
@@ -189,7 +196,7 @@ class Trial(models.Model):
         ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
         ('BOOK - Device Allocated', 'Book Device Allocated' ),
         ('BOOK - With Customization', 'Book With Customization'),
-        ('FOLLOWUP', 'Need Time - Not Booked'),
+        ('Follow up', 'Need Time - Not Booked'),
         ('DECLINE', 'Decline Device Booking'),
     ]
     trial_decision = models.CharField(max_length=50, choices=TRIAL_DECISION_CHOICES, blank=True, null=True, help_text="Patient decision after trial completion", default='TRIAL_ACTIVE')
@@ -785,7 +792,7 @@ class ClinicTransactions(models.Model):
     category = models.CharField(max_length=50)  # e.g., 'Inventory Transfer', 'Purchase', 'Sale'
     person_name = models.CharField(max_length=255, blank=True, null=True)  # Name of person involved in transaction (supplier/customer)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    transaction_date = models.DateTimeField(auto_now_add=True)
+    transaction_date = models.DateField(default=timezone.now, null=True, blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
     class Meta:

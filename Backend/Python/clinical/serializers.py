@@ -198,6 +198,12 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
         # -------------------------
         if visit_type in ['Troubleshooting General Adjustment', 'TGA']:
 
+            # Remove hearing-specific fields
+            data.pop('duration_of_problem', None)
+            data.pop('ear_side', None)
+            data.pop('previous_test_done', None)
+            data.pop('referral_type_hearing_test', None)
+            
             data.pop('cost_taken_amount', None)
             data.pop('mode_of_payment', None)
             data.pop('purchase_items', None)
@@ -652,6 +658,14 @@ class PatientVisitSerializer(serializers.ModelSerializer):
     patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
     visit_id = serializers.IntegerField(source='id', read_only=True)
     seen_by = serializers.SerializerMethodField()
+    case_history = serializers.SerializerMethodField()
+
+    def get_case_history(self, obj):
+        try:
+            case_history = AudiologistCaseHistory.objects.get(patient=obj.patient)
+            return AudiologistCaseHistorySerializer(case_history).data
+        except AudiologistCaseHistory.DoesNotExist:
+            return None
 
     def get_seen_by(self, obj):
         if obj.seen_by is None:
@@ -694,7 +708,8 @@ class PatientVisitSerializer(serializers.ModelSerializer):
             'previous_test_done',
             'test_requested',
             'notes',
-            'step_process'
+            'step_process',
+            'case_history'
         ] 
 
 
@@ -1020,9 +1035,78 @@ class VisitTestPerformedSerializer(serializers.ModelSerializer):
 class TestUploadSerializer(serializers.ModelSerializer):
     file_url = serializers.CharField(source='file_path', read_only=True)
     
+    def validate(self, data):
+        report_type = data.get('report_type')
+        
+        # Validate PTA data structure
+        if report_type == 'PTA' and data.get('pta_data'):
+            pta_data = data['pta_data']
+            if not isinstance(pta_data, dict):
+                raise serializers.ValidationError({
+                    'pta_data': 'PTA data must be a valid JSON object'
+                })
+            
+            # Validate required structure
+            required_ears = ['right_ear', 'left_ear']
+            for ear in required_ears:
+                if ear not in pta_data:
+                    raise serializers.ValidationError({
+                        'pta_data': f'Missing {ear} data'
+                    })
+                
+                ear_data = pta_data[ear]
+                if not isinstance(ear_data, dict):
+                    raise serializers.ValidationError({
+                        'pta_data': f'{ear} data must be a valid JSON object'
+                    })
+                
+                # Validate AC/BC structure
+                required_types = ['AC', 'BC']
+                for test_type in required_types:
+                    if test_type not in ear_data:
+                        raise serializers.ValidationError({
+                            'pta_data': f'Missing {test_type} data in {ear}'
+                        })
+        
+        # Validate Impedance data structure
+        elif report_type == 'Impedance' and data.get('impedance_data'):
+            impedance_data = data['impedance_data']
+            if not isinstance(impedance_data, dict):
+                raise serializers.ValidationError({
+                    'impedance_data': 'Impedance data must be a valid JSON object'
+                })
+            
+            # Validate required structure
+            required_ears = ['right_ear', 'left_ear']
+            for ear in required_ears:
+                if ear not in impedance_data:
+                    raise serializers.ValidationError({
+                        'impedance_data': f'Missing {ear} data'
+                    })
+                
+                ear_data = impedance_data[ear]
+                if not isinstance(ear_data, dict):
+                    raise serializers.ValidationError({
+                        'impedance_data': f'{ear} data must be a valid JSON object'
+                    })
+                
+                # Validate required fields
+                required_fields = ['volume', 'pressure', 'compliance', 'gradient']
+                for field in required_fields:
+                    if field not in ear_data:
+                        raise serializers.ValidationError({
+                            'impedance_data': f'Missing {field} in {ear}'
+                        })
+        
+        return data
+    
     class Meta:
         model = TestUpload
-        fields = ['id', 'report_type', 'report_description', 'file_url', 'created_at']
+        fields = [
+            'id', 'visit', 'report_type', 'report_description', 
+            'pta_data', 'impedance_data', 'test_data', 
+            'file_url', 'created_at'
+        ]
 
 class TrialSerializer(serializers.ModelSerializer):
     device_details = serializers.SerializerMethodField()
@@ -1048,26 +1132,29 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
     """Comprehensive serializer for patient visit details including tests performed and trials"""
     
     # Patient information
-    # patient_id = serializers.IntegerField(source='patient.id', read_only=True)
-    # patient_name = serializers.CharField(source='patient.name', read_only=True)
-    # patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
-    # patient_email = serializers.EmailField(source='patient.email', read_only=True)
-    # patient_age = serializers.IntegerField(source='patient.age', read_only=True)
-    # patient_gender = serializers.CharField(source='patient.gender', read_only=True)
-    # patient_address = serializers.CharField(source='patient.address', read_only=True)
-    # patient_city = serializers.CharField(source='patient.city', read_only=True)
+    patient_id = serializers.IntegerField(source='patient.id', read_only=True)
+    patient_name = serializers.CharField(source='patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='patient.phone_primary', read_only=True)
+    patient_email = serializers.EmailField(source='patient.email', read_only=True)
+    patient_age = serializers.IntegerField(source='patient.age', read_only=True)
+    patient_gender = serializers.CharField(source='patient.gender', read_only=True)
+    patient_address = serializers.CharField(source='patient.address', read_only=True)
+    patient_city = serializers.CharField(source='patient.city', read_only=True)
     
     # Seen by doctor information
     seen_by_name = serializers.CharField(source='seen_by.name', read_only=True)
     
     # Case history
-    # case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
+    case_history = AudiologistCaseHistorySerializer(source='patient.case_history', read_only=True)
     
     # Conditional data based on visit type
     tests_performed = serializers.SerializerMethodField()
     test_uploads = serializers.SerializerMethodField()
     trials = serializers.SerializerMethodField()
     service_visit = serializers.SerializerMethodField()
+
+    # Purchase records for this visit 
+    purchase_records = serializers.SerializerMethodField()
     
     # Bill information
     bill_details = serializers.SerializerMethodField()
@@ -1144,6 +1231,14 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
         except Bill.DoesNotExist:
             return None
     
+    def get_purchase_records(self, obj):
+        """Get purchase records for this visit"""
+        try:
+            purchase_records = PatientPurchase.objects.filter(visit=obj)
+            return PatientPurchaseSerializer(purchase_records, many=True).data
+        except PatientPurchase.DoesNotExist:
+            return None
+    
     def to_representation(self, instance):
         """Convert test_requested string to list"""
         data = super().to_representation(instance)
@@ -1158,13 +1253,15 @@ class PatientVisitFullDetailsSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'visit_type', 'service_type', 'present_complaint', 'test_requested',
             'notes', 'status', 'status_note', 'appointment_date',
+            'case_history',
             # # Patient information
-            # 'patient_id', 'patient_name', 'patient_phone', 'patient_email', 
-            # 'patient_age', 'patient_gender', 'patient_address', 'patient_city',
+            'patient_id', 'patient_name', 'patient_phone', 'patient_email', 
+            'patient_age', 'patient_gender', 'patient_address', 'patient_city',
             # Doctor information
             'seen_by_name',
             # Clinical data (conditional based on visit type)
-             'tests_performed', 'test_uploads', 'trials', 'service_visit',
+             'tests_performed', 'test_uploads','trials', 'service_visit',
+             'purchase_records',
             # Billing
             'bill_details'
         ]
@@ -2408,13 +2505,16 @@ class TrialCompletionNotesUpdateSerializer(serializers.Serializer):
 
 
 class ClinicTransactionCreateSerializer(serializers.ModelSerializer):
+    transaction_date = serializers.DateField(required=False, allow_null=True)
+    
     class Meta:
         model = ClinicTransactions
-        fields = ['transaction_type', 'amount', 'person_name','category']
+        fields = ['transaction_type', 'amount', 'person_name','category', 'transaction_date']
 
     def create(self, validated_data):
         request = self.context.get('request')
         clinic = getattr(request.user, 'clinic', None)
+        
 
         # The amount should be less than the total amount of  transaction type Income if the transaction type is Expense
         if validated_data['transaction_type'] == 'Expense':

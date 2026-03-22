@@ -24,6 +24,7 @@ from .serializers import (
     TrialCompletionSerializer,
     PatientVisitFullDetailsSerializer,
     TestTypeSerializer,
+    TestUploadSerializer,
     ClinicTransactionCreateSerializer,
     ClinicTransactionListSerializer,
     InventoryItemSerializer,
@@ -32,6 +33,7 @@ from .serializers import (
 from .models import Patient, PatientPurchase, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType,ClinicTransactions
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission, AuditorPermission, SppechTherapistPermission
@@ -745,7 +747,7 @@ class VisitTestTypesView(APIView):
                 (test_performed.srt_sds, "SRT/SDS"),
                 (test_performed.bera, "BERA"),
                 (test_performed.assr, "ASSR"),
-                (test_performed.special_tests, "Special Tests"),
+                (test_performed.special_tests and test_performed.special_tests.strip() and test_performed.special_tests.strip().lower() != 'false', "Special Tests"),
                
             ]
             
@@ -817,6 +819,152 @@ class TestUploadDeleteView(APIView):
                 'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
                 'message': f'Error deleting test upload file: {str(e)}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
+
+class TestUploadCreateView(generics.CreateAPIView):
+    """
+    Create and upload test reports for a specific visit.
+    
+    POST /api/clinical/test-upload/
+    
+    Supports different report types with structured JSON data:
+    - PTA: Pure Tone Audiometry with ear/frequency breakdown
+    - Impedance: Tympanometry with volume, pressure, compliance, gradient
+    - Other types: Generic JSON data field
+    """
+    serializer_class = TestUploadSerializer
+    permission_classes = [IsAuthenticated, AuditorPermission]
+    
+    @transaction.atomic
+    def create(self, request, *args, **kwargs):
+        try:
+            # Get visit_id from request data
+            visit_id = request.data.get('visit')
+            print("Visit ID:", visit_id)
+            
+            if not visit_id:
+                return Response({
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'error': 'Visit ID is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate visit exists and belongs to user's clinic
+            try:
+                visit_test_performed = VisitTestPerformed.objects.get(visit_id=visit_id)
+                user_clinic = getattr(request.user, 'clinic', None)
+                if user_clinic and visit_test_performed.visit.clinic != user_clinic:
+                    return Response({
+                        'status': status.HTTP_403_FORBIDDEN,
+                        'error': 'You can only upload tests for your clinic visits'
+                    }, status=status.HTTP_403_FORBIDDEN)
+            except VisitTestPerformed.DoesNotExist:
+                return Response({
+                    'status': status.HTTP_404_NOT_FOUND,
+                    'error': 'Visit not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Check if report type already exists for this visit
+            report_type = request.data.get('report_type')
+            if not report_type:
+                return Response({
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'error': 'Report type is required'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Check for duplicate report types in payload (if payload is an array)
+            if isinstance(request.data, list):
+                report_types = [item.get('report_type') for item in request.data if item.get('report_type')]
+                duplicates = set([rt for rt in report_types if report_types.count(rt) > 1])
+                if duplicates:
+                    return Response({
+                        'status': status.HTTP_400_BAD_REQUEST,
+                        'error': f'Duplicate report types found in payload: {", ".join(duplicates)}'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                
+                # For bulk upload, we need to handle each item
+                return self._handle_bulk_upload(request, visit_test_performed)
+            
+            # For single record upload
+            existing_report = TestUpload.objects.filter(
+                visit=visit_test_performed,
+                report_type=report_type
+            ).exists()
+            
+            if existing_report:
+                return Response({
+                    'status': status.HTTP_400_BAD_REQUEST,
+                    'error': f'A {report_type} report for this visit already exists'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Set visit in the data
+            request.data['visit'] = visit_test_performed.id
+            
+            # Create the test upload
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            test_upload = serializer.save()
+            
+            return Response({
+                'status': status.HTTP_201_CREATED,
+                'message': 'Test report uploaded successfully',
+                'data': TestUploadSerializer(test_upload).data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'error': f'Error uploading test report: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    def _handle_bulk_upload(self, request, visit_test_performed):
+        """Handle bulk upload of multiple test reports"""
+        try:
+            uploaded_reports = []
+            errors = []
+            
+            for index, report_data in enumerate(request.data):
+                report_type = report_data.get('report_type')
+                
+                # Check if report type already exists for this visit
+                existing_report = TestUpload.objects.filter(
+                    visit=visit_test_performed,
+                    report_type=report_type
+                ).exists()
+                
+                if existing_report:
+                    errors.append({
+                        'index': index,
+                        'report_type': report_type,
+                        'error': f'A {report_type} report for this visit already exists'
+                    })
+                    continue
+                
+                # Set visit in the data
+                report_data['visit'] = visit_test_performed.id
+                
+                # Create the test upload
+                serializer = self.get_serializer(data=report_data)
+                if serializer.is_valid():
+                    test_upload = serializer.save()
+                    uploaded_reports.append(TestUploadSerializer(test_upload).data)
+                else:
+                    errors.append({
+                        'index': index,
+                        'report_type': report_type,
+                        'error': serializer.errors
+                    })
+            
+            return Response({
+                'status': status.HTTP_201_CREATED if uploaded_reports else status.HTTP_400_BAD_REQUEST,
+                'message': f'Uploaded {len(uploaded_reports)} test reports successfully',
+                'uploaded_reports': uploaded_reports,
+                'errors': errors
+            }, status=status.HTTP_201_CREATED if uploaded_reports else status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            return Response({
+                'status': status.HTTP_500_INTERNAL_SERVER_ERROR,
+                'error': f'Error in bulk upload: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class MarkAsPaidView(APIView):
     """
@@ -1138,7 +1286,7 @@ class TestTypeUpdateListView(generics.ListAPIView):
                     'message': 'TestType not found.'
                 }, status=status.HTTP_404_NOT_FOUND)
 
-            serializer = TestTypeSerializer(test_type, data=data, partial=True)
+            serializer = TestUploadSerializer(test_type, data=data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response({
@@ -1201,19 +1349,28 @@ class ClinicTransactionFilter(django_filters.FilterSet):
 
     transaction_date = django_filters.DateFilter(
         field_name="transaction_date",
-        lookup_expr="date"
+        lookup_expr="exact"
     )
+    
+    transaction_month = django_filters.NumberFilter(
+        field_name="transaction_date",
+        lookup_expr="month",
+        label="Filter by month (1-12)"
+    )
+    
 
     class Meta:
         model = ClinicTransactions
-        fields = ['transaction_type', 'transaction_date']
+        fields = ['transaction_type', 'transaction_date', 'transaction_month']
 
 class ClinicTransactionListView(generics.ListAPIView):
     """
     API to list all financial transactions for the clinic.
     GET /api/clinical/transactions/
     
-    Supports pagination and filtering by transaction type (?transaction_type=Credit/Debit).
+    Supports pagination and filtering by:
+    - Transaction type (?transaction_type=Income/Expense)
+    - Exact date (?transaction_date=2026-03-22)
     """
     permission_classes = [IsAuthenticated]
     serializer_class = ClinicTransactionListSerializer
