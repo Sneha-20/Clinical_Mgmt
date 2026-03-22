@@ -20,6 +20,168 @@ import TrialGivenForm from "./TrialGivenForm";
 import { getTestTypes } from "@/lib/services/dashboard";
 import { current } from "@reduxjs/toolkit";
 
+const defaultPTAData = {
+  right_ear: {
+    AC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" },
+    BC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" }
+  },
+  left_ear: {
+    AC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" },
+    BC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" }
+  }
+};
+
+const defaultImpedanceData = {
+  right_ear: { volume: "", pressure: "", compliance: "", gradient: "" },
+  left_ear: { volume: "", pressure: "", compliance: "", gradient: "" }
+};
+
+const PTAForm = ({ ptaData, onChange }) => {
+  const frequencies = ["250", "500", "1K", "2K", "4K", "8K"];
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const table = e.target.closest("table");
+      if (!table) return;
+      const inputs = Array.from(table.querySelectorAll("input.pta-input"));
+      const index = inputs.indexOf(e.target);
+      if (index > -1 && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+      }
+    }
+  };
+
+  return (
+    <div className="overflow-x-auto mt-4 mb-2 border border-slate-200 rounded-md">
+      <table className="w-full text-xs text-center border-collapse">
+        <thead>
+          <tr className="bg-slate-100/75 border-b border-slate-200">
+            <th className="border-r border-slate-200 p-2 font-bold w-16 text-slate-700">RT. EAR</th>
+            <th className="border-r border-slate-200 p-2 w-12"></th>
+            {frequencies.map(f => (<th key={`rt_${f}`} className="border-r border-slate-200 p-2 font-semibold w-12 text-slate-700">{f}</th>))}
+            <th className="border-r border-slate-200 p-2 font-bold w-16 text-slate-700">LT. EAR</th>
+            <th className="border-r border-slate-200 p-2 w-12"></th>
+            {frequencies.map(f => (<th key={`lt_${f}`} className="border-r border-slate-200 p-2 font-semibold w-12 text-slate-700">{f}</th>))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-200">
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">AC</td>
+            {frequencies.map(f => (
+              <td key={`rt_ac_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
+                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+                  value={ptaData?.right_ear?.AC?.[f] || ""}
+                  onChange={(e) => onChange("right_ear", "AC", f, e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="—"
+                />
+              </td>
+            ))}
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">AC</td>
+            {frequencies.map(f => (
+              <td key={`lt_ac_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
+                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+                  value={ptaData?.left_ear?.AC?.[f] || ""}
+                  onChange={(e) => onChange("left_ear", "AC", f, e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="—"
+                />
+              </td>
+            ))}
+          </tr>
+          <tr>
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">BC</td>
+            {frequencies.map(f => (
+              <td key={`rt_bc_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
+                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+                  value={ptaData?.right_ear?.BC?.[f] || ""}
+                  onChange={(e) => onChange("right_ear", "BC", f, e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="—"
+                />
+              </td>
+            ))}
+            <td className="border-r border-slate-200 bg-slate-50/50"></td>
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">BC</td>
+            {frequencies.map(f => (
+              <td key={`lt_bc_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
+                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+                  value={ptaData?.left_ear?.BC?.[f] || ""}
+                  onChange={(e) => onChange("left_ear", "BC", f, e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="—"
+                />
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const ImpedanceForm = ({ impedanceData, onChange }) => {
+  const fields = ["volume", "pressure", "compliance", "gradient"];
+  
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const table = e.target.closest("table");
+      if (!table) return;
+      const inputs = Array.from(table.querySelectorAll("input.impedance-input"));
+      const index = inputs.indexOf(e.target);
+      if (index > -1 && index < inputs.length - 1) {
+        inputs[index + 1].focus();
+      }
+    }
+  };
+
+  return (
+    <div className="overflow-x-auto mt-4 mb-2 border border-slate-200 rounded-md">
+      <table className="w-full text-xs text-center border-collapse">
+        <thead>
+          <tr className="bg-slate-100/75 border-b border-slate-200">
+            <th className="border-r border-slate-200 p-2 font-bold w-20 text-slate-700 bg-slate-100">EAR</th>
+            {fields.map(f => (<th key={`head_${f}`} className="border-r border-slate-200 p-2 font-semibold w-24 text-slate-700 uppercase">{f}</th>))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-slate-200">
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">RIGHT</td>
+            {fields.map(f => (
+              <td key={`rt_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
+                <input type="text" className="impedance-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+                  value={impedanceData?.right_ear?.[f] || ""}
+                  onChange={(e) => onChange("right_ear", f, e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="—"
+                />
+              </td>
+            ))}
+          </tr>
+          <tr>
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">LEFT</td>
+            {fields.map(f => (
+              <td key={`lt_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
+                <input type="text" className="impedance-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+                  value={impedanceData?.left_ear?.[f] || ""}
+                  onChange={(e) => onChange("left_ear", f, e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="—"
+                />
+              </td>
+            ))}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 export default function CaseHistoryForm({ patientId }) {
   const router = useRouter();
 
@@ -40,7 +202,7 @@ export default function CaseHistoryForm({ patientId }) {
   const [loadingTestTypes, setLoadingTestTypes] = useState(false);
   const [currentStep, setCurrentStep] = useState(null); // null until initialized
   const [reports, setReports] = useState([
-    { report_type: "", report_description: "" },
+    { report_type: "", report_description: "", pta_data: JSON.parse(JSON.stringify(defaultPTAData)), impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)) },
   ]);
   const [isEditTestMode, setIsEditTestMode] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
@@ -142,6 +304,7 @@ export default function CaseHistoryForm({ patientId }) {
   useEffect(() => {
     if (patientId) {
       fetchPatientFormData(patientId);
+      fetchTestTypesForVisit(patientId);
     }
   }, [patientId, fetchPatientFormData]);
 
@@ -152,6 +315,8 @@ export default function CaseHistoryForm({ patientId }) {
         patientsCaseHistory.reports.map((r) => ({
           report_type: r.report_type || "",
           report_description: r.report_description || "",
+          pta_data: r.pta_data || JSON.parse(JSON.stringify(defaultPTAData)),
+          impedance_data: r.impedance_data || JSON.parse(JSON.stringify(defaultImpedanceData)),
         })),
       );
     }
@@ -184,6 +349,34 @@ export default function CaseHistoryForm({ patientId }) {
     });
   };
 
+  const handlePTAChange = (index, ear, type, frequency, value) => {
+    setReports((prev) => {
+      const copy = [...prev];
+      const newPtaData = JSON.parse(JSON.stringify(copy[index].pta_data || defaultPTAData));
+      
+      if (!newPtaData[ear]) newPtaData[ear] = {};
+      if (!newPtaData[ear][type]) newPtaData[ear][type] = {};
+      
+      newPtaData[ear][type][frequency] = value;
+      copy[index] = { ...copy[index], pta_data: newPtaData };
+      
+      return copy;
+    });
+  };
+
+  const handleImpedanceChange = (index, ear, field, value) => {
+    setReports((prev) => {
+      const copy = [...prev];
+      const newImpData = JSON.parse(JSON.stringify(copy[index].impedance_data || defaultImpedanceData));
+      
+      if (!newImpData[ear]) newImpData[ear] = {};
+      newImpData[ear][field] = value;
+      copy[index] = { ...copy[index], impedance_data: newImpData };
+      
+      return copy;
+    });
+  };
+
   const canAddMore = () => {
     const last = reports[reports.length - 1];
     return last.report_type && last.report_description;
@@ -193,7 +386,7 @@ export default function CaseHistoryForm({ patientId }) {
     if (canAddMore()) {
       setReports((prev) => [
         ...prev,
-        { report_type: "", report_description: "" },
+        { report_type: "", report_description: "", pta_data: JSON.parse(JSON.stringify(defaultPTAData)), impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)) },
       ]);
     }
   };
@@ -207,12 +400,25 @@ export default function CaseHistoryForm({ patientId }) {
       alert("Please fill all report fields before submitting.");
       return;
     }
+
+    const cleanedReports = reports.map(r => {
+      const payloadReport = {
+        report_type: r.report_type,
+        report_description: r.report_description,
+      };
+      // Only include PTA data structure if this specific report is actually a PTA type report.
+      if (r.report_type?.includes("PTA")) {
+        payloadReport.pta_data = r.pta_data;
+      }
+      else if (r.report_type?.toLowerCase().includes("impedance")) {
+        payloadReport.impedance_data = r.impedance_data;
+      }
+      return payloadReport;
+    });
+
     try {
-      const res = await registerReports({
-        patient_visit: patientId,
-        reports,
-      });
-      setReports([{ report_type: "", report_description: "" }]);
+      const res = await registerReports({ patientId, reports: cleanedReports });
+      setReports([{ report_type: "", report_description: "", pta_data: JSON.parse(JSON.stringify(defaultPTAData)), impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)) }]);
       // prefer backend-controlled step from response; fallback to refetch
       if (res && typeof res.step_process !== "undefined") {
         setCurrentStep(res.step_process);
@@ -602,24 +808,43 @@ export default function CaseHistoryForm({ patientId }) {
 
         {/* ---------------- STEP 2 ---------------- */}
         {currentStep === 2 && (
-          <div>
+          <div className="space-y-6">
             {reports.map((rep, idx) => (
               <div
                 key={idx}
-                className="relative grid grid-cols-1 gap-6 items-end"
+                className="relative grid grid-cols-1 gap-4 items-start bg-slate-50 border p-4 rounded-lg"
               >
-                <DropDown
-                  label="Test Type"
-                  options={testTypes}
-                  value={rep.report_type}
-                  disabled={loadingTestTypes}
-                  placeholder={
-                    loadingTestTypes
-                      ? "Loading test types..."
-                      : "Select test type"
-                  }
-                  onChange={(n, v) => handleReportChange(idx, "report_type", v)}
-                />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 w-full max-w-sm">
+                    <DropDown
+                      label="Test Type"
+                      options={testTypes}
+                      value={rep.report_type}
+                      disabled={loadingTestTypes}
+                      placeholder={
+                        loadingTestTypes
+                          ? "Loading test types..."
+                          : "Select test type"
+                      }
+                      onChange={(n, v) => handleReportChange(idx, "report_type", v)}
+                    />
+                  </div>
+                </div>
+
+                {rep.report_type?.includes("PTA") && (
+                  <PTAForm 
+                    ptaData={rep.pta_data}
+                    onChange={(ear, type, freq, value) => handlePTAChange(idx, ear, type, freq, value)}
+                  />
+                )}
+
+                {rep.report_type?.toLowerCase().includes("impedance") && (
+                  <ImpedanceForm 
+                    impedanceData={rep.impedance_data}
+                    onChange={(ear, field, value) => handleImpedanceChange(idx, ear, field, value)}
+                  />
+                )}
+
                 <TextArea
                   label="Description"
                   value={rep.report_description}
@@ -631,11 +856,12 @@ export default function CaseHistoryForm({ patientId }) {
                     )
                   }
                 />
+                
                 {reports.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeReport(idx)}
-                    className="text-red-500 p-2 absolute right-[130px] bottom-[-38px] underline"
+                    className="text-red-500 font-medium text-sm w-max hover:underline absolute top-4 right-4"
                   >
                     Remove
                   </button>

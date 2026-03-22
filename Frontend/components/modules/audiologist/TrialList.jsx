@@ -6,6 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import useTrialDevice from "@/lib/hooks/useTrialDevice";
 import CompleteTrialModal from "./components/CompleteTrialModal";
 import Pagination from "@/components/ui/Pagination";
+import SearchBox from "@/components/modules/receptionist/component/SearchBox";
+import DropDown from "@/components/ui/dropdown";
+
+const trialDecisionOptions = [
+  { label: "All", value: "All" },
+  { label: "Trial Active", value: "TRIAL_ACTIVE" },
+  { label: "Follow up", value: "Follow up" },
+  { label: "Book - Awaiting Stock", value: "BOOK - Awaiting Stock" },
+  { label: "Book - Device Allocated", value: "BOOK - Device Allocated" },
+  { label: "Book - with Customization", value: "BOOK - With Customization" },
+  { label: "Decline", value: "DECLINE" },
+];
 
 const TrialList = () => {
   const {
@@ -31,6 +43,10 @@ const TrialList = () => {
     handleChange,
     nextPage,
     prevPage,
+    searchTerm,
+    setSearchTerm,
+    filterDecision,
+    setFilterDecision,
   } = useTrialDevice();
 
   const getStatusBadge = (status) => {
@@ -106,6 +122,32 @@ const TrialList = () => {
             </div>
           </div>
         </div>
+
+        {/* Filters */}
+        <div className="grid sm:grid-cols-4 grid-cols-1 gap-4 mb-6 bg-card p-4 rounded-lg shadow-sm border border-border/50 items-end">
+          <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">Search</label>
+            <div className="w-full">
+              <SearchBox
+                value={searchTerm}
+                onChange={setSearchTerm}
+              />
+            </div>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-muted-foreground">Filter by Decision</label>
+            <div className="w-full">
+              <DropDown
+                options={trialDecisionOptions}
+                value={filterDecision}
+                name="filterDecision"
+                placeholder="Select Decision Filter"
+                onChange={(name, value) => setFilterDecision(value)}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="mb-8">
           <div className="grid gap-4">
             {activeTrialDeviceList.map((trial) => (

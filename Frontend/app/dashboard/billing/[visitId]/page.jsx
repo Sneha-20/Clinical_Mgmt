@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
-import { getBillById, markBillAsPaid } from "@/lib/services/billing";
+import { getBillById, markBillAsPaid, applyDiscountUpdate } from "@/lib/services/billing";
 import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 import { showToast } from "@/components/ui/toast";
@@ -12,7 +12,10 @@ import Modal from "@/components/ui/Modal";
 
 export default function BillingDetailPage() {
   const [openModal, setOpenModal] = useState(false);
+  const [discountFields, setDiscountFields] = useState([{ item_id: "", discount_amount: "" }]);
+
   const openDiscountDialog = () => {
+    setDiscountFields([{ item_id: "", discount_amount: "" }]);
     setOpenModal(true);
   };
   const closeDiscountDialog = () => {
@@ -65,9 +68,28 @@ export default function BillingDetailPage() {
       dispatch(stopLoading());
     }
   };
-  const handleAddDiscount = async (data) => {
-    console.log("Discount Data:", data);
-    closeDiscountDialog();
+  const handleAddDiscount = async () => {
+    const updates = discountFields
+      .filter(f => f.item_id && f.discount_amount)
+      .map(f => ({ item_id: Number(f.item_id), discount_amount: Number(f.discount_amount) }));
+
+    if (updates.length === 0) {
+      showToast({ type: "error", message: "Please select an item and enter an amount." });
+      return;
+    }
+
+    try {
+      dispatch(startLoading());
+      await applyDiscountUpdate(billingDetail.id, { discount_updates: updates });
+      showToast({ type: "success", message: "Discount applied successfully" });
+      closeDiscountDialog();
+      fetchBillingDetail(); // Refresh bill data logic
+    } catch (err) {
+      console.error("Failed to apply discount:", err);
+      showToast({ type: "error", message: err?.error || "Failed to apply discount." });
+    } finally {
+      dispatch(stopLoading());
+    }
   };
 
   const handlePrint = () => {
@@ -75,14 +97,16 @@ export default function BillingDetailPage() {
   };
 
   return (
-    <div className="p-6 mx-auto space-y-6">
+    <div className="p-6 mx-auto space-y-6 print:p-0 print:space-y-4">
       <div className="flex justify-between items-center print:hidden">
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <div>
-          <Button onClick={openDiscountDialog}>Add discount</Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={openDiscountDialog} className="border-primary text-primary font-medium hover:bg-primary/10 hover:text-primary">
+            Add Discount
+          </Button>
           <Button onClick={handlePrint}>
             <Printer className="h-4 w-4 mr-2" />
             Print Bill
@@ -90,11 +114,11 @@ export default function BillingDetailPage() {
         </div>
       </div>
 
-      <Card className="print:shadow-none print:border-none border-gray-200 shadow-sm rounded-xl overflow-hidden">
-        <CardContent className="p-0 sm:p-8">
-          <div className="p-6 sm:p-0 space-y-8">
+      <Card className="print:shadow-none print:border-none border-gray-200 shadow-sm rounded-xl overflow-hidden print:w-full print:max-w-none">
+        <CardContent className="p-0 sm:p-8 print:p-0">
+          <div className="p-6 sm:p-0 space-y-8 print:space-y-4">
             {/* Header / Clinic Info */}
-            <div className="flex flex-col sm:flex-row justify-between items-start border-b border-gray-200 pb-8 gap-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start border-b border-gray-200 pb-8 gap-6 print:pb-4 print:gap-2">
               <div className="order-2 sm:order-1">
                 <h2 className="text-2xl font-extrabold text-teal-700 tracking-tight">
                   {billingDetail.clinic_name || "Clinic Name"}
@@ -139,7 +163,7 @@ export default function BillingDetailPage() {
             </div>
 
             {/* Two-Column Details Group */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:gap-3">
               {/* Patient Details */}
               <div className="bg-slate-50 p-5 rounded-lg border border-slate-100">
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -164,15 +188,15 @@ export default function BillingDetailPage() {
                   )}
                   {(billingDetail.patient_address ||
                     billingDetail.patient_city) && (
-                    <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                      {billingDetail.patient_address}
-                      {billingDetail.patient_address &&
-                      billingDetail.patient_city
-                        ? ", "
-                        : ""}
-                      {billingDetail.patient_city}
-                    </p>
-                  )}
+                      <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                        {billingDetail.patient_address}
+                        {billingDetail.patient_address &&
+                          billingDetail.patient_city
+                          ? ", "
+                          : ""}
+                        {billingDetail.patient_city}
+                      </p>
+                    )}
                 </div>
               </div>
 
@@ -228,21 +252,21 @@ export default function BillingDetailPage() {
             <div>
               <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50 border-b border-gray-200">
+                  <thead className="bg-slate-50 border-b border-gray-200 print:bg-transparent">
                     <tr>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider">
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider print:py-2 print:px-3 text-left">
                         Description
                       </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-center w-20">
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-center w-20 print:py-2 print:px-3">
                         Qty
                       </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-28">
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-28 print:py-2 print:px-3">
                         Item Total
                       </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-24">
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-24 print:py-2 print:px-3">
                         GST
                       </th>
-                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-32">
+                      <th className="px-5 py-4 font-bold text-slate-700 uppercase text-xs tracking-wider text-right w-32 print:py-2 print:px-3">
                         Discount
                       </th>
                     </tr>
@@ -251,46 +275,46 @@ export default function BillingDetailPage() {
                     {billingDetail?.bill_items?.map((item, index) => (
                       <tr
                         key={index}
-                        className="hover:bg-slate-50/50 transition-colors group"
+                        className="hover:bg-slate-50/50 transition-colors group print:border-b-0"
                       >
-                        <td className="px-5 py-4 text-slate-800 font-medium">
+                        <td className="px-5 py-4 text-slate-800 font-medium print:py-2 print:px-3">
                           {item.description}
                         </td>
-                        <td className="px-5 py-4 text-center text-slate-600 bg-slate-50/30 group-hover:bg-slate-100/50">
+                        <td className="px-5 py-4 text-center text-slate-600 bg-slate-50/30 group-hover:bg-slate-100/50 print:bg-transparent print:py-2 print:px-3">
                           {item.quantity}
                         </td>
-                        <td className="px-5 py-4 text-right text-slate-600">
+                        <td className="px-5 py-4 text-right text-slate-600 print:py-2 print:px-3">
                           ₹{Number(item.item_total || 0).toFixed(2)}
                         </td>
-                        <td className="px-5 py-4 text-right text-slate-500 text-xs">
+                        <td className="px-5 py-4 text-right text-slate-500 text-xs print:py-2 print:px-3">
                           {Number(item.gst_value) > 0
                             ? `₹${Number(item.gst_value).toFixed(2)}`
                             : "-"}
                         </td>
-                        <td className="px-5 py-4 text-right font-bold text-slate-800">
+                        <td className="px-5 py-4 text-right font-bold text-slate-800 print:py-2 print:px-3">
                           ₹{Number(item.discount_amount || 0).toFixed(2)}
                         </td>
                       </tr>
                     ))}
                     {(!billingDetail?.bill_items ||
                       billingDetail.bill_items.length === 0) && (
-                      <tr className="bg-white">
-                        <td
-                          colSpan="5"
-                          className="px-5 py-8 text-center text-slate-500 italic"
-                        >
-                          No bill items found.
-                        </td>
-                      </tr>
-                    )}
+                        <tr className="bg-white">
+                          <td
+                            colSpan="5"
+                            className="px-5 py-8 text-center text-slate-500 italic"
+                          >
+                            No bill items found.
+                          </td>
+                        </tr>
+                      )}
                   </tbody>
                 </table>
               </div>
             </div>
 
             {/* Calculations & Summary Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start gap-8 pt-4">
-              <div className="w-full md:w-1/2">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-8 pt-4 print:flex-row print:pt-2 print:gap-4 print:break-inside-avoid">
+              <div className="w-full md:w-1/2 print:w-1/2">
                 {billingDetail.notes && (
                   <div className="bg-amber-50/80 border border-amber-200/60 p-5 rounded-xl shadow-sm">
                     <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
@@ -305,9 +329,9 @@ export default function BillingDetailPage() {
               </div>
 
               {/* Totals Box */}
-              <div className="w-full md:w-[380px] shrink-0">
-                <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                  <div className="p-5 space-y-3.5">
+              <div className="w-full md:w-[380px] shrink-0 print:w-1/2 print:md:w-1/2">
+                <div className="bg-slate-50 rounded-xl border border-slate-200 overflow-hidden shadow-sm print:bg-transparent print:border-none print:shadow-none">
+                  <div className="p-5 space-y-3.5 print:p-0 print:space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-500 font-medium">
                         Subtotal ({billingDetail.items_count || 0} items)
@@ -349,17 +373,22 @@ export default function BillingDetailPage() {
                       </div>
                     )}
 
-                    {/* {Number(billingDetail.cost_taken_amount_deducted) > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500 font-medium">Advance Given </span>
-                        <span className="font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">-₹{Number(billingDetail.cost_taken_amount_deducted || 0).toFixed(2)}</span>
+                    {Number(billingDetail.cost_taken_amount_deducted) > 0 && (
+                      <div className="flex justify-between items-center text-sm pt-2 border-t border-slate-100 print:hidden">
+                        <span className="text-slate-500 font-medium flex flex-col">
+                          <span>Advance Collected</span>
+                          <span className="text-[10px] text-slate-400">Paid previously, excluded from this bill</span>
+                        </span>
+                        <span className="font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                          ₹{Number(billingDetail.cost_taken_amount_deducted || 0).toFixed(2)}
+                        </span>
                       </div>
-                    )} */}
+                    )}
                   </div>
 
-                  <div className="bg-slate-100 p-5 border-t border-b border-slate-200">
+                  <div className="bg-slate-100 p-5 border-t border-b border-slate-200 print:bg-transparent print:p-2 print:border-none print:mt-2">
                     <div className="flex justify-between items-center">
-                      <span className="font-black text-slate-700 uppercase tracking-wider text-sm">
+                      <span className="font-black text-slate-700 uppercase tracking-wider text-sm print:text-black">
                         Total Amount
                       </span>
                       <span className="font-black text-2xl text-slate-800">
@@ -369,7 +398,7 @@ export default function BillingDetailPage() {
                   </div>
 
                   <div className="p-5 space-y-4">
-                    <div className="flex justify-between items-center text-sm">
+                    {/* <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-500 font-medium">
                         Amount Paid
                       </span>
@@ -379,9 +408,9 @@ export default function BillingDetailPage() {
                           ? Number(billingDetail.final_amount || 0).toFixed(2)
                           : "0.00"}
                       </span>
-                    </div>
+                    </div> */}
 
-                    <div
+                    {/* <div
                       className={`flex justify-between items-center p-3 rounded-lg border ${billingDetail.payment_status === "Paid" ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"}`}
                     >
                       <span
@@ -397,7 +426,7 @@ export default function BillingDetailPage() {
                           ? "0.00"
                           : Number(billingDetail.final_amount || 0).toFixed(2)}
                       </span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
@@ -424,12 +453,76 @@ export default function BillingDetailPage() {
         isModalOpen={openModal}
         onSubmit={handleAddDiscount}
       >
-        <div className="space-y-4">
-          <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Enter the discount amount to apply to this bill. This will reduce
-              the total payable amount for the patient.
+        <div className="space-y-5">
+          <div className="bg-teal-50/60 border border-teal-100 rounded-lg p-4">
+            <p className="text-sm text-teal-800/90 leading-relaxed font-medium">
+              Select specific bill items and apply a flat discount against them. This will dynamically recalculate the total payable amounts.
             </p>
+          </div>
+
+          <div className="space-y-4">
+            {discountFields.map((field, index) => (
+              <div key={index} className="flex flex-col sm:flex-row gap-3 items-start sm:items-center bg-slate-50 p-3.5 rounded-lg border border-slate-100 shadow-sm relative group transition-all hover:border-teal-100">
+                <div className="w-full sm:flex-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Bill Item</label>
+                  <select
+                    className="w-full text-sm p-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:outline-none transition-all shadow-sm"
+                    value={field.item_id}
+                    onChange={(e) => {
+                      const copy = [...discountFields];
+                      copy[index].item_id = e.target.value;
+                      setDiscountFields(copy);
+                    }}
+                  >
+                    <option value="">-- Select Bill Item --</option>
+                    {billingDetail?.bill_items?.map(item => (
+                      <option key={item.id} value={item.id}>{item.description}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="w-full sm:w-36 shrink-0">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Discount Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-[11px] text-slate-400 font-bold">₹</span>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      className="w-full text-sm pl-7 pr-3 py-2.5 bg-white border border-slate-200 rounded-md focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 focus:outline-none transition-all placeholder:text-slate-300 font-bold text-slate-700 shadow-sm"
+                      value={field.discount_amount}
+                      onChange={(e) => {
+                        const copy = [...discountFields];
+                        copy[index].discount_amount = e.target.value;
+                        setDiscountFields(copy);
+                      }}
+                    />
+                  </div>
+                </div>
+                {discountFields.length > 1 && (
+                  <div className="absolute -top-2 -right-2 sm:static sm:top-auto sm:right-auto sm:mt-[23px]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const copy = [...discountFields];
+                        copy.splice(index, 1);
+                        setDiscountFields(copy);
+                      }}
+                      className="p-1.5 sm:p-2 text-slate-400 hover:text-red-600 bg-white sm:bg-transparent border border-slate-200 sm:border-transparent rounded-full sm:rounded-md shadow-sm sm:shadow-none sm:hover:bg-red-50 transition-colors"
+                      title="Remove Item"
+                    >
+                      <span className="text-xl leading-none">&times;</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setDiscountFields([...discountFields, { item_id: "", discount_amount: "" }])}
+              className="w-full border-dashed border-2 py-6 text-slate-500 hover:text-teal-700 hover:bg-teal-50 hover:border-teal-300 transition-all font-semibold"
+            >
+              + Add Another Bill Item
+            </Button>
           </div>
         </div>
       </Modal>

@@ -5,10 +5,11 @@ import apiClient from "../api/client";
 
 export const getTransactions = async (params = {}) => {
   try {
-    const { transaction_type, page, transaction_date } = params;
+    const { transaction_type, page, transaction_date, transaction_month } = params;
     const queryParams = new URLSearchParams();
     if (transaction_type) queryParams.append("transaction_type", transaction_type);
     if (transaction_date) queryParams.append("transaction_date", transaction_date);
+    if (transaction_month) queryParams.append("transaction_month", transaction_month);
     if (page) queryParams.append("page", page.toString());
 
     const url = `${routes.transactions.list}?${queryParams.toString()}`;

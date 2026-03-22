@@ -11,9 +11,10 @@ const initialValues = {
   person_name: '',
   category: '',
   amount: '',
+  transaction_date: '',
 };
 
-export default function TransactionForm({ isModalOpen, onClose, onSubmit = () => {}, initialData = null }) {
+export default function TransactionForm({ isModalOpen, onClose, onSubmit = () => { }, initialData = null }) {
   const expenseTypeOptions = [
     { value: 'Expense', label: 'Expense' },
     { value: 'Income', label: 'Income' },
@@ -26,14 +27,19 @@ export default function TransactionForm({ isModalOpen, onClose, onSubmit = () =>
         person_name: initialData.person_name || '',
         category: initialData.category || '',
         amount: initialData.amount || '',
+        transaction_date: initialData.transaction_date || '',
       };
     }
     return initialValues;
   };
 
   const handleSubmit = (values) => {
-    console.log("Transaction form submitted", values);
-     onSubmit(values);
+    const payload = { ...values };
+    if (!payload.transaction_date) {
+      delete payload.transaction_date;
+    }
+    console.log("Transaction form submitted", payload);
+    onSubmit(payload);
     onClose();
   };
 
@@ -51,16 +57,16 @@ export default function TransactionForm({ isModalOpen, onClose, onSubmit = () =>
               <div>
                 <label className="block text-sm font-medium mb-2">Transaction Type</label>
                 <div className='flex gap-2'>
-                {expenseTypeOptions.map((option) => (
-                  <CommonRadio
-                    key={option.value}
-                    label={option.label}
-                    name="transaction_type"
-                    checked={values.transaction_type === option.value}
-                    value={option.value}
-                    onChange={(e) => setFieldValue('transaction_type', e.target.value)}
-                  />
-                ))}
+                  {expenseTypeOptions.map((option) => (
+                    <CommonRadio
+                      key={option.value}
+                      label={option.label}
+                      name="transaction_type"
+                      checked={values.transaction_type === option.value}
+                      value={option.value}
+                      onChange={(e) => setFieldValue('transaction_type', e.target.value)}
+                    />
+                  ))}
                 </div>
                 {errors.transaction_type && touched.transaction_type && (
                   <p className="text-xs text-red-500 mt-1">{errors.transaction_type}</p>
@@ -97,6 +103,17 @@ export default function TransactionForm({ isModalOpen, onClose, onSubmit = () =>
                     label="Amount"
                     important
                     error={touched.amount && errors.amount}
+                  />
+                )}
+              </Field>
+
+              <Field name="transaction_date">
+                {({ field }) => (
+                  <Input
+                    {...field}
+                    type="date"
+                    label="Transaction Date (Optional)"
+                    error={touched.transaction_date && errors.transaction_date}
                   />
                 )}
               </Field>

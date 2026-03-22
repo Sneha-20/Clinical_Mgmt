@@ -88,6 +88,7 @@ export default function usePatientData() {
         seenBy: p.seen_by,
         visitType: p.visit_type || "New",
         status: p.status || "Test Pending",
+        statusNote: p.status_note || "",
         appointmentDate: p.appointment_date || "-",
       })),
     [],

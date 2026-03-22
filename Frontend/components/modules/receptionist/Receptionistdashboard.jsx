@@ -85,22 +85,32 @@ export default function ReceptionistDashboard() {
           </div>
         </div>
 
-        {/* Search Input */}
-        <div className="grid sm:grid-cols-4 grid-cols-1 gap-3">
-          <SearchBox value={searchTerm} onChange={setSearchTerm} />
-          <DropDown
-            options={serviceOption}
-            value={serviceType}
-            name="serviceType"
-            onChange={(name, value) => setServiceType(value)}
-          />
+        {/* Filters */}
+        <div className="grid sm:grid-cols-4 grid-cols-1 gap-3 items-end">
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-muted-foreground">Search</label>
+            <SearchBox value={searchTerm} onChange={setSearchTerm} />
+          </div>
 
-          <DropDown
-            options={visitStatusOptions}
-            value={visitStatus}
-            name="visitStatus"
-            onChange={(name, value) => setVisitStatus(value)}
-          />
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-muted-foreground">Filter by Service</label>
+            <DropDown
+              options={serviceOption}
+              value={serviceType}
+              name="serviceType"
+              onChange={(name, value) => setServiceType(value)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 w-full">
+            <label className="text-sm font-medium text-muted-foreground">Filter by Status</label>
+            <DropDown
+              options={visitStatusOptions}
+              value={visitStatus}
+              name="visitStatus"
+              onChange={(name, value) => setVisitStatus(value)}
+            />
+          </div>
         </div>
 
         {/* Tabs (Today / Total) */}

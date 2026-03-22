@@ -77,3 +77,13 @@ export const markBillAsPaid = async (billId, paymentData) => {
     throw error;
   }
 };
+
+export const applyDiscountUpdate = async (billId, payload) => {
+  try {
+    const url = `clinical/bills/${billId}/items/discount/`;
+    const response = await apiClient.put(url, payload);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};

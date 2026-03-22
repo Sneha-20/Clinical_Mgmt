@@ -38,11 +38,13 @@ export default function () {
   const [form, setForm] = useState(INITIAL_BOOK_FORM);
   const [extendForm, setExtendForm] = useState(INITIAL_EXTEND_FORM);
   const [notBookReason, setNotBookReason] = useState(INITIAL_NOT_BOOK_REASON);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterDecision, setFilterDecision] = useState("All");
 
-  const fetchTrialDevice = async ({ page = 1 } = {}) => {
+  const fetchTrialDevice = async ({ page = 1, search = "", decision = "" } = {}) => {
     try {
       dispatch(startLoading());
-      const response = await getActiveTrialDeviceList({ page });
+      const response = await getActiveTrialDeviceList({ page, search, decision });
       const resData = response.data;
       setActiveTrialDeviceList(resData);
       setTotalpage(response.totalPages);
@@ -56,8 +58,8 @@ export default function () {
     }
   };
   useEffect(() => {
-    fetchTrialDevice({ page: currentPage });
-  }, [currentPage]);
+    fetchTrialDevice({ page: currentPage, search: searchTerm, decision: filterDecision });
+  }, [currentPage, searchTerm, filterDecision]);
 
   useEffect(() => {
     const getInventoryDevice = async () => {
@@ -299,5 +301,9 @@ export default function () {
     fetchSerialsByDevice,
     nextPage,
     prevPage,
+    searchTerm,
+    setSearchTerm,
+    filterDecision,
+    setFilterDecision,
   };
 }
