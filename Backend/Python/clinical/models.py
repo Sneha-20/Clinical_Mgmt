@@ -121,14 +121,15 @@ class TestUpload(models.Model):
     visit = models.ForeignKey(VisitTestPerformed, on_delete=models.CASCADE)
     report_type = models.CharField(max_length=100, choices=[
         ('PTA', 'PTA - Pure Tone Audiometry'),
-        ('Impedance', 'Impedance - Tympanometry'),
-        ('SRT', 'SRT - Speech Reception Threshold'),
-        ('SDS', 'SDS - Speech Discrimination Score'),
-        ('BERA', 'BERA - Brainstem Evoked Response'),
-        ('OAE', 'OAE - Otoacoustic Emissions'),
-        ('ASSR', 'ASSR - Auditory Steady State Response'),
-        ('Free_Field', 'Free Field Testing'),
-        ('Special_Test', 'Special Tests')
+        ('Speech_Assessment', 'Speech Assessment'),
+        ('BERA/ASSR', 'BERA/ASSR'),
+        ('Impedance', 'Impedance'),
+        ('Impedance/ETF', 'Impedance/ETF'),
+        ('PTA/SDS', 'PTA/SDS'),
+        ('SRT/SDS', 'SRT/SDS'),
+        ('BERA', 'BERA'),
+        ('ASSR', 'ASSR'),
+        ('Special Tests', 'Special Tests')
     ])
     report_description = models.TextField(blank=True, null=True)
     
