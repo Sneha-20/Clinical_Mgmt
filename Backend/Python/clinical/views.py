@@ -903,6 +903,11 @@ class TestUploadCreateView(generics.CreateAPIView):
             serializer.is_valid(raise_exception=True)
             test_upload = serializer.save()
             
+            # Update step_process to 3 in PatientVisit table
+            patient_visit = visit_test_performed.visit
+            patient_visit.step_process = 3
+            patient_visit.save()
+            
             return Response({
                 'status': status.HTTP_201_CREATED,
                 'message': 'Test report uploaded successfully',
@@ -952,6 +957,12 @@ class TestUploadCreateView(generics.CreateAPIView):
                         'report_type': report_type,
                         'error': serializer.errors
                     })
+            
+            # # Update step_process to 3 in PatientVisit table if any uploads were successful
+            if uploaded_reports:
+                patient_visit = visit_test_performed.visit
+                patient_visit.step_process = 3
+                patient_visit.save()
             
             return Response({
                 'status': status.HTTP_201_CREATED if uploaded_reports else status.HTTP_400_BAD_REQUEST,
