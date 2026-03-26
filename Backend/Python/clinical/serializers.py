@@ -239,6 +239,7 @@ class PatientVisitRegistrationSerializer(serializers.Serializer):
             data.pop('tga_service_type', None)
             data.pop('device_serial_need_service', None)
             data.pop('complaint', None)
+            data.pop('previous_test_done', None)
 
             allowed = {
                 'visit_type',
@@ -1920,6 +1921,8 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'product_name',    
             'brand_name',
             'model_type_name',
+            'implant_systems',
+            'cochlear_accessory',
             'sku',
             'description',
             'stock_type',
@@ -1986,16 +1989,62 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
             'category', 'product_name', 'brand', 'model_type', 'description', 'gst_value',
             'stock_type', 'quantity_in_stock', 'reorder_level', 'location',
             'expiry_date', 'notes', 'use_in_trial', 'unit_price', 'serial_numbers', 'sku',
-            'gst_value'
+            'gst_value', 'implant_systems', 'cochlear_accessory','age_groups'
         ]
         extra_kwargs = {
-            'quantity_in_stock': {'required': False, 'allow_null': True}
+            'quantity_in_stock': {'required': False, 'allow_null': True},
+            'model_type': {'required': False, 'allow_null': True},
+            'implant_systems': {'required': False, 'allow_null': True},
+            'cochlear_accessory': {'required': False, 'allow_null': True},
+            'brand': {'required': False, 'allow_null': True}
         }
 
     def validate(self, data):
         stock_type = data.get('stock_type')
         serial_numbers = data.get('serial_numbers', [])
         quantity_in_stock = data.get('quantity_in_stock')
+        category = data.get('category')
+        model_type = data.get('model_type')
+        brand = data.get('brand')
+        implant_systems = data.get('implant_systems')
+        cochlear_accessory = data.get('cochlear_accessory')
+
+        # Validate cochlear implant category logic
+        if category == 'Cochlear Implant Accessories':
+            if not implant_systems:
+                raise serializers.ValidationError({"implant_systems": "Implant system is required for Cochlear Implant Accessories."})
+            
+            # If implant system is External Processor, cochlear accessory is required
+            if implant_systems == 'External Processor' and not cochlear_accessory:
+                raise serializers.ValidationError({"cochlear_accessory": "Cochlear accessory is required when implant system is External Processor."})
+            
+            # model_type should not be used for cochlear implants
+            if model_type:
+                raise serializers.ValidationError({"model_type": "Use implant_systems instead of model_type for Cochlear Implant Accessories."})
+            
+            # brand is required for cochlear implants
+            if not brand:
+                raise serializers.ValidationError({"brand": "Brand is required for Cochlear Implant Accessories."})
+        
+        elif category == 'Diagnostic Equipment':
+            # For diagnostic equipment, brand is optional but model_type is required
+            if not model_type:
+                raise serializers.ValidationError({"model_type": "Model type is required for Diagnostic Equipment."})
+            
+            # implant_systems and cochlear_accessory should not be used for diagnostic equipment
+            if implant_systems or cochlear_accessory:
+                raise serializers.ValidationError({"implant_systems": "Implant systems and cochlear accessories are only for Cochlear Implant Accessories category."})
+        
+        else:
+            # For other categories, use model_type and brand as usual
+            if implant_systems or cochlear_accessory:
+                raise serializers.ValidationError({"implant_systems": "Implant systems and cochlear accessories are only for Cochlear Implant Accessories category."})
+            
+            if not brand and category not in ["Diagnostic Equipment", "Speech & Therapy Materials"]:
+                raise serializers.ValidationError({"brand": "Brand is required for this category."})
+            
+            if not model_type and category not in ["Speech & Therapy Materials"]:
+                raise serializers.ValidationError({"model_type": "Model type is required for this category."})
 
         if stock_type == 'Serialized':
             if not serial_numbers:
