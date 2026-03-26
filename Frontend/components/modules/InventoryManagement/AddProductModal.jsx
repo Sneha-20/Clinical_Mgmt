@@ -6,7 +6,13 @@ import TextArea from "@/components/ui/TextArea";
 import DropDown from "@/components/ui/dropdown";
 import Modal from "@/components/ui/Modal";
 import CommonCheckbox from "@/components/ui/CommonCheckbox";
-import { accessoriesTypeOptions } from "@/lib/utils/constants/staticValue";
+import {
+  accessoriesTypeOptions,
+  diagnosticCoreProducts,
+  diagnosticAccessoryProducts,
+  speechPediatricProducts,
+  speechAdultProducts,
+} from "@/lib/utils/constants/staticValue";
 
 export default function AddProductModal({
   isOpen,
@@ -17,6 +23,8 @@ export default function AddProductModal({
   categories = [],
   brands = [],
   models = [],
+  cochlearAccessories = [],
+  ageGroups = [],
   onCategoryChange,
   onBrandChange,
   onCreateBrand,
@@ -27,6 +35,7 @@ export default function AddProductModal({
   const [formData, setFormData] = useState({
     category: "",
     accessories_type: "",
+    age_group: "",
     brand: "",
     model_type: "",
     product_name: "",
@@ -48,8 +57,36 @@ export default function AddProductModal({
   const [creatingBrand, setCreatingBrand] = useState(false);
   const [creatingModel, setCreatingModel] = useState(false);
 
-  // Use a ref to track if we've already done the initial prefill so we don't wipe it out
   const [hasPrefilled, setHasPrefilled] = useState(false);
+
+  const isDiagnostic = !!formData.category?.toLowerCase().includes("diagnostic");
+  const isSpeech = !!formData.category?.toLowerCase().includes("speech");
+
+  const selectedModelName = models.find(m => m.id === formData.model_type)?.name || formData.model_type;
+
+  const getDiagnosticProductOptions = () => {
+    if (selectedModelName?.toLowerCase().includes("core")) {
+      return diagnosticCoreProducts;
+    }
+    if (selectedModelName?.toLowerCase().includes("accessories")) {
+      return diagnosticAccessoryProducts;
+    }
+    return [];
+  };
+
+  const getSpeechProductOptions = () => {
+    const ageGroup = formData.age_group?.toLowerCase();
+    if (ageGroup?.includes("pediatric")) {
+      return speechPediatricProducts;
+    }
+    if (ageGroup?.includes("adult")) {
+      return speechAdultProducts;
+    }
+    return [];
+  };
+
+  const diagnosticProductOptions = getDiagnosticProductOptions();
+  const speechProductOptions = getSpeechProductOptions();
 
   // Prefill when editing
   useEffect(() => {
@@ -57,6 +94,7 @@ export default function AddProductModal({
       setHasPrefilled(false); // reset tracking when opened
       setFormData({
         category: initialData.category || "",
+        age_group: initialData.age_group || "",
         brand: initialData.brand || "",
         model_type: initialData.model_type || "",
         product_name: initialData.product_name || "",
@@ -95,6 +133,7 @@ export default function AddProductModal({
       setHasPrefilled(false);
       setFormData({
         category: "",
+        age_group: "",
         brand: "",
         model_type: "",
         product_name: "",
@@ -127,6 +166,7 @@ export default function AddProductModal({
         brand: "",
         model_type: "",
         accessories_type: "",
+        age_group: "",
       }));
     }
 
@@ -149,13 +189,33 @@ export default function AddProductModal({
   // Fetch models when brand changes
   useEffect(() => {
     if (formData.brand && formData.category) {
-      onBrandChange?.(formData.category, formData.brand);
+      onBrandChange?.(formData.category, formData.brand, formData.model_type);
       if (hasPrefilled || !isEdit) {
-        setFormData((prev) => ({ ...prev, model_type: "" }));
+        setFormData((prev) => {
+          if (formData.category?.toLowerCase().includes("cochlear")) {
+            return prev;
+          }
+          return { ...prev, model_type: "" };
+        });
       }
       setShowAddModel(false);
     }
   }, [formData.brand, formData.category]);
+
+  // Fetch dropdown options when implant_system (stored in model_type for Cochlear) is selected
+  useEffect(() => {
+    if (formData.category?.toLowerCase().includes("cochlear") && formData.model_type) {
+      if (hasPrefilled || !isEdit) {
+        // We use onBrandChange to ensure brand and category are also taken into account
+        // when fetching dependent dropdowns for Cochlear devices.
+        if (formData.brand) {
+          onBrandChange?.(formData.category, formData.brand, formData.model_type);
+        } else {
+          onCategoryChange?.(formData.category, undefined, formData.model_type);
+        }
+      }
+    }
+  }, [formData.model_type, formData.category, formData.brand]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -230,10 +290,19 @@ export default function AddProductModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     const newErrors = {};
+    const isCochlear = formData.category?.toLowerCase().includes("cochlear");
     if (!formData.category) newErrors.category = "Category is required";
-    if (!formData.brand) newErrors.brand = "Brand is required";
-    if (formData.category !== "Accessories" && !formData.model_type) {
-      newErrors.model_type = "Model is required";
+    if (!isDiagnostic && !isSpeech && !formData.brand) newErrors.brand = "Brand is required";
+    if (formData.category !== "Accessories" && !isSpeech && !formData.model_type) {
+      newErrors.model_type = formData.category?.toLowerCase().includes("cochlear")
+        ? "Implant system is required"
+        : "Model is required";
+    }
+    if (formData.category?.toLowerCase().includes("cochlear") && formData.model_type === "External Processor" && !formData.accessories_type) {
+      newErrors.accessories_type = "Accessory is required";
+    }
+    if (isSpeech && !formData.age_group) {
+      newErrors.age_group = "Age group is required";
     }
     if (!formData.product_name)
       newErrors.product_name = "Product name is required";
@@ -249,10 +318,8 @@ export default function AddProductModal({
     const payload = {
       category: formData.category,
       product_name: formData.product_name,
-      brand: parseInt(formData.brand) || formData.brand,
-      ...(formData.category !== "Accessories" && formData.model_type
-        ? { model_type: parseInt(formData.model_type) || formData.model_type }
-        : {}),
+      ...(!isDiagnostic && !isSpeech ? { brand: parseInt(formData.brand) || formData.brand } : {}),
+      ...(isSpeech ? { age_groups: formData.age_group } : {}),
       description: formData.description || "",
       stock_type: formData.stock_type ? "Serialized" : "Non-Serialized",
       location: formData.location,
@@ -261,6 +328,20 @@ export default function AddProductModal({
       use_in_trial: formData.use_in_trial,
       reorder_level: formData.reorder_level || 10,
     };
+
+    if (isCochlear) {
+      if (formData.model_type) {
+        payload.implant_systems = formData.model_type;
+      }
+      if (formData.accessories_type) {
+        payload.cochlear_accessory = formData.accessories_type;
+      }
+    } else if (!isSpeech) {
+      payload.accessories_type = formData.accessories_type || "";
+      if (formData.category !== "Accessories" && formData.model_type) {
+        payload.model_type = parseInt(formData.model_type) || formData.model_type;
+      }
+    }
 
     if (!formData.stock_type) {
       payload.quantity_in_stock = formData.quantity_in_stock;
@@ -296,6 +377,12 @@ export default function AddProductModal({
     label: model.name,
     value: model.id,
   }));
+
+  const ageGroupOptions = ageGroups?.map((group) => ({
+    label: group.label || group.value || group,
+    value: group.value || group,
+  })) || [];
+
   return (
     <Modal
       isModalOpen={isOpen}
@@ -334,54 +421,106 @@ export default function AddProductModal({
               important
             />
           )}
-          <div className="space-y-2">
-            <DropDown
-              label="Brand"
-              name="brand"
-              options={brandOptions}
-              value={formData.brand}
-              onChange={updateField}
-              placeholder="Select brand"
-              error={errors.brand}
-              isDisabled={!formData.category}
-              important
-            />
-            {formData.category && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAddBrand(!showAddBrand)}
-                className="w-full"
-              >
-                {showAddBrand ? "Cancel Add Brand" : "Add New Brand"}
-              </Button>
-            )}
-            {showAddBrand && formData.category && (
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter brand name"
-                  value={newBrandName}
-                  onChange={(e) => {
-                    setNewBrandName(e.target.value);
-                    if (errors.newBrandName)
-                      setErrors((prev) => ({ ...prev, newBrandName: "" }));
-                  }}
-                  error={errors.newBrandName}
-                />
+
+          {isSpeech && ageGroups?.length > 0 && (
+            <div className="space-y-2">
+              <DropDown
+                label="Age Groups"
+                name="age_group"
+                options={ageGroupOptions}
+                value={formData.age_group}
+                onChange={updateField}
+                placeholder="Select age group"
+                error={errors.age_group}
+                important
+              />
+            </div>
+          )}
+
+          {!isDiagnostic && !isSpeech && (
+            <div className="space-y-2">
+              <DropDown
+                label="Brand"
+                name="brand"
+                options={brandOptions}
+                value={formData.brand}
+                onChange={updateField}
+                placeholder="Select brand"
+                error={errors.brand}
+                isDisabled={!formData.category}
+                important
+              />
+              {formData.category && (
                 <Button
                   type="button"
-                  onClick={handleAddBrand}
-                  disabled={creatingBrand || loading}
+                  variant="outline"
                   size="sm"
+                  onClick={() => setShowAddBrand(!showAddBrand)}
+                  className="w-full"
                 >
-                  {creatingBrand ? "Creating..." : "Add"}
+                  {showAddBrand ? "Cancel Add Brand" : "Add New Brand"}
                 </Button>
-              </div>
-            )}
-          </div>
+              )}
+              {showAddBrand && formData.category && (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter brand name"
+                    value={newBrandName}
+                    onChange={(e) => {
+                      setNewBrandName(e.target.value);
+                      if (errors.newBrandName)
+                        setErrors((prev) => ({ ...prev, newBrandName: "" }));
+                    }}
+                    error={errors.newBrandName}
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleAddBrand}
+                    disabled={creatingBrand || loading}
+                    size="sm"
+                  >
+                    {creatingBrand ? "Creating..." : "Add"}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
 
-          {formData.category !== "Accessories" && (
+          {formData.category?.toLowerCase().includes("cochlear") && (
+            <>
+              <div className="space-y-2">
+                <DropDown
+                  label="Implant System"
+                  name="model_type"
+                  options={[
+                    { label: "Internal Implant", value: "Internal Implant" },
+                    { label: "External Processor", value: "External Processor" },
+                  ]}
+                  value={formData.model_type}
+                  onChange={updateField}
+                  placeholder="Select implant system"
+                  error={errors.model_type}
+                  important
+                />
+              </div>
+              {formData.model_type === "External Processor" && cochlearAccessories && cochlearAccessories.length > 0 && (
+                <div className="space-y-2">
+                  <DropDown
+                    label="Accessory"
+                    name="accessories_type"
+                    options={cochlearAccessories}
+                    value={formData.accessories_type}
+                    onChange={updateField}
+                    placeholder="Select accessory"
+                    error={errors.accessories_type}
+                    important
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {formData.category !== "Accessories" && !formData.category?.toLowerCase().includes("cochlear") && !isSpeech && (
             <div className="space-y-2">
               <DropDown
                 label="Model"
@@ -391,11 +530,11 @@ export default function AddProductModal({
                 onChange={updateField}
                 placeholder="Select model"
                 error={errors.model_type}
-                isDisabled={!formData.brand}
+                isDisabled={!isDiagnostic && !formData.brand}
                 important
               />
 
-              {formData.brand && (
+              {(!isDiagnostic ? formData.brand : formData.category) && (
                 <Button
                   type="button"
                   variant="outline"
@@ -406,7 +545,7 @@ export default function AddProductModal({
                   {showAddModel ? "Cancel Add Model" : "Add New Model"}
                 </Button>
               )}
-              {showAddModel && formData.brand && (
+              {showAddModel && (!isDiagnostic ? formData.brand : formData.category) && (
                 <div className="flex gap-2">
                   <Input
                     placeholder="Enter model name"
@@ -431,15 +570,28 @@ export default function AddProductModal({
             </div>
           )}
 
-          <Input
-            label="Product Name"
-            name="product_name"
-            value={formData.product_name}
-            onChange={handleChange}
-            placeholder="Enter product name"
-            error={errors.product_name}
-            important
-          />
+          {(isDiagnostic && diagnosticProductOptions.length > 0) || (isSpeech && speechProductOptions.length > 0) ? (
+            <DropDown
+              label="Product Name"
+              name="product_name"
+              options={isDiagnostic ? diagnosticProductOptions : speechProductOptions}
+              value={formData.product_name}
+              onChange={updateField}
+              placeholder="Select product name"
+              error={errors.product_name}
+              important
+            />
+          ) : (
+            <Input
+              label="Product Name"
+              name="product_name"
+              value={formData.product_name}
+              onChange={handleChange}
+              placeholder="Enter product name"
+              error={errors.product_name}
+              important
+            />
+          )}
 
           <Input
             label="Location"

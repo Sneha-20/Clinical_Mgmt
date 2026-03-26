@@ -33,6 +33,8 @@ export default function useInventory() {
   // Current status filter (All | Critical | Low)
   const [selectedClinic, setSelectedClinic] = useState(null);
   const [showTrial, setShowTrial] = useState(false);
+  const [cochlearAccessories, setCochlearAccessories] = useState([]);
+  const [ageGroups, setAgeGroups] = useState([]);
 
   const [filterStatus, setFilterStatus] = useState("All");
 
@@ -123,7 +125,7 @@ export default function useInventory() {
   }, [categories]);
 
   // Fetch brands when category is selected
-  const fetchBrands = useCallback(async (category, accessories_type) => {
+  const fetchBrands = useCallback(async (category, accessories_type, implant_system) => {
     if (!category) {
       setBrands([]);
       setModels([]);
@@ -134,10 +136,21 @@ export default function useInventory() {
       const data = await getInventoryDropdowns({
         category,
         accessories_type,
+        implant_system,
       });
 
       setBrands(data?.brands || []);
-      setModels([]);
+      setModels(data?.models || []);
+      if (data?.cochlear_accessories) {
+        setCochlearAccessories(data.cochlear_accessories);
+      } else {
+        setCochlearAccessories([]);
+      }
+      if (data?.age_groups) {
+        setAgeGroups(data.age_groups);
+      } else {
+        setAgeGroups([]);
+      }
     } catch (error) {
       console.error("Error fetching brands:", error);
       setBrands([]);
@@ -146,7 +159,7 @@ export default function useInventory() {
 
   // Fetch models when brand is selected
   const fetchModels = useCallback(
-    async (category, brandIdOrName) => {
+    async (category, brandIdOrName, implant_system) => {
       if (!brandIdOrName || !category) {
         setModels([]);
         return;
@@ -162,8 +175,14 @@ export default function useInventory() {
         const data = await getInventoryDropdowns({
           category,
           brand: brandName,
+          implant_system,
         });
         setModels(data?.models || []);
+        if (data?.cochlear_accessories) {
+          setCochlearAccessories(data.cochlear_accessories);
+        } else {
+          setCochlearAccessories([]);
+        }
       } catch (error) {
         console.error("Error fetching models:", error);
         setModels([]);
@@ -339,6 +358,8 @@ export default function useInventory() {
     categories,
     brands,
     models,
+    cochlearAccessories,
+    ageGroups,
     filterStatus,
     totalItem,
     criticalItemCount,

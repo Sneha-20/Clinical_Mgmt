@@ -12,12 +12,13 @@ import apiClient from "../api/client";
  */
 export const getInventoryDropdowns = async (params = {}) => {
   try {
-    const { category, accessories_type, brand } = params;
+    const { category, accessories_type, brand, implant_system } = params;
     const queryParams = new URLSearchParams();
     if (category) queryParams.append("category", category);
     if (accessories_type)
       queryParams.append("accessories_type", accessories_type);
     if (brand) queryParams.append("brand", brand);
+    if (implant_system) queryParams.append("implant_system", implant_system);
 
     const url = `${routes.inventoryItemList}?${queryParams.toString()}`;
     const response = await apiClient.get(url);

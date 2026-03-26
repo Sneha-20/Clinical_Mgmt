@@ -107,3 +107,27 @@ export const tgaServiceOptions = [
   { label: "Calibration", value: "calibration" },
   { label: "Other", value: "other" },
 ];
+
+export const diagnosticCoreProducts = [
+  { label: "Audiometer", value: "Audiometer" },
+  { label: "Tympanometer", value: "Tympanometer" },
+  { label: "OAE", value: "OAE" },
+  { label: "BERA", value: "BERA" },
+];
+
+export const diagnosticAccessoryProducts = [
+  { label: "Headphones", value: "Headphones" },
+  { label: "Inserts", value: "Inserts" },
+  { label: "Electrodes", value: "Electrodes" },
+];
+
+export const speechPediatricProducts = [
+  { label: "Flashcards", value: "Flashcards" },
+  { label: "Toys", value: "Toys" },
+  { label: "Language kits", value: "Language kits" },
+];
+
+export const speechAdultProducts = [
+  { label: "Speech training tools", value: "Speech training tools" },
+  { label: "Auditory training modules", value: "Auditory training modules" },
+];

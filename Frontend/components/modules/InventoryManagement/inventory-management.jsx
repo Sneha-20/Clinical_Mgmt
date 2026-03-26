@@ -24,6 +24,8 @@ export default function InventoryManagement() {
     categories,
     brands,
     models,
+    cochlearAccessories,
+    ageGroups,
     filterStatus,
     totalItem,
     criticalItemCount,
@@ -431,6 +433,8 @@ export default function InventoryManagement() {
         categories={categories}
         brands={brands}
         models={models}
+        cochlearAccessories={cochlearAccessories}
+        ageGroups={ageGroups}
         onCategoryChange={fetchBrands}
         onBrandChange={fetchModels}
         onCreateBrand={createNewBrand}
