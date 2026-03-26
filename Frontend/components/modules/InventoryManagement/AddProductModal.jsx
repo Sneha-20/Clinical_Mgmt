@@ -12,6 +12,13 @@ import {
   diagnosticAccessoryProducts,
   speechPediatricProducts,
   speechAdultProducts,
+  accessoriesDomesProducts,
+  accessoriesReceiversProducts,
+  accessoriesTubingProducts,
+  accessoriesFiltersProducts,
+  accessoriesCleaningProducts,
+  accessoriesBatteriesProducts,
+  accessoriesRechargeableProducts,
 } from "@/lib/utils/constants/staticValue";
 
 export default function AddProductModal({
@@ -68,7 +75,7 @@ export default function AddProductModal({
     if (selectedModelName?.toLowerCase().includes("core")) {
       return diagnosticCoreProducts;
     }
-    if (selectedModelName?.toLowerCase().includes("accessories")) {
+    if (selectedModelName?.toLowerCase().includes("Hearing Aids Accessories")) {
       return diagnosticAccessoryProducts;
     }
     return [];
@@ -85,8 +92,31 @@ export default function AddProductModal({
     return [];
   };
 
+  const getAccessoriesProductOptions = () => {
+    const type = formData.accessories_type;
+    switch (type) {
+      case "Domes":
+        return accessoriesDomesProducts;
+      case "Receivers / Wires":
+        return accessoriesReceiversProducts;
+      case "Tubing & Hooks":
+        return accessoriesTubingProducts;
+      case "Filters & Guards":
+        return accessoriesFiltersProducts;
+      case "Cleaning & Care":
+        return accessoriesCleaningProducts;
+      case "Batteries":
+        return accessoriesBatteriesProducts;
+      case "Rechargeable Systems":
+        return accessoriesRechargeableProducts;
+      default:
+        return [];
+    }
+  };
+
   const diagnosticProductOptions = getDiagnosticProductOptions();
   const speechProductOptions = getSpeechProductOptions();
+  const accessoriesProductOptions = getAccessoriesProductOptions();
 
   // Prefill when editing
   useEffect(() => {
@@ -173,13 +203,13 @@ export default function AddProductModal({
     setShowAddBrand(false);
     setShowAddModel(false);
 
-    if (formData.category !== "Accessories") {
+    if (formData.category !== "Hearing Aids Accessories") {
       onCategoryChange?.(formData.category);
     }
   }, [formData.category]);
 
   useEffect(() => {
-    if (formData.category === "Accessories" && formData.accessories_type) {
+    if (formData.category === "Hearing Aids Accessories" && formData.accessories_type) {
       if (hasPrefilled || !isEdit) {
         onCategoryChange?.(formData.category, formData.accessories_type);
       }
@@ -293,7 +323,7 @@ export default function AddProductModal({
     const isCochlear = formData.category?.toLowerCase().includes("cochlear");
     if (!formData.category) newErrors.category = "Category is required";
     if (!isDiagnostic && !isSpeech && !formData.brand) newErrors.brand = "Brand is required";
-    if (formData.category !== "Accessories" && !isSpeech && !formData.model_type) {
+    if (formData.category !== "Hearing Aids Accessories" && !isSpeech && !formData.model_type) {
       newErrors.model_type = formData.category?.toLowerCase().includes("cochlear")
         ? "Implant system is required"
         : "Model is required";
@@ -338,7 +368,7 @@ export default function AddProductModal({
       }
     } else if (!isSpeech) {
       payload.accessories_type = formData.accessories_type || "";
-      if (formData.category !== "Accessories" && formData.model_type) {
+      if (formData.category !== "Hearing Aids Accessories" && formData.model_type) {
         payload.model_type = parseInt(formData.model_type) || formData.model_type;
       }
     }
@@ -409,7 +439,7 @@ export default function AddProductModal({
             error={errors.category}
             important
           />
-          {formData.category === "Accessories" && (
+          {formData.category === "Hearing Aids Accessories" && (
             <DropDown
               label="Accessories Type"
               name="accessories_type"
@@ -520,7 +550,7 @@ export default function AddProductModal({
             </>
           )}
 
-          {formData.category !== "Accessories" && !formData.category?.toLowerCase().includes("cochlear") && !isSpeech && (
+          {formData.category !== "Hearing Aids Accessories" && !formData.category?.toLowerCase().includes("cochlear") && !isSpeech && (
             <div className="space-y-2">
               <DropDown
                 label="Model"
@@ -570,11 +600,19 @@ export default function AddProductModal({
             </div>
           )}
 
-          {(isDiagnostic && diagnosticProductOptions.length > 0) || (isSpeech && speechProductOptions.length > 0) ? (
+          {(isDiagnostic && diagnosticProductOptions.length > 0) ||
+            (isSpeech && speechProductOptions.length > 0) ||
+            (formData.category === "Hearing Aids Accessories" && accessoriesProductOptions.length > 0) ? (
             <DropDown
               label="Product Name"
               name="product_name"
-              options={isDiagnostic ? diagnosticProductOptions : speechProductOptions}
+              options={
+                isDiagnostic
+                  ? diagnosticProductOptions
+                  : isSpeech
+                    ? speechProductOptions
+                    : accessoriesProductOptions
+              }
               value={formData.product_name}
               onChange={updateField}
               placeholder="Select product name"
