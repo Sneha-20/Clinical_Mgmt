@@ -500,7 +500,7 @@ from django.utils import timezone
 CATEGORY_CHOICES = [
     ('Hearing Aid', 'Hearing Aid'),
     ("Cochlear Implant Accessories", "Cochlear Implant Accessories"),
-    ("Hear Aids Accessories",'Hear Aids Accessories'),
+    ("Hearing Aids Accessories",'Hearing Aids Accessories'),
     ("Diagnostic Equipment", "Diagnostic Equipment"),
     ("Speech & Therapy Materials", "Speech & Therapy Materials"),
     ("Consumables", "Consumables"),
@@ -508,12 +508,13 @@ CATEGORY_CHOICES = [
 ]
 
 ACCESSORIES_TYPE_CHOICES = [
-    ('Battery', 'Battery'),
-    ('Dome', 'Dome'),
-    ('Receiver', 'Receiver'),
-    ('Mold', 'Mold'),
-     ('Tube', 'Tube'),
-    ('Charger', 'Charger'),
+    ('Domes', 'Domes'),
+    ('Receivers / Wires', 'Receivers / Wires'),
+    ('Tubing & Hooks', 'Tubing & Hooks'),
+    ('Filters & Guards', 'Filters & Guards'),
+    ('Cleaning & Care', 'Cleaning & Care'),
+    ('BATTERIES & POWER', 'BATTERIES & POWER'),
+    ('Rechargeable Systems', 'Rechargeable Systems'),
 ]
 
 
