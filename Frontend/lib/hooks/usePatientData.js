@@ -291,7 +291,7 @@ export default function usePatientData() {
       setLoadingInventory(true);
       const response = await getPurchaseInventoryItems();
       const itemOptions = response.map((item) => ({
-        label: `${item.category} - ${item.product_name} (${item.brand_name})`,
+        label: `${item.category} - ${item.product_name}`,
         value: item.id,
         stock_type: item.stock_type,
         quantity_in_stock: item.quantity_in_stock,
