@@ -92,12 +92,13 @@ export const referalTypeOptions = [
 ];
 
 export const accessoriesTypeOptions = [
-  { label: "Dome", value: "Dome" },
-  { label: "Tube", value: "Tube" },
-  { label: "Battery", value: "Battery" },
-  { label: "Receiver", value: "Receiver" },
-  { label: "Mold", value: "Mold" },
-  { label: "Charger", value: "Charger" },
+  { label: "Domes", value: "Domes" },
+  { label: "Receivers / Wires", value: "Receivers / Wires" },
+  { label: "Tubing & Hooks", value: "Tubing & Hooks" },
+  { label: "Filters & Guards", value: "Filters & Guards" },
+  { label: "Cleaning & Care", value: "Cleaning & Care" },
+  { label: "Batteries", value: "Batteries" },
+  { label: "Rechargeable Systems", value: "Rechargeable Systems" },
 ];
 
 export const tgaServiceOptions = [
@@ -106,4 +107,73 @@ export const tgaServiceOptions = [
   { label: "Cleaning", value: "cleaning" },
   { label: "Calibration", value: "calibration" },
   { label: "Other", value: "other" },
+];
+
+export const diagnosticCoreProducts = [
+  { label: "Audiometer", value: "Audiometer" },
+  { label: "Tympanometer", value: "Tympanometer" },
+  { label: "OAE", value: "OAE" },
+  { label: "BERA", value: "BERA" },
+];
+
+export const diagnosticAccessoryProducts = [
+  { label: "Headphones", value: "Headphones" },
+  { label: "Inserts", value: "Inserts" },
+  { label: "Electrodes", value: "Electrodes" },
+];
+
+export const speechPediatricProducts = [
+  { label: "Flashcards", value: "Flashcards" },
+  { label: "Toys", value: "Toys" },
+  { label: "Language kits", value: "Language kits" },
+];
+
+export const speechAdultProducts = [
+  { label: "Speech training tools", value: "Speech training tools" },
+  { label: "Auditory training modules", value: "Auditory training modules" },
+];
+
+export const accessoriesDomesProducts = [
+  { label: "Open Dome", value: "Open Dome" },
+  { label: "Closed Dome", value: "Closed Dome" },
+  { label: "Power Dome (Double)", value: "Power Dome (Double)" },
+  { label: "Tulip Dome", value: "Tulip Dome" },
+];
+
+export const accessoriesReceiversProducts = [
+  { label: "S Receiver", value: "S Receiver" },
+  { label: "M Receiver", value: "M Receiver" },
+  { label: "P Receiver", value: "P Receiver" },
+  { label: "HP Receiver", value: "HP Receiver" },
+];
+
+export const accessoriesTubingProducts = [
+  { label: "Standard Tube", value: "Standard Tube" },
+  { label: "Thick Tube", value: "Thick Tube" },
+  { label: "Ear Hook", value: "Ear Hook" },
+  { label: "Filter Hook", value: "Filter Hook" },
+];
+
+export const accessoriesFiltersProducts = [
+  { label: "Wax Guard", value: "Wax Guard" },
+  { label: "Mic Filter", value: "Mic Filter" },
+];
+
+export const accessoriesCleaningProducts = [
+  { label: "Cleaning kit", value: "Cleaning kit" },
+  { label: "Dry box", value: "Dry box" },
+  { label: "Dehumidifier", value: "Dehumidifier" },
+];
+
+export const accessoriesBatteriesProducts = [
+  { label: "Size 10", value: "Size 10" },
+  { label: "Size 312", value: "Size 312" },
+  { label: "Size 13", value: "Size 13" },
+  { label: "Size 675", value: "Size 675" },
+];
+
+export const accessoriesRechargeableProducts = [
+  { label: "Multichargers", value: "Multichargers" },
+  { label: "Charging docks", value: "Charging docks" },
+  { label: "Power banks (hearing aid compatible)", value: "Power banks (hearing aid compatible)" },
 ];

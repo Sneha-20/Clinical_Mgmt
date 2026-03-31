@@ -9,10 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, AlertTriangle, TrendingDown, List, Trash2 } from "lucide-react";
+import { Plus, AlertTriangle, TrendingDown, List, Trash2, Eye, MoreVertical, Edit } from "lucide-react";
 import useInventory from "@/lib/hooks/useInventory";
 import AddProductModal from "./AddProductModal";
 import AddStockModal from "./AddStockModal";
+import ProductDetailModal from "./ProductDetailModal";
 import Pagination from "@/components/ui/Pagination";
 import DropDown from "@/components/ui/dropdown";
 
@@ -24,6 +25,8 @@ export default function InventoryManagement() {
     categories,
     brands,
     models,
+    cochlearAccessories,
+    ageGroups,
     filterStatus,
     totalItem,
     criticalItemCount,
@@ -43,6 +46,7 @@ export default function InventoryManagement() {
     changeFilter,
     createNewBrand,
     createNewModel,
+    fetchItemDetails,
   } = useInventory();
 
   const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -50,6 +54,9 @@ export default function InventoryManagement() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showProductDetailModal, setShowProductDetailModal] = useState(false);
+  const [productToView, setProductToView] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
   const clinicOptions = [
     { label: "All", value: "All" },
@@ -69,6 +76,13 @@ export default function InventoryManagement() {
     setTimeout(() => {
       setShowAddProductModal(true);
     }, 0);
+  };
+  const handleViewDetails = async (product) => {
+    const details = await fetchItemDetails(product.id);
+    if (details) {
+      setProductToView(details);
+      setShowProductDetailModal(true);
+    }
   };
 
   const handleUpdateProduct = async (productData) => {
@@ -332,10 +346,10 @@ export default function InventoryManagement() {
                           {item.category}
                         </td>
                         <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">
-                          {item.brand_name}
+                          {item.brand_name || "-"}
                         </td>
                         <td className="text-left py-2 sm:py-3 px-2 sm:px-3 hidden lg:table-cell">
-                          {item.model_type_name}
+                          {item.model_type_name || "-"}
                         </td>
                         <td className="text-center py-2 sm:py-3 px-2 sm:px-3 font-semibold">
                           {item.quantity_in_stock || 0}
@@ -369,32 +383,72 @@ export default function InventoryManagement() {
                         </td>
                         {isSelectedClinicMain && (
                           <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
-                            <div className="flex items-center justify-center gap-1">
+                            <div className="relative flex justify-center">
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
-                                onClick={() => handleAddStockClick(item)}
-                                className="text-xs"
+                                onClick={() =>
+                                  setOpenMenuId(
+                                    openMenuId === item.id ? null : item.id,
+                                  )
+                                }
+                                className="h-8 w-8 p-0"
                               >
-                                Add Stock
+                                <MoreVertical className="h-4 w-4" />
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditClick(item)}
-                                className="text-xs"
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteClick(item)}
-                                className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-                                disabled={isSubmitting}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
+
+                              {openMenuId === item.id && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-40"
+                                    onClick={() => setOpenMenuId(null)}
+                                  />
+                                  <div className="absolute right-0 top-full mt-1 w-40 rounded-md border bg-white shadow-lg z-50 py-1 overflow-hidden animate-in fade-in zoom-in duration-150">
+                                    <button
+                                      onClick={() => {
+                                        handleViewDetails(item);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
+                                    >
+                                      <Eye className="w-4 h-4 mr-2 text-slate-500" />
+                                      View
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        handleAddStockClick(item);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
+                                    >
+                                      <Plus className="w-4 h-4 mr-2 text-slate-500" />
+                                      Add Stock
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        handleEditClick(item);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
+                                    >
+                                      <Edit className="w-4 h-4 mr-2 text-slate-500" />
+                                      Edit
+                                    </button>
+                                    <div className="my-1 border-t border-slate-100" />
+                                    <button
+                                      onClick={() => {
+                                        handleDeleteClick(item);
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                                      disabled={isSubmitting}
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </td>
                         )}
@@ -431,6 +485,8 @@ export default function InventoryManagement() {
         categories={categories}
         brands={brands}
         models={models}
+        cochlearAccessories={cochlearAccessories}
+        ageGroups={ageGroups}
         onCategoryChange={fetchBrands}
         onBrandChange={fetchModels}
         onCreateBrand={createNewBrand}
@@ -447,6 +503,15 @@ export default function InventoryManagement() {
         onSubmit={handleAddStock}
         item={selectedItem}
         loading={isSubmitting}
+      />
+
+      <ProductDetailModal
+        isOpen={showProductDetailModal}
+        onClose={() => {
+          setShowProductDetailModal(false);
+          setProductToView(null);
+        }}
+        product={productToView}
       />
     </div>
   );
