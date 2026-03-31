@@ -2,80 +2,105 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from .models import InventoryItem, InventorySerial,InventoryTransfer
-from .serializers import InventoryItemSerializer, InventorySerialDetailSerializer,InventoryTransferSerializer
+from .serializers import InventoryItemSerializer, InventoryItemDetailSerializer, InventorySerialDetailSerializer,InventoryTransferSerializer
 from clinical_be.utils.permission import IsClinicAdmin, AuditorPermission, ReceptionistPermission, ClinicManagerPermission
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from rest_framework.generics import ListAPIView
 
-class InventoryItemListView(ListAPIView):
+class InventoryItemListView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission | ClinicManagerPermission ]
     pagination_class = StandardResultsSetPagination
 
     def get(self, request, format=None):
-        # Filter items based on user's clinic
-        if request.user.role.name == 'Admin':
-            items = InventoryItem.objects.filter(is_approved=True).order_by('-id')
-            # Admin can filter by specific clinic_id via query param
-            clinic_id = request.query_params.get('clinic_id')
-            if clinic_id:
-                items = items.filter(clinic_id=clinic_id)
-        elif request.user.role.name == 'Clinic Manager':
-            # Clinic Managers see items for their clinic, but can also filter by other clinics they manage
-            managed_clinics = request.user.managed_clinics_assignments.values_list('clinic', flat=True)
-            items = InventoryItem.objects.filter(clinic__in=managed_clinics, is_approved=True).order_by('-id')
-            clinic_id = request.query_params.get('clinic_id')
-            if clinic_id:
-                items = items.filter(clinic_id=clinic_id)
+        # Check if id parameter is provided for single item retrieval
+        item_id = request.query_params.get('id')
+        
+        if item_id:
+            # Return single item with detail serializer
+            try:
+                # Get inventory item based on user role and clinic
+                if request.user.role.name == 'Admin':
+                    item = InventoryItem.objects.get(pk=item_id, is_approved=True)
+                elif request.user.role.name == 'Clinic Manager':
+                    managed_clinics = request.user.managed_clinics_assignments.values_list('clinic', flat=True)
+                    item = InventoryItem.objects.get(pk=item_id, clinic__in=managed_clinics, is_approved=True)
+                else:
+                    item = InventoryItem.objects.get(pk=item_id, clinic=request.user.clinic, is_approved=True)
                 
-        else:
-            # Non-admins only see their clinic's inventory
-            items = InventoryItem.objects.filter(clinic=request.user.clinic, is_approved=True).order_by('-id')
+            except InventoryItem.DoesNotExist:
+                return Response({"error": "Inventory item not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
 
-        # Always compute counts on the full unfiltered list
-        all_items = list(items)
+            # Use the enhanced detail serializer for single item
+            serializer = InventoryItemDetailSerializer(item)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
-        status_param = request.query_params.get('status')
-        use_in_trial = request.query_params.get('use_in_trial') # true or false
-         
-        # Determine base items for counting based on conditions
-        if use_in_trial is not None:
-            # With use_in_trial param: counts should reflect filtered items
-            use_in_trial_bool = use_in_trial.lower() == 'true'
-            base_items = [item for item in all_items if item.use_in_trial == use_in_trial_bool]
         else:
-            # No params: counts should reflect all items
-            base_items = all_items
-        
-        # Calculate counts based on determined base items
-        total_count = len(base_items)
-        low_count = sum(1 for item in base_items if item.status.lower() == 'low')
-        critical_count = sum(1 for item in base_items if item.status.lower() == 'critical')
-        
-        # Apply additional filters
-        items = base_items
-        if status_param:
-            items = [item for item in items if item.status.lower() == status_param.lower()]
-        
-        page = self.paginate_queryset(items)
+            # Return list of items with basic serializer
+            # Filter items based on user's clinic
+            if request.user.role.name == 'Admin':
+                items = InventoryItem.objects.filter(is_approved=True).order_by('-id')
+                # Admin can filter by specific clinic_id via query param
+                clinic_id = request.query_params.get('clinic_id')
+                if clinic_id:
+                    items = items.filter(clinic_id=clinic_id)
+            elif request.user.role.name == 'Clinic Manager':
+                # Clinic Managers see items for their clinic, but can also filter by other clinics they manage
+                managed_clinics = request.user.managed_clinics_assignments.values_list('clinic', flat=True)
+                items = InventoryItem.objects.filter(clinic__in=managed_clinics, is_approved=True).order_by('-id')
+                clinic_id = request.query_params.get('clinic_id')
+                if clinic_id:
+                    items = items.filter(clinic_id=clinic_id)
+                    
+            else:
+                # Non-admins only see their clinic's inventory
+                items = InventoryItem.objects.filter(clinic=request.user.clinic, is_approved=True).order_by('-id')
 
-        if page is not None:
-            serializer = InventoryItemSerializer(page, many=True)
-            response = self.get_paginated_response(serializer.data)
-            response.data['total_count'] = total_count
-            response.data['low_count'] = low_count
-            response.data['critical_count'] = critical_count
-            return response
-        serializer = InventoryItemSerializer(items, many=True)
-        return Response({
-            'total_count': total_count,
-            'low_count': low_count,
-            'critical_count': critical_count,
-            'results': serializer.data
+            # Always compute counts on the full unfiltered list
+            all_items = list(items)
             
-        }, status=status.HTTP_200_OK)
+            status_param = request.query_params.get('status')
+            use_in_trial = request.query_params.get('use_in_trial') # true or false
+             
+            # Determine base items for counting based on conditions
+            if use_in_trial is not None:
+                # With use_in_trial param: counts should reflect filtered items
+                use_in_trial_bool = use_in_trial.lower() == 'true'
+                base_items = [item for item in all_items if item.use_in_trial == use_in_trial_bool]
+            else:
+                # No params: counts should reflect all items
+                base_items = all_items
+            
+            # Calculate counts based on determined base items
+            total_count = len(base_items)
+            low_count = sum(1 for item in base_items if item.status.lower() == 'low')
+            critical_count = sum(1 for item in base_items if item.status.lower() == 'critical')
+            
+            # Apply additional filters
+            items = base_items
+            if status_param:
+                items = [item for item in items if item.status.lower() == status_param.lower()]
+            
+            # Apply pagination manually since we're using APIView
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(items, request)
+            
+            if page is not None:
+                serializer = InventoryItemSerializer(page, many=True)
+                response = paginator.get_paginated_response(serializer.data)
+                response.data['total_count'] = total_count
+                response.data['low_count'] = low_count
+                response.data['critical_count'] = critical_count
+                return response
+            serializer = InventoryItemSerializer(items, many=True)
+            return Response({
+                'total_count': total_count,
+                'low_count': low_count,
+                'critical_count': critical_count,
+                'results': serializer.data
+                
+            }, status=status.HTTP_200_OK)
 
-
-
+    
 # Get the InventorySerial info for a product ( inventoryItem)
 class InventorySerialListView(ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | AuditorPermission | 

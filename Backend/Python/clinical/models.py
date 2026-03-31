@@ -533,9 +533,6 @@ class ModelType(models.Model):
     class Meta:
         unique_together = ('brand', 'name')
 
-    def __str__(self):
-        return f"{self.brand.name} {self.name}"
-
 
 class InventoryItem(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True, blank=True)

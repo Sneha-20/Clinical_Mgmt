@@ -1938,6 +1938,102 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         ]
 
 
+class InventoryItemDetailSerializer(serializers.ModelSerializer):
+    """Serializer for inventory list with category-specific field inclusion/exclusion"""
+    brand_name = serializers.CharField(source='brand.name', read_only=True, allow_null=True)
+    model_type_name = serializers.CharField(source='model_type.name', read_only=True, allow_null=True)
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    quantity_in_stock = serializers.SerializerMethodField()
+    
+    def get_quantity_in_stock(self, obj):
+        """Calculate quantity_in_stock based on stock type."""
+        if obj.stock_type == 'Serialized':
+            # For serialized items, count only serial numbers with 'In Stock' status
+            return obj.serials.filter(status='In Stock').count()
+        else:
+            # For non-serialized items, use the stored quantity
+            return obj.quantity_in_stock
+
+    def to_representation(self, instance):
+        """Customize field inclusion based on category and format for table display"""
+        data = super().to_representation(instance)
+        category = instance.category
+        
+        # Format display values for better table presentation
+        data['id'] = instance.id
+        data['category'] = instance.category
+        data['product_name'] = instance.product_name or ''
+        data['stock_type'] = instance.stock_type
+        data['quantity_in_stock'] = self.get_quantity_in_stock(instance)
+        data['status'] = instance.status
+        data['unit_price'] = float(instance.unit_price)
+       
+        
+        # Category-specific field handling
+        if category == 'Hearing Aids Accessories':
+            # Include brand, exclude model_type
+            data['brand_name'] = instance.brand.name if instance.brand else None
+            data['model_type_name'] = None
+            data['display_name'] = f"{instance.brand.name if instance.brand else ''} - {instance.accessories_type or ''}"
+            data['subtitle'] = f"Accessories Type: {instance.accessories_type or 'N/A'}"
+            
+        elif category == 'Diagnostic Equipment':
+            # Exclude brand, include model_type
+            data['brand_name'] = None
+            data['model_type_name'] = instance.model_type.name if instance.model_type else None
+            data['display_name'] = f"{instance.model_type.name if instance.model_type else ''}"
+            data['subtitle'] = f"SKU: {instance.sku or 'N/A'}"
+            
+        elif category == 'Cochlear Implant Accessories':
+            # Include brand and implant_systems, exclude model_type
+            data['brand_name'] = instance.brand.name if instance.brand else None
+            data['model_type_name'] = None
+            data['display_name'] = f"{instance.brand.name if instance.brand else ''} {instance.implant_systems or ''} {instance.cochlear_accessory or ''}"
+            data['subtitle'] = f"System: {instance.implant_systems or 'N/A'} | Accessory: {instance.cochlear_accessory or 'N/A'}"
+            
+        elif category == 'Speech & Therapy Materials':
+            # Exclude brand and model_type, include age_groups
+            data['brand_name'] = None
+            data['model_type_name'] = None
+            data['display_name'] = f"{instance.age_groups or ''} - {instance.accessories_type or ''}"
+            data['subtitle'] = f"Age Group: {instance.age_groups or 'N/A'} | Type: {instance.accessories_type or 'N/A'}"
+            
+        else:
+            # For other categories (Hearing Aid, Consumables), include all fields
+            data['brand_name'] = instance.brand.name if instance.brand else None
+            data['model_type_name'] = instance.model_type.name if instance.model_type else None
+            data['display_name'] = f"{instance.brand.name if instance.brand else ''} {instance.model_type.name if instance.model_type else ''}"
+            data['subtitle'] = f"SKU: {instance.sku or 'N/A'}"
+        
+        return data
+
+
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'id',
+            'category',
+            'product_name',    
+            'brand_name',
+            'model_type_name',
+            'implant_systems',
+            'cochlear_accessory',
+            'age_groups',
+            'sku',
+            'description',
+            'stock_type',
+            'quantity_in_stock',
+            'notes',
+            'use_in_trial',
+            'unit_price',
+            'status', 
+            'clinic_id',
+            'clinic_name',
+            'accessories_type',
+            'gst_value',
+        ]
+
+
 class InventoryItemCreateSerializer(serializers.ModelSerializer):
     """
     Serializer to create a new Inventory Item.
@@ -2039,11 +2135,13 @@ class InventoryItemCreateSerializer(serializers.ModelSerializer):
             # For other categories, use model_type and brand as usual
             if implant_systems or cochlear_accessory:
                 raise serializers.ValidationError({"implant_systems": "Implant systems and cochlear accessories are only for Cochlear Implant Accessories category."})
-            
+          
+            # For Diagnostic Equipment and Speech & Therapy Materials, brand is optional
             if not brand and category not in ["Diagnostic Equipment", "Speech & Therapy Materials"]:
                 raise serializers.ValidationError({"brand": "Brand is required for this category."})
             
-            if not model_type and category not in ["Speech & Therapy Materials"]:
+            # For Speech & Therapy Materials and Hearing Aids Accessories, model_type is optional
+            if not model_type and category not in ["Speech & Therapy Materials", "Hearing Aids Accessories"]:
                 raise serializers.ValidationError({"model_type": "Model type is required for this category."})
 
         if stock_type == 'Serialized':
@@ -2128,8 +2226,8 @@ class ServiceVisitListSerializer(serializers.ModelSerializer):
 class PatientPurchaseSerializer(serializers.ModelSerializer):
     """Serializer for listing a patient's purchased items."""
     item_name = serializers.CharField(source='inventory_item.product_name', read_only=True)
-    item_brand = serializers.CharField(source='inventory_item.brand', read_only=True)
-    item_model = serializers.CharField(source='inventory_item.model_type', read_only=True)
+    item_brand = serializers.CharField(source='inventory_item.brand.name', read_only=True)
+    item_model = serializers.CharField(source='inventory_item.model_type.name', read_only=True)
     serial_number = serializers.CharField(source='inventory_serial.serial_number', read_only=True)
     patient_name = serializers.CharField(source='patient.name', read_only=True)
     visit_id = serializers.IntegerField(source='visit.id', read_only=True)
