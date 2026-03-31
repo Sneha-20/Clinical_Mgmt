@@ -499,23 +499,27 @@ from django.utils import timezone
 # Choices for category
 CATEGORY_CHOICES = [
     ('Hearing Aid', 'Hearing Aid'),
-    ('Speech Material', 'Speech Material'),
-    ("Cochlear Implant", "Cochlear Implant"),
-    ("Accessories",'Accessories'),
+    ("Cochlear Implant Accessories", "Cochlear Implant Accessories"),
+    ("Hearing Aids Accessories",'Hearing Aids Accessories'),
+    ("Diagnostic Equipment", "Diagnostic Equipment"),
+    ("Speech & Therapy Materials", "Speech & Therapy Materials"),
+    ("Consumables", "Consumables"),
+
 ]
 
 ACCESSORIES_TYPE_CHOICES = [
-    ('Battery', 'Battery'),
-    ('Dome', 'Dome'),
-    ('Receiver', 'Receiver'),
-    ('Mold', 'Mold'),
-     ('Tube', 'Tube'),
-    ('Charger', 'Charger'),
+    ('Domes', 'Domes'),
+    ('Receivers / Wires', 'Receivers / Wires'),
+    ('Tubing & Hooks', 'Tubing & Hooks'),
+    ('Filters & Guards', 'Filters & Guards'),
+    ('Cleaning & Care', 'Cleaning & Care'),
+    ('BATTERIES & POWER', 'BATTERIES & POWER'),
+    ('Rechargeable Systems', 'Rechargeable Systems'),
 ]
 
 
 class Brand(models.Model):
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=100, choices=CATEGORY_CHOICES)
     accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES, help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
     name = models.CharField(max_length=50)
 
@@ -523,19 +527,16 @@ class Brand(models.Model):
         return self.name
 
 class ModelType(models.Model):
-    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='model_types')
+    brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='model_types',null=True,blank=True)
     name = models.CharField(max_length=100)
 
     class Meta:
         unique_together = ('brand', 'name')
 
-    def __str__(self):
-        return f"{self.brand.name} {self.name}"
-
 
 class InventoryItem(models.Model):
     clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True, blank=True)
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    category = models.CharField(max_length=100, choices=CATEGORY_CHOICES)
     accessories_type = models.CharField(max_length=100, blank=True, null=True, choices=ACCESSORIES_TYPE_CHOICES,help_text="Specify type of accessory if category is Accessories (e.g., Cleaning Brush, Drying Box)")
     product_name = models.CharField(max_length=100, blank=True, null=True)  # Product Name
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True)  # Brand
@@ -558,13 +559,36 @@ class InventoryItem(models.Model):
     gst_value = models.DecimalField(max_digits=5, decimal_places=2, default=0.00, help_text="GST percentage applicable to this item")
 
     master_item = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='distributed_copies', help_text="Link to the main inventory item if this is a distributed copy")
-
+    
+    # Cochlear Implant specific fields
+    IMPLANT_SYSTEM_CHOICES = [
+        ('Internal Implant', 'Internal Implant'),
+        ('External Processor', 'External Processor'),
+    ]
+    
+    COCHLEAR_ACCESSORY_CHOICES = [
+        ('Coil', 'Coil'),
+        ('Cable', 'Cable'),
+        ('Magnet', 'Magnet'),
+        ('Battery module', 'Battery module'),
+    ]
+    
+    AGE_GROUP_CHOICES = [
+        ('Adult Rehab', 'Adult Rehab'),
+        ('Pediatric', 'Pediatric'),
+    ]
+    
+    implant_systems = models.CharField(max_length=50, choices=IMPLANT_SYSTEM_CHOICES, blank=True, null=True, help_text="Implant system for Cochlear Implant Accessories")
+    cochlear_accessory = models.CharField(max_length=50, choices=COCHLEAR_ACCESSORY_CHOICES, blank=True, null=True, help_text="Cochlear accessory type for external processors")
+    age_groups = models.CharField(max_length=50, choices=AGE_GROUP_CHOICES, blank=True, null=True, help_text="Age groups for Speech & Therapy Materials")
     class Meta:
         verbose_name = "Inventory Item"
         verbose_name_plural = "Inventory Items"
         ordering = ['category', 'brand', 'model_type']
 
     def __str__(self):
+        if self.category == "Cochlear Implant Accessories" and self.implant_systems:
+            return f"{self.id} - {self.brand} {self.implant_systems}"
         return f"{self.id} - {self.brand} {self.model_type}"
 
     @property
