@@ -33,7 +33,7 @@ COPY . /app/
 RUN mkdir -p /app/logs /app/media /app/static
 
 # Set permissions
-RUN chmod +x /app/manage.py
+RUN chmod +x /app/Python/manage.py
 
 # Collect static files (will be done at runtime)
 # RUN python manage.py collectstatic --noinput
