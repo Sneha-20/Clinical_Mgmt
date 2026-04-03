@@ -26,8 +26,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy project
 COPY . /app/
 
-# Copy environment file
-COPY ../.env /app/.env
+# # Copy environment file
+# COPY ../.env /app/.env
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/media /app/static
