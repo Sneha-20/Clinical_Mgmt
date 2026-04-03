@@ -46,4 +46,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/clinical/ || exit 1
 
 # Run the application with production settings
-CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8000 --settings=clinical_be.settings_env"]
+CMD ["sh", "-c", "python /app/Python/manage.py runserver 0.0.0.0:8000"]
