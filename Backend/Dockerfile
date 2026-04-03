@@ -43,7 +43,7 @@ EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
-    CMD python manage.py check --deploy || exit 1
+    CMD cd /app/Python && python manage.py check --deploy || exit 1
 
 # Run application with production settings
 CMD ["sh", "-c", "cd /app/Python && python manage.py runserver 0.0.0.0:8000"]
