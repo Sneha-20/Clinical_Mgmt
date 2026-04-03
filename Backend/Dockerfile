@@ -42,8 +42,8 @@ RUN chmod +x /app/Python/manage.py
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/api/clinical/ || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=10s --retries=3 \
+    CMD python manage.py check --deploy || exit 1
 
-# Run the application with production settings
-CMD ["sh", "-c", "python /app/Python/manage.py runserver 0.0.0.0:8000"]
+# Run application with production settings
+CMD ["sh", "-c", "cd /app/Python && python manage.py runserver 0.0.0.0:8000"]
