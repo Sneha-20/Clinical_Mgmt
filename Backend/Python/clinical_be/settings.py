@@ -26,7 +26,7 @@ load_dotenv(os.path.join(BASE_DIR.parent, '.env'))
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
+DEBUG = True
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -97,10 +97,10 @@ WSGI_APPLICATION = 'clinical_be.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'Clinical_Mgmt_local'),
+        'NAME': os.getenv('DB_NAME', 'clinical_mgmt_dev'),
         'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'HOST': os.getenv('DB_HOST', '51.20.207.138'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
