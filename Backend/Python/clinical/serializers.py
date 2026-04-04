@@ -46,7 +46,7 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
     total_bill = serializers.SerializerMethodField()
     payment_status = serializers.SerializerMethodField()
     completed_date = serializers.SerializerMethodField()
-    trial_details = serializers.SerializerMethodField()
+    # trial_details = serializers.SerializerMethodField()
 
     def get_payment_status(self, obj):
         # get the payment status from Bill
@@ -56,23 +56,23 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
         return 'Pending'
 
 
-    def get_trial_details(self, obj):
-        trial = Trial.objects.filter(visit=obj).first()
-        if not trial:
-            return None
+    # def get_trial_details(self, obj):
+    #     trial = Trial.objects.filter(visit=obj).first()
+    #     if not trial:
+    #         return None
         
-        return {
-            'start_date': trial.trial_start_date,
-            'end_date': trial.trial_end_date,
-            'extended': trial.extended_trial,
-            'extended_at': trial.trial_completed_at if trial.extended_trial else None,
-            'device': {
-                'id': trial.device_inventory_id.id if trial.device_inventory_id else None,
-                'name': trial.device_inventory_id.product_name if trial.device_inventory_id else None,
-                'serial_number': trial.serial_number
+    #     return {
+    #         'start_date': trial.trial_start_date,
+    #         'end_date': trial.trial_end_date,
+    #         'extended': trial.extended_trial,
+    #         'extended_at': trial.trial_completed_at if trial.extended_trial else None,
+    #         'device': {
+    #             'id': trial.device_inventory_id.id if trial.device_inventory_id else None,
+    #             'name': trial.device_inventory_id.product_name if trial.device_inventory_id else None,
+    #             'serial_number': trial.serial_number
            
-             }
-        } 
+    #          }
+    #     } 
 
 
     def get_total_bill(self, obj):
@@ -103,7 +103,7 @@ class PatientAllVisitSerializer(serializers.ModelSerializer):
             'total_bill',
             'status', 
             'status_note',
-            'trial_details',
+            # 'trial_details',
             'completed_date',
             'payment_status'
         ]
