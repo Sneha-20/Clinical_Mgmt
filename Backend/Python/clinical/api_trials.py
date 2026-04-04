@@ -27,7 +27,7 @@ class TrialCreateView(generics.CreateAPIView):
 class TrialListView(generics.ListAPIView):
     """API endpoint for listing all trial records."""
     queryset = Trial.objects.select_related(
-        'assigned_patient', 'visit__seen_by', 'device_inventory_id'
+        'assigned_patient', 'visit__seen_by'
     ).order_by('-created_at')
     serializer_class = TrialListSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -38,8 +38,8 @@ class TrialListView(generics.ListAPIView):
         'assigned_patient__name', 
         'assigned_patient__phone_primary',
         # 'visit__seen_by__name', 
-        'device_inventory_id__product_name', 
-        'serial_number'
+        # 'device_inventory_id__product_name', 
+        # 'serial_number'
     ]
     
     def get_queryset(self):

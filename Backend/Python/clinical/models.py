@@ -302,25 +302,42 @@ class Trial(models.Model):
     return_notes = models.TextField(blank=True, null=True)
     device_condition_on_return = models.CharField(max_length=50, blank=True, null=True)  # Condition (Good / Bad)
     extended_trial = models.BooleanField(default=False)
-    # Trial completion decision fields
+
     TRIAL_DECISION_CHOICES = [
         ('TRIAL_ACTIVE', 'Trial Active'),
-        ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
-        ('BOOK - Device Allocated', 'Book Device Allocated' ),
-        ('BOOK - With Customization', 'Book With Customization'),
+        ('BOOKED', 'Booked'),
         ('Follow up', 'Need Time - Not Booked'),
         ('DECLINE', 'Decline Device Booking'),
     ]
-    trial_decision = models.CharField(max_length=50, choices=TRIAL_DECISION_CHOICES, blank=True, null=True, help_text="Patient decision after trial completion", default='TRIAL_ACTIVE')
+    # Trial completion decision field
+    trial_decision = models.CharField(max_length=50, blank=True, null=True, help_text="Patient decision after trial completion", default='TRIAL_ACTIVE')
     trial_completed_at = models.DateTimeField(null=True, blank=True, help_text="When trial was completed and decision made")
     extended_at = models.DateTimeField(null=True, blank=True, help_text="When trial was extended")
     # New fields for bilateral booking (left and right ear)
-    booked_device_inventory_left = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_left', help_text="Left ear device booked by patient after trial")
-    booked_device_serial_left = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_left_serial', help_text="Left ear device serial number")
-    booked_device_inventory_right = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_right', help_text="Right ear device booked by patient after trial")
-    booked_device_serial_right = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_right_serial', help_text="Right ear device serial number")
-    need_customization = models.BooleanField(default=False)  
-    is_customization_completed = models.BooleanField(default=False) 
+    # booked_device_inventory_left = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_left', help_text="Left ear device booked by patient after trial")
+    # booked_device_serial_left = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_left_serial', help_text="Left ear device serial number")
+    # booked_device_inventory_right = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_right', help_text="Right ear device booked by patient after trial")
+    # booked_device_serial_right = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_right_serial', help_text="Right ear device serial number")
+ 
+
+BOOKING_STATUS_CHOICES = [
+        ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
+        ('BOOK - Device Allocated', 'Book Device Allocated' ),
+        ('BOOK - With Customization', 'Book With Customization')
+    ]
+
+class BookedDeviceAfterTrial(models.Model):
+    trial = models.ForeignKey('Trial', on_delete=models.CASCADE, related_name='booked_devices_after_trial')
+    inventory_item = models.ForeignKey('InventoryItem', on_delete=models.CASCADE)
+    serial_number = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True)
+    ear_side = models.CharField(max_length=10, choices=[('LEFT', 'Left'), ('RIGHT', 'Right')])
+    booking_status = models.CharField(max_length=50, choices=BOOKING_STATUS_CHOICES)
+    is_customization_needed = models.BooleanField(default=False)
+    is_customization_completed = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
 class TestType(models.Model):
     """
     Model to store test types and their associated costs.

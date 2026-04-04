@@ -615,59 +615,76 @@ class TrialDeviceReturnView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        serial_number = serializer.validated_data['serial_number']
+        left_serial_number = serializer.validated_data.get('left_serial_number')
+        right_serial_number = serializer.validated_data.get('right_serial_number')
         device_condition_on_return = serializer.validated_data.get('device_condition_on_return', '')
-        # condition = serializer.validated_data.get('condition', 'Good')
         
-        try:
-            # Get the serial number record
-            serial = InventorySerial.objects.get(
-                serial_number=serial_number,
-                status='Use in Trial'  # Only allow returning devices that are in trial
-            )
-            
-            # # Get the active trial for this serial
-            trial = Trial.objects.filter(
-                serial_number=serial_number,
-                # trial_end_date__isnull=True  # Only if trial end date is not set
-            ).first()
-            
-           
-                # Update trial end date
-            trial.trial_end_date = timezone.now().date()
-            trial.device_condition_on_return = device_condition_on_return
-            # trial.device_condition_on_return = condition
-            trial.save()
-            
-            # Update serial status back to 'In Stock' to make it available again
-            serial.status = 'In Stock'
-            serial.save()
-            
-            # Update the inventory item's quantity
-            # if serial.inventory_item:
-            #     serial.inventory_item.quantity_in_stock += 1
-            #     serial.inventory_item.save()
-            
-            return Response({
-                    "status": "success",
-                    "message": "Device returned successfully",
-                    # "data": {
-                    #     "serial_number": serial.serial_number,
-                    #     "status": serial.status,
-                    #     "return_date": timezone.now().date()
-                    # }
-                })
-                
-        except InventorySerial.DoesNotExist:
+        returned_devices = []
+        errors = []
+        
+        # Process left ear device if provided
+        if left_serial_number:
+            try:
+                result = self._process_device_return(
+                    left_serial_number, device_condition_on_return, 'LEFT'
+                )
+                returned_devices.append(result)
+            except Exception as e:
+                errors.append(f"Left ear device: {str(e)}")
+        
+        # Process right ear device if provided
+        if right_serial_number:
+            try:
+                result = self._process_device_return(
+                    right_serial_number, device_condition_on_return, 'RIGHT'
+                )
+                returned_devices.append(result)
+            except Exception as e:
+                errors.append(f"Right ear device: {str(e)}")
+        
+        if errors:
             return Response(
-                {"status": "error", "message": "Device not found or not in trial"},
-                status=status.HTTP_404_NOT_FOUND
+                {"status": "error", "message": "Some devices could not be returned", "errors": errors},
+                status=status.HTTP_400_BAD_REQUEST
             )
-        except Exception as e:
-            return Response(
-                {"status": "error", "message": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        
+        return Response({
+            "status": "success", 
+            "message": f"{len(returned_devices)} device(s) returned successfully",
+            "data": returned_devices
+        })
+    
+    def _process_device_return(self, serial_number, device_condition_on_return, ear_side):
+        """Helper method to process individual device return."""
+        # Get serial number record
+        serial = InventorySerial.objects.get(
+            serial_number=serial_number,
+            status='Use in Trial'  # Only allow returning devices that are in trial
+        )
+        
+        # Get the booked device record for this serial
+        booked_device = BookedDeviceAfterTrial.objects.get(
+            serial_number=serial
+        )
+        
+        # Get the trial from booked device
+        trial = booked_device.trial
+        
+        # Update trial end date and condition
+        trial.trial_end_date = timezone.now().date()
+        trial.device_condition_on_return = device_condition_on_return
+        trial.save()
+        
+        # Update serial status back to 'In Stock' to make it available again
+        serial.status = 'In Stock'
+        serial.save()
+        
+        return {
+            "serial_number": serial.serial_number,
+            "ear_side": ear_side,
+            "status": serial.status,
+            "return_date": timezone.now().date()
+        }
 
 
 # List of test result (TestUpload) for a visit ID 

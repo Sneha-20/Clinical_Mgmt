@@ -78,7 +78,7 @@ class TrialDeviceSerialListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         """Return serial numbers grouped by device with counts."""
         queryset = self.get_queryset()
-        serial_numbers = [f"{serial['inventory_item__model_type__name']} - {serial['serial_number']}" for serial in queryset]
+        serial_numbers = [f"{serial['serial_number']}" for serial in queryset]
         
         return Response({
             "status": status.HTTP_200_OK,
