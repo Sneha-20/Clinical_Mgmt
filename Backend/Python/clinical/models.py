@@ -167,21 +167,132 @@ class TestUpload(models.Model):
         ordering = ['-created_at']
 
 
-class Trial(models.Model):
-    clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
-    visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE, null=True)
+class TrialDeviceDetails(models.Model):
+    """Model to store hearing aid specifications for each ear side during trial."""
+    
+    EAR_SIDE_CHOICES = [
+        ('LEFT', 'Left'),
+        ('RIGHT', 'Right'),
+    ]
+    
+    STYLE_TYPE_CHOICES = [
+        ('RIC', 'RIC'),
+        ('BTE', 'BTE'),
+        ('ITE', 'ITE'),
+        ('ITC', 'ITC'),
+        ('Custom', 'Custom'),
+        ('Cross', 'Cross'),
+        ('Bicross', 'Bicross'),
+        ('CIC', 'CIC'),
+    ]
+    
+    RECEIVER_POWER_CHOICES = [
+        ('Standard', 'Standard'),
+        ('Medium', 'Medium'),
+        ('Power', 'Power'),
+        ('High Power', 'High Power'),
+    ]
+    
+    DOME_TYPE_CHOICES = [
+        ('Vented Dome', 'Vented Dome'),
+        ('Closed Dome', 'Closed Dome'),
+        ('Power Dome', 'Power Dome'),
+        ('Tulip Dome', 'Tulip Dome'),
+        ('Open', 'Open'),
+        ('Close', 'Close'),
+    ]
+    
+    DOME_SIZE_CHOICES = [
+        ('XS', 'XS'),
+        ('S', 'S'),
+        ('M', 'M'),
+        ('L', 'L'),
+        ('XL', 'XL'),
+        ('Small', 'Small'),
+        ('Medium', 'Medium'),
+        ('Large', 'Large'),
+    ]
+    
+    EAR_PIECE_CHOICES = [
+        ('Ear Mold', 'Ear Mold'),
+        ('Universal Eartips', 'Universal Eartips'),
+    ]
+    
+    UNIVERSAL_EARTIP_SIZE_CHOICES = [
+        ('S', 'S'),
+        ('M', 'M'),
+        ('L', 'L'),
+        ('Length', 'Length'),
+    ]
+
+    
+    # Basic fields
+    trial = models.ForeignKey('Trial', on_delete=models.CASCADE, related_name='device_details_set')
+    ear_side = models.CharField(max_length=10, choices=EAR_SIDE_CHOICES)
     device_inventory_id = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True)
     serial_number = models.CharField(max_length=255, blank=True, null=True)
-    receiver_size = models.CharField(max_length=255, blank=True, null=True)
-    ear_fitted = models.CharField(max_length=50, blank=True, null=True)  # Ear fitted (Right / Left / Both)
-    dome_type = models.CharField(max_length=255, blank=True, null=True)  # e.g., Open, Closed, Custom
-    gain_settings = models.TextField(blank=True, null=True)  # Gain settings (initial fitting gain, target adjustments, comfort changes)
+    style_type = models.CharField(max_length=20, choices=STYLE_TYPE_CHOICES)
+    
+    # RIC specific fields
+    receiver_power = models.CharField(max_length=20, choices=RECEIVER_POWER_CHOICES, blank=True, null=True)
+    receiver_length = models.IntegerField(max_length=50, blank=True, null=True)
+    dome_type = models.CharField(max_length=50, choices=DOME_TYPE_CHOICES, blank=True, null=True)
+    dome_size = models.CharField(max_length=50, choices=DOME_SIZE_CHOICES, blank=True, null=True)
+    
+    # BTE specific fields
+    ear_piece = models.CharField(max_length=20, choices=EAR_PIECE_CHOICES, blank=True, null=True)
+    universal_eartip_size = models.CharField(max_length=50, choices=UNIVERSAL_EARTIP_SIZE_CHOICES, blank=True, null=True)
+    vent = models.CharField(max_length=10, blank=True, null=True)
+    vent_size = models.CharField(max_length=100, blank=True, null=True)
+    
+    # ITE/ITC/Custom specific fields
+    rechargeable = models.BooleanField(default=False)
+    battery_number = models.CharField(max_length=50, blank=True, null=True)
+    wireless = models.BooleanField(default=False)
+
+    # Cross and bicross
+    better_ear_device = models.CharField(max_length=50, blank=True, null=True)
+    routing_device = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Battery number choices
+    BATTERY_NUMBER_CHOICES = [
+        ('10', '10'),
+        ('13', '13'),
+        ('312', '312'),
+    ]
+    
+    # Better ear device choices
+    BETTER_EAR_DEVICE_CHOICES = [
+        ('RIC', 'RIC'),
+        ('BTE', 'BTE'),
+        ('CIC', 'CIC'),
+    ]
+    
+    # Routing side choices
+    ROUTING_SIDE_CHOICES = [
+        ('Right to Left', 'Right to Left'),
+        ('Left to Right', 'Left to Right'),
+    ]
+    
+    # Common fields
     srt_before = models.CharField(max_length=255, blank=True, null=True)
     sds_before = models.CharField(max_length=255, blank=True, null=True)
     ucl_before = models.CharField(max_length=255, blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('ear_side', 'trial')  # Ensure only one device per ear per trial
+    
+    def __str__(self):
+        return f"{self.get_ear_side_display()} - {self.get_style_type_display()} - {self.serial_number or 'No Serial'}"
+
+
+class Trial(models.Model):
+    clinic = models.ForeignKey(Clinic, on_delete=models.SET_NULL, null=True)
+    visit = models.ForeignKey(PatientVisit, on_delete=models.CASCADE, null=True)
     patient_response = models.CharField(max_length=255, blank=True, null=True)
     counselling_notes = models.TextField(null=True, blank=True)
-    discount_offered = models.IntegerField(blank=True, null=True)
     cost = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True, help_text="Cost associated with the trial")
     followup_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -203,11 +314,13 @@ class Trial(models.Model):
     trial_decision = models.CharField(max_length=50, choices=TRIAL_DECISION_CHOICES, blank=True, null=True, help_text="Patient decision after trial completion", default='TRIAL_ACTIVE')
     trial_completed_at = models.DateTimeField(null=True, blank=True, help_text="When trial was completed and decision made")
     extended_at = models.DateTimeField(null=True, blank=True, help_text="When trial was extended")
-    booked_device_inventory = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials', help_text="Device booked by patient after trial")
-    need_customization = models.BooleanField(default=False)
-    is_customization_completed = models.BooleanField(default=False)
-    booked_device_serial = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials', help_text="Serial number of booked device")
-
+    # New fields for bilateral booking (left and right ear)
+    booked_device_inventory_left = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_left', help_text="Left ear device booked by patient after trial")
+    booked_device_serial_left = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_left_serial', help_text="Left ear device serial number")
+    booked_device_inventory_right = models.ForeignKey('InventoryItem', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_right', help_text="Right ear device booked by patient after trial")
+    booked_device_serial_right = models.ForeignKey('InventorySerial', on_delete=models.CASCADE, null=True, blank=True, related_name='booked_trials_right_serial', help_text="Right ear device serial number")
+    need_customization = models.BooleanField(default=False)  
+    is_customization_completed = models.BooleanField(default=False) 
 class TestType(models.Model):
     """
     Model to store test types and their associated costs.
@@ -465,6 +578,8 @@ class PatientPurchase(models.Model):
         null=True,
         blank=True
     )
+
+    ear_side = models.CharField(max_length=50, null=True)
 
 #     purchase_type = models.CharField(
 #         max_length=20,

@@ -4,6 +4,7 @@ from .models import (
     AudiologistCaseHistory,
     VisitTestPerformed,
     Trial,
+    TrialDeviceDetails,
     TestType,
     Bill,
     BillItem,
@@ -1109,18 +1110,62 @@ class TestUploadSerializer(serializers.ModelSerializer):
             'file_url', 'created_at'
         ]
 
-class TrialSerializer(serializers.ModelSerializer):
-    device_details = serializers.SerializerMethodField()
+
+class TrialDeviceDetailsSerializer(serializers.ModelSerializer):
+    """Serializer for TrialDeviceDetails model."""
     
-    def get_device_details(self, obj):
-        if obj.device_inventory_id:
-            return {
-                'id': obj.device_inventory_id.id,
-                'brand': obj.device_inventory_id.brand.name if obj.device_inventory_id.brand else None,
-                'model_type': obj.device_inventory_id.model_type.name if obj.device_inventory_id.model_type else None,
-                'category': obj.device_inventory_id.category
-            }
-        return None
+    device_inventory_name = serializers.CharField(source='device_inventory_id.product_name', read_only=True)
+    device_brand = serializers.CharField(source='device_inventory_id.brand.name', read_only=True)
+    device_model = serializers.CharField(source='device_inventory_id.model_type.name', read_only=True)
+    
+    class Meta:
+        model = TrialDeviceDetails
+        fields = [
+            'id', 'ear_side', 'serial_number', 'style_type', 'device_inventory_id',
+            'device_inventory_name', 'device_brand', 'device_model',
+            # RIC specific fields
+            'receiver_power', 'receiver_length', 'dome_type', 'dome_size',
+            # BTE specific fields  
+            'ear_piece', 'universal_eartip_size', 'vent','vent_size',
+            # ITE/ITC/Custom specific fields
+            'rechargeable', 'battery_number', 'wireless',
+            # Cross and Bicross
+            'better_ear_device', 'routing_device',
+            # Common fields
+            'srt_before', 'sds_before', 'ucl_before',
+            'created_at'
+        ]
+    
+    def validate(self, data):
+        """Validate that required fields are present based on style_type."""
+        style_type = data.get('style_type')
+        
+        if style_type == 'RIC':
+            if not data.get('receiver_power'):
+                raise serializers.ValidationError("Receiver power is required for RIC style")
+            if not data.get('receiver_length'):
+                raise serializers.ValidationError("Receiver length is required for RIC style")
+            if not data.get('dome_type'):
+                raise serializers.ValidationError("Dome type is required for RIC style")
+                
+        elif style_type == 'BTE':
+            if not data.get('ear_piece'):
+                raise serializers.ValidationError("Ear piece is required for BTE style")
+            if data.get('ear_piece') == 'Universal Eartips' and not data.get('universal_eartip_size'):
+                raise serializers.ValidationError("Universal eartip size is required when using universal eartips")
+            if data.get('ear_piece') == 'Ear Mold' and not data.get('vent'):
+                raise serializers.ValidationError("Vent is required when using ear mold")
+                
+        elif style_type in ['ITE', 'ITC', 'Custom', 'CIC']:
+            # These styles have optional rechargeable field
+            if data.get('rechargeable') is False and not data.get('battery_number'):
+                raise serializers.ValidationError("Battery number is required when device is not rechargeable")
+        
+        return data
+
+
+class TrialSerializer(serializers.ModelSerializer):
+    device_details_list = TrialDeviceDetailsSerializer(source='device_details_set', many=True, read_only=True)
     
     class Meta:
         model = Trial
@@ -2262,45 +2307,72 @@ class ServiceQueueSerializer(serializers.ModelSerializer):
 
 
 class TrialCreateSerializer(serializers.ModelSerializer):
-    """Serializer for creating a new trial record.
+    """Serializer for creating a new trial record with device specifications.
 
     **Payload Example:**
     ```json
     {
         "visit": 1,
-        # "device_inventory_id": 5,
-        "serial_number": "SN-TRIAL-001",
-        "receiver_size": "M",
-        "ear_fitted": "Right",
-        "dome_type": "Open",
-        "gain_settings": "Initial fitting with minor adjustments for high frequencies.",
-        "srt_before": "45 dB",
-        "sds_before": "88%",
-        "ucl_before": "100 dB",
         "patient_response": "Positive, reports better clarity in quiet environments.",
         "counselling_notes": "Counselled on device usage and maintenance. Follow-up scheduled.",
         "cost": "500.00",
         "trial_start_date": "2025-12-19",
-        "trial_end_date": "2026-01-02"
-        "discount_offered": "10",
-
+        "trial_end_date": "2026-01-02",
+        "devices": [
+            {
+                "ear_side": "LEFT",
+                "serial_number": "SN-TRIAL-001",
+                "style_type": "RIC",
+                "receiver_power": "Standard",
+                "receiver_length": 2,
+                "dome_type": "Vented Dome",
+                "vented_dome": true,
+                "dome_size": "M",
+                "gain_settings": "Initial fitting with minor adjustments",
+                "srt_before": "45 dB",
+                "sds_before": "88%",
+                "ucl_before": "100 dB"
+            },
+            {
+                "ear_side": "RIGHT",
+                "serial_number": "SN-TRIAL-002",
+                "style_type": "BTE",
+                "ear_piece": "Universal Eartips",
+                "universal_eartip_size": "M",
+                "vent": "Open",
+                "gain_settings": "Initial fitting with minor adjustments",
+                "srt_before": "42 dB",
+                "sds_before": "92%",
+                "ucl_before": "105 dB"
+            }
+        ]
     }
     ```
     """
+    devices = TrialDeviceDetailsSerializer(many=True)
+    
     class Meta:
         model = Trial
-        fields = '__all__'
+        fields = [
+            'visit', 'patient_response', 'counselling_notes', 'cost', 
+            'trial_start_date', 'trial_end_date','devices'
+        ]
         read_only_fields = ['clinic', 'created_at', 'assigned_patient']
 
     def create(self, validated_data):
         request = self.context.get('request')
         visit = validated_data.get('visit')
+        devices_data = validated_data.pop('devices', [])
 
         if not visit:
             raise serializers.ValidationError("A visit is required to create a trial.")
 
+        if not devices_data:
+            raise serializers.ValidationError("At least one device must be specified for the trial.")
+
         validated_data['clinic'] = request.user.clinic
         validated_data['assigned_patient'] = visit.patient
+        
         # Automatically set followup_date to the day after trial_end_date
         trial_end_date = validated_data.get('trial_end_date')
         if trial_end_date:
@@ -2308,31 +2380,51 @@ class TrialCreateSerializer(serializers.ModelSerializer):
         else:
             validated_data['followup_date'] = None
 
-        
-        device_serial_number = validated_data.get('serial_number')
-        if device_serial_number:
-            if not InventorySerial.objects.filter(serial_number=device_serial_number).exists():
-                raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
-            
-            # Update serial status to 'Trial' when creating trial
-            try:
-                serial = InventorySerial.objects.get(serial_number=device_serial_number)
-                if serial.status == 'In Stock':
+        # Validate serial numbers and update their status
+        for device_data in devices_data:
+            serial_number = device_data.get('serial_number')
+            if serial_number:
+                if not InventorySerial.objects.filter(serial_number=serial_number).exists():
+                    raise serializers.ValidationError({"status": 400, "error": f"Invalid serial number: {serial_number}"})
+                
+                # Update serial status to 'Use in Trial' when creating trial
+                try:
+                    serial = InventorySerial.objects.get(serial_number=serial_number)
+                    if serial.status != 'In Stock':
+                        raise serializers.ValidationError({"status": 400, "error": f"Serial number {serial_number} is not in stock"})
                     serial.status = 'Use in Trial'
                     serial.save()
-            except InventorySerial.DoesNotExist:
-                raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
+                except InventorySerial.DoesNotExist:
+                    raise serializers.ValidationError({"status": 400, "error": f"Invalid serial number: {serial_number}"})
 
-        # Update the status of Patient visit ( Trial Active )
+        # Update the status of Patient visit (Trial Active)
         visit.status = 'Trial Active'
         visit.status_note = 'Trial is in progress'
         visit.step_process = 4  # Move to next step in workflow
         visit.save()
-
-        validated_data['device_inventory_id'] = serial.inventory_item
         
         with transaction.atomic():     
             trial = super().create(validated_data)
+
+            # Create device details for each ear
+            for device_data in devices_data:
+                serial_number = device_data.get('serial_number')
+                device_inventory_id = None
+                
+                # Get the inventory item from serial number if provided
+                if serial_number:
+                    try:
+                        serial = InventorySerial.objects.get(serial_number=serial_number)
+                        device_inventory_id = serial.inventory_item
+                    except InventorySerial.DoesNotExist:
+                        pass  # Handle error already done in validation above
+                
+                # Create device details with inventory item
+                TrialDeviceDetails.objects.create(
+                    trial=trial,
+                    device_inventory_id=device_inventory_id,
+                    **device_data
+                )
             
             # If a cost is associated, add it to the bill for this visit
             if trial.cost and trial.cost > 0 and trial.visit:
@@ -2346,8 +2438,11 @@ class TrialCreateSerializer(serializers.ModelSerializer):
                 
                 # Create a bill item for the trial security deposit
                 description = "Security deposit for trial"
-                if trial.device_inventory_id:
-                    description += f" of {trial.device_inventory_id.product_name}"
+                if len(devices_data) == 1:
+                    device = devices_data[0]
+                    description += f" ({device.get('style_type')} - {device.get('ear_side')})"
+                else:
+                    description += f" ({len(devices_data)} devices)"
 
                 BillItem.objects.create(
                     bill=bill,
@@ -2358,17 +2453,120 @@ class TrialCreateSerializer(serializers.ModelSerializer):
                     quantity=1,
                 )
                 
-                # Apply trial discount to bill if offered (as percentage)
-                # if trial.discount_offered and trial.discount_offered > 0:
-                #     # Apply discount as a fixed amount
-                #     from decimal import Decimal
-                #     bill.discount_amount = Decimal(trial.discount_offered)
-                #     bill.save()
-                
-                # Recalculate bill totals
                 bill.calculate_total()
-
+        
         return trial
+
+
+# Legacy TrialCreateSerializer for backward compatibility
+# class TrialCreateLegacySerializer(serializers.ModelSerializer):
+#     """Serializer for creating a new trial record.
+
+#     **Payload Example:**
+#     ```json
+#     {
+#         "visit": 1,
+#         # "device_inventory_id": 5,
+#         "serial_number": "SN-TRIAL-001",
+#         "receiver_size": "M",
+#         "ear_fitted": "Right",
+#         "dome_type": "Open",
+#         "gain_settings": "Initial fitting with minor adjustments for high frequencies.",
+#         "srt_before": "45 dB",
+#         "sds_before": "88%",
+#         "ucl_before": "100 dB",
+#         "patient_response": "Positive, reports better clarity in quiet environments.",
+#         "counselling_notes": "Counselled on device usage and maintenance. Follow-up scheduled.",
+#         "cost": "500.00",
+#         "trial_start_date": "2025-12-19",
+#         "trial_end_date": "2026-01-02"
+#         "discount_offered": "10",
+
+#     }
+#     ```
+#     """
+#     class Meta:
+#         model = Trial
+#         fields = '__all__'
+#         read_only_fields = ['clinic', 'created_at', 'assigned_patient']
+
+#     def create(self, validated_data):
+#         request = self.context.get('request')
+#         visit = validated_data.get('visit')
+
+#         if not visit:
+#             raise serializers.ValidationError("A visit is required to create a trial.")
+
+#         validated_data['clinic'] = request.user.clinic
+#         validated_data['assigned_patient'] = visit.patient
+#         # Automatically set followup_date to the day after trial_end_date
+#         trial_end_date = validated_data.get('trial_end_date')
+#         if trial_end_date:
+#             validated_data['followup_date'] = trial_end_date + timedelta(days=1)
+#         else:
+#             validated_data['followup_date'] = None
+
+        
+#         device_serial_number = validated_data.get('serial_number')
+#         if device_serial_number:
+#             if not InventorySerial.objects.filter(serial_number=device_serial_number).exists():
+#                 raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
+            
+#             # Update serial status to 'Trial' when creating trial
+#             try:
+#                 serial = InventorySerial.objects.get(serial_number=device_serial_number)
+#                 if serial.status == 'In Stock':
+#                     serial.status = 'Use in Trial'
+#                     serial.save()
+#             except InventorySerial.DoesNotExist:
+#                 raise serializers.ValidationError({"status": 400, "error": "Invalid serial number."})
+
+#         # Update the status of Patient visit ( Trial Active )
+#         visit.status = 'Trial Active'
+#         visit.status_note = 'Trial is in progress'
+#         visit.step_process = 4  # Move to next step in workflow
+#         visit.save()
+
+#         validated_data['device_inventory_id'] = serial.inventory_item
+        
+#         with transaction.atomic():     
+#             trial = super().create(validated_data)
+            
+#             # If a cost is associated, add it to the bill for this visit
+#             if trial.cost and trial.cost > 0 and trial.visit:
+#                 bill, _ = Bill.objects.get_or_create(
+#                     visit=trial.visit,
+#                     defaults={
+#                         'clinic': trial.clinic,
+#                         'created_by': request.user,
+#                     }
+#                 )
+                
+#                 # Create a bill item for the trial security deposit
+#                 description = "Security deposit for trial"
+#                 if trial.device_inventory_id:
+#                     description += f" of {trial.device_inventory_id.product_name}"
+
+#                 BillItem.objects.create(
+#                     bill=bill,
+#                     item_type='Trial',
+#                     trial=trial,
+#                     description=description,
+#                     cost=trial.cost,
+#                     quantity=1,
+#                 )
+                
+#                 # Apply trial discount to bill if offered (as percentage)
+#                 # if trial.discount_offered and trial.discount_offered > 0:
+#                 #     # Apply discount as a fixed amount
+#                 #     from decimal import Decimal
+#                 #     bill.discount_amount = Decimal(trial.discount_offered)
+#                 #     bill.save()
+                
+#                 # Recalculate bill totals
+#                 bill.calculate_total()
+
+#         return trial
 
 
 class TrialListSerializer(serializers.ModelSerializer):
@@ -2376,8 +2574,8 @@ class TrialListSerializer(serializers.ModelSerializer):
     # patient_name = serializers.CharField(source='assigned_patient.name', read_only=True)
     doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
     device_name = serializers.CharField(source='device_inventory_id.product_name', read_only=True)
-    device_brand = serializers.CharField(source='device_inventory_id.brand', read_only=True)
-    device_model = serializers.CharField(source='device_inventory_id.model_type', read_only=True)
+    device_brand = serializers.CharField(source='device_inventory_id.brand.name', read_only=True)
+    device_model = serializers.CharField(source='device_inventory_id.model_type.name', read_only=True)
     assigned_patient = serializers.CharField(source='assigned_patient.name', read_only=True)
     assigned_patient_phone = serializers.CharField(source='assigned_patient.phone_primary', read_only=True)
     # status = serializers.CharField(source='visit.status', read_only=True)
@@ -2401,7 +2599,7 @@ class TrialListSerializer(serializers.ModelSerializer):
             'patient_response',
             'trial_decision',
             'completion_notes',
-            'need_customization',
+            # 'need_customization',
             'is_customization_completed',
             'device_condition_on_return',
             'extended_trial'
@@ -2483,39 +2681,42 @@ class TrialCompletionSerializer(serializers.Serializer):
     """
     Serializer for completing a trial and handling patient's device booking decision.
     
+    Supports multiple devices with ear-specific booking (LEFT/RIGHT).
+    
     Expected payload:
     {
         "trial_decision": "BOOK" | "NOT_BOOKED",
-        "booked_device_inventory": 123,  // Required only if trial_decision is "BOOK"
-        "booked_device_serial": "SN12345",  // Required only if device is serialized
+        "booked_devices": [
+            {
+                "ear_side": "LEFT" | "RIGHT",
+                "booked_device_inventory": 123,
+                "booked_device_serial": "SN12345",
+                "customization_notes": "Custom dome size required"
+            }
+        ],
         "completion_notes": "Patient satisfied with trial experience"
     }
+    
+    Note: For bilateral devices, send two records - one with ear_side: "LEFT" and one with ear_side: "RIGHT"
     """
     trial_decision = serializers.ChoiceField(
-        
         choices=[
-        
-        ('TRIAL_ACTIVE', 'Trial Active'),
-        ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
-        ('BOOK - Device Allocated', 'Book Device Allocated' ),
-        ('BOOK - With Customization', 'Book With Customization'),
-        ('DECLINE', 'Decline Device Booking')],
+            ('TRIAL_ACTIVE', 'Trial Active'),
+            ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
+            ('BOOK - Device Allocated', 'Book Device Allocated' ),
+            ('BOOK - With Customization', 'Book With Customization'),
+            ('DECLINE', 'Decline Device Booking')
+        ],
         required=True,
         help_text="Patient decision after trial completion"
     )
     
-    # ... (rest of the code remains the same)
-    booked_device_inventory = serializers.IntegerField(
+    # Multiple device support (required format)
+    booked_devices = serializers.ListField(
+        child=serializers.DictField(child=serializers.CharField()),
         required=False,
-        allow_null=True,
-        help_text="Inventory item ID of device to book (required only if decision is BOOK)"
-    )
-    
-    booked_device_serial = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        allow_null=True,
-        help_text="Serial number of device to book (required only for serialized items)"
+        allow_empty=True,
+        help_text="List of devices to book with ear side, inventory, serial, and customization"
     )
     
     need_customization = serializers.BooleanField(
@@ -2530,47 +2731,67 @@ class TrialCompletionSerializer(serializers.Serializer):
         help_text="Notes about trial completion and patient decision"
     )
     
-    next_followup = serializers.IntegerField(required=False, allow_null=True)
+    followup_days = serializers.IntegerField(required=False, allow_null=True)
     
     def validate(self, data):
         trial_decision = data.get('trial_decision')
+        booked_devices = data.get('booked_devices', [])
         
-        if trial_decision == 'BOOK - Device Allocated' or trial_decision == 'BOOK - With Customization':
-            if not data.get('booked_device_inventory'):
+        if trial_decision in ['BOOK - Device Allocated', 'BOOK - With Customization', 'BOOK - Awaiting Stock']:
+            # Validate that booked_devices array is provided
+            if not booked_devices:
                 raise serializers.ValidationError({
-                    'booked_device_inventory': 'Device inventory is required when booking a device'
+                    'booked_devices': 'booked_devices array is required when booking a device'
                 })
             
-            # Validate that the inventory item exists
-            try:
-                from .models import InventoryItem
-                inventory_item = InventoryItem.objects.get(id=data['booked_device_inventory'])
+            # Validate each device in the array
+            for i, device in enumerate(booked_devices):
+                if not device.get('ear_side'):
+                    raise serializers.ValidationError({
+                        f'booked_devices[{i}].ear_side': 'Ear side (LEFT/RIGHT) is required'
+                    })
                 
-                # Check if it's a serialized item and serial number is provided
-                # if inventory_item.stock_type == 'Serialized' and not data.get('booked_device_serial'):
-                #     raise serializers.ValidationError({
-                #         'booked_device_serial': 'Serial number is required for serialized devices'
-                #     })
+                if device['ear_side'] not in ['LEFT', 'RIGHT']:
+                    raise serializers.ValidationError({
+                        f'booked_devices[{i}].ear_side': 'Ear side must be either LEFT or RIGHT'
+                    })
+                
+                if not device.get('booked_device_inventory'):
+                    raise serializers.ValidationError({
+                        f'booked_devices[{i}].booked_device_inventory': 'Device inventory is required'
+                    })
+                
+                # Validate inventory item exists
+                try:
+                    from .models import InventoryItem
+                    inventory_item = InventoryItem.objects.get(id=device['booked_device_inventory'])
+                    
+                    # # Check if serialized item requires serial number
+                    # if inventory_item.stock_type == 'Serialized' and not device.get('booked_device_serial'):
+                    #     raise serializers.ValidationError({
+                    #         f'booked_devices[{i}].booked_device_serial': 'Serial number is required for serialized devices'
+                    #     })
+                        
+                except InventoryItem.DoesNotExist:
+                    raise serializers.ValidationError({
+                        f'booked_devices[{i}].booked_device_inventory': 'Inventory item not found'
+                    })
 
-                booked_device_serial = data.get('booked_device_serial')  # Store for use in view logic
-
-                print(booked_device_serial)
-                print(inventory_item.stock_type)
 
                 # For serialized items, validate the serial number exists and is in stock
-                if inventory_item.stock_type == 'Serialized' and booked_device_serial:
+                if inventory_item.stock_type == 'Serialized' and device.get('booked_device_serial'):
                     try:
                         from .models import InventorySerial
                         serial = InventorySerial.objects.get(
-                            serial_number=data['booked_device_serial'],
+                            serial_number=device['booked_device_serial'],
                             inventory_item=inventory_item,
                             status='In Stock'
                         )
-                        data['validated_serial'] = serial
+                        device['validated_serial'] = serial
 
                     except InventorySerial.DoesNotExist:
                         raise serializers.ValidationError({
-                            'booked_device_serial': 'Serial number not found or not available in stock'
+                            f'booked_devices[{i}].booked_device_serial': 'Serial number not found or not available in stock'
                         })
                 
                 # Check stock availability for non-serialized items
@@ -2579,10 +2800,6 @@ class TrialCompletionSerializer(serializers.Serializer):
                         'booked_device_inventory': 'Device is out of stock'
                     })
                     
-            except InventoryItem.DoesNotExist:
-                raise serializers.ValidationError({
-                    'booked_device_inventory': 'Invalid inventory item'
-                })
         
         return data
 
@@ -2603,10 +2820,12 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
     patient_name = serializers.CharField(source='assigned_patient.name', read_only=True)
     patient_phone = serializers.CharField(source='assigned_patient.phone_primary', read_only=True)
     doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
-    device_name = serializers.CharField(source='booked_device_inventory.product_name', read_only=True)
-    device_brand = serializers.CharField(source='booked_device_inventory.brand.name', read_only=True)
-    device_model = serializers.CharField(source='booked_device_inventory.model_type.name', read_only=True)
-    device_serial_no = serializers.CharField(source='booked_device_serial.serial_number', read_only=True)
+    left_device_name = serializers.CharField(source='booked_device_inventory_left.product_name', read_only=True)
+    right_device_name = serializers.CharField(source='booked_device_inventory_right.product_name', read_only=True)
+    device_brand = serializers.CharField(source='booked_device_inventory_left.brand.name', read_only=True)
+    device_model = serializers.CharField(source='booked_device_inventory_left.model_type.name', read_only=True)
+    left_device_serial_no = serializers.CharField(source='booked_device_serial_left.serial_number', read_only=True)
+    right_device_serial_no = serializers.CharField(source='booked_device_serial_right.serial_number', read_only=True)
     trial_completed_at = serializers.DateTimeField(source='completed_at', read_only=True)
     completion_notes = serializers.CharField(source='return_notes', read_only=True)
     
@@ -2618,11 +2837,14 @@ class AwaitingStockListSerializer(serializers.ModelSerializer):
             'patient_name',
             'patient_phone',
             'doctor_name',
-            'booked_device_inventory',
-            'device_name',
+            'booked_device_inventory_left',
+            'booked_device_inventory_right',
+            'left_device_name',
+            'right_device_name',
             'device_brand',
             'device_model',
-            'device_serial_no',
+            'left_device_serial_no',
+            'right_device_serial_no',
             'trial_end_date',
             'trial_completed_at',
             'trial_decision',
