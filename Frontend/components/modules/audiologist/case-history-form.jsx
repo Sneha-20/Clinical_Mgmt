@@ -22,18 +22,18 @@ import { current } from "@reduxjs/toolkit";
 
 const defaultPTAData = {
   right_ear: {
-    AC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" },
-    BC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" }
+    AC: { 250: "", 500: "", "1K": "", "2K": "", "4K": "", "8K": "" },
+    BC: { 250: "", 500: "", "1K": "", "2K": "", "4K": "", "8K": "" },
   },
   left_ear: {
-    AC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" },
-    BC: { "250": "", "500": "", "1K": "", "2K": "", "4K": "", "8K": "" }
-  }
+    AC: { 250: "", 500: "", "1K": "", "2K": "", "4K": "", "8K": "" },
+    BC: { 250: "", 500: "", "1K": "", "2K": "", "4K": "", "8K": "" },
+  },
 };
 
 const defaultImpedanceData = {
   right_ear: { volume: "", pressure: "", compliance: "", gradient: "" },
-  left_ear: { volume: "", pressure: "", compliance: "", gradient: "" }
+  left_ear: { volume: "", pressure: "", compliance: "", gradient: "" },
 };
 
 const PTAForm = ({ ptaData, onChange }) => {
@@ -57,35 +57,71 @@ const PTAForm = ({ ptaData, onChange }) => {
       <table className="w-full text-xs text-center border-collapse">
         <thead>
           <tr className="bg-slate-100/75 border-b border-slate-200">
-            <th className="border-r border-slate-200 p-2 font-bold w-16 text-slate-700">RT. EAR</th>
+            <th className="border-r border-slate-200 p-2 font-bold w-16 text-slate-700">
+              RT. EAR
+            </th>
             <th className="border-r border-slate-200 p-2 w-12"></th>
-            {frequencies.map(f => (<th key={`rt_${f}`} className="border-r border-slate-200 p-2 font-semibold w-12 text-slate-700">{f}</th>))}
-            <th className="border-r border-slate-200 p-2 font-bold w-16 text-slate-700">LT. EAR</th>
+            {frequencies.map((f) => (
+              <th
+                key={`rt_${f}`}
+                className="border-r border-slate-200 p-2 font-semibold w-12 text-slate-700"
+              >
+                {f}
+              </th>
+            ))}
+            <th className="border-r border-slate-200 p-2 font-bold w-16 text-slate-700">
+              LT. EAR
+            </th>
             <th className="border-r border-slate-200 p-2 w-12"></th>
-            {frequencies.map(f => (<th key={`lt_${f}`} className="border-r border-slate-200 p-2 font-semibold w-12 text-slate-700">{f}</th>))}
+            {frequencies.map((f) => (
+              <th
+                key={`lt_${f}`}
+                className="border-r border-slate-200 p-2 font-semibold w-12 text-slate-700"
+              >
+                {f}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           <tr className="border-b border-slate-200">
             <td className="border-r border-slate-200 bg-slate-50/50"></td>
-            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">AC</td>
-            {frequencies.map(f => (
-              <td key={`rt_ac_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
-                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">
+              AC
+            </td>
+            {frequencies.map((f) => (
+              <td
+                key={`rt_ac_${f}`}
+                className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors"
+              >
+                <input
+                  type="text"
+                  className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200"
                   value={ptaData?.right_ear?.AC?.[f] || ""}
-                  onChange={(e) => onChange("right_ear", "AC", f, e.target.value)}
+                  onChange={(e) =>
+                    onChange("right_ear", "AC", f, e.target.value)
+                  }
                   onKeyDown={handleKeyDown}
                   placeholder="—"
                 />
               </td>
             ))}
             <td className="border-r border-slate-200 bg-slate-50/50"></td>
-            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">AC</td>
-            {frequencies.map(f => (
-              <td key={`lt_ac_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
-                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">
+              AC
+            </td>
+            {frequencies.map((f) => (
+              <td
+                key={`lt_ac_${f}`}
+                className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors"
+              >
+                <input
+                  type="text"
+                  className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200"
                   value={ptaData?.left_ear?.AC?.[f] || ""}
-                  onChange={(e) => onChange("left_ear", "AC", f, e.target.value)}
+                  onChange={(e) =>
+                    onChange("left_ear", "AC", f, e.target.value)
+                  }
                   onKeyDown={handleKeyDown}
                   placeholder="—"
                 />
@@ -94,24 +130,42 @@ const PTAForm = ({ ptaData, onChange }) => {
           </tr>
           <tr>
             <td className="border-r border-slate-200 bg-slate-50/50"></td>
-            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">BC</td>
-            {frequencies.map(f => (
-              <td key={`rt_bc_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
-                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">
+              BC
+            </td>
+            {frequencies.map((f) => (
+              <td
+                key={`rt_bc_${f}`}
+                className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors"
+              >
+                <input
+                  type="text"
+                  className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200"
                   value={ptaData?.right_ear?.BC?.[f] || ""}
-                  onChange={(e) => onChange("right_ear", "BC", f, e.target.value)}
+                  onChange={(e) =>
+                    onChange("right_ear", "BC", f, e.target.value)
+                  }
                   onKeyDown={handleKeyDown}
                   placeholder="—"
                 />
               </td>
             ))}
             <td className="border-r border-slate-200 bg-slate-50/50"></td>
-            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">BC</td>
-            {frequencies.map(f => (
-              <td key={`lt_bc_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
-                <input type="text" className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-600">
+              BC
+            </td>
+            {frequencies.map((f) => (
+              <td
+                key={`lt_bc_${f}`}
+                className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors"
+              >
+                <input
+                  type="text"
+                  className="pta-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200"
                   value={ptaData?.left_ear?.BC?.[f] || ""}
-                  onChange={(e) => onChange("left_ear", "BC", f, e.target.value)}
+                  onChange={(e) =>
+                    onChange("left_ear", "BC", f, e.target.value)
+                  }
                   onKeyDown={handleKeyDown}
                   placeholder="—"
                 />
@@ -126,13 +180,15 @@ const PTAForm = ({ ptaData, onChange }) => {
 
 const ImpedanceForm = ({ impedanceData, onChange }) => {
   const fields = ["volume", "pressure", "compliance", "gradient"];
-  
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       const table = e.target.closest("table");
       if (!table) return;
-      const inputs = Array.from(table.querySelectorAll("input.impedance-input"));
+      const inputs = Array.from(
+        table.querySelectorAll("input.impedance-input"),
+      );
       const index = inputs.indexOf(e.target);
       if (index > -1 && index < inputs.length - 1) {
         inputs[index + 1].focus();
@@ -145,16 +201,32 @@ const ImpedanceForm = ({ impedanceData, onChange }) => {
       <table className="w-full text-xs text-center border-collapse">
         <thead>
           <tr className="bg-slate-100/75 border-b border-slate-200">
-            <th className="border-r border-slate-200 p-2 font-bold w-20 text-slate-700 bg-slate-100">EAR</th>
-            {fields.map(f => (<th key={`head_${f}`} className="border-r border-slate-200 p-2 font-semibold w-24 text-slate-700 uppercase">{f}</th>))}
+            <th className="border-r border-slate-200 p-2 font-bold w-20 text-slate-700 bg-slate-100">
+              EAR
+            </th>
+            {fields.map((f) => (
+              <th
+                key={`head_${f}`}
+                className="border-r border-slate-200 p-2 font-semibold w-24 text-slate-700 uppercase"
+              >
+                {f}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           <tr className="border-b border-slate-200">
-            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">RIGHT</td>
-            {fields.map(f => (
-              <td key={`rt_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
-                <input type="text" className="impedance-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">
+              RIGHT
+            </td>
+            {fields.map((f) => (
+              <td
+                key={`rt_${f}`}
+                className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors"
+              >
+                <input
+                  type="text"
+                  className="impedance-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200"
                   value={impedanceData?.right_ear?.[f] || ""}
                   onChange={(e) => onChange("right_ear", f, e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -164,10 +236,17 @@ const ImpedanceForm = ({ impedanceData, onChange }) => {
             ))}
           </tr>
           <tr>
-            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">LEFT</td>
-            {fields.map(f => (
-              <td key={`lt_${f}`} className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors">
-                <input type="text" className="impedance-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200" 
+            <td className="border-r border-slate-200 p-2 font-semibold bg-slate-50/50 text-slate-700">
+              LEFT
+            </td>
+            {fields.map((f) => (
+              <td
+                key={`lt_${f}`}
+                className="border-r border-slate-200 p-0 hover:bg-slate-50 transition-colors"
+              >
+                <input
+                  type="text"
+                  className="impedance-input w-full h-full p-2 text-center focus:outline-none focus:ring-1 focus:ring-teal-500 bg-transparent text-blue-700 font-medium placeholder:text-slate-200"
                   value={impedanceData?.left_ear?.[f] || ""}
                   onChange={(e) => onChange("left_ear", f, e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -189,8 +268,6 @@ export default function CaseHistoryForm({ patientId }) {
     patientsCaseHistory,
     trialDeviceList,
     searchTerm,
-    modalList,
-    setSelectedModal,
     setSearchTerm,
     fetchPatientFormData,
     registerCasehistory,
@@ -202,16 +279,16 @@ export default function CaseHistoryForm({ patientId }) {
   const [loadingTestTypes, setLoadingTestTypes] = useState(false);
   const [currentStep, setCurrentStep] = useState(null); // null until initialized
   const [reports, setReports] = useState([
-    { report_type: "", report_description: "", pta_data: JSON.parse(JSON.stringify(defaultPTAData)), impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)) },
+    {
+      report_type: "",
+      report_description: "",
+      pta_data: JSON.parse(JSON.stringify(defaultPTAData)),
+      impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)),
+    },
   ]);
   const [isEditTestMode, setIsEditTestMode] = useState(false);
   const [showAddTestModal, setShowAddTestModal] = useState(false);
   const [tempSelectedTests, setTempSelectedTests] = useState([]);
-
-  const modalOptions = modalList?.map((modal) => ({
-    label: modal.name,
-    value: modal.id,
-  }));
 
   const goToDashboard = () => {
     router.push("/dashboard/home");
@@ -257,7 +334,9 @@ export default function CaseHistoryForm({ patientId }) {
 
   // Handle Add Tests from Modal
   const handleAddTests = () => {
-    const newTests = Array.from(new Set([...formik.values.test_requested, ...tempSelectedTests]));
+    const newTests = Array.from(
+      new Set([...formik.values.test_requested, ...tempSelectedTests]),
+    );
     formik.setFieldValue("test_requested", newTests);
     setShowAddTestModal(false);
     setTempSelectedTests([]);
@@ -291,8 +370,7 @@ export default function CaseHistoryForm({ patientId }) {
 
   // keep local step in sync when backend data arrives
   useEffect(() => {
-
-    console.log(patientsCaseHistory, "patientsCaseHistory")
+    console.log(patientsCaseHistory, "patientsCaseHistory");
     if (
       patientsCaseHistory &&
       typeof patientsCaseHistory.step_process !== "undefined"
@@ -316,7 +394,9 @@ export default function CaseHistoryForm({ patientId }) {
           report_type: r.report_type || "",
           report_description: r.report_description || "",
           pta_data: r.pta_data || JSON.parse(JSON.stringify(defaultPTAData)),
-          impedance_data: r.impedance_data || JSON.parse(JSON.stringify(defaultImpedanceData)),
+          impedance_data:
+            r.impedance_data ||
+            JSON.parse(JSON.stringify(defaultImpedanceData)),
         })),
       );
     }
@@ -352,14 +432,16 @@ export default function CaseHistoryForm({ patientId }) {
   const handlePTAChange = (index, ear, type, frequency, value) => {
     setReports((prev) => {
       const copy = [...prev];
-      const newPtaData = JSON.parse(JSON.stringify(copy[index].pta_data || defaultPTAData));
-      
+      const newPtaData = JSON.parse(
+        JSON.stringify(copy[index].pta_data || defaultPTAData),
+      );
+
       if (!newPtaData[ear]) newPtaData[ear] = {};
       if (!newPtaData[ear][type]) newPtaData[ear][type] = {};
-      
+
       newPtaData[ear][type][frequency] = value;
       copy[index] = { ...copy[index], pta_data: newPtaData };
-      
+
       return copy;
     });
   };
@@ -367,12 +449,14 @@ export default function CaseHistoryForm({ patientId }) {
   const handleImpedanceChange = (index, ear, field, value) => {
     setReports((prev) => {
       const copy = [...prev];
-      const newImpData = JSON.parse(JSON.stringify(copy[index].impedance_data || defaultImpedanceData));
-      
+      const newImpData = JSON.parse(
+        JSON.stringify(copy[index].impedance_data || defaultImpedanceData),
+      );
+
       if (!newImpData[ear]) newImpData[ear] = {};
       newImpData[ear][field] = value;
       copy[index] = { ...copy[index], impedance_data: newImpData };
-      
+
       return copy;
     });
   };
@@ -386,7 +470,12 @@ export default function CaseHistoryForm({ patientId }) {
     if (canAddMore()) {
       setReports((prev) => [
         ...prev,
-        { report_type: "", report_description: "", pta_data: JSON.parse(JSON.stringify(defaultPTAData)), impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)) },
+        {
+          report_type: "",
+          report_description: "",
+          pta_data: JSON.parse(JSON.stringify(defaultPTAData)),
+          impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)),
+        },
       ]);
     }
   };
@@ -401,7 +490,7 @@ export default function CaseHistoryForm({ patientId }) {
       return;
     }
 
-    const cleanedReports = reports.map(r => {
+    const cleanedReports = reports.map((r) => {
       const payloadReport = {
         report_type: r.report_type,
         report_description: r.report_description,
@@ -409,8 +498,7 @@ export default function CaseHistoryForm({ patientId }) {
       // Only include PTA data structure if this specific report is actually a PTA type report.
       if (r.report_type?.includes("PTA")) {
         payloadReport.pta_data = r.pta_data;
-      }
-      else if (r.report_type?.toLowerCase().includes("impedance")) {
+      } else if (r.report_type?.toLowerCase().includes("impedance")) {
         payloadReport.impedance_data = r.impedance_data;
       }
       return payloadReport;
@@ -418,7 +506,14 @@ export default function CaseHistoryForm({ patientId }) {
 
     try {
       const res = await registerReports({ patientId, reports: cleanedReports });
-      setReports([{ report_type: "", report_description: "", pta_data: JSON.parse(JSON.stringify(defaultPTAData)), impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)) }]);
+      setReports([
+        {
+          report_type: "",
+          report_description: "",
+          pta_data: JSON.parse(JSON.stringify(defaultPTAData)),
+          impedance_data: JSON.parse(JSON.stringify(defaultImpedanceData)),
+        },
+      ]);
       // prefer backend-controlled step from response; fallback to refetch
       if (res && typeof res.step_process !== "undefined") {
         setCurrentStep(res.step_process);
@@ -439,9 +534,25 @@ export default function CaseHistoryForm({ patientId }) {
       previous_ha_experience:
         patientsCaseHistory?.case_history?.previous_ha_experience || "no",
       red_flags: patientsCaseHistory?.case_history?.red_flags || "",
-      test_requested: Array.from(new Set((typeof patientsCaseHistory?.test_requested === "string" ? patientsCaseHistory.test_requested.split(",") : (patientsCaseHistory?.test_requested || [])).map(t => typeof t === "string" ? t.trim() : t).filter(Boolean).map(t => { const found = testRequestedOptions.find(opt => opt.label === t || opt.value === t); return found ? found.value : t; }))),
+      test_requested: Array.from(
+        new Set(
+          (typeof patientsCaseHistory?.test_requested === "string"
+            ? patientsCaseHistory.test_requested.split(",")
+            : patientsCaseHistory?.test_requested || []
+          )
+            .map((t) => (typeof t === "string" ? t.trim() : t))
+            .filter(Boolean)
+            .map((t) => {
+              const found = testRequestedOptions.find(
+                (opt) => opt.label === t || opt.value === t,
+              );
+              return found ? found.value : t;
+            }),
+        ),
+      ),
       report_description: patientsCaseHistory?.report_description || "",
-      hearing_symptoms: patientsCaseHistory?.case_history?.hearing_symptoms || [],
+      hearing_symptoms:
+        patientsCaseHistory?.case_history?.hearing_symptoms || [],
       other_symptoms: patientsCaseHistory?.case_history?.other_symptoms || "",
     },
     validationSchema: CaseHistorySchema,
@@ -476,27 +587,40 @@ export default function CaseHistoryForm({ patientId }) {
           </div>
         )}
 
-
         {/* Patient Visit Details Block */}
-        {patientsCaseHistory && Object.keys(patientsCaseHistory).length > 0 && currentStep !== null && (
-          <div className="bg-indigo-50/40 border border-indigo-100 rounded-lg p-3 sm:p-4 mb-4 shadow-sm">
-            <h3 className="font-bold text-indigo-900 mb-2.5 pb-2 border-b border-indigo-100/60 uppercase tracking-wider text-[11px]">
-              Initial Visit Record
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4">
-              <div>
-                <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Patient Name</p>
-                <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory?.patient_name || "-"}</p>
-              </div>
-              <div>
-                <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Visit Type</p>
-                <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory?.visit_type || "-"}</p>
-              </div>
-              <div>
-                <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Present Complaint</p>
-                <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory?.present_complaint || "-"}</p>
-              </div>
-              {/* <div>
+        {patientsCaseHistory &&
+          Object.keys(patientsCaseHistory).length > 0 &&
+          currentStep !== null && (
+            <div className="bg-indigo-50/40 border border-indigo-100 rounded-lg p-3 sm:p-4 mb-4 shadow-sm">
+              <h3 className="font-bold text-indigo-900 mb-2.5 pb-2 border-b border-indigo-100/60 uppercase tracking-wider text-[11px]">
+                Initial Visit Record
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-4">
+                <div>
+                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">
+                    Patient Name
+                  </p>
+                  <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                    {patientsCaseHistory?.patient_name || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">
+                    Visit Type
+                  </p>
+                  <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                    {patientsCaseHistory?.visit_type || "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">
+                    Present Complaint
+                  </p>
+                  <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                    {patientsCaseHistory?.present_complaint || "-"}
+                  </p>
+                </div>
+                {/* <div>
                 <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Appointment Date</p>
                 <p className="font-semibold text-slate-800 text-xs sm:text-sm">
                   {patientsCaseHistory?.appointment_date
@@ -505,37 +629,53 @@ export default function CaseHistoryForm({ patientId }) {
                 </p>
               </div> */}
 
-              {patientsCaseHistory?.duration_of_problem && (
-                <div>
-                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Duration</p>
-                  <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory.duration_of_problem}</p>
-                </div>
-              )}
-              {patientsCaseHistory?.ear_side && (
-                <div>
-                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Ear Side</p>
-                  <p className="font-semibold text-slate-800 capitalize text-xs sm:text-sm">{patientsCaseHistory.ear_side}</p>
-                </div>
-              )}
-              {patientsCaseHistory?.previous_test_done !== undefined && patientsCaseHistory?.previous_test_done !== null && (
-                <div>
-                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Previous Test</p>
-                  <p className="font-semibold text-slate-800 text-xs sm:text-sm">{patientsCaseHistory.previous_test_done ? "Yes, Done" : "Not Done"}</p>
-                </div>
-              )}
+                {patientsCaseHistory?.duration_of_problem && (
+                  <div>
+                    <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">
+                      Duration
+                    </p>
+                    <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                      {patientsCaseHistory.duration_of_problem}
+                    </p>
+                  </div>
+                )}
+                {patientsCaseHistory?.ear_side && (
+                  <div>
+                    <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">
+                      Ear Side
+                    </p>
+                    <p className="font-semibold text-slate-800 capitalize text-xs sm:text-sm">
+                      {patientsCaseHistory.ear_side}
+                    </p>
+                  </div>
+                )}
+                {patientsCaseHistory?.previous_test_done !== undefined &&
+                  patientsCaseHistory?.previous_test_done !== null && (
+                    <div>
+                      <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">
+                        Previous Test
+                      </p>
+                      <p className="font-semibold text-slate-800 text-xs sm:text-sm">
+                        {patientsCaseHistory.previous_test_done
+                          ? "Yes, Done"
+                          : "Not Done"}
+                      </p>
+                    </div>
+                  )}
 
-              {(patientsCaseHistory?.notes) && (
-                <div className="sm:col-span-2 md:col-span-3 mt-0.5 pt-2.5 border-t border-indigo-100/60">
-                  <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">Clinical Notes</p>
-                  <p className="font-medium text-slate-700 text-xs sm:text-sm leading-snug">
-                    {patientsCaseHistory.notes}
-                  </p>
-                </div>
-              )}
+                {patientsCaseHistory?.notes && (
+                  <div className="sm:col-span-2 md:col-span-3 mt-0.5 pt-2.5 border-t border-indigo-100/60">
+                    <p className="text-indigo-400 font-semibold text-[9px] uppercase tracking-widest mb-0.5">
+                      Clinical Notes
+                    </p>
+                    <p className="font-medium text-slate-700 text-xs sm:text-sm leading-snug">
+                      {patientsCaseHistory.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-
+          )}
 
         {/* ---------------- STEP 1 ---------------- */}
         {currentStep === 1 && (
@@ -580,9 +720,10 @@ export default function CaseHistoryForm({ patientId }) {
 
             <TextArea label="Red Flags" name="red_flags" formik={formik} />
 
-            {/* Hearing Problem Symptoms */}
             <div className="border rounded-lg p-4 bg-slate-50">
-              <h3 className="font-semibold text-lg mb-4">Hearing Problem Symptoms</h3>
+              <h3 className="font-semibold text-lg mb-4">
+                Hearing Problem Symptoms
+              </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {[
                   { label: "Aural fullness", value: "aural_fullness" },
@@ -597,15 +738,20 @@ export default function CaseHistoryForm({ patientId }) {
                   <CommonCheckbox
                     key={symptom.value}
                     label={symptom.label}
-                    checked={formik.values.hearing_symptoms?.includes(symptom.value)}
+                    checked={formik.values.hearing_symptoms?.includes(
+                      symptom.value,
+                    )}
                     onChange={(e) => {
                       const isChecked = e.target.checked;
-                      const currentSymptoms = formik.values.hearing_symptoms || [];
+                      const currentSymptoms =
+                        formik.values.hearing_symptoms || [];
                       let newSymptoms;
                       if (isChecked) {
                         newSymptoms = [...currentSymptoms, symptom.value];
                       } else {
-                        newSymptoms = currentSymptoms.filter((s) => s !== symptom.value);
+                        newSymptoms = currentSymptoms.filter(
+                          (s) => s !== symptom.value,
+                        );
                       }
                       formik.setFieldValue("hearing_symptoms", newSymptoms);
                     }}
@@ -826,22 +972,28 @@ export default function CaseHistoryForm({ patientId }) {
                           ? "Loading test types..."
                           : "Select test type"
                       }
-                      onChange={(n, v) => handleReportChange(idx, "report_type", v)}
+                      onChange={(n, v) =>
+                        handleReportChange(idx, "report_type", v)
+                      }
                     />
                   </div>
                 </div>
 
                 {rep.report_type?.includes("PTA") && (
-                  <PTAForm 
+                  <PTAForm
                     ptaData={rep.pta_data}
-                    onChange={(ear, type, freq, value) => handlePTAChange(idx, ear, type, freq, value)}
+                    onChange={(ear, type, freq, value) =>
+                      handlePTAChange(idx, ear, type, freq, value)
+                    }
                   />
                 )}
 
                 {rep.report_type?.toLowerCase().includes("impedance") && (
-                  <ImpedanceForm 
+                  <ImpedanceForm
                     impedanceData={rep.impedance_data}
-                    onChange={(ear, field, value) => handleImpedanceChange(idx, ear, field, value)}
+                    onChange={(ear, field, value) =>
+                      handleImpedanceChange(idx, ear, field, value)
+                    }
                   />
                 )}
 
@@ -856,7 +1008,7 @@ export default function CaseHistoryForm({ patientId }) {
                     )
                   }
                 />
-                
+
                 {reports.length > 1 && (
                   <button
                     type="button"
@@ -897,12 +1049,10 @@ export default function CaseHistoryForm({ patientId }) {
           <div className="space-y-4">
             <TrialGivenForm
               visitId={patientId}
-              setSelectedModal={setSelectedModal}
               registerTrialForm={registerTrialForm}
               trialDeviceList={trialDeviceList}
               setSearchTerm={setSearchTerm}
               searchTerm={searchTerm}
-              modalOptions={modalOptions}
               onSubmitSuccess={handleNextStep}
               goToDashboard={goToDashboard}
             />

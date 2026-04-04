@@ -20,23 +20,31 @@ export const getpatientHistoryById = async (visitId) => {
 
 export const addCaseHistory = async (caseHistoryData) => {
   try {
-    const response = await apiClient.post(routes.audiologist.registerCaseHistory, caseHistoryData);
-    const caseHistoryResponse = response?.data?.data || response?.data || response;
-    return caseHistoryResponse
+    const response = await apiClient.post(
+      routes.audiologist.registerCaseHistory,
+      caseHistoryData,
+    );
+    const caseHistoryResponse =
+      response?.data?.data || response?.data || response;
+    return caseHistoryResponse;
   } catch (err) {
-    throw err?.response?.data || "registration failed"
+    throw err?.response?.data || "registration failed";
   }
-}
+};
 
 export const addTrialForm = async (trialFormData) => {
   try {
-    const response = await apiClient.post(routes.audiologist.registerTrialForm, trialFormData);
-    const trialFormrResponse = response?.data?.data || response?.data || response;
-    return trialFormrResponse
+    const response = await apiClient.post(
+      routes.audiologist.registerTrialForm,
+      trialFormData,
+    );
+    const trialFormrResponse =
+      response?.data?.data || response?.data || response;
+    return trialFormrResponse;
   } catch (err) {
-    throw err?.response?.data || "registration failed"
+    throw err?.response?.data || "registration failed";
   }
-}
+};
 
 // endpoint for creating one or more reports for a visit
 export const createReports = async ({ patientId, reports }) => {
@@ -45,18 +53,22 @@ export const createReports = async ({ patientId, reports }) => {
     const promises = reports.map((report) => {
       const payload = {
         visit: Number(patientId),
-        ...report
+        ...report,
       };
       return apiClient.post(routes.audiologist.reportCreate, payload);
     });
 
     const responses = await Promise.all(promises);
-    return responses[responses.length - 1]?.data?.data || responses[responses.length - 1]?.data || responses;
+    return (
+      responses[responses.length - 1]?.data?.data ||
+      responses[responses.length - 1]?.data ||
+      responses
+    );
   } catch (err) {
     // propagate useful message
     throw err?.response?.data || "failed to create reports";
   }
-}
+};
 
 export const getTrialDevice = async ({ serial_number = "", modal_id = "" }) => {
   const queryParams = new URLSearchParams();
@@ -81,9 +93,7 @@ export const getModalList = async () => {
     const url = `${routes.audiologist.modalList}`;
     const response = await apiClient.get(url);
     return response;
-  }
-  catch (error) {
+  } catch (error) {
     throw error;
   }
 };
-
