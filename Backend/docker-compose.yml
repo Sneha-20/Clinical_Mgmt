@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: clinical_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: clinical_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - clinical_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django Backend Service
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinical_backend
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - DEBUG=True
+      - DATABASE_URL=postgresql://postgres:postgres123@db:5432/clinical_management
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=clinical_management
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres123
+      - SECRET_KEY=django-insecure-development-key-change-in-production
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend,0.0.0.0
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+    volumes:
+      - ./Python:/app
+      - media_files:/app/media
+      - static_files:/app/static
+      - log_files:/app/logs
+    ports:
+      - "8000:8000"
+    networks:
+      - clinical_network
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+        cd /app/Python &&
+        python manage.py makemigrations &&
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+  # Optional: Redis for caching and sessions (if needed)
+  redis:
+    image: redis:7-alpine
+    container_name: clinical_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - clinical_network
+    command: redis-server --appendonly yes
+
+# Volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+  media_files:
+    driver: local
+  static_files:
+    driver: local
+  log_files:
+    driver: local
+
+# Networks
+networks:
+  clinical_network:
+    driver: bridge

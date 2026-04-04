@@ -47,7 +47,7 @@ class TrialDeviceSerialListView(generics.ListAPIView):
         """Get serial numbers for trial devices with available count > 0 and not used in trials."""
 
         # get the model id from query params if provided
-        model_type_id = self.request.query_params.get('model_type_id', None)
+        # model_type_id = self.request.query_params.get('model_type_id', None)
 
         # Get serial numbers that are already used in trials
         # used_serial_numbers = Trial.objects.filter(
@@ -57,31 +57,28 @@ class TrialDeviceSerialListView(generics.ListAPIView):
         # Get search parameter from query params
         search_serial = self.request.query_params.get('serial_number', None)
 
-        if model_type_id:
+        # if model_type_id:
             # Filter available devices excluding those used in trials
-            queryset = InventorySerial.objects.filter(
-                inventory_item__use_in_trial=True,
-                inventory_item__model_type_id=model_type_id,
-                status='In Stock',
-                inventory_item__clinic=self.request.user.clinic
-            )
-        
-            
+        queryset = InventorySerial.objects.filter(
+            inventory_item__use_in_trial=True,
+            # inventory_item__model_type_id=model_type_id,
+            status='In Stock',
+            inventory_item__clinic=self.request.user.clinic
+        )
 
-
-        
         # Apply search filter if serial_number parameter is provided
         if search_serial:
             queryset = queryset.filter(
-                serial_number__icontains=search_serial
+                Q(serial_number__icontains=search_serial) |
+                Q(inventory_item__model_type__name__icontains=search_serial)
             )
         
-        return queryset.values('serial_number')
+        return queryset.values('serial_number', 'inventory_item__model_type__name')
     
     def list(self, request, *args, **kwargs):
         """Return serial numbers grouped by device with counts."""
         queryset = self.get_queryset()
-        serial_numbers = [serial['serial_number'] for serial in queryset]
+        serial_numbers = [f"{serial['serial_number']}" for serial in queryset]
         
         return Response({
             "status": status.HTTP_200_OK,
