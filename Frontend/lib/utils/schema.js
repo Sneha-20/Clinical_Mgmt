@@ -88,30 +88,100 @@ export const CaseHistorySchema = Yup.object({
 });
 
 export const trialGivenSchema = Yup.object({
-  serial_number: Yup.string().required("Serial number is required"),
-  receiver_size: Yup.string().required("Receiver size is required"),
-  ear_fitted: Yup.string().required("Ear fitted is required"),
-  dome_type: Yup.string().required("Dome type is required"),
+  visit: Yup.string().required("Visit is required"),
+  devices: Yup.array()
+    .of(
+      Yup.object({
+        ear_fitted: Yup.string().required("Ear fitted is required"),
+        serial_number: Yup.string().required("Serial number is required"),
+        style_type: Yup.string().required("Style type is required"),
 
-  // srt_before: Yup.string().required("SRT before is required"),
-  // sds_before: Yup.string().required("SDS before is required"),
-  // ucl_before: Yup.string().required("UCL before is required"),
+        receiver_power: Yup.string().when("style_type", {
+          is: "RIC",
+          then: (schema) => schema.required("Receiver power is required"),
+        }),
+        receiver_length: Yup.string().when("style_type", {
+          is: "RIC",
+          then: (schema) => schema.required("Receiver length is required"),
+        }),
+        dome_type: Yup.string().when("style_type", {
+          is: "RIC",
+          then: (schema) => schema.required("Dome type is required"),
+        }),
+        dome_size: Yup.string().when("style_type", {
+          is: "RIC",
+          then: (schema) => schema.required("Dome size is required"),
+        }),
 
-  // gain_settings: Yup.string().required("Gain settings required"),
-  patient_response: Yup.string().required("Patient response required"),
-  // counselling_notes: Yup.string().required("Counselling notes required"),
+        ear_piece: Yup.string().when("style_type", {
+          is: "BTE",
+          then: (schema) => schema.required("Ear piece is required"),
+        }),
+        size: Yup.string().when(["style_type", "ear_piece"], {
+          is: (style_type, ear_piece) =>
+            style_type === "BTE" && ear_piece === "Universal Eartips",
+          then: (schema) => schema.required("Size is required"),
+        }),
+        venting_type: Yup.string().when(["style_type", "ear_piece"], {
+          is: (style_type, ear_piece) =>
+            style_type === "BTE" && ear_piece === "Ear Mold",
+          then: (schema) => schema.required("Venting type is required"),
+          otherwise: (schema) =>
+            schema.when("style_type", {
+              is: (style_type) =>
+                ["ITE", "ITC", "Custom", "CIC"].includes(style_type),
+              then: (schema) => schema.required("Venting type is required"),
+            }),
+        }),
+        vent_size: Yup.string().when(
+          ["style_type", "ear_piece", "venting_type"],
+          {
+            is: (style_type, ear_piece, venting_type) =>
+              (style_type === "BTE" &&
+                ear_piece === "Ear Mold" &&
+                venting_type === "Open") ||
+              (["ITE", "ITC", "Custom", "CIC"].includes(style_type) &&
+                venting_type === "Open"),
+            then: (schema) => schema.required("Vent size is required"),
+          },
+        ),
+        rechargeable: Yup.string().when("style_type", {
+          is: (style_type) =>
+            ["ITE", "ITC", "Custom", "CIC"].includes(style_type),
+          then: (schema) => schema.required("Rechargable is required"),
+        }),
+        battery_number: Yup.string().when(["style_type", "rechargeable"], {
+          is: (style_type, rechargeable) =>
+            ["ITE", "ITC", "Custom", "CIC"].includes(style_type) &&
+            rechargeable === "No",
+          then: (schema) => schema.required("Battery no is required"),
+        }),
+        wireless: Yup.string().when("style_type", {
+          is: (style_type) =>
+            ["ITE", "ITC", "Custom", "CIC"].includes(style_type),
+          then: (schema) => schema.required("Wireless is required"),
+        }),
+        better_ear_device: Yup.string().when("style_type", {
+          is: (style_type) => ["Cross", "Bicross"].includes(style_type),
+          then: (schema) => schema.required("Better ear device is required"),
+        }),
+        routing_device: Yup.string().when("style_type", {
+          is: (style_type) => ["Cross", "Bicross"].includes(style_type),
+          then: (schema) => schema.required("Routing side is required"),
+        }),
+        gain_settings: Yup.string().required("Gain settings are required"),
+      }),
+    )
+    .min(1, "At least one device trial is required"),
 
+  patient_response: Yup.string().required("Patient response is required"),
+  trial_start_date: Yup.date().required("Trial start date is required"),
+  trial_end_date: Yup.date()
+    .min(Yup.ref("trial_start_date"), "End date must be after start date")
+    .required("Trial end date is required"),
   cost: Yup.number()
     .typeError("Cost must be a number")
     .required("Cost is required"),
-
-  // discount_offered: Yup.number().typeError("Discount must be a number"),
-  // .max(100, "Discount cannot exceed 100"),
-
-  trial_start_date: Yup.date().required("Start date required"),
-  trial_end_date: Yup.date()
-    .min(Yup.ref("trial_start_date"), "End date must be after start date")
-    .required("End date required"),
 });
 
 export const transactionSchema = Yup.object({

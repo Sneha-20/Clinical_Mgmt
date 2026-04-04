@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import MedicalBanner from "@/public/icon/medicalBanner.png";
+import MedicalBanner from "@/public/StaticImage/heroBanner.jpg";
 import Image from "next/image";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -11,44 +11,20 @@ import ServicesSection from "@/components/modules/services/ServicesSection";
 // --- Section Components ---
 
 const BannerSection = () => (
-  <section
-    id="home"
-    className="relative bg-primary text-white text-center overflow-hidden min-h-[600px] flex items-center pt-20 md:pt-0"
-  >
-    {/* Background Layer using <img> tag */}
-    <div className="absolute inset-0 w-full h-full">
-      <Image
-        src={MedicalBanner}
-        alt="Medical Banner Background"
-        className="w-full h-full object-cover opacity-60"
-      />
-    </div>
-
-    {/* Content Layer: Centered and responsive */}
-    <div className="relative z-10 max-w-4xl mx-auto px-6 py-20">
-      <h2 className="text-5xl md:text-6xl font-extrabold leading-tight mb-6">
-        Navjeevan: Beyond Hearing, Communication Redefined.
-      </h2>
-      <p className="text-xl md:text-2xl mb-10 opacity-90 font-light">
-        Unmuting The World: Discover the Power of Clear Communication. Whether
-        you're facing hearing loss or speech challenges, Navjeevan is not just a
-        problem identifier, but a solution provider for clear
-        communication.{" "}
-      </p>
-      {/* Action button */}
-      <a
-        href="#contact"
-        className="bg-background text-primary py-4 px-10 rounded-full text-xl font-semibold hover:bg-muted transition-all duration-300 transform hover:scale-105 inline-block shadow-xl"
-      >
-        Book an Appointment
-      </a>
-    </div>
+  <section id="home">
+    <Image
+      src={MedicalBanner}
+      alt="Medical Banner Background"
+      width={1640}
+      height={220}
+      className="max-h-[300px] object-cover"
+    />
   </section>
 );
 
 const AboutUsSection = () => (
-  <section id="about" className="bg-background py-20 px-6 text-center">
-    <div className="max-w-4xl mx-auto">
+  <section id="about" className="bg-background  text-center">
+    <div className="max-w-4xl mx-auto py-20 px-6">
       <h3 className="text-4xl font-bold text-primaryText mb-12">
         🌟 Navjeevan: Beyond Hearing, Communication Redefined
       </h3>
@@ -64,6 +40,31 @@ const AboutUsSection = () => (
         and evidence-based practices to achieve measurable, life-changing
         results.
       </p>
+    </div>
+    <div className="bg-muted rounded-lg p-12 mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-10">
+        <div>
+          <h2 className="text-3xl font-bold text-primaryText mb-4">
+            Meet Our Founder
+          </h2>
+          <p className="text-lg text-foreground leading-relaxed mb-4">
+            Dr. Navjeevan founded our clinic with a deep commitment to quality
+            care and patient-centered outcomes. Here, we blend expertise with
+            compassion to transform lives through hearing and speech health.
+          </p>
+          <p className="text-lg text-foreground leading-relaxed">
+            With over 20 years of clinical experience, he leads our team in
+            setting new standards for treatment, technology, and patient trust.
+          </p>
+        </div>
+        <div className="flex justify-center">
+          <img
+            src="/StaticImage/ClinicOwner.jpg"
+            alt="Clinic Owner"
+            className="rounded-xl max-w-full h-auto shadow-lg"
+          />
+        </div>
+      </div>
     </div>
   </section>
 );
@@ -203,12 +204,12 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect logged-in users to dashboard
-    const token = document.cookie.split("; ").find((row) => row.startsWith("token="));
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="));
     const userRole = localStorage.getItem("userRole");
 
     if (token && userRole) {
-      // User is already logged in, redirect to dashboard
       router.push("/dashboard/home");
     }
   }, [router]);

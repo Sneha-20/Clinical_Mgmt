@@ -62,33 +62,15 @@ export default function ServicesSection() {
               onClick={() => handleServiceClick(service.id)}
               className="bg-card rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 p-6 cursor-pointer border border-border hover:border-primary"
             >
-              {/* Icon */}
               <div className="text-5xl mb-4">{service.icon}</div>
 
-              {/* Service Name */}
               <h4 className="text-2xl font-bold text-primaryText mb-3">
                 {service.name}
               </h4>
 
-              {/* Description */}
               <p className="text-foreground text-sm mb-4 line-clamp-2">
                 {service.description}
               </p>
-
-              {/* Details Footer */}
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    Duration: {service.duration}
-                  </p>
-                  <p className="text-lg font-bold text-primary">
-                    {service.price}
-                  </p>
-                </div>
-                <button className="bg-primary/10 hover:bg-primary/20 text-primary p-2 rounded-lg transition-colors">
-                  →
-                </button>
-              </div>
             </div>
           ))}
         </div>
@@ -98,7 +80,11 @@ export default function ServicesSection() {
           <Button
             size="lg"
             className="px-8 py-4 text-lg"
-            onClick={() => document.getElementById("contact").scrollIntoView({ behavior: "smooth" })}
+            onClick={() =>
+              document
+                .getElementById("contact")
+                .scrollIntoView({ behavior: "smooth" })
+            }
           >
             Book Your Service Today
           </Button>
