@@ -30,7 +30,7 @@ from .serializers import (
     InventoryItemSerializer,
     PurchaseInventoryItemSerializer
 )
-from .models import Patient, PatientPurchase, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType,ClinicTransactions
+from .models import Patient, PatientPurchase, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType,ClinicTransactions,BookedDeviceAfterTrial,TrialDeviceDetails
 from accounts.models import User
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django.db import transaction
@@ -663,8 +663,8 @@ class TrialDeviceReturnView(APIView):
         )
         
         # Get the booked device record for this serial
-        booked_device = BookedDeviceAfterTrial.objects.get(
-            serial_number=serial
+        booked_device = TrialDeviceDetails.objects.get(
+            serial_number=serial_number
         )
         
         # Get the trial from booked device

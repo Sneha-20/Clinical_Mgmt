@@ -295,12 +295,12 @@ class AwaitingStockListView(generics.ListAPIView):
 
 
     def get_queryset(self):
-        queryset = Trial.objects.filter(trial_decision__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
+        queryset = BookedDeviceAfterTrial.objects.filter(booking_status__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
         
         # Filter by trial_decision if provided as query parameter
-        trial_decision = self.request.query_params.get('trial_decision', None)
-        if trial_decision:
-            queryset = queryset.filter(trial_decision=trial_decision)
+        booking_status = self.request.query_params.get('booking_status', None)
+        if booking_status:
+            queryset = queryset.filter(booking_status=booking_status)
         
         return queryset
     
@@ -332,24 +332,25 @@ class AllocateSerialNumber(generics.UpdateAPIView):
     """API endpoint to allocate a serial number to a trial that is awaiting stock."""
     
     permission_classes = [IsAuthenticated]
-    queryset = Trial.objects.filter(trial_decision__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
+    queryset = BookedDeviceAfterTrial.objects.filter(booking_status__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
     lookup_field = 'id'
     lookup_url_kwarg = 'trial_id'
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
-        trial_decision = instance.trial_decision
+        booking_status = instance.booking_status
         booked_device_serial = request.data.get('booked_device_serial')
-        is_customization_completed = request.data.get('is_customization_completed',False)
+        is_customization_completed = request.data.get('is_customization_completed', False)
         serial_obj = None
+        
         with transaction.atomic():
-            # For serialized items, validate the serial number exists and is in stock
-            if instance.booked_device_inventory.stock_type == 'Serialized':
+            # For serialized items, validate serial number exists and is in stock
+            if instance.inventory_item.stock_type == 'Serialized' and booked_device_serial:
                 try:
                     from .models import InventorySerial
                     serial_obj = InventorySerial.objects.get(
-                        serial_number=booked_device_serial_left,
-                        inventory_item=instance.booked_device_inventory,
+                        serial_number=booked_device_serial,
+                        inventory_item=instance.inventory_item,
                         status='In Stock'
                     )
                 except InventorySerial.DoesNotExist:
@@ -358,67 +359,71 @@ class AllocateSerialNumber(generics.UpdateAPIView):
                         "message": f"Serial number {booked_device_serial} is not available in stock for the selected inventory item."
                     }, status=status.HTTP_400_BAD_REQUEST)
             
-            # Handle different trial decisions
-            if trial_decision == 'BOOK - Awaiting Stock' and serial_obj:
-                instance.booked_device_serial = serial_obj
-                instance.trial_decision = 'BOOK - Device Allocated'
+            # Handle different booking statuses
+            if booking_status == 'BOOK - Awaiting Stock' and serial_obj:
+                # Update booked device with allocated serial
+                instance.serial_number = serial_obj
+                instance.booking_status = 'BOOK - Device Allocated'
                 instance.save()
+                
                 # Create purchase record
-                unit_price = instance.booked_device_inventory.unit_price
+                unit_price = instance.inventory_item.unit_price
                 PatientPurchase.objects.create(
-                    clinic=instance.clinic,
-                    patient=instance.assigned_patient,
-                    visit=instance.visit,
-                    inventory_item=instance.booked_device_inventory,
+                    clinic=instance.trial.clinic,
+                    patient=instance.trial.assigned_patient,
+                    visit=instance.trial.visit,
+                    inventory_item=instance.inventory_item,
                     inventory_serial=serial_obj,
                     quantity=1,
                     unit_price=unit_price,
-                    total_price=unit_price
+                    total_price=unit_price,
+                    ear_side=instance.ear_side
                 )
                 # Update inventory
                 serial_obj.status = 'Sold'
                 serial_obj.save()
-                instance.booked_device_inventory.update_quantity_from_serials()
+                instance.inventory_item.update_quantity_from_serials()
                 # Create bill for device purchase
                 bill, created = Bill.objects.get_or_create(
-                    visit=instance.visit,
+                    visit=instance.trial.visit,
                     defaults={
-                        'clinic': instance.clinic,
+                        'clinic': instance.trial.clinic,
                         'created_by': request.user,
                     }
                 )
                 BillItem.objects.create(
                     bill=bill,
                     item_type='Purchase',
-                    description=f"Purchase of {instance.booked_device_inventory.product_name} ({instance.booked_device_inventory.brand} {instance.booked_device_inventory.model_type}) - Serial: {booked_device_serial}",
+                    description=f"Purchase of {instance.inventory_item.product_name} ({instance.inventory_item.brand} {instance.inventory_item.model_type}) - Serial: {booked_device_serial}",
                     cost=unit_price,
                     quantity=1,
                 )
                 bill.calculate_total()
-                instance.visit.status = 'Book - Device Allocated'
-                instance.visit.status_note = 'Trial completed , Device Allocated for booking'
-                instance.visit.save()
+                instance.trial.visit.status = 'Book - Device Allocated'
+                instance.trial.visit.status_note = 'Trial completed , Device Allocated for booking'
+                instance.trial.visit.save()
                 
-            elif trial_decision == 'BOOK - With Customization':
+            elif booking_status == 'BOOK - With Customization':
                 # Handle completion notes for customization trials
                 if is_customization_completed:
                     instance.is_customization_completed = is_customization_completed
-                    instance.need_customization = False
-                    instance.trial_decision = 'BOOK - Device Allocated'
+                    instance.is_customization_needed = False
+                    instance.booking_status = 'BOOK - Device Allocated'
                     instance.save()
                     
                     # Create purchase record if not already created
-                    if not PatientPurchase.objects.filter(visit=instance.visit, inventory_item=instance.booked_device_inventory).exists():
-                        unit_price = instance.booked_device_inventory.unit_price
+                    if not PatientPurchase.objects.filter(visit=instance.trial.visit, inventory_item=instance.inventory_item).exists():
+                        unit_price = instance.inventory_item.unit_price
                         PatientPurchase.objects.create(
-                            clinic=instance.clinic,
-                            patient=instance.assigned_patient,
-                            visit=instance.visit,
-                            inventory_item=instance.booked_device_inventory,
+                            clinic=instance.trial.clinic,
+                            patient=instance.trial.assigned_patient,
+                            visit=instance.trial.visit,
+                            inventory_item=instance.inventory_item,
                             inventory_serial=serial_obj if serial_obj else None,
                             quantity=1,
                             unit_price=unit_price,
-                            total_price=unit_price
+                            total_price=unit_price,
+                            ear_side=instance.ear_side,
                         )
                         
                         # Create bill for device purchase
@@ -427,12 +432,12 @@ class AllocateSerialNumber(generics.UpdateAPIView):
                             defaults={
                                 'clinic': instance.clinic,
                                 'created_by': request.user,
-                                'gst_amount': instance.booked_device_inventory.gst_value,
+                                'gst_amount': instance.inventory_item.gst_value,
                             }
                         )
                         if not created:
                             Bill.objects.filter(id=bill.id).update(
-                                gst_amount=instance.booked_device_inventory.gst_value
+                                gst_amount=instance.inventory_item.gst_value
                             )
                             bill.refresh_from_db()
                         
@@ -440,7 +445,7 @@ class AllocateSerialNumber(generics.UpdateAPIView):
                         BillItem.objects.create(
                             bill=bill,
                             item_type='Purchase',
-                            description=f"Purchase of {instance.booked_device_inventory.product_name} ({instance.booked_device_inventory.brand} {instance.booked_device_inventory.model_type}) - With Customization",
+                            description=f"Purchase of {instance.inventory_item.product_name} ({instance.inventory_item.brand} {instance.inventory_item.model_type}) - With Customization",
                             cost=unit_price,
                             quantity=1,
                         )
@@ -450,12 +455,12 @@ class AllocateSerialNumber(generics.UpdateAPIView):
                         if serial_obj:
                             serial_obj.status = 'Sold'
                             serial_obj.save()
-                            instance.booked_device_serial = serial_obj
-                            instance.booked_device_inventory.update_quantity_from_serials()
+                            instance.inventory_serial = serial_obj
+                            instance.inventory_item.update_quantity_from_serials()
                     
-                    instance.visit.status = 'Book - Device Allocated'
-                    instance.visit.status_note = 'Trial completed , Device Allocated with customization'
-                    instance.visit.save()
+                    instance.trial.visit.status = 'Book - Device Allocated'
+                    instance.trial.visit.status_note = 'Trial completed , Device Allocated with customization'
+                    instance.trial.visit.save()
                 
         return Response({
             "status": "success",

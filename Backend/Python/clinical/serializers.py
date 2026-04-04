@@ -2283,7 +2283,7 @@ class PatientPurchaseSerializer(serializers.ModelSerializer):
         model = PatientPurchase
         fields = [
             'id', 'patient_name', 'visit_id', 'item_name', 'item_brand', 'item_model', 
-            'serial_number', 'quantity', 'unit_price', 'total_price', 'purchase_date'
+            'serial_number', 'quantity', 'unit_price', 'total_price', 'purchase_date', 'ear_side'
         ]
 
 
@@ -2741,6 +2741,25 @@ class TrialDeviceReturnSerializer(serializers.Serializer):
         
         return data
 
+
+# Nested serializer for individual booked devices
+class BookedDeviceSerializer(serializers.Serializer):
+    ear_side = serializers.ChoiceField(choices=[('LEFT', 'Left'), ('RIGHT', 'Right')])
+    inventory_item_id = serializers.IntegerField()
+    serial_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    booking_status = serializers.ChoiceField(
+        choices=[
+            ('BOOK - Awaiting Stock', 'Book Awaiting Stock'),
+            ('BOOK - Device Allocated', 'Book Device Allocated' ),
+            ('BOOK - With Customization', 'Book With Customization')
+        ],
+        required=False,
+        default='BOOK - Device Allocated'
+    )
+    device_name = serializers.CharField(required=False, allow_blank=True)
+
+
+
 # Trial Completion Serializer
 class TrialCompletionSerializer(serializers.Serializer):
     """
@@ -2773,10 +2792,10 @@ class TrialCompletionSerializer(serializers.Serializer):
         required=True,
         help_text="Patient decision after trial completion"
     )
-    
+
     # Multiple device support (required format)
     booked_devices = serializers.ListField(
-        child=serializers.DictField(child=serializers.CharField()),
+        child=BookedDeviceSerializer(),
         required=False,
         allow_empty=True,
         help_text="List of devices to book with ear side, inventory, serial, and customization"
@@ -2825,34 +2844,36 @@ class TrialCompletionSerializer(serializers.Serializer):
                     })
                 
                 # Get device trial decision (booking status)
-                device_trial_decision = device.get('trial_decision', 'BOOK - Device Allocated')
+                device_trial_decision = device.get('booking_status', 'BOOK - Device Allocated')
                 
                 # Validate inventory item exists
                 try:
                     from .models import InventoryItem
                     inventory_item = InventoryItem.objects.get(id=device['inventory_item_id'])
                     
-                    # Check if serialized item requires serial number (but allow null for customization)
-                    if inventory_item.stock_type == 'Serialized' and device_trial_decision != 'BOOK - With Customization':
-                        if not device.get('serial_number'):
+                    # Check if serialized item requires serial number (but allow null for awaiting stock)
+                    if inventory_item.stock_type == 'Serialized':
+                        # Only require serial number if not awaiting stock
+                        if device_trial_decision not in ['BOOK - Awaiting Stock'] and not device.get('serial_number'):
                             raise serializers.ValidationError({
-                                f'booked_devices[{i}].serial_number': 'Serial number is required for serialized devices (except when with customization)'
+                                f'booked_devices[{i}].serial_number': 'Serial number is required for serialized devices (except when awaiting stock)'
                             })
                         
-                        # Validate serial number exists and is in stock
-                        try:
-                            from .models import InventorySerial
-                            serial = InventorySerial.objects.get(
-                                serial_number=device['serial_number'],
-                                inventory_item=inventory_item,
-                                status='In Stock'
-                            )
-                            device['validated_serial'] = serial
+                        # Only validate serial number if it's provided
+                        if device.get('serial_number'):
+                            try:
+                                from .models import InventorySerial
+                                serial = InventorySerial.objects.get(
+                                    serial_number=device['serial_number'],
+                                    inventory_item=inventory_item,
+                                    status='In Stock'
+                                )
+                                device['validated_serial'] = serial
 
-                        except InventorySerial.DoesNotExist:
-                            raise serializers.ValidationError({
-                                f'booked_devices[{i}].serial_number': 'Serial number not found or not available in stock'
-                            })
+                            except InventorySerial.DoesNotExist:
+                                raise serializers.ValidationError({
+                                    f'booked_devices[{i}].serial_number': 'Serial number not found or not available in stock'
+                                })
                         
                 except InventoryItem.DoesNotExist:
                     raise serializers.ValidationError({
@@ -2868,6 +2889,8 @@ class TrialCompletionSerializer(serializers.Serializer):
         
         return data
 
+
+
 class InventoryTransferSerializer(serializers.ModelSerializer):
     from_clinic_name = serializers.CharField(source='from_clinic.name', read_only=True)
     to_clinic_name = serializers.CharField(source='to_clinic.name', read_only=True)
@@ -2882,42 +2905,39 @@ class InventoryTransferSerializer(serializers.ModelSerializer):
 
 class AwaitingStockListSerializer(serializers.ModelSerializer):
     """Serializer for listing trials that are awaiting stock for booked devices."""
-    patient_name = serializers.CharField(source='assigned_patient.name', read_only=True)
-    patient_phone = serializers.CharField(source='assigned_patient.phone_primary', read_only=True)
-    doctor_name = serializers.CharField(source='visit.seen_by.name', read_only=True)
-    left_device_name = serializers.CharField(source='booked_device_inventory_left.product_name', read_only=True)
-    right_device_name = serializers.CharField(source='booked_device_inventory_right.product_name', read_only=True)
-    device_brand = serializers.CharField(source='booked_device_inventory_left.brand.name', read_only=True)
-    device_model = serializers.CharField(source='booked_device_inventory_left.model_type.name', read_only=True)
-    left_device_serial_no = serializers.CharField(source='booked_device_serial_left.serial_number', read_only=True)
-    right_device_serial_no = serializers.CharField(source='booked_device_serial_right.serial_number', read_only=True)
-    trial_completed_at = serializers.DateTimeField(source='completed_at', read_only=True)
-    completion_notes = serializers.CharField(source='return_notes', read_only=True)
+    patient_name = serializers.CharField(source='trial.assigned_patient.name', read_only=True)
+    patient_phone = serializers.CharField(source='trial.assigned_patient.phone_primary', read_only=True)
+    doctor_name = serializers.CharField(source='trial.visit.seen_by.name', read_only=True)
+    device_name = serializers.CharField(source='inventory_item.product_name', read_only=True)
+    device_brand = serializers.CharField(source='inventory_item.brand.name', read_only=True)
+    device_model = serializers.CharField(source='inventory_item.model_type.name', read_only=True)
+    serial_number = serializers.CharField(source='serial_number.serial_number', read_only=True)
+    ear_side = serializers.CharField(read_only=True)
+    booking_status = serializers.CharField(read_only=True)
+    trial_completed_at = serializers.DateTimeField(source='trial.trial_completed_at', read_only=True)
+    completion_notes = serializers.CharField(source='trial.return_notes', read_only=True)
     
 
     class Meta:
-        model = Trial
+        model = BookedDeviceAfterTrial
         fields = [
             'id',
+            'trial',
+            'inventory_item',
+            'serial_number',
+            # 'serial_number_display',
+            'ear_side',
+            'booking_status',
+            'device_name',
+            'device_brand',
+            'device_model',
+            'is_customization_completed',
+            'created_at',
             'patient_name',
             'patient_phone',
             'doctor_name',
-            'booked_device_inventory_left',
-            'booked_device_inventory_right',
-            'left_device_name',
-            'right_device_name',
-            'device_brand',
-            'device_model',
-            'left_device_serial_no',
-            'right_device_serial_no',
-            'trial_end_date',
             'trial_completed_at',
-            'trial_decision',
-            'completion_notes',
-            'need_customization',
-            'is_customization_completed',
-            'device_condition_on_return',
-            'extended_trial'
+            'completion_notes'
         ]
 
 
