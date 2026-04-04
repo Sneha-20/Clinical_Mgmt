@@ -52,14 +52,51 @@ export default function CompleteTrialModal({
           {/* Trial Device Info */}
           <div className="p-3 bg-slate-100 rounded-lg mb-4">
             <p className="text-xs text-muted-foreground mb-1">Trial Device</p>
-            <p className="font-medium text-foreground">
-              {selectedTrial?.device_name}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {selectedTrial?.serial_number}
-            </p>
+            {(() => {
+              const devices =
+                selectedTrial?.device_details_list ||
+                selectedTrial?.device_details ||
+                [];
+              if (devices.length > 0) {
+                return (
+                  <div className="flex flex-col gap-2">
+                    {devices.map((device) => (
+                      <div key={device.id} className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-[10px] font-bold px-1 rounded-sm uppercase ${
+                              device.ear_side === "LEFT"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {device.ear_side} Ear
+                          </span>
+                          <p className="font-medium text-foreground text-sm">
+                            {device.device_inventory_name ||
+                              `${device.device_brand} ${device.device_model}`}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Serial: {device.serial_number}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+              return (
+                <>
+                  <p className="font-medium text-foreground text-sm">
+                    {selectedTrial?.device_name || "N/A"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedTrial?.serial_number || "#"}
+                  </p>
+                </>
+              );
+            })()}
           </div>
-
           {/* Action Selection Buttons */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <Button
@@ -87,92 +124,100 @@ export default function CompleteTrialModal({
               <span className="text-xs">Extend Trial</span>
             </Button>
           </div>
-
           {/* Book Device Content */}
           {selectedAction === "BOOK" && (
-            <div className="space-y-4 p-4 border rounded-lg bg-success/5 border-success/20">
-              <p className="text-sm text-muted-foreground">
-                Select a device from inventory to book for the patient. The
-                trial device will be returned to trial stock.
+            <div className="space-y-6">
+              <p className="text-sm text-muted-foreground px-1">
+                Select devices from inventory to book for the patient for each trialled ear. The
+                trial devices will be returned to trial stock.
               </p>
 
-              <div className="space-y-2">
-                <DropDown
-                  label="Select Device"
-                  name="deviceId"
-                  options={inventoryDevice}
-                  value={form.deviceId}
-                  onChange={handleChange}
-                  formatOptionLabel={(opt) => (
-                    <div className="flex flex-col">
-                      <p className="flex items-center">
-                        <span className="font-medium">{opt.label} </span>
-                        <span className="text-xs text-muted-foreground ml-2">
-                          Stock : {opt.qty}
-                        </span>
-                      </p>
-                      <span className="text-xs text-gray-500">
-                        {opt.brand} • ₹{opt.price}
-                      </span>
-                    </div>
-                  )}
-                />
-              </div>
+              {(selectedTrial?.device_details_list || selectedTrial?.device_details)?.map((trialDev) => (
+                <div key={trialDev.id} className="space-y-4 p-4 border rounded-lg bg-success/5 border-success/20">
+                   <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${trialDev.ear_side === 'LEFT' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                      {trialDev.ear_side} EAR
+                    </span>
+                    <span className="text-xs text-muted-foreground">Booking Details</span>
+                  </div>
 
-              <div className="space-y-2">
-                <DropDown
-                  label="Select Serial Number"
-                  name="serialId"
-                  options={serialOption}
-                  value={form.serialId}
-                  onChange={handleChange}
-                  isDisabled={
-                    !form.deviceId ||
-                    inventoryDevice.find((d) => d.value === form.deviceId)
-                      ?.qty === 0
-                  }
-                />
-              </div>
-              <div>
-                {(form.deviceId ||
-                  inventoryDevice.find((d) => d.value === form.deviceId)?.qty >
-                    0) && (
-                  <div className="flex items-center">
-                    <input
-                      id="customization"
-                      name="isCustomization"
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={form.isCustomization}
-                      onChange={(e) =>
-                        handleChange("isCustomization", e.target.checked)
+                  <div className="space-y-2">
+                    <DropDown
+                      label="Select Device"
+                      name="deviceId"
+                      options={inventoryDevice}
+                      value={form[trialDev.ear_side].deviceId}
+                      onChange={(name, val) => handleChange(name, val, trialDev.ear_side)}
+                      formatOptionLabel={(opt) => (
+                        <div className="flex flex-col">
+                          <p className="flex items-center">
+                            <span className="font-medium text-sm">{opt.label} </span>
+                            <span className="text-xs text-muted-foreground ml-2">
+                              Stock: {opt.qty}
+                            </span>
+                          </p>
+                          <span className="text-xs text-gray-500">
+                            {opt.brand} • ₹{opt.price}
+                          </span>
+                        </div>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <DropDown
+                      label="Select Serial Number"
+                      name="serialId"
+                      options={serialOption[trialDev.ear_side] || []}
+                      value={form[trialDev.ear_side].serialId}
+                      onChange={(name, val) => handleChange(name, val, trialDev.ear_side)}
+                      isDisabled={
+                        !form[trialDev.ear_side].deviceId ||
+                        inventoryDevice.find((d) => d.value === form[trialDev.ear_side].deviceId)
+                          ?.qty === 0
                       }
                     />
-                    <label
-                      htmlFor="customization"
-                      className="ml-2 block text-sm text-gray-900"
-                    >
-                      Is Customization Required
-                    </label>
                   </div>
-                )}
-              </div>
 
-              <div className="space-y-2">
+                  <div>
+                    {form[trialDev.ear_side].deviceId && (
+                      <div className="flex items-center">
+                        <input
+                          id={`customization-${trialDev.ear_side}`}
+                          name="isCustomization"
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          checked={form[trialDev.ear_side].isCustomization}
+                          onChange={(e) =>
+                            handleChange("isCustomization", e.target.checked, trialDev.ear_side)
+                          }
+                        />
+                        <label
+                          htmlFor={`customization-${trialDev.ear_side}`}
+                          className="ml-2 block text-sm text-gray-900 font-medium"
+                        >
+                          Is Customization Required
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {inventoryDevice?.find((d) => d.value === form[trialDev.ear_side].deviceId)?.qty === 0 && (
+                    <p className="text-[11px] text-destructive italic">
+                      Note: Selected device is out of stock – will be marked as "Awaiting Stock".
+                    </p>
+                  )}
+                </div>
+              ))}
+
+              <div className="space-y-2 px-1">
                 <Input
                   label="Notes (Optional)"
-                  placeholder="Add any booking notes..."
+                  placeholder="Add any overall booking notes..."
                   value={form.notes}
                   onChange={(e) => handleChange("notes", e.target.value)}
                 />
               </div>
-              {inventoryDevice?.find((d) => d.value === form.deviceId)?.qty ===
-                0 && (
-                <p className="text-xs text-destructive mt-[2px]">
-                  Selected device is currently out of stock – booking will be
-                  marked as <span className="text-sm">"Awaiting Stock"</span>.
-                </p>
-              )}
             </div>
           )}
 

@@ -208,7 +208,7 @@ export default function TrialGivenForm({
       ear_side: device.ear_fitted?.toUpperCase(),
       serial_number: device.serial_number,
       style_type: device.style_type,
-      device_inventory_id: null,
+      // device_inventory_id: null,
       srt_before: device.srt_before,
       sds_before: device.sds_before,
       ucl_before: device.ucl_before,
@@ -480,63 +480,63 @@ export default function TrialGivenForm({
                 {["ITE", "ITC", "Custom", "CIC"].includes(
                   device.style_type,
                 ) && (
-                  <>
-                    <DropDown
-                      label="Rechargable"
-                      options={rechargableOptions}
-                      value={device.rechargeable}
-                      onChange={(n, v) =>
-                        updateDeviceField(index, "rechargeable", v)
-                      }
-                      error={getDeviceError(index, "rechargeable")}
-                      important
-                    />
-                    {device.rechargeable === "No" && (
+                    <>
                       <DropDown
-                        label="Battery No"
-                        options={batteryNoOptions}
-                        value={device.battery_number}
+                        label="Rechargable"
+                        options={rechargableOptions}
+                        value={device.rechargeable}
                         onChange={(n, v) =>
-                          updateDeviceField(index, "battery_number", v)
+                          updateDeviceField(index, "rechargeable", v)
                         }
-                        error={getDeviceError(index, "battery_number")}
+                        error={getDeviceError(index, "rechargeable")}
                         important
                       />
-                    )}
-                    <DropDown
-                      label="Venting Type"
-                      options={ventingTypeOptions}
-                      value={device.venting_type}
-                      onChange={(n, v) =>
-                        updateDeviceField(index, "venting_type", v)
-                      }
-                      error={getDeviceError(index, "venting_type")}
-                      important
-                    />
-                    {device.venting_type === "Open" && (
+                      {device.rechargeable === "No" && (
+                        <DropDown
+                          label="Battery No"
+                          options={batteryNoOptions}
+                          value={device.battery_number}
+                          onChange={(n, v) =>
+                            updateDeviceField(index, "battery_number", v)
+                          }
+                          error={getDeviceError(index, "battery_number")}
+                          important
+                        />
+                      )}
                       <DropDown
-                        label="Vent Size"
-                        options={ventingSizeOptions}
-                        value={device.vent_size}
+                        label="Venting Type"
+                        options={ventingTypeOptions}
+                        value={device.venting_type}
                         onChange={(n, v) =>
-                          updateDeviceField(index, "vent_size", v)
+                          updateDeviceField(index, "venting_type", v)
                         }
-                        error={getDeviceError(index, "vent_size")}
+                        error={getDeviceError(index, "venting_type")}
                         important
                       />
-                    )}
-                    <DropDown
-                      label="Wireless"
-                      options={wirelessOptions}
-                      value={device.wireless}
-                      onChange={(n, v) =>
-                        updateDeviceField(index, "wireless", v)
-                      }
-                      error={getDeviceError(index, "wireless")}
-                      important
-                    />
-                  </>
-                )}
+                      {device.venting_type === "Open" && (
+                        <DropDown
+                          label="Vent Size"
+                          options={ventingSizeOptions}
+                          value={device.vent_size}
+                          onChange={(n, v) =>
+                            updateDeviceField(index, "vent_size", v)
+                          }
+                          error={getDeviceError(index, "vent_size")}
+                          important
+                        />
+                      )}
+                      <DropDown
+                        label="Wireless"
+                        options={wirelessOptions}
+                        value={device.wireless}
+                        onChange={(n, v) =>
+                          updateDeviceField(index, "wireless", v)
+                        }
+                        error={getDeviceError(index, "wireless")}
+                        important
+                      />
+                    </>
+                  )}
 
                 {["Cross", "Bicross"].includes(device.style_type) && (
                   <>

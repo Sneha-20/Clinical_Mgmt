@@ -11,9 +11,16 @@ import {
 } from "../services/audiologist";
 
 const INITIAL_BOOK_FORM = {
-  deviceId: null,
-  serialId: null,
-  isCustomization: false,
+  LEFT: {
+    deviceId: null,
+    serialId: null,
+    isCustomization: false,
+  },
+  RIGHT: {
+    deviceId: null,
+    serialId: null,
+    isCustomization: false,
+  },
   notes: "",
 };
 
@@ -30,7 +37,7 @@ export default function () {
   const [totalPage, setTotalpage] = useState(null);
   const [currentPage, setCurrenPage] = useState(1);
   const [inventoryDevice, setInventoryDevice] = useState([]);
-  const [serials, setSerials] = useState([]);
+  const [serials, setSerials] = useState({ LEFT: [], RIGHT: [] });
   const [completeTrialDialogOpen, setCompleteTrialDialogOpen] = useState(false);
   const [selectedTrial, setSelectedTrial] = useState(null);
   const [selectedTrialId, setSelectedTrialId] = useState(null);
@@ -93,21 +100,22 @@ export default function () {
     setSelectedTrial(null);
   };
 
-  const fetchSerialsByDevice = async (deviceId) => {
+  const fetchSerialsByDevice = async (deviceId, earSide) => {
     try {
       dispatch(startLoading());
       const response = await fetchSerialList({ deviceId });
       const resData = response.data;
-      setSerials(
-        resData.map((item) => ({
+      setSerials((prev) => ({
+        ...prev,
+        [earSide]: resData.map((item) => ({
           label: item,
           value: item,
         })),
-      );
+      }));
     } catch (error) {
       showToast({
         type: "error",
-        message: "Failed to fetch serial list of selected device",
+        message: `Failed to fetch serial list for ${earSide} ear device`,
       });
     } finally {
       dispatch(stopLoading());
@@ -131,94 +139,85 @@ export default function () {
   //     }
   //   }
   // };
-  const handleChange = async (name, value) => {
-    setForm((prev) => {
-      let updated = { ...prev, [name]: value };
+  const handleChange = async (name, value, earSide = null) => {
+    if (earSide) {
+      setForm((prev) => {
+        let updatedEar = { ...prev[earSide], [name]: value };
 
-      // 🔹 Device change logic
-      if (name === "deviceId") {
-        updated.serialId = null;
+        // 🔹 Device change logic
+        if (name === "deviceId") {
+          updatedEar.serialId = null;
 
-        const selected = inventoryDevice.find((d) => d.value === value);
+          const selected = inventoryDevice.find((d) => d.value === value);
 
-        if (selected?.qty === 0) {
-          showToast({
-            type: "warning",
-            message:
-              "Selected device is out of stock – booking will be marked as awaiting stock.",
-          });
-          setSerials([]);
-        } else {
-          fetchSerialsByDevice(value);
+          if (selected?.qty === 0) {
+            showToast({
+              type: "warning",
+              message:
+                "Selected device is out of stock – booking will be marked as awaiting stock.",
+            });
+            setSerials((prevSerials) => ({ ...prevSerials, [earSide]: [] }));
+          } else {
+            fetchSerialsByDevice(value, earSide);
+          }
         }
-      }
 
-      // 🔹 Checkbox (Customization) logic
-      if (name === "isCustomization") {
-        if (!value) {
-          // ❌ When unchecked → reset related data (if any)
-          // (use this if you later add customType field)
-          // updated.customType = "";
-
+        // 🔹 Checkbox (Customization) logic
+        if (name === "isCustomization") {
           showToast({
             type: "info",
-            message: "Customization removed.",
-          });
-        } else {
-          // ✅ When checked
-          showToast({
-            type: "info",
-            message: "Customization enabled for this booking.",
+            message: value
+              ? "Customization enabled for this booking."
+              : "Customization removed.",
           });
         }
-      }
 
-      return updated;
-    });
+        return { ...prev, [earSide]: updatedEar };
+      });
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
   const handleCompleteTrials = async () => {
     let payload = {};
 
     if (selectedAction === "BOOK") {
-      const selected = inventoryDevice.find((d) => d.value === form.deviceId);
+      const booked_devices = [];
 
-      const isOutOfStock = selected?.qty === 0;
+      // Check which ears were trialled
+      const trialledEars =
+        selectedTrial?.device_details?.map((d) => d.ear_side) || [];
 
-      // 🔴 CASE 1: OUT OF STOCK
-      if (isOutOfStock) {
-        payload = {
-          trial_decision: "BOOK - Awaiting Stock",
-          booked_device_inventory: form.deviceId,
-          completion_notes: form.notes || "Product not available",
-        };
+      trialledEars.forEach((ear) => {
+        const earData = form[ear];
+        const selected = inventoryDevice.find((d) => d.value === earData.deviceId);
 
-        showToast({
-          type: "info",
-          message: "Device is out of stock; booking marked as awaiting stock.",
-        });
-      }
+        if (earData.deviceId) {
+          let booking_status = "";
+          
+          if (!earData.serialId || selected?.qty === 0) {
+            booking_status = "BOOK - Awaiting Stock";
+          } else if (earData.isCustomization) {
+            booking_status = "BOOK - With Customization";
+          } else {
+            booking_status = "BOOK - Device Allocated";
+          }
 
-      // 🟡 CASE 2: AVAILABLE + CUSTOMIZATION
-      else if (form.isCustomization) {
-        payload = {
-          trial_decision: "BOOK - With Customization",
-          need_customization: true,
-          booked_device_inventory: form.deviceId,
-          booked_device_serial: form.serialId, // optional
-          completion_notes:
-            form.notes || "Customization required (earmold/tips)",
-        };
-      }
+          booked_devices.push({
+            ear_side: ear,
+            inventory_item_id: earData.deviceId,
+            serial_number: earData.serialId || null,
+            booking_status: booking_status,
+            device_name: selected?.label || "Hearing Aid",
+          });
+        }
+      });
 
-      // 🟢 CASE 3: AVAILABLE + NO CUSTOMIZATION
-      else {
-        payload = {
-          trial_decision: "BOOK - Device Allocated",
-          booked_device_inventory: form.deviceId,
-          booked_device_serial: form.serialId,
-          completion_notes: form.notes || "",
-        };
-      }
+      payload = {
+        trial_decision: "BOOKED",
+        completion_notes: form.notes || "Trial completed, devices booked",
+        booked_devices: booked_devices,
+      };
     }
 
     if (selectedAction === "DECLINE") {
@@ -239,10 +238,21 @@ export default function () {
     try {
       const res = await bookedDeviceForm(selectedTrialId, payload);
 
-      await returnTrialDevice(
-        selectedTrial?.serial_number,
-        "Device returned after trial completion",
-      );
+      // Return trial devices (send single payload with left/right serials)
+      const devices =
+        selectedTrial?.device_details_list ||
+        selectedTrial?.device_details ||
+        [];
+      const leftDevice = devices.find((d) => d.ear_side === "LEFT");
+      const rightDevice = devices.find((d) => d.ear_side === "RIGHT");
+
+      const returnPayload = {
+        left_serial_number: leftDevice?.serial_number || null,
+        right_serial_number: rightDevice?.serial_number || null,
+        device_condition_on_return: "Device returned after trial completion",
+      };
+
+      await returnTrialDevice(returnPayload);
 
       showToast({
         type: "success",
