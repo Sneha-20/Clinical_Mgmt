@@ -23,11 +23,11 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
+# Copy environment file first
+COPY .env /app/.env
+
 # Copy project
 COPY . /app/
-
-# Copy environment file
-COPY .env /app/.env
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/media /app/static

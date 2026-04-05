@@ -20,7 +20,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
-load_dotenv(os.path.join(BASE_DIR.parent.parent, '.env'))
+
+# Debug: Print current working directory and paths
+print(f"Current working directory: {os.getcwd()}")
+print(f"BASE_DIR: {BASE_DIR}")
+print(f"BASE_DIR.parent: {BASE_DIR.parent}")
+print(f"BASE_DIR.parent.parent: {BASE_DIR.parent.parent}")
+
+env_path = os.path.join(BASE_DIR.parent.parent, '.env')
+print(f"Looking for .env at: {env_path}")
+print(f".env file exists: {os.path.exists(env_path)}")
+
+# List files in the parent directory to debug
+parent_dir = BASE_DIR.parent.parent
+if os.path.exists(parent_dir):
+    print(f"Files in {parent_dir}: {os.listdir(parent_dir)}")
+
+load_dotenv(env_path)
+
+# Check if environment variables are loaded
+print(f"DB_NAME from env: {os.getenv('DB_NAME', 'NOT_FOUND')}")
+print(f"DB_HOST from env: {os.getenv('DB_HOST', 'NOT_FOUND')}")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-production')
