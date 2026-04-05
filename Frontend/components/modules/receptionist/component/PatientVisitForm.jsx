@@ -445,38 +445,34 @@ export default function PatientVisitForm({
                     rows={3}
                   />
                 </div>
-                {(visit.visit_type === "New Test" ||
-                  visit.visit_type === "Hearing Aid Trial") && (
-                    <>
-                      <div className="mt-4">
-                        <label className="font-medium text-sm text-gray-700">
-                          Tests Required (Tick)
-                        </label>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                        {testRequestedOptions.map((test) => (
-                          <CommonCheckbox
-                            key={test.value}
-                            label={test.label}
-                            value={test.value}
-                            checked={visit.test_requested.includes(test.value)}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              const updated = visit.test_requested.includes(value)
-                                ? visit.test_requested.filter((t) => t !== value)
-                                : [...visit.test_requested, value];
-                              updateVisitDetails(
-                                index,
-                                "test_requested",
-                                updated,
-                              );
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
+                {visit.visit_type !== "Speech Therapy Assessment" && (
+                  <div className="p-3 bg-slate-50 rounded-md">
+                    <label className="font-semibold text-sm text-gray-700 block mb-2">
+                      Tests Required
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {testRequestedOptions.map((test) => (
+                        <CommonCheckbox
+                          key={test.value}
+                          label={test.label}
+                          value={test.value}
+                          checked={visit.test_requested.includes(test.value)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const updated = visit.test_requested.includes(value)
+                              ? visit.test_requested.filter((t) => t !== value)
+                              : [...visit.test_requested, value];
+                            updateVisitDetails(
+                              index,
+                              "test_requested",
+                              updated,
+                            );
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                   <Input
