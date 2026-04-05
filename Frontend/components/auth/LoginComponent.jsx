@@ -20,7 +20,7 @@ export default function LoginComponent() {
       <div className="w-full max-w-md">
         <div className="mb-6 sm:mb-8 text-center">
           <div
-            className="flex items-center justify-center gap-2 mb-3 sm:mb-4"
+            className="flex items-center justify-center gap-2 mb-3 sm:mb-4 cursor-pointer"
             onClick={() => router.push(routes.pages.home)}
           >
             <div className=" flex items-center justify-center">
