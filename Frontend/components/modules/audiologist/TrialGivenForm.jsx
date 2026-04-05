@@ -23,8 +23,8 @@ const domeSizeOptions = [
 const domeTypeOptions = [
   { label: "Close", value: "Close" },
   { label: "Open", value: "Open" },
-  { label: "Power", value: "Power" },
-  { label: "Tulip", value: "Tulip" },
+  { label: "Power Dome", value: "Power Dome" },
+  { label: "Tulip Dome", value: "Tulip Dome" },
   { label: "Vented Dome", value: "Vented Dome" },
 ];
 const styleTypeOption = [
