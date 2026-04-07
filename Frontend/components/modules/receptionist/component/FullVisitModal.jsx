@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Modal from "@/components/ui/Modal";
 import { apiClient } from "@/lib/api";
 import CommonBadge from "@/components/ui/badge";
@@ -209,23 +209,63 @@ export default function FullVisitModal({ visitId, open, onClose }) {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-100">
-                         <th className="p-2 border">Device</th>
-                         <th className="p-2 border">Serial</th>
-                         <th className="p-2 border">Ear</th>
-                         <th className="p-2 border">Duration</th>
-                         <th className="p-2 border">Decision</th>
+                         <th className="p-2 border font-semibold">Device</th>
+                         <th className="p-2 border font-semibold">Serial</th>
+                         <th className="p-2 border font-semibold text-center">Ear</th>
+                         <th className="p-2 border font-semibold text-center">Duration</th>
+                         <th className="p-2 border font-semibold text-center">Decision</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.trials.map(t => (
-                        <tr key={t.id}>
-                          <td className="p-2 border">{t.device_details?.brand} {t.device_details?.model_type}</td>
-                          <td className="p-2 border">{t.serial_number}</td>
-                          <td className="p-2 border">{t.ear_fitted}</td>
-                          <td className="p-2 border">{t.trial_start_date} to {t.trial_end_date}</td>
-                          <td className="p-2 border"><CommonBadge title={t.trial_decision} /></td>
-                        </tr>
-                      ))}
+                      {data.trials.map(t => {
+                        const devices = t.device_details_list || t.device_details || [];
+                        return (
+                          <React.Fragment key={t.id}>
+                            {devices.length > 0 ? (
+                              devices.map((dev, idx) => (
+                                <tr key={`${t.id}-${dev.id || idx}`}>
+                                  <td className="p-2 border">
+                                    <div className="font-medium text-slate-800">
+                                      {dev.device_inventory_name || `${dev.device_brand} ${dev.device_model}`}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500">
+                                      {dev.style_type} {dev.receiver_power ? `• ${dev.receiver_power} Power` : ""}
+                                    </div>
+                                  </td>
+                                  <td className="p-2 border text-slate-600">{dev.serial_number}</td>
+                                  <td className="p-2 border text-center">
+                                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${dev.ear_side === 'LEFT' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                                      {dev.ear_side}
+                                    </span>
+                                  </td>
+                                  {idx === 0 && (
+                                    <>
+                                      <td className="p-2 border text-slate-600 text-center align-middle" rowSpan={devices.length}>
+                                        {t.trial_start_date} <span className="block text-[10px] text-slate-400">to</span> {t.trial_end_date}
+                                      </td>
+                                      <td className="p-2 border text-center align-middle" rowSpan={devices.length}>
+                                        <CommonBadge title={t.trial_decision} />
+                                      </td>
+                                    </>
+                                  )}
+                                </tr>
+                              ))
+                            ) : (
+                               <tr key={t.id}>
+                                 <td className="p-2 border text-slate-400 italic">No devices listed</td>
+                                 <td className="p-2 border text-center">{t.serial_number || "-"}</td>
+                                 <td className="p-2 border text-center uppercase text-[10px] font-bold">{t.ear_fitted || "-"}</td>
+                                 <td className="p-2 border text-center text-slate-600">
+                                   {t.trial_start_date} <span className="text-[10px] text-slate-400">to</span> {t.trial_end_date}
+                                 </td>
+                                 <td className="p-2 border text-center">
+                                   <CommonBadge title={t.trial_decision} />
+                                 </td>
+                               </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -262,20 +302,28 @@ export default function FullVisitModal({ visitId, open, onClose }) {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-100">
-                         <th className="p-2 border">Item</th>
-                         <th className="p-2 border">Model</th>
-                         <th className="p-2 border">Serial</th>
-                         <th className="p-2 border text-center">Qty</th>
-                         <th className="p-2 border">Unit Price</th>
-                         <th className="p-2 border text-right">Total Price</th>
+                         <th className="p-2 border font-semibold">Item</th>
+                         <th className="p-2 border font-semibold">Model</th>
+                         <th className="p-2 border font-semibold">Serial</th>
+                         <th className="p-2 border font-semibold text-center">Ear</th>
+                         <th className="p-2 border font-semibold text-center">Qty</th>
+                         <th className="p-2 border font-semibold">Unit Price</th>
+                         <th className="p-2 border font-semibold text-right">Total Price</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.purchase_records.map(p => (
                         <tr key={p.id}>
-                          <td className="p-2 border font-medium">{p.item_name}</td>
+                          <td className="p-2 border font-medium text-slate-800">{p.item_name}</td>
                           <td className="p-2 border text-slate-600">{p.item_brand} {p.item_model}</td>
-                          <td className="p-2 border">{p.serial_number || "-"}</td>
+                          <td className="p-2 border text-slate-600">{p.serial_number || "-"}</td>
+                          <td className="p-2 border text-center">
+                            {p.ear_side ? (
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${p.ear_side === 'LEFT' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                                {p.ear_side}
+                              </span>
+                            ) : "-"}
+                          </td>
                           <td className="p-2 border text-center">{p.quantity}</td>
                           <td className="p-2 border">₹{p.unit_price}</td>
                           <td className="p-2 border font-semibold text-right">₹{p.total_price}</td>

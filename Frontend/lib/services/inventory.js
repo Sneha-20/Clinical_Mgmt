@@ -229,3 +229,12 @@ export const deleteInventoryItem = async (id) => {
     throw error;
   }
 };
+export const getInventoryItemDetail = async (id) => {
+  try {
+    const url = `clinical/inventory/items/?id=${id}`;
+    const response = await apiClient.get(url);
+    return response.data || response;
+  } catch (error) {
+    throw error;
+  }
+};

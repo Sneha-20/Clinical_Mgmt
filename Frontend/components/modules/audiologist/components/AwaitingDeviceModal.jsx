@@ -16,7 +16,7 @@ export default function AwaitingDeviceModal({
   isCompleting,
 }) {
   const isCustomization =
-    selectedTrial?.trial_decision === "BOOK - With Customization" &&
+    selectedTrial?.booking_status === "BOOK - With Customization" &&
     selectedTrial?.device_serial_no !== null;
 
   return (
@@ -74,7 +74,7 @@ export default function AwaitingDeviceModal({
               <p className="text-sm text-muted-foreground">
                 This trial was booked with customization. Has the customization process been completed?
               </p>
-              
+
               <div className="space-y-2 mt-2">
                 <label className="text-sm font-medium">
                   Is Customization completed? <span className="text-red-500">*</span>
@@ -141,14 +141,14 @@ export default function AwaitingDeviceModal({
           <Button
             onClick={handleCompleteTrial}
             disabled={
-              isCompleting || 
-              (!isCustomization && !form.serialId) || 
+              isCompleting ||
+              (!isCustomization && !form.serialId) ||
               (isCustomization && form.is_customization_completed === undefined)
             }
             className="bg-green-600 hover:bg-green-700"
           >
-            {isCompleting 
-              ? (isCustomization ? "Saving..." : "Allocating...") 
+            {isCompleting
+              ? (isCustomization ? "Saving..." : "Allocating...")
               : (isCustomization ? "Complete Customization" : "Allocate Device")}
           </Button>
         </div>

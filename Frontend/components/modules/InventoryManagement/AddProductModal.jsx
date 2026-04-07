@@ -75,7 +75,7 @@ export default function AddProductModal({
     if (selectedModelName?.toLowerCase().includes("core")) {
       return diagnosticCoreProducts;
     }
-    if (selectedModelName?.toLowerCase().includes("Hearing Aids Accessories")) {
+    if (selectedModelName?.toLowerCase().includes("accessories")) {
       return diagnosticAccessoryProducts;
     }
     return [];

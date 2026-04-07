@@ -177,13 +177,52 @@ const TrialList = () => {
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Device</p>
-                        <p className="font-medium text-foreground">
-                          {trial.device_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          <Hash className="h-3 w-3 inline mr-1" />
-                          {trial.serial_number}
-                        </p>
+                        {(() => {
+                          const devices = trial.device_details_list || trial.device_details || [];
+                          if (devices.length > 0) {
+                            return (
+                              <div className="flex flex-col gap-2 mt-1">
+                                {devices.map((device) => (
+                                  <div
+                                    key={device.id}
+                                    className="bg-slate-50/50 p-1.5 rounded border border-slate-100 min-w-[140px]"
+                                  >
+                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                      <span
+                                        className={`text-[9px] font-bold px-1 rounded-sm uppercase ${
+                                          device.ear_side === "LEFT"
+                                            ? "bg-blue-100 text-blue-700"
+                                            : "bg-red-100 text-red-700"
+                                        }`}
+                                      >
+                                        {device.ear_side}
+                                      </span>
+                                      <p className="font-medium text-foreground text-[13px] truncate">
+                                        {device.device_inventory_name ||
+                                          `${device.device_brand} ${device.device_model}`}
+                                      </p>
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground flex items-center">
+                                      <Hash className="h-2.5 w-2.5 inline mr-1" />
+                                      {device.serial_number}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                          return (
+                            <>
+                              <p className="font-medium text-foreground">
+                                {trial.device_name || "N/A"}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                <Hash className="h-3 w-3 inline mr-1" />
+                                {trial.serial_number || "#"}
+                              </p>
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
