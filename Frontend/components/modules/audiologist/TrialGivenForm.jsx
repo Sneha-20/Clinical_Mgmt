@@ -208,7 +208,6 @@ export default function TrialGivenForm({
       ear_side: device.ear_fitted?.toUpperCase(),
       serial_number: device.serial_number,
       style_type: device.style_type,
-      // device_inventory_id: null,
       srt_before: device.srt_before,
       sds_before: device.sds_before,
       ucl_before: device.ucl_before,
@@ -257,7 +256,7 @@ export default function TrialGivenForm({
       cost: "",
       devices: [{ ...defaultDevice }],
     },
-    // validationSchema: trialGivenSchema,
+    validationSchema: trialGivenSchema,
     onSubmit: async (values) => {
       const payload = {
         visit: values.visit,
@@ -268,8 +267,6 @@ export default function TrialGivenForm({
         trial_end_date: values.trial_end_date,
         devices: values.devices.map(buildDevicePayload),
       };
-
-      console.log("Payload:", payload);
       await registerTrialForm(payload);
       goToDashboard();
       onSubmitSuccess?.();
@@ -290,6 +287,15 @@ export default function TrialGivenForm({
           idx !== currentIndex && device.ear_fitted === option.value,
       ),
     }));
+
+  const getAvailableSerialNumbers = (currentIndex) =>
+    trialDeviceList.filter(
+      (serialNumber) =>
+        !formik.values.devices.some(
+          (device, idx) =>
+            idx !== currentIndex && device.serial_number === serialNumber,
+        ),
+    );
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -330,6 +336,7 @@ export default function TrialGivenForm({
                   onChange={(n, v) => updateDeviceField(index, "ear_fitted", v)}
                   error={getDeviceError(index, "ear_fitted")}
                   important
+                  // className={`${isDisabled ? "cursor-not-allowed opacity-5" : ""}`}
                 />
 
                 <div className="relative">
@@ -353,8 +360,8 @@ export default function TrialGivenForm({
 
                   {showDropdown && focusedSerialIndex === index && (
                     <ul className="absolute bg-white w-full z-[5] max-h-40 overflow-y-auto border border-slate-200 rounded-md mt-1">
-                      {trialDeviceList.length > 0 ? (
-                        trialDeviceList.map((deviceValue) => (
+                      {getAvailableSerialNumbers(index).length > 0 ? (
+                        getAvailableSerialNumbers(index).map((deviceValue) => (
                           <li
                             key={deviceValue}
                             className="px-3 py-2 cursor-pointer hover:bg-slate-100"
@@ -480,63 +487,63 @@ export default function TrialGivenForm({
                 {["ITE", "ITC", "Custom", "CIC"].includes(
                   device.style_type,
                 ) && (
-                    <>
+                  <>
+                    <DropDown
+                      label="Rechargable"
+                      options={rechargableOptions}
+                      value={device.rechargeable}
+                      onChange={(n, v) =>
+                        updateDeviceField(index, "rechargeable", v)
+                      }
+                      error={getDeviceError(index, "rechargeable")}
+                      important
+                    />
+                    {device.rechargeable === "No" && (
                       <DropDown
-                        label="Rechargable"
-                        options={rechargableOptions}
-                        value={device.rechargeable}
+                        label="Battery No"
+                        options={batteryNoOptions}
+                        value={device.battery_number}
                         onChange={(n, v) =>
-                          updateDeviceField(index, "rechargeable", v)
+                          updateDeviceField(index, "battery_number", v)
                         }
-                        error={getDeviceError(index, "rechargeable")}
+                        error={getDeviceError(index, "battery_number")}
                         important
                       />
-                      {device.rechargeable === "No" && (
-                        <DropDown
-                          label="Battery No"
-                          options={batteryNoOptions}
-                          value={device.battery_number}
-                          onChange={(n, v) =>
-                            updateDeviceField(index, "battery_number", v)
-                          }
-                          error={getDeviceError(index, "battery_number")}
-                          important
-                        />
-                      )}
+                    )}
+                    <DropDown
+                      label="Venting Type"
+                      options={ventingTypeOptions}
+                      value={device.venting_type}
+                      onChange={(n, v) =>
+                        updateDeviceField(index, "venting_type", v)
+                      }
+                      error={getDeviceError(index, "venting_type")}
+                      important
+                    />
+                    {device.venting_type === "Open" && (
                       <DropDown
-                        label="Venting Type"
-                        options={ventingTypeOptions}
-                        value={device.venting_type}
+                        label="Vent Size"
+                        options={ventingSizeOptions}
+                        value={device.vent_size}
                         onChange={(n, v) =>
-                          updateDeviceField(index, "venting_type", v)
+                          updateDeviceField(index, "vent_size", v)
                         }
-                        error={getDeviceError(index, "venting_type")}
+                        error={getDeviceError(index, "vent_size")}
                         important
                       />
-                      {device.venting_type === "Open" && (
-                        <DropDown
-                          label="Vent Size"
-                          options={ventingSizeOptions}
-                          value={device.vent_size}
-                          onChange={(n, v) =>
-                            updateDeviceField(index, "vent_size", v)
-                          }
-                          error={getDeviceError(index, "vent_size")}
-                          important
-                        />
-                      )}
-                      <DropDown
-                        label="Wireless"
-                        options={wirelessOptions}
-                        value={device.wireless}
-                        onChange={(n, v) =>
-                          updateDeviceField(index, "wireless", v)
-                        }
-                        error={getDeviceError(index, "wireless")}
-                        important
-                      />
-                    </>
-                  )}
+                    )}
+                    <DropDown
+                      label="Wireless"
+                      options={wirelessOptions}
+                      value={device.wireless}
+                      onChange={(n, v) =>
+                        updateDeviceField(index, "wireless", v)
+                      }
+                      error={getDeviceError(index, "wireless")}
+                      important
+                    />
+                  </>
+                )}
 
                 {["Cross", "Bicross"].includes(device.style_type) && (
                   <>

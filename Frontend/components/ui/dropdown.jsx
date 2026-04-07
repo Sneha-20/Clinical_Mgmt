@@ -33,6 +33,7 @@ export default function DropDown({
         options={options}
         placeholder={placeholder}
         isDisabled={isDisabled}
+        isOptionDisabled={(option) => option.isDisabled}
         formatOptionLabel={formatOptionLabel}
         onChange={(selected) => onChange?.(name, selected?.value)}
         onBlur={() => onBlur?.(name)}
@@ -42,8 +43,8 @@ export default function DropDown({
             borderColor: error
               ? "red"
               : state.isFocused
-              ? "#3b82f6"
-              : "#d1d5db",
+                ? "#3b82f6"
+                : "#d1d5db",
             boxShadow: state.isFocused ? "0 0 0 2px #bfdbfe" : "none",
             padding: "2px",
             borderRadius: "8px",
@@ -54,10 +55,15 @@ export default function DropDown({
             backgroundColor: state.isSelected
               ? "rgba(20, 67, 91)"
               : state.isFocused
-              ? "rgba(20, 67, 91, 0.15)"
-              : "white",
-            color: state.isSelected ? "white" : "#111",
-            cursor: "pointer",
+                ? "rgba(20, 67, 91, 0.15)"
+                : "white",
+            color: state.isSelected
+              ? "white"
+              : state.isDisabled
+                ? "#9ca3af"
+                : "#111",
+            cursor: state.isDisabled ? "not-allowed" : "pointer",
+            // opacity: state.isDisabled ? 0.9 : 1,
             padding: "8px 12px",
           }),
         }}
