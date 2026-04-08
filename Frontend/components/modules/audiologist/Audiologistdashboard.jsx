@@ -38,9 +38,8 @@ export default function AudiologistDashboard() {
     nextCompletedTest,
     prevPendingtest,
     nextPendingtest,
+    handleViewProfile,
   } = useAudiologist();
-
-  const { handleViewProfile } = usePatientData();
 
   useEffect(() => {
     fetchDashboardStats();
