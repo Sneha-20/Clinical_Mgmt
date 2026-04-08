@@ -6,13 +6,13 @@ export const routes = {
 
   // clinical
   patientList: "/clinical/patient/visit/",
-  todayPatientList:"clinical/patient/visits/today/",
+  todayPatientList: "clinical/patient/visits/today/",
   patientRegister: "/clinical/patient/register/",
   patientVisit: "/clinical/patient/visit/create/",
   searchPatient: "/clinical/patient/flat-list/",
   doctorList: "/clinical/doctor/flat-list/",
   patientProfile: "/clinical/patient/",
-  receptionistDashboard:"clinical/dashboard/stats/",
+  receptionistDashboard: "clinical/dashboard/stats/",
   followupList: "clinical/patient-visits/followup",
   markContacted: "clinical/patient-visits/",
 
@@ -36,36 +36,36 @@ export const routes = {
   inventoryBrandCreate: "clinical/inventory/brands/create/",
   inventoryModelCreate: "clinical/inventory/models/create/",
 
-  audiologist:{
-   appointmentList:"clinical/audiologits/queue/",
-   completedTestList:"clinical/completed-tests/",
-   patientCaseHistory:"clinical/patient/visit/",
-   registerCaseHistory: "clinical/audiologist/test/perform/",
-   registerTrialForm: "/clinical/trials/create/",
-   uploadFile: "clinical/test-uploads/",
-   getTestFile: "clinical/test-results/",
-   deleteTestFile: "clinical/test-upload/",
-   patientVisitdetails: "clinical/completed-tests/",
-   trialDeviceList : "/clinical/inventory/trial-device-serials/",
-   activeTrialDevice:"clinical/trials/",
-   awaitingStockTrials:"clinical/trials/awaiting-stock/",
-   completeAwaitingTrial:"clinical/trials/",
-   allocateSerialTrial: "clinical/trials/allocate-serial/",
-   inventoryDeviceList:"/clinical/device-booking/inventory/",
-   deviceSerialList:"/clinical/device-booking/serial",
-   bookeddevice:"clinical/trials/",
-   returnDevice:"/clinical/api/inventory/return-trial-device/",
-   modalList : "/clinical/inventory/trial-available-models/",
-   reportCreate: "/clinical/report-create/"
+  audiologist: {
+    appointmentList: "clinical/audiologits/queue/",
+    completedTestList: "clinical/completed-tests/",
+    patientCaseHistory: "clinical/patient/visit/",
+    registerCaseHistory: "clinical/audiologist/test/perform/",
+    registerTrialForm: "/clinical/trials/create/",
+    uploadFile: "clinical/test-uploads/",
+    getTestFile: "clinical/test-results/",
+    deleteTestFile: "clinical/test-upload/",
+    patientVisitdetails: "clinical/patient/visit/",
+    trialDeviceList: "/clinical/inventory/trial-device-serials/",
+    activeTrialDevice: "clinical/trials/",
+    awaitingStockTrials: "clinical/trials/awaiting-stock/",
+    completeAwaitingTrial: "clinical/trials/",
+    allocateSerialTrial: "clinical/trials/allocate-serial/",
+    inventoryDeviceList: "/clinical/device-booking/inventory/",
+    deviceSerialList: "/clinical/device-booking/serial",
+    bookeddevice: "clinical/trials/",
+    returnDevice: "/clinical/api/inventory/return-trial-device/",
+    modalList: "/clinical/inventory/trial-available-models/",
+    reportCreate: "/clinical/report-create/",
   },
 
-   billing:{
-   paidBillList:"clinical/bill/paid/",
-   dueBillList:"clinical/bill/pending/",
-   billingDetail:"clinical/bill/visit/",
-   markBillPaid:"clinical/mark-bill-paid/"
+  billing: {
+    paidBillList: "clinical/bill/paid/",
+    dueBillList: "clinical/bill/pending/",
+    billingDetail: "clinical/bill/visit/",
+    markBillPaid: "clinical/mark-bill-paid/",
   },
-  
+
   // Admin Routes
   adminClinics: "accounts/clinics/manager/",
   adminDailyStatus: "clinical/admin/clinic-report/",
@@ -77,7 +77,7 @@ export const routes = {
   pendingUser: "accounts/users/pending/",
   accountsUsers: "accounts/users/",
   clinicDropdown: "accounts/clinics/",
-  inventoryDropdowns:"clinical/inventory/flat-list/",
+  inventoryDropdowns: "clinical/inventory/flat-list/",
 
   // referal doctors
   referrals: "clinical/doctor-referrals/",
@@ -92,14 +92,14 @@ export const routes = {
     delete: "clinical/clinic/transactions/",
   },
 
-    // pages
+  // pages
   pages: {
     dashboard: "/dashboard/home",
     userptofile: "/dashboard/userprofile",
     patientCaseHistory: "/dashboard/case-history",
     patientVisitdetail: "/dashboard/patient/visit-details",
     followUpList: "/dashboard/receptionist/followup-list",
-    servicepage:"/dashboard/tga-service",
+    servicepage: "/dashboard/tga-service",
     transactionHistory: "/dashboard/transaction-history",
     signup: "/signup",
     login: "/login",
@@ -114,7 +114,7 @@ export const publicRoutes = [
   "/login",
   "/signup",
   "/services",
-  "/offers"
+  "/offers",
 ];
 
 // Private routes - require authentication
@@ -135,7 +135,7 @@ export const privateRoutes = [
   "/dashboard/awaiting-device",
   "/dashboard/analytics",
   "/dashboard/transfer-products",
-   "/dashboard/transaction-history",
+  "/dashboard/transaction-history",
 ];
 
 // Routes to hide when user is logged in

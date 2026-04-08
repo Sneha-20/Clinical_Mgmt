@@ -9,18 +9,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Users,
-  Clock,
-  CheckCircle,
-  Activity,
-  CheckCircle2,
-  ArrowBigLeftDash,
-  ArrowBigRightIcon,
-  CircleArrowLeft,
-  CircleArrowRightIcon,
-} from "lucide-react";
+import { Users, CheckCircle, Activity } from "lucide-react";
 import useAudiologist from "@/lib/hooks/useAudiologist";
+import usePatientData from "@/lib/hooks/usePatientData";
 import AppoinmentListCard from "./components/AppoinmentListCard";
 import Pagination from "@/components/ui/Pagination";
 import { getDashboardStats } from "@/lib/services/dashboard";
@@ -48,6 +39,8 @@ export default function AudiologistDashboard() {
     prevPendingtest,
     nextPendingtest,
   } = useAudiologist();
+
+  const { handleViewProfile } = usePatientData();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -212,28 +205,42 @@ export default function AudiologistDashboard() {
                       ) : (
                         <Button
                           variant="link"
-                          disabled={item.step_process !== 3} 
+                          disabled={item.step_process !== 3}
                           onClick={() =>
                             showCaseHistoryform(
                               item.visit_id,
                               item.step_process,
                             )
                           }
-                           className="text-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-auto"                        >
+                          className="text-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:pointer-events-auto"
+                        >
                           Add Trail
                         </Button>
                       )}
                     </div>
                   </div>
-                  <div
-                    className="w-9 h-9 flex items-center justify-center rounded-full 
-                bg-transparent hover:bg-primary transition-colors duration-200 cursor-pointer"
-                    onClick={() => showVisitDeteail(item.visit_id)}
-                  >
-                    <CircleArrowRightIcon className="w-8 h-8 text-primary hover:text-white" />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-full sm:w-auto text-xs sm:text-sm"
+                      onClick={() => showVisitDeteail(item.visit_id)}
+                    >
+                      Visit details
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full sm:w-auto text-xs sm:text-sm"
+                      onClick={() => handleViewProfile(item.patient_id)}
+                    >
+                      Patient profile
+                    </Button>
                   </div>
                 </div>
-                <p className="text-xs absolute right-2 top-2 text-slate-400">Visit Id:{item.visit_id}</p>
+                <p className="text-xs absolute right-2 top-2 text-slate-400">
+                  Visit Id:{item.visit_id}
+                </p>
               </div>
             ))}
           </div>
