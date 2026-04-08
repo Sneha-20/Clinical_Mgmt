@@ -132,7 +132,7 @@ class PatientDetailView(generics.RetrieveAPIView):
     ''' Retrieve Patient Details along with latest visit and total visits '''
     queryset = Patient.objects.all()
     serializer_class = PatientDetailSerializer
-    permission_classes = [IsAuthenticated,ReceptionistPermission | AuditorPermission]  # Ensure user is logged in
+    permission_classes = [IsAuthenticated]  # Ensure user is logged in
     lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
 
     def retrieve(self, request, *args, **kwargs):
@@ -145,7 +145,7 @@ class PatientDetailView(generics.RetrieveAPIView):
 class PatientVisitsView(generics.ListAPIView):
     ''' List all visits for a specific patient '''
     serializer_class = PatientAllVisitSerializer
-    permission_classes = [IsAuthenticated, ReceptionistPermission | AuditorPermission]
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -414,7 +414,7 @@ class PatientVisitFullDetailsView(generics.RetrieveAPIView):
     """
     queryset = PatientVisit.objects.all()
     serializer_class = PatientVisitFullDetailsSerializer
-    permission_classes = [IsAuthenticated, AuditorPermission | ReceptionistPermission]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/full/
 
     def retrieve(self, request, *args, **kwargs):
