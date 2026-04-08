@@ -152,7 +152,7 @@ const AwaitingDeviceList = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(trial.trial_decision)}
+                        {getStatusBadge(trial.booking_status)}
                       </TableCell>
                       <TableCell>
                         <p className="text-sm text-muted-foreground line-clamp-2 max-w-[200px]" title={trial.completion_notes}>

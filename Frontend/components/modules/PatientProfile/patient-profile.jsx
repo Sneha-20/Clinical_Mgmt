@@ -220,6 +220,7 @@ export default function PatientProfile({ patientId }) {
                 <TableHead>Brand</TableHead>
                 <TableHead>Model</TableHead>
                 <TableHead>Serial</TableHead>
+                <TableHead className="text-center">Ear</TableHead>
                 <TableHead>Qty</TableHead>
                 {/* <TableHead>Unit Price</TableHead> */}
                 <TableHead>Total Price</TableHead>
@@ -234,6 +235,13 @@ export default function PatientProfile({ patientId }) {
                   <TableCell>{p.item_brand}</TableCell>
                   <TableCell>{p.item_model}</TableCell>
                   <TableCell>{p.serial_number}</TableCell>
+                  <TableCell className="text-center">
+                    {p.ear_side ? (
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${p.ear_side === 'LEFT' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
+                        {p.ear_side}
+                      </span>
+                    ) : "-"}
+                  </TableCell>
                   <TableCell>{p.quantity}</TableCell>
                   {/* <TableCell>₹{p.unit_price}</TableCell> */}
                   <TableCell>₹{p.total_price}</TableCell>

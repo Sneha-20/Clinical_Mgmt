@@ -56,12 +56,12 @@ export default function useAwaitingDevices() {
     setForm(INITIAL_COMPLETE_FORM);
     setSerials([]);
 
-    const isCustomization = 
-      trial?.trial_decision === "BOOK - With Customization" && 
+    const isCustomization =
+      trial?.booking_status === "BOOK - With Customization" &&
       trial?.device_serial_no !== null;
 
-    if (!isCustomization && trial.booked_device_inventory) {
-      fetchSerialsByDevice(trial.booked_device_inventory);
+    if (!isCustomization && trial.inventory_item) {
+      fetchSerialsByDevice(trial.inventory_item);
     }
   };
   const handleCloseDialog = () => {
@@ -98,7 +98,7 @@ export default function useAwaitingDevices() {
 
   const handleCompleteTrial = async () => {
     const isCustomization =
-      selectedTrial?.trial_decision === "BOOK - With Customization" &&
+      selectedTrial?.booking_status === "BOOK - With Customization" &&
       selectedTrial?.device_serial_no !== null;
 
     if (!isCustomization && (!selectedTrial || !form.serialId)) {

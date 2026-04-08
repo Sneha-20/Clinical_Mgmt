@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Users, FileText, Activity, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Users, FileText, Activity, ShoppingCart, IndianRupee } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { getTrialPerformance } from '@/lib/services/dashboard';
 
@@ -29,20 +29,21 @@ export default function StaffPerformancePage() {
   const fetchPerformanceData = async () => {
     try {
       setLoading(true);
-      // Build query parameters
       const queryParams = new URLSearchParams();
       queryParams.append('staff_id', params.id);
       if (startDate) queryParams.append('start_date', startDate);
       if (endDate) queryParams.append('end_date', endDate);
-      
-      const data = await getTrialPerformance(params.id, queryParams.toString());
-      setPerformanceData(data[0] || null);
-     
+
+      const resp = await getTrialPerformance(params.id, queryParams.toString());
+      let staffData = resp?.data || (Array.isArray(resp) ? resp[0] : resp);
+      if (Array.isArray(staffData)) staffData = staffData[0];
+
+      setPerformanceData(staffData || null);
     } catch (error) {
       console.error('Error fetching performance data:', error);
-      toast({ 
-        title: 'Error', 
-        description: 'Unable to fetch staff performance data' 
+      toast({
+        title: 'Error',
+        description: 'Unable to fetch staff performance data'
       });
     } finally {
       setLoading(false);
@@ -50,15 +51,19 @@ export default function StaffPerformancePage() {
   };
 
   const formatMoney = (value) => {
-    if (value === null || value === undefined || value === '') return '-';
+    if (value === null || value === undefined || value === '') return '₹0.00';
     const n = Number(value);
-    if (Number.isNaN(n)) return value;
-    return `₹${n.toFixed(2)}`;
+    if (Number.isNaN(n)) return `₹${value}`;
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 2
+    }).format(n);
   };
 
-  const StatCard = ({ title, count, icon: Icon, color, onClick, details }) => (
-    <Card 
-      className={`cursor-pointer hover:shadow-lg transition-shadow ${selectedCard === title ? 'ring-2 ring-teal-600' : ''}`}
+  const StatCard = ({ title, count, icon: Icon, color, onClick }) => (
+    <Card
+      className={`cursor-pointer hover:shadow-lg transition-all duration-300 ${selectedCard === title ? 'ring-2 ring-teal-600 shadow-md bg-teal-50/10' : ''}`}
       onClick={() => setSelectedCard(title)}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -66,7 +71,9 @@ export default function StaffPerformancePage() {
         <Icon className={`h-4 w-4 ${color}`} />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{count}</div>
+        <div className="text-2xl font-bold tracking-tight">
+          {typeof count === 'number' && title.includes('Revenue') ? formatMoney(count) : count}
+        </div>
       </CardContent>
     </Card>
   );
@@ -80,8 +87,8 @@ export default function StaffPerformancePage() {
             Back
           </Button>
         </div>
-        <div className="text-center py-8">
-          <p className="text-gray-500">Loading performance data...</p>
+        <div className="text-center py-20 bg-slate-50 rounded-2xl border border-dashed animate-pulse">
+          <p className="text-gray-500 font-medium">Loading clinical performance metrics...</p>
         </div>
       </div>
     );
@@ -96,73 +103,73 @@ export default function StaffPerformancePage() {
             Back
           </Button>
         </div>
-        <div className="text-center py-8">
-          <p className="text-gray-500">No performance data available</p>
-          <p className="text-xs text-gray-400 mt-2">Check console for API response details</p>
+        <div className="text-center py-20 bg-slate-50 rounded-2xl border">
+          <p className="text-gray-500">No performance data found for this staff member.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-     
+    <div className="space-y-6 pb-12">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
+          <Button variant="ghost" onClick={() => router.back()} className="rounded-full shadow-sm bg-white border">
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-teal-600">Staff Performance</h1>
-            <p className="text-sm text-gray-600">
-              {performanceData?.staff_name} - {performanceData?.role}
+            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Staff Clinical Performance</h1>
+            <p className="text-sm text-teal-600 font-medium bg-teal-50 px-2 py-0.5 rounded-md inline-block mt-1">
+              {performanceData?.staff_name} • {performanceData?.role}
             </p>
           </div>
         </div>
         {startDate && endDate && (
-          <div className="text-sm text-gray-500">
-            Date Range: <span className="font-semibold">{startDate} to {endDate}</span>
+          <div className="text-xs bg-slate-100 px-3 py-1.5 rounded-full text-slate-500 font-bold border">
+            PERIOD: {startDate} TO {endDate}
           </div>
         )}
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {performanceData?.role === 'Audiologist' ? (
           <>
             <StatCard
               title="Tests Conducted"
-              count={performanceData?.test_count || 0}
+              count={performanceData?.summary?.total_tests ?? performanceData?.tests?.length ?? 0}
               icon={FileText}
               color="text-blue-600"
               onClick={() => setSelectedCard('Tests Conducted')}
-              details={performanceData?.test_details}
             />
             <StatCard
               title="Trials Conducted"
-              count={performanceData?.trial_count || 0}
+              count={performanceData?.summary?.total_trials ?? performanceData?.trials?.length ?? 0}
               icon={Activity}
-              color="text-green-600"
+              color="text-emerald-600"
               onClick={() => setSelectedCard('Trials Conducted')}
-              details={performanceData?.trial_details}
             />
             <StatCard
               title="Patients Seen"
-              count={performanceData?.patient_seen || 0}
+              count={performanceData?.summary?.total_patients_seen ?? performanceData?.patient_list_seen?.length ?? 0}
               icon={Users}
               color="text-purple-600"
               onClick={() => setSelectedCard('Patients Seen')}
-              details={performanceData?.patient_seen_details}
             />
             <StatCard
               title="Trials Booked"
-              count={performanceData?.trials_booked || 0}
+              count={performanceData?.summary?.total_bookings ?? performanceData?.bookings?.length ?? 0}
               icon={ShoppingCart}
               color="text-orange-600"
               onClick={() => setSelectedCard('Trials Booked')}
-              details={performanceData?.booked_trials_details}
+            />
+            <StatCard
+              title="Total Revenue"
+              count={performanceData?.total_revenue || 0}
+              icon={IndianRupee}
+              color="text-teal-600"
+              onClick={() => setSelectedCard('Revenue Details')}
             />
           </>
         ) : (
@@ -173,15 +180,13 @@ export default function StaffPerformancePage() {
               icon={FileText}
               color="text-blue-600"
               onClick={() => setSelectedCard('Pending Services')}
-              details={performanceData?.pending_service_details}
             />
             <StatCard
               title="Follow-up Calls Made"
               count={performanceData?.calls_made_for_followup || 0}
               icon={Activity}
-              color="text-green-600"
+              color="text-emerald-600"
               onClick={() => setSelectedCard('Follow-up Calls Made')}
-              details={performanceData?.calls_made_details}
             />
           </>
         )}
@@ -189,183 +194,158 @@ export default function StaffPerformancePage() {
 
       {/* Details Tables */}
       {selectedCard && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">
-              {selectedCard === 'Tests Conducted' && 'Test Details'}
-              {selectedCard === 'Trials Conducted' && 'Trial Details'}
-              {selectedCard === 'Patients Seen' && 'Patients Seen'}
-              {selectedCard === 'Trials Booked' && 'Booked Trials'}
-              {selectedCard === 'Pending Services' && 'Pending Services'}
-              {selectedCard === 'Follow-up Calls Made' && 'Follow-up Calls Made'}
+        <Card className="border-t-4 border-t-teal-600 shadow-xl overflow-hidden">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+            <CardTitle className="text-lg font-bold text-slate-800">
+              {selectedCard === 'Tests Conducted' && 'Diagnostic Report Detail'}
+              {selectedCard === 'Trials Conducted' && 'Performance - Trial Details'}
+              {selectedCard === 'Patients Seen' && 'Clinic Interaction - Patient List'}
+              {selectedCard === 'Trials Booked' && 'Order Log - Booked Trials'}
+              {selectedCard === 'Revenue Details' && 'Financial Breakdown & Bills'}
+              {selectedCard === 'Pending Services' && 'Customer Care - Pending Services'}
+              {selectedCard === 'Follow-up Calls Made' && 'Follow-up Activity Log'}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {selectedCard === 'Tests Conducted' && performanceData?.test_details?.length > 0 && (
+          <CardContent className="pt-6">
+            {selectedCard === 'Tests Conducted' && performanceData?.tests?.length > 0 && (
               <Table>
                 <TableHeader>
-                  <tr>
+                  <TableRow>
                     <TableHead>Patient Name</TableHead>
-                    <TableHead>Phone</TableHead>
+                    <TableHead>Tests Performed</TableHead>
+                    <TableHead>Visit Date</TableHead>
+                    <TableHead>Seen By</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {performanceData.tests.map((test, idx) => (
+                    <TableRow key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <TableCell className="font-semibold text-slate-900">{test.patient_name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1.5">
+                          {Array.isArray(test.test_name) ? test.test_name.map((t, i) => (
+                            <span key={i} className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-extrabold border border-blue-100 uppercase tracking-tighter">
+                              {t}
+                            </span>
+                          )) : (test.test_name || '-')}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs font-medium text-slate-500 whitespace-nowrap">
+                        {test.visit_date ? new Date(test.visit_date).toLocaleDateString() : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-500 font-medium">{test.seen_by}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+
+            {selectedCard === 'Patients Seen' && performanceData?.patient_list_seen?.length > 0 && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient ID</TableHead>
+                    <TableHead>Patient Name</TableHead>
+                    <TableHead>Primary Phone</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {performanceData.patient_list_seen.map((p, idx) => (
+                    <TableRow key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <TableCell className="text-slate-400 text-xs font-mono">#{p.patient__id}</TableCell>
+                      <TableCell className="font-bold text-slate-800">{p.patient__name}</TableCell>
+                      <TableCell className="text-sm font-medium tracking-tight text-slate-600">{p.patient__phone_primary}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+
+            {selectedCard === 'Revenue Details' && (performanceData?.visit_details_with_bills?.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Patient</TableHead>
                     <TableHead>Visit Type</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Status Note</TableHead>
-                    <TableHead>Test Cost</TableHead>
-                  </tr>
+                    <TableHead>Bill Amount</TableHead>
+                    <TableHead>Payment Status</TableHead>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {performanceData.test_details.map((test) => (
-                    <TableRow key={test.visit_id}>
-                      <TableCell className="font-medium">{test.patient_name}</TableCell>
-                      <TableCell>{test.patient_phone}</TableCell>
-                      <TableCell>{test.visit_type}</TableCell>
-                      <TableCell>{test.appointment_date}</TableCell>
+                  {performanceData.visit_details_with_bills.map((bill, idx) => (
+                    <TableRow key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <TableCell className="font-semibold">{bill.patient_name}</TableCell>
+                      <TableCell className="text-xs font-bold text-slate-500 uppercase">{bill.visit_type}</TableCell>
+                      <TableCell className="text-xs">{new Date(bill.visit_date).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-extrabold text-teal-700">{formatMoney(bill.bill_amount)}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          test.status === 'Completed with payment' ? 'bg-green-100 text-green-800' :
-                          test.status === 'Test pending' ? 'bg-yellow-100 text-yellow-800' :
-                          test.status === 'Device Booked' ? 'bg-blue-100 text-blue-800' :
-                          test.status === 'Pending for Service' ? 'bg-orange-100 text-orange-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {test.status}
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase ${bill.payment_status === 'Paid' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                          {bill.payment_status || 'Unpaid'}
                         </span>
                       </TableCell>
-                      <TableCell className="max-w-xs truncate">{test.status_note || '-'}</TableCell>
-                      <TableCell>Rs {test.cost}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-
-            {selectedCard === 'Patients Seen' && performanceData?.patient_seen_details?.length > 0 && (
-              <Table>
-                <TableHeader>
-                  <tr>
-                    <TableHead>Patient Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                  </tr>
-                </TableHeader>
-                <TableBody>
-                  {performanceData.patient_seen_details.map((patient) => (
-                    <TableRow key={patient.patient__id}>
-                      <TableCell className="font-medium">{patient.patient__name}</TableCell>
-                      <TableCell>{patient.patient__phone_primary}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-
-            {selectedCard === 'Pending Services' && performanceData?.pending_service_details?.length > 0 && (
-              <Table>
-                <TableHeader>
-                  <tr>
-                    <TableHead>Patient Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Service Type</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Device Details</TableHead>
-                    <TableHead>Action Taken</TableHead>
-                  </tr>
-                </TableHeader>
-                <TableBody>
-                  {performanceData.pending_service_details.map((service) => (
-                    <TableRow key={service.visit_id}>
-                      <TableCell className="font-medium">{service.patient_name}</TableCell>
-                      <TableCell>{service.patient_phone}</TableCell>
-                      <TableCell>{service.service_type}</TableCell>
-                      <TableCell>{new Date(service.service_date).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          service.status === 'Completed with payment' ? 'bg-green-100 text-green-800' :
-                          service.status === 'Test pending' ? 'bg-yellow-100 text-yellow-800' :
-                          service.status === 'Device Booked' ? 'bg-blue-100 text-blue-800' :
-                          service.status === 'Pending for Service' ? 'bg-orange-100 text-orange-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {service.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">{service.device_details.name|| '-'} ({service.device_serial_number|| '-'})</TableCell>
-                      <TableCell className="max-w-xs truncate">{service.action_taken || '-'}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-
-            {selectedCard === 'Follow-up Calls Made' && performanceData?.calls_made_details?.length > 0 && (
-              <Table>
-                <TableHeader>
-                  <tr>
-                    <TableHead>Patient Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Visit Type</TableHead>
-                    <TableHead>Contacted Date</TableHead>
-                    <TableHead>Contacted Status </TableHead>
-                    <TableHead>Contacted By</TableHead>
-                  </tr>
-                </TableHeader>
-                <TableBody>
-                  {performanceData.calls_made_details.map((call) => (
-                    <TableRow key={call.visit_id}>
-                      <TableCell className="font-medium">{call.patient_name}</TableCell>
-                      <TableCell>{call.patient_phone}</TableCell>
-                      <TableCell>{call.visit_type}</TableCell>
-                      <TableCell>{ new Date(call.contacted_at).toLocaleDateString()}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          call.status === 'Completed with payment' ? 'bg-green-100 text-green-800' :
-                          call.status === 'Test pending' ? 'bg-yellow-100 text-yellow-800' :
-                          call.status === 'Device Booked' ? 'bg-blue-100 text-blue-800' :
-                          call.status === 'Pending for Service' ? 'bg-orange-100 text-orange-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {call.contacted === true ? 'Yes' : 'No'} 
-                        </span>
-                      </TableCell>
-                      <TableCell>{call.contacted_by_name}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-
-            {(selectedCard === 'Trials Conducted' || selectedCard === 'Trials Booked') && 
-             ((selectedCard === 'Trials Conducted' ? performanceData.trial_details : performanceData.booked_trials_details)?.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <tr>
-                    <TableHead>Patient Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Device (Serial Number)</TableHead>
-                    <TableHead>Trial Dates</TableHead>
-                    <TableHead>Trial Status</TableHead>
-                    <TableHead>Extended Trial</TableHead>
-                    <TableHead>Trial Security Cost</TableHead>
-                  </tr>
-                </TableHeader>
-                <TableBody>
-                  {(selectedCard === 'Trials Conducted' ? performanceData.trial_details : performanceData.booked_trials_details).map((trial) => (
-                    <TableRow key={trial.visit_id || trial.id}>
-                      <TableCell className="font-medium">{trial.assigned_patient}</TableCell>
-                      <TableCell>{trial.assigned_patient_phone}</TableCell>
-                      <TableCell>{trial.device_name} ({trial.serial_number})</TableCell>
-                      <TableCell>{trial.trial_start_date} - {trial.trial_end_date}</TableCell>
-                      <TableCell>{trial.trial_decision}</TableCell>
-                      <TableCell>{trial.extended_trial === true ? 'Yes' : 'No'}</TableCell>
-                      <TableCell>Rs {trial.cost}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             ) : (
-              <p className="text-gray-500 text-center py-4">No data available</p>
+              <p className="text-center py-10 text-slate-400 italic">No billable visit records found.</p>
             ))}
+
+            {(selectedCard === 'Trials Conducted' || selectedCard === 'Trials Booked') &&
+              ((selectedCard === 'Trials Conducted' ? performanceData.trials : performanceData.bookings)?.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Patient Name</TableHead>
+                      <TableHead>Device Detail</TableHead>
+                      <TableHead>Activity Date</TableHead>
+                      <TableHead>Ear Side</TableHead>
+                      <TableHead>Status / Decision</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(selectedCard === 'Trials Conducted' ? performanceData.trials : performanceData.bookings).map((item, idx) => (
+                      <TableRow key={idx} className="hover:bg-slate-50/80 transition-colors">
+                        <TableCell className="font-bold text-slate-900">{item.patient_name}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1.5 max-w-[220px]">
+                            {item.device_details?.length > 0 ? (
+                              item.device_details.map((d, i) => (
+                                <span key={i} className="text-[10px] bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 italic truncate font-medium text-slate-600">
+                                  {d.brand} {d.style_type || d.device_name} - {d.serial_number}
+                                </span>
+                              ))
+                            ) : (item.brand || item.inventory_item) ? (
+                              <span className="text-[10px] bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 italic truncate font-medium text-slate-600">
+                                {item.brand} {item.model_type || item.style_type} {item.serial_number ? `- ${item.serial_number}` : ''}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-300 font-medium italic">Hardware Details Missing</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs font-medium text-slate-500">
+                          {item.trial_start_date || item.booking_created_at ? new Date(item.trial_start_date || item.booking_created_at).toLocaleDateString() : '-'}
+                          {item.trial_end_date ? ` to ${new Date(item.trial_end_date).toLocaleDateString()}` : ''}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                            {item.device_details?.length === 2 ? 'Binaural' : (item.ear_side || item.device_details?.[0]?.ear_side || '-')}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border tracking-tight ${item.trial_decision?.includes('BOOK') || item.booking_status?.includes('BOOK') ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-100'}`}>
+                            {item.trial_decision || item.booking_status || '-'}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-slate-400 text-center py-10 italic">No activity records found for this period.</p>
+              ))}
           </CardContent>
         </Card>
       )}

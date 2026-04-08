@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 export default function useAudiologist() {
   const dispatch = useDispatch();
   const router = useRouter();
+  const userprofile = routes.pages.userptofile;
   const caseHistory = routes.pages.patientCaseHistory;
   const visitDetail = routes.pages.patientVisitdetail;
 
@@ -21,7 +22,7 @@ export default function useAudiologist() {
   const fetchPatientList = async ({ page = 1 } = {}) => {
     try {
       const res = await getAppointmentList({ page });
-      setTotalpendingTest(res.totalPages)
+      setTotalpendingTest(res.totalPages);
       setAppoinmentList(res.data || []);
     } catch (e) {
       console.log("Total fetch error:", e);
@@ -78,6 +79,9 @@ export default function useAudiologist() {
     router.push(`${caseHistory}/${visitId}`);
   };
 
+  const handleViewProfile = (id) => {
+    router.push(`${userprofile}/${id}`);
+  };
 
   return {
     appoinementList,
@@ -93,5 +97,6 @@ export default function useAudiologist() {
     handleViewPatient,
     showVisitDeteail,
     showCaseHistoryform,
+    handleViewProfile,
   };
 }
