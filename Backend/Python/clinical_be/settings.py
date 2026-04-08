@@ -181,6 +181,7 @@ USE_TZ = os.getenv('USE_TZ', 'True').lower() == 'true'
 
 # Static files
 STATIC_URL = os.getenv('STATIC_URL', 'static/')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
