@@ -76,65 +76,60 @@ const TeamSection = () => (
         🤝 Meet Our Specialized Team
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-        {/* Audiologist 1 */}
+        {/* Ritik Chohan - Audiologist */}
         <div className="bg-card rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 p-8 flex flex-col items-center text-center">
           <img
-            src="/audiologist.jpg"
-            alt="Chief Audiologist"
+            src="/StaticImage/ritik-chohan.jpg"
+            alt="Ritik Chohan"
             className="w-32 h-32 rounded-full object-cover mb-6 border-4 border-primary"
           />
           <h4 className="text-2xl font-semibold text-primaryText mb-2">
-            Dr. Anjali Verma (Audiologist)
+            Ritik Chohan
           </h4>
-          <p className="text-primary font-medium mb-3">
-            Chief Clinical Audiologist
-          </p>
+          <p className="text-primary font-medium mb-3">Audiologist</p>
           <p className="text-foreground leading-relaxed">
-            **Static Content:** Dr. Verma holds a Doctorate in Audiology (Au.D.)
-            and is an expert in advanced hearing aid technology, diagnostic
-            evaluations, and aural rehabilitation. She specializes in
-            customizing solutions for complex adult hearing loss and pediatric
-            cases.
+            Ritik specializes in comprehensive hearing assessments, hearing aid
+            fittings, and rehabilitation programs. With expertise in both adult
+            and pediatric audiology, he ensures personalized care for optimal
+            hearing outcomes.
           </p>
         </div>
 
-        {/* Speech Therapist 2 */}
+        {/* Sandeep Sharma - Audiologist */}
         <div className="bg-card rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 p-8 flex flex-col items-center text-center">
           <img
-            src="/speech_therapist.jpg"
-            alt="Lead Speech Therapist"
+            src="/StaticImage/sandeep-sharma.jpg"
+            alt="Sandeep Sharma"
             className="w-32 h-32 rounded-full object-cover mb-6 border-4 border-primary"
           />
           <h4 className="text-2xl font-semibold text-primaryText mb-2">
-            Mr. Karan Singh (Speech Therapist)
+            Sandeep Sharma
           </h4>
-          <p className="text-primary font-medium mb-3">
-            Lead Speech-Language Pathologist (SLP)
-          </p>
+          <p className="text-primary font-medium mb-3">Audiologist</p>
           <p className="text-foreground leading-relaxed">
-            **Static Content:** Mr. Singh is certified in numerous specialized
-            speech therapies, including fluency treatment (stuttering) and voice
-            modification. His passion lies in helping children and adults find
-            their confidence through clear and effective communication.
+            Sandeep brings extensive experience in diagnostic audiology and
+            tinnitus management. He is dedicated to providing advanced hearing
+            solutions and counseling services to improve patients' quality of
+            life through better hearing.
           </p>
         </div>
 
-        {/* Owner/Founder 3 */}
+        {/* Shaveta Verma - Speech Therapist */}
         <div className="bg-card rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 p-8 flex flex-col items-center text-center">
           <img
-            src="/owner_placeholder.jpg"
-            alt="Founder"
+            src="/StaticImage/shaveta-sharma.jpg"
+            alt="Shaveta Verma"
             className="w-32 h-32 rounded-full object-cover mb-6 border-4 border-primary"
           />
           <h4 className="text-2xl font-semibold text-primaryText mb-2">
-            [Owner Name]
+            Shaveta Verma
           </h4>
-          <p className="text-primary font-medium mb-3">Founder & CEO</p>
+          <p className="text-primary font-medium mb-3">Speech Therapist</p>
           <p className="text-foreground leading-relaxed">
-            **Static Content:** The visionary behind NOIS, [Owner Name] started
-            the company to bridge the gap between clinical need and
-            administrative technology, ensuring every medical team member is
-            empowered with efficient, modern tools.
+            Shaveta specializes in speech and language therapy, working with
+            patients of all ages to address communication disorders, swallowing
+            difficulties, and voice rehabilitation. Her compassionate approach
+            helps patients regain confidence in their communication abilities.
           </p>
         </div>
       </div>
@@ -174,7 +169,8 @@ const ContactSection = () => (
         <p>
           <strong className="font-semibold">Address:</strong>
           <span className="block text-foreground mt-1">
-            [Your Clinic Full Address Here]
+            Shop No. 7, Rd, Opp. ENT Hospital, Sehaj Avenue, Majitha, Amritsar,
+            Punjab 143001
           </span>
         </p>
         <p>
@@ -183,7 +179,7 @@ const ContactSection = () => (
             href="tel:+1234567890"
             className="text-primary hover:underline block mt-1"
           >
-            (123) 456-7890
+            098145 64444
           </a>
         </p>
         <p>
@@ -192,7 +188,7 @@ const ContactSection = () => (
             href="mailto:info@yourclinic.com"
             className="text-primary hover:underline block mt-1"
           >
-            info@yourclinic.com
+            hello@navjeevan.com
           </a>
         </p>
       </div>
