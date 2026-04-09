@@ -45,11 +45,7 @@ export const routes = {
     uploadFile: "clinical/test-uploads/",
     getTestFile: "clinical/test-results/",
     deleteTestFile: "clinical/test-upload/",
-<<<<<<< HEAD
-    patientVisitdetails: "clinical/completed-tests/",
-=======
     patientVisitdetails: "clinical/patient/visit/",
->>>>>>> 5eedebd9945097d7d56090881719ee0495c59bb2
     trialDeviceList: "/clinical/inventory/trial-device-serials/",
     activeTrialDevice: "clinical/trials/",
     awaitingStockTrials: "clinical/trials/awaiting-stock/",
@@ -60,22 +56,14 @@ export const routes = {
     bookeddevice: "clinical/trials/",
     returnDevice: "/clinical/api/inventory/return-trial-device/",
     modalList: "/clinical/inventory/trial-available-models/",
-<<<<<<< HEAD
-    reportCreate: "/clinical/report-create/"
-=======
     reportCreate: "/clinical/report-create/",
->>>>>>> 5eedebd9945097d7d56090881719ee0495c59bb2
   },
 
   billing: {
     paidBillList: "clinical/bill/paid/",
     dueBillList: "clinical/bill/pending/",
     billingDetail: "clinical/bill/visit/",
-<<<<<<< HEAD
-    markBillPaid: "clinical/mark-bill-paid/"
-=======
     markBillPaid: "clinical/mark-bill-paid/",
->>>>>>> 5eedebd9945097d7d56090881719ee0495c59bb2
   },
 
   // Admin Routes
@@ -89,10 +77,7 @@ export const routes = {
   pendingUser: "accounts/users/pending/",
   accountsUsers: "accounts/users/",
   clinicDropdown: "accounts/clinics/",
-<<<<<<< HEAD
   clinics: "clinical/clinics/",
-=======
->>>>>>> 5eedebd9945097d7d56090881719ee0495c59bb2
   inventoryDropdowns: "clinical/inventory/flat-list/",
 
   // referal doctors
