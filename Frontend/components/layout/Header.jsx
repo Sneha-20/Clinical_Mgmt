@@ -54,7 +54,7 @@ export const Header = () => {
           >
             About
           </a>
-          
+
           {/* Services Dropdown */}
           <div className="relative group">
             <button className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap flex items-center gap-1">
@@ -89,12 +89,6 @@ export const Header = () => {
           >
             Offers
           </a>
-          <a
-            href="#contact"
-            className="text-foreground hover:text-primary transition-colors duration-300 font-medium whitespace-nowrap"
-          >
-            Contact
-          </a>
         </nav>
         <Button
           className="w-full"
@@ -120,7 +114,7 @@ export const Header = () => {
           >
             About
           </a>
-          
+
           {/* Mobile Services Dropdown */}
           <div>
             <button
@@ -128,7 +122,9 @@ export const Header = () => {
               className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50 w-full text-left flex items-center justify-between"
             >
               Services
-              <span className={`text-xs transition-transform ${isServicesDropdownOpen ? "rotate-180" : ""}`}>
+              <span
+                className={`text-xs transition-transform ${isServicesDropdownOpen ? "rotate-180" : ""}`}
+              >
                 ▼
               </span>
             </button>
@@ -165,13 +161,6 @@ export const Header = () => {
             className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
           >
             Offers
-          </a>
-          <a
-            href="#contact"
-            onClick={closeMenu}
-            className="text-foreground hover:text-primary transition-colors duration-300 font-medium px-2 py-2 rounded-md hover:bg-muted/50"
-          >
-            Contact
           </a>
           <button
             className="mt-4 bg-primary text-white py-2 px-5 rounded-md hover:bg-primary-foreground transition-colors duration-300 font-medium shadow-md w-full"
