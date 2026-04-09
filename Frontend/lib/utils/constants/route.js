@@ -77,6 +77,7 @@ export const routes = {
   pendingUser: "accounts/users/pending/",
   accountsUsers: "accounts/users/",
   clinicDropdown: "accounts/clinics/",
+  clinics: "clinical/clinics/",
   inventoryDropdowns: "clinical/inventory/flat-list/",
 
   // referal doctors
