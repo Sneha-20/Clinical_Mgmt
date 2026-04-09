@@ -8,10 +8,10 @@ import { routes } from "../utils/constants/route";
  */
 export const getPatientVisitById = async (visitId) => {
   try {
-    const url = `${routes.audiologist.patientVisitdetails}${visitId}/`;
+    const url = `${routes.audiologist.patientVisitdetails}${visitId}/full`;
     const response = await apiClient.get(url);
     const visitDetails = response?.data || response;
-    
+
     return visitDetails;
   } catch (error) {
     console.error("❌ Get visit Details by ID failed:", {
@@ -29,7 +29,7 @@ export const getPatientVisitById = async (visitId) => {
 //     const response = await apiClient.get(url);
 //     // Handle nested response structure
 //     const patientVisit = response?.data || response;
-    
+
 //     return patientVisit;
 //   } catch (error) {
 //     console.error("❌ Get patient visit by ID failed:", {

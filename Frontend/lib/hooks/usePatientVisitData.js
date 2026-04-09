@@ -6,7 +6,7 @@ import { getPatientVisitById } from "../services/patientVisitDetails";
 export default function usePatientVisitdata(visitId) {
   const dispatch = useDispatch();
 
-  const [patientVisitdetails,setPatientVisitdetails]=useState([])
+  const [patientVisitdetails, setPatientVisitdetails] = useState({});
 
   useEffect(() => {
     const fetchPatientVisitData = async (id) => {
@@ -14,7 +14,7 @@ export default function usePatientVisitdata(visitId) {
       dispatch(startLoading());
       try {
         const res = await getPatientVisitById(id);
-        setPatientVisitdetails(res);
+        setPatientVisitdetails(res?.data || res || {});
         dispatch(stopLoading());
       } catch (err) {
         dispatch(stopLoading());
@@ -22,7 +22,7 @@ export default function usePatientVisitdata(visitId) {
       }
     };
     fetchPatientVisitData(visitId);
-  },[visitId]);
+  }, [visitId, dispatch]);
 
   return {
     patientVisitdetails,
