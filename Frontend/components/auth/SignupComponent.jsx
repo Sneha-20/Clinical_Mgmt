@@ -20,6 +20,7 @@ import DropDown from "../ui/dropdown";
 import { showToast } from "../ui/toast";
 
 import { register } from "@/lib/services/auth";
+import { getClinics } from "@/lib/services/clinics";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 import RoleSelection from "../ui/RoleSelection";
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
@@ -48,17 +49,30 @@ export default function SignupComponent() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [clinics, setClinics] = useState([]);
   // -------------------------------
   // Clinic Options Memoized
   // -------------------------------
   const clinicOptions = useMemo(
     () =>
-      staticText.clinicOption.map(({ id, label }) => ({
-        label,
+      clinics.map(({ id, name }) => ({
+        label: name,
         value: id,
       })),
-    [],
+    [clinics],
   );
+
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const data = await getClinics();
+        setClinics(data || []);
+      } catch (err) {
+        console.error("Failed to fetch clinics", err);
+      }
+    };
+    fetchClinics();
+  }, []);
 
   // -------------------------------
   // Generic Input Handler

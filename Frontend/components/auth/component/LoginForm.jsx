@@ -6,7 +6,7 @@ import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 import { loginSchema } from "@/lib/utils/schema";
 import { extractYupErrors } from "@/lib/utils/helper/extractError";
 import { login } from "@/lib/services/auth";
-import { staticText } from "@/lib/utils/constants/staticOption";
+import { getClinics } from "@/lib/services/clinics";
 import { Button } from "@/components/ui/button";
 import DropDown from "@/components/ui/dropdown";
 import { Input } from "@/components/ui/input";
@@ -31,14 +31,28 @@ export default function LoginForm({ onLogin }) {
   const isSubmittingRef = useRef(false); // Ref to prevent multiple calls
   const [showPassword, setShowPassword] = useState(false);
   
+  const [clinics, setClinics] = useState([]);
+  
   const clinicOptions = useMemo(
     () =>
-      staticText.clinicOption.map(({ id, label }) => ({
-        label,
+      clinics.map(({ id, name }) => ({
+        label: name,
         value: id,
       })),
-    []
+    [clinics]
   );
+
+  React.useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const data = await getClinics();
+        setClinics(data || []);
+      } catch (err) {
+        console.error("Failed to fetch clinics", err);
+      }
+    };
+    fetchClinics();
+  }, []);
 
   const handleChange = useCallback(
     (e) => {

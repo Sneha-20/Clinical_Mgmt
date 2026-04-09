@@ -40,10 +40,10 @@ if (typeof window !== "undefined") {
         .find((row) => row.startsWith("token="))
         ?.split("=")[1];
       
-      if (token) {
+      if (token && !config.skipAuth) {
         config.headers.Authorization = `Bearer ${token}`;
       } else {
-        // Remove Authorization header if no token
+        // Remove Authorization header if no token or skipAuth is true
         delete config.headers.Authorization;
       }
       
