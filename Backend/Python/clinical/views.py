@@ -28,10 +28,11 @@ from .serializers import (
     ClinicTransactionCreateSerializer,
     ClinicTransactionListSerializer,
     InventoryItemSerializer,
+    ClinicSerializer,
     PurchaseInventoryItemSerializer
 )
 from .models import Patient, PatientPurchase, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType,ClinicTransactions,BookedDeviceAfterTrial,TrialDeviceDetails
-from accounts.models import User
+from accounts.models import User, Clinic
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -1595,6 +1596,20 @@ class CustomerNeedPurchase(APIView):
                 'message': f'Error fetching service queue: {str(e)}',
                 'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ClinicListView(generics.ListAPIView):
+    """
+    API to get list of clinics with id and name, no authentication required.
+    """
+    queryset = Clinic.objects.all()
+    serializer_class = ClinicSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
     
 
