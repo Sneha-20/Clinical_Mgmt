@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MedicalBanner from "@/public/StaticImage/heroBanner.jpg";
 import Image from "next/image";
@@ -155,46 +155,204 @@ const OwnerSection = () => (
   </section>
 );
 
-const ContactSection = () => (
-  <section id="contact" className="bg-background py-20 px-6 text-center">
-    <div className="max-w-3xl mx-auto">
-      <h3 className="text-4xl font-bold text-primaryText mb-12">
-        📞 Get In Touch
-      </h3>
-      <p className="text-lg text-foreground mb-10">
-        Ready to take the next step towards better hearing or speech? Contact us
-        to schedule your comprehensive evaluation or consultation.
-      </p>
-      <div className="space-y-6 text-xl text-primaryText">
-        <p>
-          <strong className="font-semibold">Address:</strong>
-          <span className="block text-foreground mt-1">
-            Shop No. 7, Rd, Opp. ENT Hospital, Sehaj Avenue, Majitha, Amritsar,
-            Punjab 143001
-          </span>
+const ContactSection = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    age: "",
+    nearbyClinic: "",
+    notes: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Form submitted:", formData);
+    setSubmitted(true);
+    setFormData({
+      name: "",
+      phone: "",
+      age: "",
+      nearbyClinic: "",
+      notes: "",
+    });
+    setTimeout(() => setSubmitted(false), 3000);
+  };
+
+  return (
+    <section id="contact" className="bg-background py-20 px-6">
+      <div className="max-w-6xl mx-auto">
+        <h3 className="text-4xl font-bold text-primaryText mb-16 text-center">
+          📞 Get In Touch
+        </h3>
+        <p className="text-lg text-foreground mb-12 text-center">
+          Ready to take the next step towards better hearing or speech? Contact
+          us to schedule your comprehensive evaluation or consultation.
         </p>
-        <p>
-          <strong className="font-semibold">Phone:</strong>
-          <a
-            href="tel:+1234567890"
-            className="text-primary hover:underline block mt-1"
-          >
-            098145 64444
-          </a>
-        </p>
-        <p>
-          <strong className="font-semibold">Email:</strong>
-          <a
-            href="mailto:info@yourclinic.com"
-            className="text-primary hover:underline block mt-1"
-          >
-            hello@navjeevan.com
-          </a>
-        </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Left Side - Contact Details */}
+          <div className="bg-card rounded-xl shadow-lg p-8 space-y-8">
+            <div>
+              <h4 className="text-2xl font-semibold text-primaryText mb-6">
+                Contact Information
+              </h4>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground font-semibold mb-2">
+                ADDRESS
+              </p>
+              <p className="text-lg text-foreground leading-relaxed">
+                Shop No. 7, Rd, Opp. ENT Hospital, Sehaj Avenue, Majitha,
+                Amritsar, Punjab 143001
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground font-semibold mb-2">
+                PHONE
+              </p>
+              <a
+                href="tel:+91981456444"
+                className="text-lg text-primary hover:underline block font-medium"
+              >
+                +91 98145 64444
+              </a>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground font-semibold mb-2">
+                EMAIL
+              </p>
+              <a
+                href="mailto:hello@navjeevan.com"
+                className="text-lg text-primary hover:underline block font-medium"
+              >
+                hello@navjeevan.com
+              </a>
+            </div>
+
+            <div className="bg-primary/10 rounded-lg p-6 border-l-4 border-primary">
+              <p className="text-sm text-muted-foreground font-semibold mb-2">
+                HOURS
+              </p>
+              <div className="space-y-1 text-foreground">
+                <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
+                <p>Saturday: 9:00 AM - 5:00 PM</p>
+                <p>Sunday: Closed</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Side - Contact Form */}
+          <div className="bg-card rounded-xl shadow-lg p-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-primaryText mb-2">
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter your full name"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-primaryText mb-2">
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  required
+                  placeholder="Enter your phone number"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-primaryText mb-2">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  name="age"
+                  value={formData.age}
+                  onChange={handleInputChange}
+                  placeholder="Enter your age"
+                  min="0"
+                  max="150"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-primaryText mb-2">
+                  Nearby Clinic
+                </label>
+                <select
+                  name="nearbyClinic"
+                  value={formData.nearbyClinic}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">Select a clinic</option>
+                  <option value="amritsar">Amritsar Main</option>
+                  <option value="chandigarh">Chandigarh</option>
+                  <option value="ludhiana">Ludhiana</option>
+                  <option value="jalandhar">Jalandhar</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-primaryText mb-2">
+                  Problem / Notes
+                </label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Describe your concerns or problems..."
+                  rows="4"
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-primary text-white font-semibold py-3 rounded-lg hover:bg-primary/90 transition-colors duration-200"
+              >
+                Send Message
+              </button>
+
+              {submitted && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                  ✓ Thank you! We'll get back to you soon.
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 export default function Home() {
   const router = useRouter();
