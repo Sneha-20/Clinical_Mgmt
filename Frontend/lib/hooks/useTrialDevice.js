@@ -278,8 +278,9 @@ export default function () {
         right_serial_number: rightDevice?.serial_number || null,
         device_condition_on_return: "Device returned after trial completion",
       };
-
-      await returnTrialDevice(returnPayload);
+      if (!selectedAction === "FOLLOWUP") {
+        await returnTrialDevice(returnPayload);
+      }
 
       showToast({
         type: "success",
