@@ -1672,6 +1672,9 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                 visit.status_note = 'Test Performed by Audiologist'
                 visit.step_process = 2
                 visit.save(update_fields=['status', 'status_note', 'step_process'])
+            else:
+                visit.step_process = 2  # Move to next step even if no tests were performed, since case history is filled
+                visit.save(update_fields=['step_process'])
 
         # Return both case_history and step_process for response
         return {
