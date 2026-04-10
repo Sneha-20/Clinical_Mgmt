@@ -145,9 +145,9 @@ class InventoryTransferView(APIView):
                 dest_item.save()
 
                 transfer_logs.append(InventoryTransfer(
-                    item_name=source_item.product_name,
-                    category=source_item.category,
-                    brand=source_item.brand,
+                    item_name=source_item.product_name or '',
+                    category=source_item.category or '',
+                    brand=source_item.brand.name if source_item.brand else '',
                     model=source_item.model_type.name if source_item.model_type else '',
                     from_clinic=source_item.clinic,
                     to_clinic=to_clinic,
