@@ -45,9 +45,9 @@ export const testRequestedOptions = [
   { label: "BERA", value: "bera" },
   { label: "ASSR", value: "assr" },
   { label: "BERA / ASSR", value: "bera_assr" },
-  { label: "Speech Assessment", value: "speec_assessment" },
-  { label: "Impedance/ETF", value: "impdeance_etf" },
-  { label: "Special Tests", value: "speech_tests" },
+  { label: "Speech Assessment", value: "speech_assessment" },
+  { label: "Impedance/ETF", value: "impedance_etf" },
+  { label: "Special Tests", value: "special_tests" },
 ];
 
 export const visitTypeOptions = [
@@ -59,8 +59,14 @@ export const visitTypeOptions = [
   { label: "Follow-up for Test ", value: "Follow-up" },
   { label: "Purchase Accessories", value: "Purchase" },
   { label: "Speech Therapy Assessment", value: "Speech Therapy Assessment" },
-  { label: "Cochlear implant Consultation", value: "Cochlear implant Consultation" },
-  { label: "Cochlear implant mapping check", value: "Cochlear implant mapping check" },
+  {
+    label: "Cochlear implant Consultation",
+    value: "Cochlear implant Consultation",
+  },
+  {
+    label: "Cochlear implant mapping check",
+    value: "Cochlear implant mapping check",
+  },
 ];
 
 export const previousHearingAidsOptions = [
@@ -175,5 +181,8 @@ export const accessoriesBatteriesProducts = [
 export const accessoriesRechargeableProducts = [
   { label: "Multichargers", value: "Multichargers" },
   { label: "Charging docks", value: "Charging docks" },
-  { label: "Power banks (hearing aid compatible)", value: "Power banks (hearing aid compatible)" },
+  {
+    label: "Power banks (hearing aid compatible)",
+    value: "Power banks (hearing aid compatible)",
+  },
 ];

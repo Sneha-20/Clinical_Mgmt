@@ -106,7 +106,9 @@ export default function PatientRegistrationForm({
         ...values,
         // age,
         visit_details: values.visit_details.map((visit) => {
-          const enforcedCost = visit.cost_taken_amount ? Number(visit.cost_taken_amount) : 0;
+          const enforcedCost = visit.cost_taken_amount
+            ? Number(visit.cost_taken_amount)
+            : 0;
           if (visit.visit_type === "Purchase") {
             return {
               visit_type: visit.visit_type,
@@ -341,7 +343,7 @@ export default function PatientRegistrationForm({
                       format(date, "yyyy-MM-dd"),
                     )
                   }
-                  minDate={new Date()}
+                  // minDate={new Date()}
                   error={
                     formik.touched.appointment_date &&
                     formik.errors.appointment_date
@@ -525,8 +527,8 @@ export default function PatientRegistrationForm({
                                               const next = e.target.checked
                                                 ? [...current, s.value]
                                                 : current.filter(
-                                                  (id) => id !== s.value,
-                                                );
+                                                    (id) => id !== s.value,
+                                                  );
                                               updatePurchaseItem(
                                                 index,
                                                 itemIndex,
@@ -560,7 +562,11 @@ export default function PatientRegistrationForm({
                 ) : (
                   /* STANDARD VISIT UI SECTION */
                   <div className="space-y-4 mt-4">
-                    {["Hearing Test", "Hearing Aids Trial", "Hearing Aids Test & Trial"].includes(visit.visit_type) && (
+                    {[
+                      "Hearing Test",
+                      "Hearing Aids Trial",
+                      "Hearing Aids Test & Trial",
+                    ].includes(visit.visit_type) && (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-teal-50/50 p-4 rounded-lg border border-teal-100">
                         <Input
                           label="Duration of Problem"
@@ -658,8 +664,8 @@ export default function PatientRegistrationForm({
                                   val,
                                 )
                                   ? visit.test_requested.filter(
-                                    (t) => t !== val,
-                                  )
+                                      (t) => t !== val,
+                                    )
                                   : [...visit.test_requested, val];
                                 formik.setFieldValue(
                                   `visit_details.${index}.test_requested`,
@@ -677,13 +683,18 @@ export default function PatientRegistrationForm({
                         label="Amount Taken"
                         type="number"
                         placeholder="0.00"
-                        value={visit.cost_taken_amount === 0 ? "" : visit.cost_taken_amount}
+                        value={
+                          visit.cost_taken_amount === 0
+                            ? ""
+                            : visit.cost_taken_amount
+                        }
                         onChange={(e) => {
-                          const val = e.target.value === "" ? 0 : Number(e.target.value);
+                          const val =
+                            e.target.value === "" ? 0 : Number(e.target.value);
                           formik.setFieldValue(
                             `visit_details.${index}.cost_taken_amount`,
                             val,
-                          )
+                          );
                         }}
                       />
                       <Input

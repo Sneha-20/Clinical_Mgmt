@@ -169,7 +169,6 @@ export const trialGivenSchema = Yup.object({
           is: (style_type) => ["Cross", "Bicross"].includes(style_type),
           then: (schema) => schema.required("Routing side is required"),
         }),
-        gain_settings: Yup.string().required("Gain settings are required"),
       }),
     )
     .min(1, "At least one device trial is required"),
@@ -182,6 +181,8 @@ export const trialGivenSchema = Yup.object({
   cost: Yup.number()
     .typeError("Cost must be a number")
     .required("Cost is required"),
+
+  // gain_settings: Yup.string().required("Gain settings are required"),
 });
 
 export const transactionSchema = Yup.object({
