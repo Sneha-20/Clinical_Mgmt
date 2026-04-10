@@ -126,16 +126,17 @@ const TrialList = () => {
         {/* Filters */}
         <div className="grid sm:grid-cols-4 grid-cols-1 gap-4 mb-6 bg-card p-4 rounded-lg shadow-sm border border-border/50 items-end">
           <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-muted-foreground">Search</label>
+            <label className="text-sm font-medium text-muted-foreground">
+              Search
+            </label>
             <div className="w-full">
-              <SearchBox
-                value={searchTerm}
-                onChange={setSearchTerm}
-              />
+              <SearchBox value={searchTerm} onChange={setSearchTerm} />
             </div>
           </div>
           <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-muted-foreground">Filter by Decision</label>
+            <label className="text-sm font-medium text-muted-foreground">
+              Filter by Decision
+            </label>
             <div className="w-full">
               <DropDown
                 options={trialDecisionOptions}
@@ -178,7 +179,10 @@ const TrialList = () => {
                       <div>
                         <p className="text-xs text-muted-foreground">Device</p>
                         {(() => {
-                          const devices = trial.device_details_list || trial.device_details || [];
+                          const devices =
+                            trial.device_details_list ||
+                            trial.device_details ||
+                            [];
                           if (devices.length > 0) {
                             return (
                               <div className="flex flex-col gap-2 mt-1">
@@ -245,7 +249,9 @@ const TrialList = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-end gap-2 ml-4">
+                    <div
+                      className={"flex items-center justify-end gap-2 ml-4 "}
+                    >
                       <Button
                         size="sm"
                         disabled={

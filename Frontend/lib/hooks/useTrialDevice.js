@@ -48,10 +48,18 @@ export default function () {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDecision, setFilterDecision] = useState("All");
 
-  const fetchTrialDevice = async ({ page = 1, search = "", decision = "" } = {}) => {
+  const fetchTrialDevice = async ({
+    page = 1,
+    search = "",
+    decision = "",
+  } = {}) => {
     try {
       dispatch(startLoading());
-      const response = await getActiveTrialDeviceList({ page, search, decision });
+      const response = await getActiveTrialDeviceList({
+        page,
+        search,
+        decision,
+      });
       const resData = response.data;
       setActiveTrialDeviceList(resData);
       setTotalpage(response.totalPages);
@@ -65,7 +73,11 @@ export default function () {
     }
   };
   useEffect(() => {
-    fetchTrialDevice({ page: currentPage, search: searchTerm, decision: filterDecision });
+    fetchTrialDevice({
+      page: currentPage,
+      search: searchTerm,
+      decision: filterDecision,
+    });
   }, [currentPage, searchTerm, filterDecision]);
 
   useEffect(() => {
@@ -142,7 +154,9 @@ export default function () {
   const handleChange = async (name, value, earSide = null) => {
     if (earSide) {
       setForm((prev) => {
+        const otherEar = earSide === "LEFT" ? "RIGHT" : "LEFT";
         let updatedEar = { ...prev[earSide], [name]: value };
+        let updatedOtherEar = { ...prev[otherEar] };
 
         // 🔹 Device change logic
         if (name === "deviceId") {
@@ -162,6 +176,13 @@ export default function () {
           }
         }
 
+        // 🔹 Serial selection cannot duplicate across ears
+        if (name === "serialId") {
+          if (updatedOtherEar.serialId === value) {
+            updatedOtherEar.serialId = null;
+          }
+        }
+
         // 🔹 Checkbox (Customization) logic
         if (name === "isCustomization") {
           showToast({
@@ -172,7 +193,11 @@ export default function () {
           });
         }
 
-        return { ...prev, [earSide]: updatedEar };
+        return {
+          ...prev,
+          [earSide]: updatedEar,
+          [otherEar]: updatedOtherEar,
+        };
       });
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -190,11 +215,13 @@ export default function () {
 
       trialledEars.forEach((ear) => {
         const earData = form[ear];
-        const selected = inventoryDevice.find((d) => d.value === earData.deviceId);
+        const selected = inventoryDevice.find(
+          (d) => d.value === earData.deviceId,
+        );
 
         if (earData.deviceId) {
           let booking_status = "";
-          
+
           if (!earData.serialId || selected?.qty === 0) {
             booking_status = "BOOK - Awaiting Stock";
           } else if (earData.isCustomization) {
@@ -229,12 +256,11 @@ export default function () {
 
     if (selectedAction === "FOLLOWUP") {
       payload = {
-        trial_decision: "TRIAL ACTIVE",
+        trial_decision: "TRIAL_ACTIVE",
         next_followup: extendForm.dayCount,
         completion_notes: extendForm.reason,
       };
     }
-    console.log("Payload for Trial Completion:", payload);
     try {
       const res = await bookedDeviceForm(selectedTrialId, payload);
 
@@ -247,6 +273,7 @@ export default function () {
       const rightDevice = devices.find((d) => d.ear_side === "RIGHT");
 
       const returnPayload = {
+        id: selectedTrialId,
         left_serial_number: leftDevice?.serial_number || null,
         right_serial_number: rightDevice?.serial_number || null,
         device_condition_on_return: "Device returned after trial completion",

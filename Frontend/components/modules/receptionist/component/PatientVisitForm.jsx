@@ -139,7 +139,8 @@ export default function PatientVisitForm({
         ...purchaseItems[itemIndex],
         serial_numbers: value,
         quantity: value.length,
-        stockError: value.length > (purchaseItems[itemIndex].quantity_in_stock || 0)
+        stockError:
+          value.length > (purchaseItems[itemIndex].quantity_in_stock || 0),
       };
     } else if (key === "quantity") {
       const qty = parseInt(value) || 0;
@@ -147,7 +148,7 @@ export default function PatientVisitForm({
       purchaseItems[itemIndex] = {
         ...purchaseItems[itemIndex],
         [key]: qty,
-        stockError: qty > inStock
+        stockError: qty > inStock,
       };
     } else {
       purchaseItems[itemIndex] = { ...purchaseItems[itemIndex], [key]: value };
@@ -157,7 +158,8 @@ export default function PatientVisitForm({
       const selectedItem = inventoryItems.find((item) => item.value === value);
       if (selectedItem) {
         purchaseItems[itemIndex].stock_type = selectedItem.stock_type;
-        purchaseItems[itemIndex].quantity_in_stock = selectedItem.quantity_in_stock;
+        purchaseItems[itemIndex].quantity_in_stock =
+          selectedItem.quantity_in_stock;
         purchaseItems[itemIndex].serial_numbers = [];
         purchaseItems[itemIndex].stockError = false;
         if (selectedItem.stock_type === "Serialized") {
@@ -176,7 +178,10 @@ export default function PatientVisitForm({
     itemIndex,
     showAvailableOnly,
   ) => {
-    const serials = await fetchSerialsForItem(inventoryItemId, showAvailableOnly);
+    const serials = await fetchSerialsForItem(
+      inventoryItemId,
+      showAvailableOnly,
+    );
     if (serials && serials.length > 0) {
       const updatedVisit = [...formData.visit_details];
       const purchaseItems = [...updatedVisit[visitIndex].purchase_items];
@@ -252,8 +257,8 @@ export default function PatientVisitForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const hasStockError = formData.visit_details.some(visit =>
-      visit.purchase_items?.some(item => item.stockError)
+    const hasStockError = formData.visit_details.some((visit) =>
+      visit.purchase_items?.some((item) => item.stockError),
     );
 
     if (hasStockError) {
@@ -357,7 +362,7 @@ export default function PatientVisitForm({
           onChange={(date) =>
             updateField("appointment_date", format(date, "yyyy-MM-dd"))
           }
-          minDate={new Date()}
+          // minDate={new Date()}
           error={errors.appointment_date}
         />
 
@@ -379,14 +384,22 @@ export default function PatientVisitForm({
 
             {visit.visit_type !== "TGA" && visit.visit_type !== "Purchase" && (
               <>
-                {["Hearing Test", "'Hearing Aids Trial", "Hearing Aids Test & Trial"].includes(visit.visit_type) && (
+                {[
+                  "Hearing Test",
+                  "'Hearing Aids Trial",
+                  "Hearing Aids Test & Trial",
+                ].includes(visit.visit_type) && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-teal-50/50 p-4 rounded-lg border border-teal-100 mb-4">
                     <Input
                       label="Duration of Problem"
                       placeholder="e.g. 6 months"
                       value={visit.duration_of_problem}
                       onChange={(e) =>
-                        updateVisitDetails(index, "duration_of_problem", e.target.value)
+                        updateVisitDetails(
+                          index,
+                          "duration_of_problem",
+                          e.target.value,
+                        )
                       }
                     />
                     <DropDown
@@ -398,14 +411,20 @@ export default function PatientVisitForm({
                         { label: "Right", value: "right" },
                       ]}
                       value={visit.ear_side}
-                      onChange={(n, v) => updateVisitDetails(index, "ear_side", v)}
+                      onChange={(n, v) =>
+                        updateVisitDetails(index, "ear_side", v)
+                      }
                     />
                     <div className="flex items-center pt-5">
                       <CommonCheckbox
                         label="Previous Test Done"
                         checked={visit.previous_test_done}
                         onChange={(e) =>
-                          updateVisitDetails(index, "previous_test_done", e.target.checked)
+                          updateVisitDetails(
+                            index,
+                            "previous_test_done",
+                            e.target.checked,
+                          )
                         }
                       />
                     </div>
@@ -599,13 +618,17 @@ export default function PatientVisitForm({
                                     index,
                                     itemIndex,
                                     "quantity",
-                                    e.target.value
+                                    e.target.value,
                                   );
                                 }}
-                                className={item.stockError ? "border-red-500" : ""}
+                                className={
+                                  item.stockError ? "border-red-500" : ""
+                                }
                               />
                               {item.stockError && (
-                                <p className="text-red-500 text-xs mt-1">Insufficient stock</p>
+                                <p className="text-red-500 text-xs mt-1">
+                                  Insufficient stock
+                                </p>
                               )}
                             </div>
                           )}
