@@ -6,7 +6,7 @@ from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailVi
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
                     TestResultListView,TestUploadDeleteView,TestUploadCreateView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,
                     MarkPatientContactedView, VisitTestTypesView,TestTypeUpdateListView,ClinicTransactionListView,ClinicTransactionView,ClinicTransactionUpdateDeleteView,
-                    PurchaseInventoryItemListView,PurchaseInventoryItemCreateView,CustomerNeedPurchase)
+                    PurchaseInventoryItemListView,PurchaseInventoryItemCreateView,CustomerNeedPurchase,ClinicListView)
 
 from .api_inventory_item_update import InventoryItemUpdateView,InventorySerialNumberCreateView
 from .api_inventory_dropdowns import InventoryDropdownsView
@@ -31,6 +31,7 @@ urlpatterns = [
       path('trials/awaiting-stock/<int:trial_id>/', AllocateSerialFlatList.as_view(), name='trial_awaiting_stock_detail'),
       path('trials/allocate-serial/<int:trial_id>/', AllocateSerialNumber.as_view(), name='trial_allocate_serial'),
       
+   path('clinics/', ClinicListView.as_view(), name='clinic_list'),
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
    path('patient/<int:id>/', PatientDetailView.as_view(), name='patient_detail'), # Retrieve patient details
    

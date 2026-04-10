@@ -35,6 +35,12 @@ from django.db.models import F
 
 
 
+class ClinicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Clinic
+        fields = ['id', 'name']
+
+
 class PatientAllVisitSerializer(serializers.ModelSerializer):
     # Tell DRF what you expect from the API (list of strings)
     seen_by = serializers.CharField(source='seen_by.name', read_only=True)
