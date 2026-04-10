@@ -616,6 +616,7 @@ class TrialDeviceReturnView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        trial_id = serializer.validated_data.get('id')
         left_serial_number = serializer.validated_data.get('left_serial_number')
         right_serial_number = serializer.validated_data.get('right_serial_number')
         device_condition_on_return = serializer.validated_data.get('device_condition_on_return', '')
@@ -627,6 +628,7 @@ class TrialDeviceReturnView(APIView):
         if left_serial_number:
             try:
                 result = self._process_device_return(
+                    trial_id,
                     left_serial_number, device_condition_on_return, 'LEFT'
                 )
                 returned_devices.append(result)
@@ -637,6 +639,7 @@ class TrialDeviceReturnView(APIView):
         if right_serial_number:
             try:
                 result = self._process_device_return(
+                    trial_id,
                     right_serial_number, device_condition_on_return, 'RIGHT'
                 )
                 returned_devices.append(result)
@@ -655,7 +658,7 @@ class TrialDeviceReturnView(APIView):
             "data": returned_devices
         })
     
-    def _process_device_return(self, serial_number, device_condition_on_return, ear_side):
+    def _process_device_return(self, trial_id, serial_number, device_condition_on_return, ear_side):
         """Helper method to process individual device return."""
         # Get serial number record
         serial = InventorySerial.objects.get(
@@ -665,7 +668,7 @@ class TrialDeviceReturnView(APIView):
         
         # Get the booked device record for this serial
         booked_device = TrialDeviceDetails.objects.get(
-            serial_number=serial_number
+            serial_number=serial_number , trial__pk=trial_id
         )
         
         # Get the trial from booked device

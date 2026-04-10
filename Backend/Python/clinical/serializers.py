@@ -2717,6 +2717,7 @@ class ProductInfoBySerialSerializer(serializers.ModelSerializer):
 
 # Return Device Update 
 class TrialDeviceReturnSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=True)
     left_serial_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     right_serial_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     device_condition_on_return = serializers.CharField(required=False, allow_blank=True)
