@@ -28,11 +28,11 @@ from .serializers import (
     ClinicTransactionCreateSerializer,
     ClinicTransactionListSerializer,
     InventoryItemSerializer,
-    ClinicSerializer,
     PurchaseInventoryItemSerializer
 )
 from .models import Patient, PatientPurchase, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType,ClinicTransactions,BookedDeviceAfterTrial,TrialDeviceDetails
 from accounts.models import User, Clinic
+from accounts.serializers import ClinicSimpleSerializer
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -1606,7 +1606,7 @@ class ClinicListView(generics.ListAPIView):
     API to get list of clinics with id and name, no authentication required.
     """
     queryset = Clinic.objects.all()
-    serializer_class = ClinicSerializer
+    serializer_class = ClinicSimpleSerializer
     permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):

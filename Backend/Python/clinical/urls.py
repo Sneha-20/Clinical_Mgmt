@@ -25,13 +25,20 @@ from .admin_staff_performance import AdminStaffPerformanceAPIView
 from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
 from .api_inventory_transfer import InventoryTransferView, InventoryTransferHistoryView,InventoryFlatListView
 from .api_bill_item_discount import BillItemDiscountUpdateView, BillItemBulkDiscountUpdateView
+from .clinic_form_views import (ClinicFormRecordCreateView, ClinicFormRecordListView, 
+                                ClinicFormRecordUpdateView)
+from .views import ClinicListView
 urlpatterns = [
       # Awaiting stock trial endpoints
       path('trials/awaiting-stock/', AwaitingStockListView.as_view(), name='trials_awaiting_stock'),
       path('trials/awaiting-stock/<int:trial_id>/', AllocateSerialFlatList.as_view(), name='trial_awaiting_stock_detail'),
       path('trials/allocate-serial/<int:trial_id>/', AllocateSerialNumber.as_view(), name='trial_allocate_serial'),
       
+   # Clinic form endpoints
    path('clinics/', ClinicListView.as_view(), name='clinic_list'),
+   path('clinic-forms/', ClinicFormRecordCreateView.as_view(), name='clinic_form_create'),
+   path('clinic-forms/list/', ClinicFormRecordListView.as_view(), name='clinic_form_list'),
+   path('clinic-forms/<int:pk>/update/', ClinicFormRecordUpdateView.as_view(), name='clinic_form_update'),
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
    path('patient/<int:id>/', PatientDetailView.as_view(), name='patient_detail'), # Retrieve patient details
    

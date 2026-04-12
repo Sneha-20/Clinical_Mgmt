@@ -17,7 +17,8 @@ from .models import (
     Brand,  
     ModelType,
     ClinicTransactions,
-    BookedDeviceAfterTrial
+    BookedDeviceAfterTrial,
+    ClinicFormRecord
 )
 
 from accounts.models import Clinic
@@ -1169,6 +1170,20 @@ class TrialDeviceDetailsSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Battery number is required when device is not rechargeable")
         
         return data
+
+
+class ClinicFormRecordSerializer(serializers.ModelSerializer):
+    """Serializer for ClinicFormRecord model."""
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.name', read_only=True)
+    
+    class Meta:
+        model = ClinicFormRecord
+        fields = [
+            'id', 'clinic', 'clinic_name', 'patient_name', 'phone', 'email',
+            'purpose', 'created_at', 'contacted', 'contacted_at', 'contacted_by'
+        ]
+        read_only_fields = ['created_at']
 
 
 class TrialSerializer(serializers.ModelSerializer):
