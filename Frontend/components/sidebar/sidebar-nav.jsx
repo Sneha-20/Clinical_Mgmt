@@ -12,6 +12,7 @@ export default function SidebarNav({ role, onItemClick }) {
   const navItems = {
     Reception: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },
+      { icon: '📅', label: 'Appointment Requests', href: '/dashboard/receptionist/appointment-requests' },
       { icon: '🔧', label: 'Pending Item', href: '/dashboard/pending-item' },
       { icon: '📦', label: 'Inventory', href: '/dashboard/inventory' },
       { icon: '💰', label: 'Billing', href: '/dashboard/billing' },
