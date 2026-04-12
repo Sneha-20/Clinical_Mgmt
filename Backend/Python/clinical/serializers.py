@@ -1175,13 +1175,15 @@ class TrialDeviceDetailsSerializer(serializers.ModelSerializer):
 class ClinicFormRecordSerializer(serializers.ModelSerializer):
     """Serializer for ClinicFormRecord model."""
     clinic_name = serializers.CharField(source='clinic.name', read_only=True)
-    created_by_name = serializers.CharField(source='created_by.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.name', read_only=True, allow_null=True)
+    contacted_by_name = serializers.CharField(source='contacted_by.name', read_only=True, allow_null=True)
     
     class Meta:
         model = ClinicFormRecord
         fields = [
             'id', 'clinic', 'clinic_name', 'patient_name', 'phone', 'email',
-            'purpose', 'created_at', 'contacted', 'contacted_at', 'contacted_by'
+            'purpose', 'created_at', 'created_by', 'created_by_name',
+            'contacted', 'contacted_at', 'contacted_by', 'contacted_by_name'
         ]
         read_only_fields = ['created_at']
 

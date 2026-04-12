@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Count
+from django.utils import timezone
 from .models import ClinicFormRecord
 from .serializers import ClinicFormRecordSerializer
 from accounts.models import Clinic
