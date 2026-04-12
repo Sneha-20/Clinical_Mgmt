@@ -34,7 +34,6 @@ const ContactForm = ({
     const payload = {
       ...formData,
       clinic: Number(formData.clinic),
-      created_at: new Date().toISOString(),
     };
 
     console.log("Form submitted payload:", payload);
