@@ -157,6 +157,28 @@ const OwnerSection = () => (
 );
 
 const ContactSection = () => {
+  const [clinics, setClinics] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchClinics = async () => {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+        const response = await fetch(`${baseUrl}/clinical/clinics/`);
+        const data = await response.json();
+        // Adjust based on typical API response structure { data: [...] } or [...]
+        setClinics(data?.data || data || []);
+      } catch (error) {
+        console.error("Error fetching clinics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClinics();
+  }, []);
+
+  const mainClinic = clinics.length > 0 ? clinics[0] : null;
+
   return (
     <section id="contact" className="bg-background py-20 px-6">
       <div className="max-w-6xl mx-auto">
@@ -170,52 +192,78 @@ const ContactSection = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Side - Contact Details */}
-          <div className="bg-card rounded-xl shadow-lg p-8 space-y-8">
+          <div className="bg-card rounded-xl shadow-lg p-8 space-y-8 h-fit">
             <div>
               <h4 className="text-2xl font-semibold text-primaryText mb-6">
-                Contact Information
+                Our Locations
               </h4>
             </div>
 
-            <div>
-              <p className="text-sm text-muted-foreground font-semibold mb-2">
-                ADDRESS
-              </p>
-              <p className="text-lg text-foreground leading-relaxed">
-                Shop No. 7, Rd, Opp. ENT Hospital, Sehaj Avenue, Majitha,
-                Amritsar, Punjab 143001
-              </p>
-            </div>
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="animate-pulse space-y-2">
+                    <div className="h-4 bg-muted rounded w-1/4"></div>
+                    <div className="h-10 bg-muted rounded"></div>
+                  </div>
+                ))}
+              </div>
+            ) : clinics.length > 0 ? (
+              <div className="space-y-10">
+                {clinics.map((clinic) => (
+                  <div key={clinic.id} className="border-b border-muted pb-8 last:border-0 last:pb-0">
+                    <h5 className="text-xl font-bold text-primary mb-4 uppercase tracking-wide">
+                      {clinic.name}
+                    </h5>
+                    
+                    <div className="space-y-6">
+                      <div className="flex flex-col">
+                        <p className="text-xs text-muted-foreground font-bold mb-1 uppercase tracking-tighter">
+                          Address
+                        </p>
+                        <p className="text-lg text-foreground leading-snug">
+                          {clinic.address}, {clinic.city}, {clinic.state} {clinic.zip_code}
+                        </p>
+                      </div>
 
-            <div>
-              <p className="text-sm text-muted-foreground font-semibold mb-2">
-                PHONE
-              </p>
-              <a
-                href="tel:+91981456444"
-                className="text-lg text-primary hover:underline block font-medium"
-              >
-                +91 98145 64444
-              </a>
-            </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex flex-col">
+                          <p className="text-xs text-muted-foreground font-bold mb-1 uppercase tracking-tighter">
+                            Phone
+                          </p>
+                          <a
+                            href={`tel:${clinic.phone}`}
+                            className="text-lg text-primary hover:underline font-medium"
+                          >
+                            {clinic.phone}
+                          </a>
+                        </div>
 
-            <div>
-              <p className="text-sm text-muted-foreground font-semibold mb-2">
-                EMAIL
-              </p>
-              <a
-                href="mailto:hello@navjeevan.com"
-                className="text-lg text-primary hover:underline block font-medium"
-              >
-                hello@navjeevan.com
-              </a>
-            </div>
+                        <div className="flex flex-col">
+                          <p className="text-xs text-muted-foreground font-bold mb-1 uppercase tracking-tighter">
+                            Email
+                          </p>
+                          <a
+                            href={`mailto:${clinic.email}`}
+                            className="text-lg text-primary hover:underline font-medium break-all"
+                          >
+                            {clinic.email}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-destructive font-medium">Contact information currently unavailable.</p>
+            )}
 
-            <div className="bg-primary/10 rounded-lg p-6 border-l-4 border-primary">
-              <p className="text-sm text-muted-foreground font-semibold mb-2">
-                HOURS
+            <div className="bg-primary/5 rounded-lg p-6 border-l-4 border-primary mt-4">
+              <p className="text-sm text-muted-foreground font-bold mb-3 uppercase tracking-tighter">
+                General Operating Hours
               </p>
-              <div className="space-y-1 text-foreground">
+              <div className="space-y-1 text-foreground font-medium">
                 <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
                 <p>Saturday: 9:00 AM - 5:00 PM</p>
                 <p>Sunday: Closed</p>
@@ -225,8 +273,30 @@ const ContactSection = () => {
 
           {/* Right Side - Contact Form */}
           <ContactForm
-            submitButtonText="Send Message"
-            onSubmit={(data) => console.log("Contact form submitted:", data)}
+            submitButtonText="Send Appointment Request"
+            clinics={clinics}
+            onSubmit={async (payload) => {
+              try {
+                const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+                const response = await fetch(`${baseUrl}/clinical/clinic-forms/`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                  throw new Error("Failed to submit appointment request");
+                }
+
+                console.log("Appointment request submitted successfully");
+              } catch (error) {
+                console.error("Error submitting appointment request:", error);
+                // The ContactForm manages its own success state, 
+                // but we log the error here for debugging.
+              }
+            }}
           />
         </div>
       </div>

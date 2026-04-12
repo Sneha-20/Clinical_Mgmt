@@ -244,8 +244,13 @@ const TrialList = () => {
                           -{" "}
                           {new Date(trial.trial_end_date).toLocaleDateString()}
                         </p>
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-3 mt-1">
                           {getStatusBadge(trial.trial_decision)}
+                          {trial.extended_trial ? (
+                            <p className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-indigo-100 text-indigo-700 border border-indigo-300">
+                              Extended: {typeof trial.extended_trial === 'boolean' ? 'Yes' : trial.extended_trial}
+                            </p>
+                          ) : null}
                         </div>
                       </div>
                     </div>
