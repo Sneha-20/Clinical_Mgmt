@@ -392,7 +392,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             'visit_details'
               # Include the nested field
         ]
-        read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic']
+        read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic', 'created_at']
 
     def validate_phone_primary(self, value):
         if not re.fullmatch(r'\d{10}', (value or '').strip()):
@@ -1175,17 +1175,15 @@ class TrialDeviceDetailsSerializer(serializers.ModelSerializer):
 class ClinicFormRecordSerializer(serializers.ModelSerializer):
     """Serializer for ClinicFormRecord model."""
     clinic_name = serializers.CharField(source='clinic.name', read_only=True)
-    created_by_name = serializers.CharField(source='created_by.name', read_only=True, allow_null=True)
     contacted_by_name = serializers.CharField(source='contacted_by.name', read_only=True, allow_null=True)
     
     class Meta:
         model = ClinicFormRecord
         fields = [
             'id', 'clinic', 'clinic_name', 'patient_name', 'phone', 'email',
-            'purpose', 'created_at', 'created_by', 'created_by_name',
-            'contacted', 'contacted_at', 'contacted_by', 'contacted_by_name'
+            'purpose', 'created_at', 'contacted', 'contacted_at', 'contacted_by', 'contacted_by_name'
         ]
-        read_only_fields = ['created_at']
+        read_only_fields = ['created_at', 'contacted_at', 'contacted_by']
 
 
 class TrialSerializer(serializers.ModelSerializer):
