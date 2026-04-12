@@ -15,6 +15,8 @@ export const routes = {
   receptionistDashboard: "clinical/dashboard/stats/",
   followupList: "clinical/patient-visits/followup",
   markContacted: "clinical/patient-visits/",
+  appointmentRequestList: "clinical/clinic-forms/list/",
+  appointmentRequestBase: "clinical/clinic-forms/",
 
   // TGA Services
   tgaServiceList: "clinical/service/visit/list",
@@ -100,6 +102,7 @@ export const routes = {
     patientCaseHistory: "/dashboard/case-history",
     patientVisitdetail: "/dashboard/patient/visit-details",
     followUpList: "/dashboard/receptionist/followup-list",
+    appointmentRequests: "/dashboard/receptionist/appointment-requests",
     servicepage: "/dashboard/tga-service",
     transactionHistory: "/dashboard/transaction-history",
     signup: "/signup",
@@ -127,6 +130,7 @@ export const privateRoutes = [
   "/dashboard/case-history",
   "/dashboard/patient/visit-details",
   "/dashboard/receptionist/followup-list",
+  "/dashboard/receptionist/appointment-requests",
   "/dashboard/tga-service",
   "/dashboard/pending-item",
   "/dashboard/inventory",
@@ -157,6 +161,7 @@ export const roleRoutesAccess = {
     "/dashboard/awaiting-device",
     "/dashboard/tga-service",
     "/dashboard/receptionist/followup-list",
+    "/dashboard/receptionist/appointment-requests",
     "/dashboard/transaction-history",
   ],
   Audiologist: [
