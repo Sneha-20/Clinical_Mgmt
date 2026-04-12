@@ -22,16 +22,16 @@ class ClinicFormRecordCreateView(generics.CreateAPIView):
 
 class ClinicFormRecordListView(generics.ListAPIView):
     """API endpoint for listing clinic form records."""
-    queryset = ClinicFormRecord.objects.select_related('clinic', 'created_by').order_by('-created_at')
+    queryset = ClinicFormRecord.objects.select_related('clinic', 'contacted_by').order_by('-created_at')
     serializer_class = ClinicFormRecordSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """Filter records by clinic if provided"""
         queryset = super().get_queryset()
-        clinic_id = self.request.query_params.get('clinic_id')
-        if clinic_id:
-            queryset = queryset.filter(clinic_id=clinic_id)
+        user_clinic = getattr(self.request.user, 'clinic', None)
+        if user_clinic:
+            queryset = queryset.filter(clinic=user_clinic, contacted=False)
         return queryset
 
 
