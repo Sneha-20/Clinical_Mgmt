@@ -77,6 +77,58 @@ services:
       - clinical_network
     command: redis-server --appendonly yes
 
+  # Celery Worker Service
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinical_celery_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./Python:/app
+      - media_files:/app/media
+      - static_files:/app/static
+      - log_files:/app/logs
+    networks:
+      - clinical_network
+    depends_on:
+      - db
+      - redis
+      - backend
+    command: >
+      sh -c "
+        cd /app &&
+        celery -A clinical_be worker --loglevel=info --concurrency=2
+      "
+
+  # Celery Beat Service (for scheduled tasks)
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinical_celery_beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./Python:/app
+      - media_files:/app/media
+      - static_files:/app/static
+      - log_files:/app/logs
+    networks:
+      - clinical_network
+    depends_on:
+      - db
+      - redis
+      - backend
+    command: >
+      sh -c "
+        cd /app &&
+        celery -A clinical_be beat --loglevel=info
+      "
+
 # Volumes for data persistence
 volumes:
   postgres_data:

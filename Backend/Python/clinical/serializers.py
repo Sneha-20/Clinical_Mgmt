@@ -2823,7 +2823,7 @@ class TrialCompletionSerializer(serializers.Serializer):
         help_text="Notes about trial completion and patient decision"
     )
     
-    followup_days = serializers.IntegerField(required=False, allow_null=True)
+    next_followup = serializers.IntegerField(required=False, allow_null=True)
     
     def validate(self, data):
         trial_decision = data.get('trial_decision')

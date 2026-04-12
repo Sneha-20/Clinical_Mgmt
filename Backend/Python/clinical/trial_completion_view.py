@@ -32,7 +32,7 @@ class TrialCompletionView(APIView):
             
             trial_decision = serializer.validated_data['trial_decision']
             completion_notes = serializer.validated_data.get('completion_notes', '')
-            followup_days = serializer.validated_data.get('followup_days', 3)
+            followup_days = serializer.validated_data.get('next_followup', 1)
             
             with transaction.atomic():
                 # Update trial completion details
@@ -218,8 +218,12 @@ class TrialCompletionView(APIView):
                     trial.extended_trial = True
                     trial.visit.status_note = 'Trial extended for booking device decision'
                     trial.extended_at = timezone.now()
-                    trial.trial_end_date = timezone.now() + timedelta(days=followup_days)
-                    trial.followup_date = timezone.now() + timedelta(days=followup_days + 1)
+                    trial.trial_start_date = trial.trial_start_date or timezone.now().date()
+                    if trial.trial_end_date:
+                        trial.trial_end_date = trial.trial_end_date + timedelta(days=followup_days)
+                    else:
+                        trial.trial_end_date = trial.trial_start_date + timedelta(days=followup_days)
+                    trial.followup_date = trial.trial_end_date + timedelta(days=1)
 
                 elif trial_decision == 'DECLINE':
                     # Scenario 3: Patient doesn't need new device anymore
