@@ -9,13 +9,14 @@ const ContactForm = ({
   submitButtonText = "Send Message",
   onSubmit,
   className = "",
+  clinics = [],
 }) => {
   const [formData, setFormData] = useState({
-    name: "",
+    patient_name: "",
     phone: "",
-    age: "",
-    nearbyClinic: "",
-    notes: "",
+    email: "",
+    clinic: "",
+    purpose: "",
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -29,19 +30,25 @@ const ContactForm = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+
+    const payload = {
+      ...formData,
+      clinic: Number(formData.clinic),
+    };
+
+    console.log("Form submitted payload:", payload);
 
     if (onSubmit) {
-      onSubmit(formData);
+      onSubmit(payload);
     }
 
     setSubmitted(true);
     setFormData({
-      name: "",
+      patient_name: "",
       phone: "",
-      age: "",
-      nearbyClinic: "",
-      notes: "",
+      email: "",
+      clinic: "",
+      purpose: "",
     });
     setTimeout(() => setSubmitted(false), 3000);
   };
@@ -55,71 +62,74 @@ const ContactForm = ({
           </label>
           <Input
             type="text"
-            name="name"
-            value={formData.name}
+            name="patient_name"
+            value={formData.patient_name}
             onChange={handleInputChange}
             placeholder="Enter your full name"
             required
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-semibold text-primaryText mb-2">
-            Phone Number *
-          </label>
-          <Input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleInputChange}
-            placeholder="Enter your phone number"
-            required
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-sm font-semibold text-primaryText mb-2">
+              Phone Number *
+            </label>
+            <Input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
+              placeholder="Enter your phone number"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-primaryText mb-2">
+              Email *
+            </label>
+            <Input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="Enter your email"
+              required
+            />
+          </div>
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-primaryText mb-2">
-            Age
-          </label>
-          <Input
-            type="number"
-            name="age"
-            value={formData.age}
-            onChange={handleInputChange}
-            placeholder="Enter your age"
-            min="0"
-            max="150"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-primaryText mb-2">
-            Nearby Clinic
+            Select Clinic *
           </label>
           <select
-            name="nearbyClinic"
-            value={formData.nearbyClinic}
+            name="clinic"
+            value={formData.clinic}
             onChange={handleInputChange}
-            className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-foreground"
+            required
           >
             <option value="">Select a clinic</option>
-            <option value="amritsar">Amritsar Main</option>
-            <option value="chandigarh">Chandigarh</option>
-            <option value="ludhiana">Ludhiana</option>
-            <option value="jalandhar">Jalandhar</option>
+            {clinics.map((clinic) => (
+              <option key={clinic.id} value={clinic.id}>
+                {clinic.name} - {clinic.city}
+              </option>
+            ))}
           </select>
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-primaryText mb-2">
-            Problem / Notes
+            Purpose of Visit *
           </label>
           <TextArea
-            name="notes"
-            value={formData.notes}
+            name="purpose"
+            value={formData.purpose}
             onChange={handleInputChange}
-            placeholder="Describe your concerns or problems..."
+            placeholder="Describe the purpose of your visit..."
             rows={4}
+            required
           />
         </div>
 
