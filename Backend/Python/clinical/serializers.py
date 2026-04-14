@@ -1186,6 +1186,41 @@ class ClinicFormRecordSerializer(serializers.ModelSerializer):
         read_only_fields = ['created_at', 'contacted_at', 'contacted_by']
 
 
+class BillItemCreateSerializer(serializers.Serializer):
+    """Serializer for creating bill items with inventory products"""
+    
+    inventory_item_id = serializers.IntegerField(write_only=True)
+    quantity = serializers.IntegerField(write_only=True, min_value=1, default=1)
+    
+    def validate_inventory_item_id(self, value):
+        """Validate that inventory item exists and is approved"""
+        try:
+            inventory_item = InventoryItem.objects.get(id=value, is_approved=True)
+            return inventory_item
+        except InventoryItem.DoesNotExist:
+            raise serializers.ValidationError("Inventory item not found or not approved")
+    
+    def validate_quantity(self, value):
+        """Validate quantity is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be greater than 0")
+        return value
+
+
+class BasicInventorySerializer(serializers.ModelSerializer):
+    """Basic serializer for inventory items with essential fields"""
+    
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
+    model_name = serializers.CharField(source='model_type.name', read_only=True)
+    
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'id', 'product_name', 'category', 'brand_name', 'model_name', 
+            'unit_price', 'quantity_in_stock', 'stock_type'
+        ]
+
+
 class TrialSerializer(serializers.ModelSerializer):
     device_details_list = TrialDeviceDetailsSerializer(source='device_details_set', many=True, read_only=True)
     

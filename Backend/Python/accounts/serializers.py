@@ -73,6 +73,7 @@ class TokenWithClinicSerializer(serializers.Serializer):
                 'name': getattr(user, 'name', ''),
                 'role': roles_data,
             },
+            'clinic': clinic_data,
         }
 
 class RegisterSerializer(serializers.ModelSerializer):

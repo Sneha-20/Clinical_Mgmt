@@ -616,7 +616,7 @@ class PatientPurchase(models.Model):
         blank=True
     )
 
-    ear_side = models.CharField(max_length=50, null=True)
+    ear_side = models.CharField(max_length=50, null=True, blank=True)
 
 #     purchase_type = models.CharField(
 #         max_length=20,

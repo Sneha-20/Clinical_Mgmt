@@ -25,6 +25,8 @@ from .admin_staff_performance import AdminStaffPerformanceAPIView
 from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
 from .api_inventory_transfer import InventoryTransferView, InventoryTransferHistoryView,InventoryFlatListView
 from .api_bill_item_discount import BillItemDiscountUpdateView, BillItemBulkDiscountUpdateView
+from .api_bill_item_add import BillItemAddView
+from .api_inventory_excluding_hearing_aids import InventoryExcludingHearingAidsView
 from .clinic_form_views import (ClinicFormRecordCreateView, ClinicFormRecordListView, 
                                 ClinicFormRecordUpdateView)
 from .views import ClinicListView
@@ -62,12 +64,14 @@ urlpatterns = [
    path('bill/paid/', BillPaidListView.as_view(), name='bill_list'), # List bills with patient info and status
    path('bill/pending/', BillPendingListView.as_view(), name='bill_list'), # List bills with patient info and status
    path('bill/visit/<int:visit_id>/', BillDetailView.as_view(), name='bill_detail'), # Get bill details by visit ID
+   path('bill/items/add/', BillItemAddView.as_view(), name='bill_item_add'), # Add inventory products to bill
 
    #  # InventoryItem update endpoint
    path('inventory-item/<int:pk>/update/', InventoryItemUpdateView.as_view(), name='inventory_item_update'),
 
    # Inventory dropdowns endpoint
    path('inventory/dropdowns/', InventoryDropdownsView.as_view(), name='inventory_dropdowns'),
+   path('inventory/excluding-hearing-aids/', InventoryExcludingHearingAidsView.as_view(), name='inventory_excluding_hearing_aids'), # Inventory excluding Hearing Aids
 
    # Trial endpoints
    path('trials/create/', TrialCreateView.as_view(), name='trial_create'),
