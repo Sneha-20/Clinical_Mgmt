@@ -238,3 +238,17 @@ export const getInventoryItemDetail = async (id) => {
     throw error;
   }
 };
+
+/**
+ * Get inventory items excluding hearing aids
+ * @returns {Promise<Object>} Object with categories as keys and item lists as values
+ */
+export const getExcludingHearingAids = async () => {
+  try {
+    const url = routes.excludingHearingAids;
+    const response = await apiClient.get(url);
+    return response.data || {};
+  } catch (error) {
+    throw error;
+  }
+};

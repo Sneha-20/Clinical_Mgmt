@@ -37,6 +37,7 @@ export const routes = {
   inventorySerialNumberCreate: "clinical/inventory/serial-number/create/",
   inventoryBrandCreate: "clinical/inventory/brands/create/",
   inventoryModelCreate: "clinical/inventory/models/create/",
+  excludingHearingAids: "clinical/inventory/excluding-hearing-aids/",
 
   audiologist: {
     appointmentList: "clinical/audiologits/queue/",
@@ -66,6 +67,7 @@ export const routes = {
     dueBillList: "clinical/bill/pending/",
     billingDetail: "clinical/bill/visit/",
     markBillPaid: "clinical/mark-bill-paid/",
+    addBillItems: "clinical/bill/items/add/",
   },
 
   // Admin Routes
@@ -163,6 +165,7 @@ export const roleRoutesAccess = {
     "/dashboard/receptionist/followup-list",
     "/dashboard/receptionist/appointment-requests",
     "/dashboard/transaction-history",
+    "/dashboard/transfer-products",
   ],
   Audiologist: [
     "/dashboard/home",

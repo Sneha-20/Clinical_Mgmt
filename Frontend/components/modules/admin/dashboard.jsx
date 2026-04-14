@@ -11,17 +11,26 @@ import {
   TableCell,
 } from "@/components/ui/Table";
 import { Button } from "@/components/ui/button";
-import CommonDatePicker from '@/components/ui/CommonDatePicker'
-import { format } from 'date-fns'
+import CommonDatePicker from "@/components/ui/CommonDatePicker";
+import { format } from "date-fns";
 import FullVisitModal from "@/components/modules/receptionist/component/FullVisitModal";
 import {
   getReceptionists,
   approveUser,
   rejectUser,
-} from '@/lib/services/accounts'
-import { useToast } from '@/components/ui/use-toast'
+} from "@/lib/services/accounts";
+import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
-import { Users, Activity, PlayCircle, CalendarCheck, Banknote, ShieldCheck, TrendingUp, Eye } from 'lucide-react'
+import {
+  Users,
+  Activity,
+  PlayCircle,
+  CalendarCheck,
+  Banknote,
+  ShieldCheck,
+  TrendingUp,
+  Eye,
+} from "lucide-react";
 export default function AdminDashboard() {
   const router = useRouter();
   const [clinics, setClinics] = useState([]);
@@ -40,7 +49,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
 
   // Which summary card is active: 'patients' | 'visits' | 'tests' | 'trials' | 'bookings' | 'purchases'
-  const [activeSection, setActiveSection] = useState('patients');
+  const [activeSection, setActiveSection] = useState("patients");
   const [hoveredSection, setHoveredSection] = useState(null);
 
   // Initialize dates to today
@@ -108,7 +117,6 @@ export default function AdminDashboard() {
           console.error("First clinic ID is undefined");
         }
       }
-
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     }
@@ -149,19 +157,12 @@ export default function AdminDashboard() {
       end_date,
     );
     try {
-      const resp = await getDailyRevenueStatus(
-        clinicId,
-        start_date,
-        end_date,
-      );
+      const resp = await getDailyRevenueStatus(clinicId, start_date, end_date);
       const dailyStatusData = resp?.data || resp;
       if (dailyStatusData && dailyStatusData.summary) {
         setDailyStatus(dailyStatusData);
       } else {
-        console.error(
-          "Daily status data or summary is undefined",
-          resp,
-        );
+        console.error("Daily status data or summary is undefined", resp);
         setDailyStatus(null); // Reset dailyStatus to null if data is invalid
       }
     } catch (error) {
@@ -199,7 +200,7 @@ export default function AdminDashboard() {
             key={clinic.id}
             role="button"
             aria-selected={selectedClinicId === clinic.id}
-            className={`bg-white rounded-lg p-4 cursor-pointer hover:shadow-lg ${selectedClinicId === clinic.id ? 'border-2 border-teal-600 shadow-lg' : 'shadow'}`}
+            className={`bg-white rounded-lg p-4 cursor-pointer hover:shadow-lg ${selectedClinicId === clinic.id ? "border-2 border-teal-600 shadow-lg" : "shadow"}`}
             onClick={() => handleClinicClick(clinic.id)}
           >
             <h4 className="text-lg font-semibold text-gray-900">
@@ -278,7 +279,9 @@ export default function AdminDashboard() {
                   <CommonDatePicker
                     // label="Start Date"
                     selectedDate={startDate ? new Date(startDate) : null}
-                    onChange={(date) => setStartDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                    onChange={(date) =>
+                      setStartDate(date ? format(date, "yyyy-MM-dd") : "")
+                    }
                     maxDate={new Date()}
                   />
                 </div>
@@ -286,32 +289,96 @@ export default function AdminDashboard() {
                   <CommonDatePicker
                     // label="End Date"
                     selectedDate={endDate ? new Date(endDate) : null}
-                    onChange={(date) => setEndDate(date ? format(date, 'yyyy-MM-dd') : '')}
+                    onChange={(date) =>
+                      setEndDate(date ? format(date, "yyyy-MM-dd") : "")
+                    }
                     maxDate={new Date()}
                   />
                 </div>
                 <div>
-                  <button onClick={handleDateFilter} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                  <button
+                    onClick={handleDateFilter}
+                    className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                  >
                     Apply Filter
                   </button>
                 </div>
               </div>
             </div>
             <div className="flex gap-3 items-center text-xs text-gray-500">
-              <div>Date Range: <span className="font-semibold">{startDate} to {endDate}</span></div>
-              <div className="mt-1">Selected Clinic: <span className="font-semibold">{clinics.find(c => c.id === selectedClinicId)?.name || 'None selected'}</span></div>
+              <div>
+                Date Range:{" "}
+                <span className="font-semibold">
+                  {startDate} to {endDate}
+                </span>
+              </div>
+              <div className="mt-1">
+                Selected Clinic:{" "}
+                <span className="font-semibold">
+                  {clinics.find((c) => c.id === selectedClinicId)?.name ||
+                    "None selected"}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* Summary - clickable KPI cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
             {[
-              { id: 'patients', title: 'Total Patients', value: dailyStatus?.summary?.total_patients ?? 0, icon: Users, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
-              { id: 'visits', title: 'Patient Visits', value: dailyStatus?.summary?.total_patient_visits ?? 0, icon: TrendingUp, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
-              { id: 'tests', title: 'Total Tests', value: dailyStatus?.summary?.total_tests ?? 0, icon: Activity, color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200' },
-              { id: 'trials', title: 'Total Trials', value: dailyStatus?.summary?.total_trials ?? 0, icon: PlayCircle, color: 'text-purple-600', bgColor: 'bg-purple-50', borderColor: 'border-purple-200' },
-              { id: 'bookings', title: 'Total Bookings', value: dailyStatus?.summary?.total_bookings ?? 0, icon: CalendarCheck, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-              { id: 'purchases', title: 'Total Purchases', value: dailyStatus?.summary?.total_purchases ?? 0, icon: Banknote, color: 'text-teal-600', bgColor: 'bg-teal-50', borderColor: 'border-teal-200' },
+              {
+                id: "patients",
+                title: "Total Patients",
+                value: dailyStatus?.summary?.total_patients ?? 0,
+                icon: Users,
+                color: "text-blue-600",
+                bgColor: "bg-blue-50",
+                borderColor: "border-blue-200",
+              },
+              {
+                id: "visits",
+                title: "Patient Visits",
+                value: dailyStatus?.summary?.total_patient_visits ?? 0,
+                icon: TrendingUp,
+                color: "text-rose-600",
+                bgColor: "bg-rose-50",
+                borderColor: "border-rose-200",
+              },
+              {
+                id: "tests",
+                title: "Total Tests",
+                value: dailyStatus?.summary?.total_tests ?? 0,
+                icon: Activity,
+                color: "text-orange-600",
+                bgColor: "bg-orange-50",
+                borderColor: "border-orange-200",
+              },
+              {
+                id: "trials",
+                title: "Total Trials",
+                value: dailyStatus?.summary?.total_trials ?? 0,
+                icon: PlayCircle,
+                color: "text-purple-600",
+                bgColor: "bg-purple-50",
+                borderColor: "border-purple-200",
+              },
+              {
+                id: "bookings",
+                title: "Total Bookings",
+                value: dailyStatus?.summary?.total_bookings ?? 0,
+                icon: CalendarCheck,
+                color: "text-emerald-600",
+                bgColor: "bg-emerald-50",
+                borderColor: "border-emerald-200",
+              },
+              {
+                id: "purchases",
+                title: "Total Purchases",
+                value: dailyStatus?.summary?.total_purchases ?? 0,
+                icon: Banknote,
+                color: "text-teal-600",
+                bgColor: "bg-teal-50",
+                borderColor: "border-teal-200",
+              },
             ].map((card) => {
               const Icon = card.icon;
               const isActive = activeSection === card.id;
@@ -323,13 +390,16 @@ export default function AdminDashboard() {
                   onClick={() => setActiveSection(card.id)}
                   onMouseEnter={() => setHoveredSection(card.id)}
                   onMouseLeave={() => setHoveredSection(null)}
-                  className={`relative group p-5 rounded-2xl cursor-pointer transition-all duration-500 ease-in-out border ${isActive
-                    ? `ring-2 ring-offset-2 ring-teal-500 shadow-xl ${card.bgColor} border-transparent`
-                    : `bg-white ${card.borderColor} hover:shadow-xl hover:border-teal-200`
-                    } ${isHovered ? 'z-10 scale-[1.02]' : 'z-0'}`}
+                  className={`relative group p-5 rounded-2xl cursor-pointer transition-all duration-500 ease-in-out border ${
+                    isActive
+                      ? `ring-2 ring-offset-2 ring-teal-500 shadow-xl ${card.bgColor} border-transparent`
+                      : `bg-white ${card.borderColor} hover:shadow-xl hover:border-teal-200`
+                  } ${isHovered ? "z-10 scale-[1.02]" : "z-0"}`}
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <div className={`p-2.5 rounded-xl ${card.bgColor} ${card.color} transition-colors duration-300 shadow-sm`}>
+                    <div
+                      className={`p-2.5 rounded-xl ${card.bgColor} ${card.color} transition-colors duration-300 shadow-sm`}
+                    >
                       <Icon size={24} />
                     </div>
                     {isActive && (
@@ -338,7 +408,9 @@ export default function AdminDashboard() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{card.title}</p>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+                      {card.title}
+                    </p>
                     <div className="flex items-baseline gap-1">
                       <p className="text-3xl font-black text-slate-900 leading-none">
                         {card.isCurrency ? `₹${card.value}` : card.value}
@@ -347,48 +419,86 @@ export default function AdminDashboard() {
                   </div>
 
                   {/* Aesthetic Background Pattern */}
-                  <div className={`absolute right-0 bottom-0 opacity-[0.05] transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-12 ${card.color}`}>
+                  <div
+                    className={`absolute right-0 bottom-0 opacity-[0.05] transition-transform duration-700 group-hover:scale-125 group-hover:-rotate-12 ${card.color}`}
+                  >
                     <Icon size={80} />
                   </div>
 
                   {/* Quick Glance Preview on Hover */}
                   <div
-                    className={`overflow-hidden transition-all duration-500 ease-in-out ${isHovered && ['patients', 'visits', 'tests', 'trials', 'bookings', 'purchases'].includes(card.id)
-                      ? 'max-h-52 mt-4 opacity-100'
-                      : 'max-h-0 opacity-0'
-                      }`}
+                    className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                      isHovered &&
+                      [
+                        "patients",
+                        "visits",
+                        "tests",
+                        "trials",
+                        "bookings",
+                        "purchases",
+                      ].includes(card.id)
+                        ? "max-h-52 mt-4 opacity-100"
+                        : "max-h-0 opacity-0"
+                    }`}
                   >
                     <div className="pt-3 border-t border-slate-100">
                       <p className="text-[10px] font-bold text-slate-400 uppercase mb-2 flex items-center gap-1">
                         <TrendingUp size={10} /> Recent Records
                       </p>
                       <div className="space-y-1.5">
-                        {(card.id === 'patients' ? dailyStatus?.patients :
-                          card.id === 'visits' ? dailyStatus?.patient_visits :
-                            card.id === 'tests' ? dailyStatus?.tests :
-                              card.id === 'trials' ? dailyStatus?.trials :
-                                card.id === 'bookings' ? dailyStatus?.bookings :
-                                  card.id === 'purchases' ? dailyStatus?.purchase_records : [])?.slice(0, 3).map((item, i) => (
-                                    <div key={i} className="text-[11px] text-slate-600 flex justify-between items-center gap-2 group/item">
-                                      <span className="truncate font-medium group-hover/item:text-teal-600 transition-colors">
-                                        {item.patient_name || item.name || 'Unknown'}
-                                      </span>
-                                      <span className="shrink-0 px-1.5 py-0.5 rounded bg-slate-50 text-slate-400 text-[9px] font-bold border border-slate-100 uppercase">
-                                        {Array.isArray(item.test_name) ? item.test_name.join(', ') : (item.visit_type || item.test_name || item.trial_decision || item.inventory_item || 'Record')}
-                                      </span>
-                                    </div>
-                                  ))}
-                        {(!dailyStatus?.[card.id === 'visits' ? 'patient_visits' : (card.id === 'purchases' ? 'purchase_records' : card.id)]?.length) && (
-                          <p className="text-[10px] text-slate-400 italic">No recent activity</p>
+                        {(card.id === "patients"
+                          ? dailyStatus?.patients
+                          : card.id === "visits"
+                            ? dailyStatus?.patient_visits
+                            : card.id === "tests"
+                              ? dailyStatus?.tests
+                              : card.id === "trials"
+                                ? dailyStatus?.trials
+                                : card.id === "bookings"
+                                  ? dailyStatus?.bookings
+                                  : card.id === "purchases"
+                                    ? dailyStatus?.purchase_records
+                                    : []
+                        )
+                          ?.slice(0, 3)
+                          .map((item, i) => (
+                            <div
+                              key={i}
+                              className="text-[11px] text-slate-600 flex justify-between items-center gap-2 group/item"
+                            >
+                              <span className="truncate font-medium group-hover/item:text-teal-600 transition-colors">
+                                {item.patient_name || item.name || "Unknown"}
+                              </span>
+                              <span className="shrink-0 px-1.5 py-0.5 rounded bg-slate-50 text-slate-400 text-[9px] font-bold border border-slate-100 uppercase">
+                                {Array.isArray(item.test_name)
+                                  ? item.test_name.join(", ")
+                                  : item.visit_type ||
+                                    item.test_name ||
+                                    item.trial_decision ||
+                                    item.inventory_item ||
+                                    "Record"}
+                              </span>
+                            </div>
+                          ))}
+                        {!dailyStatus?.[
+                          card.id === "visits"
+                            ? "patient_visits"
+                            : card.id === "purchases"
+                              ? "purchase_records"
+                              : card.id
+                        ]?.length && (
+                          <p className="text-[10px] text-slate-400 italic">
+                            No recent activity
+                          </p>
                         )}
                       </div>
                     </div>
                   </div>
 
                   {/* Active Indicator Bar */}
-                  {isActive && (
+                  {/* {isActive && (
                     <div className="absolute inset-x-0 bottom-0 h-1 bg-teal-500 rounded-b-2xl" />
-                  )}
+                  )} */}
                 </div>
               );
             })}
@@ -397,17 +507,17 @@ export default function AdminDashboard() {
           {/* Detail Table for the active card */}
           <div className="border border-gray-300 rounded-lg p-4">
             <h4 className="text-md font-bold text-gray-900 mb-2 uppercase tracking-tight">
-              {activeSection === 'patients' && 'Patients Register'}
-              {activeSection === 'visits' && 'Visit History'}
-              {activeSection === 'tests' && 'Diagnostics List'}
-              {activeSection === 'trials' && 'Trials Performance'}
-              {activeSection === 'bookings' && 'Bookings Tracker'}
-              {activeSection === 'purchases' && 'Purchases Log'}
+              {activeSection === "patients" && "Patients Register"}
+              {activeSection === "visits" && "Visit History"}
+              {activeSection === "tests" && "Diagnostics List"}
+              {activeSection === "trials" && "Trials Performance"}
+              {activeSection === "bookings" && "Bookings Tracker"}
+              {activeSection === "purchases" && "Purchases Log"}
             </h4>
 
             {/* Patients Table */}
-            {activeSection === 'patients' && (
-              dailyStatus?.patients?.length > 0 ? (
+            {activeSection === "patients" &&
+              (dailyStatus?.patients?.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <tr>
@@ -422,17 +532,26 @@ export default function AdminDashboard() {
                   <TableBody>
                     {dailyStatus?.patients?.map((patient, idx) => (
                       <TableRow key={idx}>
-                        <TableCell className="font-semibold text-slate-800">{patient.name}</TableCell>
+                        <TableCell className="font-semibold text-slate-800">
+                          {patient.name}
+                        </TableCell>
                         <TableCell>{patient.phone_primary}</TableCell>
-                        <TableCell className="max-w-[200px] truncate">{patient.address}</TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {patient.address}
+                        </TableCell>
                         <TableCell>{patient.age}</TableCell>
-                        <TableCell>{patient.referral_doctor || '-'}</TableCell>
+                        <TableCell>{patient.referral_doctor || "-"}</TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-teal-600 hover:text-teal-700 hover:bg-teal-50"
-                            onClick={() => window.open(`/dashboard/userprofile/${patient.id || patient.patient__id}`, '_blank')}
+                            onClick={() =>
+                              window.open(
+                                `/dashboard/userprofile/${patient.id || patient.patient__id}`,
+                                "_blank",
+                              )
+                            }
                           >
                             <Eye size={16} />
                           </Button>
@@ -442,13 +561,14 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-sm text-gray-500">No patient records found.</p>
-              )
-            )}
+                <p className="text-sm text-gray-500">
+                  No patient records found.
+                </p>
+              ))}
 
             {/* Patient Visits Table */}
-            {activeSection === 'visits' && (
-              dailyStatus?.patient_visits?.length > 0 ? (
+            {activeSection === "visits" &&
+              (dailyStatus?.patient_visits?.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <tr>
@@ -462,8 +582,14 @@ export default function AdminDashboard() {
                   <TableBody>
                     {dailyStatus?.patient_visits?.map((visit, idx) => (
                       <TableRow key={idx}>
-                        <TableCell className="font-semibold">{visit.patient_name}</TableCell>
-                        <TableCell>{visit.visit_date ? new Date(visit.visit_date).toLocaleDateString() : '-'}</TableCell>
+                        <TableCell className="font-semibold">
+                          {visit.patient_name}
+                        </TableCell>
+                        <TableCell>
+                          {visit.visit_date
+                            ? new Date(visit.visit_date).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
                         <TableCell>{visit.visit_type}</TableCell>
                         <TableCell>
                           <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600">
@@ -489,12 +615,11 @@ export default function AdminDashboard() {
                 </Table>
               ) : (
                 <p className="text-sm text-gray-500">No visits recorded.</p>
-              )
-            )}
+              ))}
 
             {/* Tests Table */}
-            {activeSection === 'tests' && (
-              dailyStatus?.tests?.length > 0 ? (
+            {activeSection === "tests" &&
+              (dailyStatus?.tests?.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <tr>
@@ -507,18 +632,27 @@ export default function AdminDashboard() {
                   <TableBody>
                     {dailyStatus?.tests?.map((test, idx) => (
                       <TableRow key={idx}>
-                        <TableCell className="font-semibold">{test.patient_name}</TableCell>
+                        <TableCell className="font-semibold">
+                          {test.patient_name}
+                        </TableCell>
                         <TableCell className="uppercase tracking-wider font-medium text-[10px] text-teal-700">
                           <div className="flex flex-wrap gap-1">
-                            {Array.isArray(test.test_name) ? test.test_name.map((t, idx) => (
-                              <span key={idx} className="bg-teal-50 px-2 py-0.5 rounded border border-teal-100">
-                                {t}
-                              </span>
-                            )) : (test.test_name || '-')}
+                            {Array.isArray(test.test_name)
+                              ? test.test_name.map((t, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="bg-teal-50 px-2 py-0.5 rounded border border-teal-100"
+                                  >
+                                    {t}
+                                  </span>
+                                ))
+                              : test.test_name || "-"}
                           </div>
                         </TableCell>
                         <TableCell className="text-xs font-medium text-slate-500 whitespace-nowrap">
-                          {test.visit_date ? new Date(test.visit_date).toLocaleDateString() : '-'}
+                          {test.visit_date
+                            ? new Date(test.visit_date).toLocaleDateString()
+                            : "-"}
                         </TableCell>
                         <TableCell>{test.seen_by}</TableCell>
                       </TableRow>
@@ -527,12 +661,11 @@ export default function AdminDashboard() {
                 </Table>
               ) : (
                 <p className="text-sm text-gray-500">No tests recorded.</p>
-              )
-            )}
+              ))}
 
             {/* Trials Table */}
-            {activeSection === 'trials' && (
-              dailyStatus?.trials?.length > 0 ? (
+            {activeSection === "trials" &&
+              (dailyStatus?.trials?.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <tr>
@@ -546,22 +679,36 @@ export default function AdminDashboard() {
                   <TableBody>
                     {dailyStatus?.trials?.map((trial, idx) => (
                       <TableRow key={trial.id ?? idx}>
-                        <TableCell className="font-medium">{trial.patient_name}</TableCell>
+                        <TableCell className="font-medium">
+                          {trial.patient_name}
+                        </TableCell>
                         <TableCell>
                           {trial.device_details?.length > 0 ? (
                             <div className="flex flex-col gap-1">
                               {trial.device_details.map((d, i) => (
-                                <span key={i} className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 italic">
-                                  {d.brand} {d.style_type} ({d.ear_side}) - {d.serial_number}
+                                <span
+                                  key={i}
+                                  className="text-[10px] bg-slate-50 px-2 py-0.5 rounded border border-slate-100 italic"
+                                >
+                                  {d.brand} {d.style_type} ({d.ear_side}) -{" "}
+                                  {d.serial_number}
                                 </span>
                               ))}
                             </div>
-                          ) : '-'}
+                          ) : (
+                            "-"
+                          )}
                         </TableCell>
-                        <TableCell className="text-sm">{trial.trial_start_date ?? '-'}</TableCell>
-                        <TableCell className="text-sm">{trial.trial_end_date ?? '-'}</TableCell>
+                        <TableCell className="text-sm">
+                          {trial.trial_start_date ?? "-"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {trial.trial_end_date ?? "-"}
+                        </TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${trial.trial_decision === 'BOOKED' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                          <span
+                            className={`px-2 py-1 rounded-full text-[10px] font-bold ${trial.trial_decision === "BOOKED" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"}`}
+                          >
                             {trial.trial_decision}
                           </span>
                         </TableCell>
@@ -570,13 +717,14 @@ export default function AdminDashboard() {
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-sm text-gray-500">No trials conducted today.</p>
-              )
-            )}
+                <p className="text-sm text-gray-500">
+                  No trials conducted today.
+                </p>
+              ))}
 
             {/* Bookings Table */}
-            {activeSection === 'bookings' && (
-              dailyStatus?.bookings?.length > 0 ? (
+            {activeSection === "bookings" &&
+              (dailyStatus?.bookings?.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <tr>
@@ -590,13 +738,15 @@ export default function AdminDashboard() {
                   <TableBody>
                     {dailyStatus?.bookings?.map((booking, idx) => (
                       <TableRow key={booking.id ?? idx}>
-                        <TableCell className="font-medium">{booking.patient_name}</TableCell>
-                        <TableCell>{`${booking.brand ?? ''} ${booking.model_type ?? ''}`}</TableCell>
+                        <TableCell className="font-medium">
+                          {booking.patient_name}
+                        </TableCell>
+                        <TableCell>{`${booking.brand ?? ""} ${booking.model_type ?? ""}`}</TableCell>
                         <TableCell>{booking.inventory_item}</TableCell>
-                        <TableCell>{booking.serial_number || '-'}</TableCell>
+                        <TableCell>{booking.serial_number || "-"}</TableCell>
                         <TableCell>
                           <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200 uppercase">
-                            {booking.ear_side || 'N/A'}
+                            {booking.ear_side || "N/A"}
                           </span>
                         </TableCell>
                       </TableRow>
@@ -605,12 +755,11 @@ export default function AdminDashboard() {
                 </Table>
               ) : (
                 <p className="text-sm text-gray-500">No bookings made today.</p>
-              )
-            )}
+              ))}
 
             {/* Purchase Records Table */}
-            {activeSection === 'purchases' && (
-              dailyStatus?.purchase_records?.length > 0 ? (
+            {activeSection === "purchases" &&
+              (dailyStatus?.purchase_records?.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <tr>
@@ -626,28 +775,38 @@ export default function AdminDashboard() {
                   <TableBody>
                     {dailyStatus?.purchase_records?.map((p, idx) => (
                       <TableRow key={idx}>
-                        <TableCell className="font-medium">{p.patient_name}</TableCell>
+                        <TableCell className="font-medium">
+                          {p.patient_name}
+                        </TableCell>
                         <TableCell>{p.inventory_item}</TableCell>
-                        <TableCell>{p.brand} {p.model_type}</TableCell>
-                        <TableCell>{p.serial_number || '-'}</TableCell>
+                        <TableCell>
+                          {p.brand} {p.model_type}
+                        </TableCell>
+                        <TableCell>{p.serial_number || "-"}</TableCell>
                         <TableCell>{p.quantity}</TableCell>
-                        <TableCell className="font-bold text-teal-600">₹{p.total_price}</TableCell>
-                        <TableCell>{p.purchased_at ? new Date(p.purchased_at).toLocaleDateString() : '-'}</TableCell>
+                        <TableCell className="font-bold text-teal-600">
+                          ₹{p.total_price}
+                        </TableCell>
+                        <TableCell>
+                          {p.purchased_at
+                            ? new Date(p.purchased_at).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               ) : (
-                <p className="text-sm text-gray-500">No purchase records found.</p>
-              )
-            )}
-
+                <p className="text-sm text-gray-500">
+                  No purchase records found.
+                </p>
+              ))}
           </div>
         </div>
       )}
 
       {/* Full Visit Record Modal */}
-      <FullVisitModal 
+      <FullVisitModal
         open={isVisitModalOpen}
         onClose={() => setIsVisitModalOpen(false)}
         visitId={selectedVisitId}
@@ -655,5 +814,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-

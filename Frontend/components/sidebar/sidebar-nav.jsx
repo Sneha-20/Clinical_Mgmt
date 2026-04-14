@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Companylogo from "@/public/icon/clinic-logo.png";
 import Image from 'next/image'
 
-export default function SidebarNav({ role, onItemClick }) {
+export default function SidebarNav({ role, isMainInventory, onItemClick }) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -20,6 +20,7 @@ export default function SidebarNav({ role, onItemClick }) {
       { icon: '🤝', label: 'Referal', href: '/dashboard/referal-doctor' },
       { icon: '📊', label: 'Awaiting Device', href: '/dashboard/awaiting-device'},
       { icon: '💰', label: 'Transaction History', href: '/dashboard/transaction-history' },
+      ...(isMainInventory ? [{ icon: '📦', label: 'Transfer Products', href: '/dashboard/transfer-products' }] : []),
     ],
     Audiologist: [
       { icon: '👥', label: 'Dashboard', href: '/dashboard/home' },

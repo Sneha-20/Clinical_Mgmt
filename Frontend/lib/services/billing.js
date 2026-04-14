@@ -87,3 +87,13 @@ export const applyDiscountUpdate = async (billId, payload) => {
     throw error;
   }
 };
+
+export const addBillItems = async (payload) => {
+  try {
+    const url = routes.billing.addBillItems;
+    const response = await apiClient.post(url, payload);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};
