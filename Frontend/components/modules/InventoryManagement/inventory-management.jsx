@@ -316,11 +316,9 @@ export default function InventoryManagement() {
                     <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
                       Status
                     </th>
-                    {isSelectedClinicMain && (
-                      <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
-                        Actions
-                      </th>
-                    )}
+                    <th className="text-center py-2 sm:py-3 px-2 sm:px-3 font-medium">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -381,77 +379,79 @@ export default function InventoryManagement() {
                                 : "Critical"}
                           </span>
                         </td>
-                        {isSelectedClinicMain && (
-                          <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
-                            <div className="relative flex justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  setOpenMenuId(
-                                    openMenuId === item.id ? null : item.id,
-                                  )
-                                }
-                                className="h-8 w-8 p-0"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
+                        <td className="text-center py-2 sm:py-3 px-2 sm:px-3">
+                          <div className="relative flex justify-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                setOpenMenuId(
+                                  openMenuId === item.id ? null : item.id,
+                                )
+                              }
+                              className="h-8 w-8 p-0"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
 
-                              {openMenuId === item.id && (
-                                <>
-                                  <div
-                                    className="fixed inset-0 z-40"
-                                    onClick={() => setOpenMenuId(null)}
-                                  />
-                                  <div className="absolute right-0 top-full mt-1 w-40 rounded-md border bg-white shadow-lg z-50 py-1 overflow-hidden animate-in fade-in zoom-in duration-150">
-                                    <button
-                                      onClick={() => {
-                                        handleViewDetails(item);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
-                                    >
-                                      <Eye className="w-4 h-4 mr-2 text-slate-500" />
-                                      View
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        handleAddStockClick(item);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
-                                    >
-                                      <Plus className="w-4 h-4 mr-2 text-slate-500" />
-                                      Add Stock
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        handleEditClick(item);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
-                                    >
-                                      <Edit className="w-4 h-4 mr-2 text-slate-500" />
-                                      Edit
-                                    </button>
-                                    <div className="my-1 border-t border-slate-100" />
-                                    <button
-                                      onClick={() => {
-                                        handleDeleteClick(item);
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                                      disabled={isSubmitting}
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" />
-                                      Delete
-                                    </button>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        )}
+                            {openMenuId === item.id && (
+                              <>
+                                <div
+                                  className="fixed inset-0 z-40"
+                                  onClick={() => setOpenMenuId(null)}
+                                />
+                                <div className="absolute right-0 top-full mt-1 w-40 rounded-md border bg-white shadow-lg z-50 py-1 overflow-hidden animate-in fade-in zoom-in duration-150">
+                                  <button
+                                    onClick={() => {
+                                      handleViewDetails(item);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
+                                  >
+                                    <Eye className="w-4 h-4 mr-2 text-slate-500" />
+                                    View
+                                  </button>
+                                  {isSelectedClinicMain && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          handleAddStockClick(item);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
+                                      >
+                                        <Plus className="w-4 h-4 mr-2 text-slate-500" />
+                                        Add Stock
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleEditClick(item);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center px-3 py-2 text-sm hover:bg-slate-100 transition-colors"
+                                      >
+                                        <Edit className="w-4 h-4 mr-2 text-slate-500" />
+                                        Edit
+                                      </button>
+                                      <div className="my-1 border-t border-slate-100" />
+                                      <button
+                                        onClick={() => {
+                                          handleDeleteClick(item);
+                                          setOpenMenuId(null);
+                                        }}
+                                        className="w-full flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                                        disabled={isSubmitting}
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     );
                   })}

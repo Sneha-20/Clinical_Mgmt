@@ -9,10 +9,18 @@ import { useDispatch } from "react-redux";
 import { startLoading, stopLoading } from "@/lib/redux/slice/uiSlice";
 import { showToast } from "@/components/ui/toast";
 import Modal from "@/components/ui/Modal";
+import { getExcludingHearingAids } from "@/lib/services/inventory";
+import { addBillItems } from "@/lib/services/billing";
+import { Search, Package, IndianRupee, Tag, Check, CheckSquare, Square, Filter } from "lucide-react";
 
 export default function BillingDetailPage() {
   const [openModal, setOpenModal] = useState(false);
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [discountFields, setDiscountFields] = useState([{ item_id: "", discount_amount: "" }]);
+  const [itemsByCategory, setItemsByCategory] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedItems, setSelectedItems] = useState({}); // { id: { quantity, custom_price, ... } }
 
   const openDiscountDialog = () => {
     setDiscountFields([{ item_id: "", discount_amount: "" }]);
@@ -41,6 +49,74 @@ export default function BillingDetailPage() {
       setBillingDetail(resdata);
     } catch (error) {
       showToast({ type: "error", message: "Failed to fetch Billing Detail" });
+    } finally {
+      dispatch(stopLoading());
+    }
+  };
+
+  const fetchInventoryItems = async () => {
+    try {
+      dispatch(startLoading());
+      const data = await getExcludingHearingAids();
+      setItemsByCategory(data || {});
+      setPurchaseModalOpen(true);
+    } catch (error) {
+      showToast({ type: "error", message: "Failed to fetch inventory items" });
+    } finally {
+      dispatch(stopLoading());
+    }
+  };
+
+  const toggleSelectItem = (item) => {
+    setSelectedItems(prev => {
+      const copy = { ...prev };
+      if (copy[item.id]) {
+        delete copy[item.id];
+      } else {
+        copy[item.id] = {
+          inventory_item_id: item.id,
+          product_name: item.product_name,
+          quantity: 1,
+          unit_price: item.unit_price 
+        };
+      }
+      return copy;
+    });
+  };
+
+  const updateSelectedItem = (id, field, value) => {
+    setSelectedItems(prev => ({
+      ...prev,
+      [id]: { ...prev[id], [field]: value }
+    }));
+  };
+
+  const handleSavePurchase = async () => {
+    const items = Object.values(selectedItems).map(item => ({
+      inventory_item_id: Number(item.inventory_item_id),
+      quantity: Number(item.quantity),
+      custom_price: Number(item.unit_price) // Using unit_price as custom_price
+    }));
+
+    if (items.length === 0) {
+      showToast({ type: "error", message: "Please select at least one item." });
+      return;
+    }
+
+    try {
+      dispatch(startLoading());
+      const payload = {
+        bill_id: Number(billingDetail.id),
+        items: items
+      };
+      await addBillItems(payload);
+      showToast({ type: "success", message: "Items added to bill successfully" });
+      setPurchaseModalOpen(false);
+      setSelectedItems({});
+      fetchBillingDetail();
+    } catch (error) {
+      console.error("Failed to add items:", error);
+      showToast({ type: "error", message: error?.error || "Failed to add items to bill." });
     } finally {
       dispatch(stopLoading());
     }
@@ -104,6 +180,10 @@ export default function BillingDetailPage() {
           Back
         </Button>
         <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={fetchInventoryItems} className="border-teal-600 text-teal-600 font-medium hover:bg-teal-50">
+            <Package className="h-4 w-4 mr-2" />
+            Add Purchase Item
+          </Button>
           <Button variant="outline" onClick={openDiscountDialog} className="border-primary text-primary font-medium hover:bg-primary/10 hover:text-primary">
             Add Discount
           </Button>
@@ -524,6 +604,152 @@ export default function BillingDetailPage() {
               + Add Another Bill Item
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal
+        onClose={() => setPurchaseModalOpen(false)}
+        header="Add Purchase Item"
+        isModalOpen={purchaseModalOpen}
+        showFooter={false}
+        ClassName="max-w-5xl"
+      >
+        <div className="space-y-6 pb-20">
+          <div className="sticky top-0 bg-white z-20 pb-4 pt-1 space-y-4 shadow-[0_10px_10px_-10px_rgba(0,0,0,0.05)]">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  className="w-full pl-10 pr-4 py-3 text-base border rounded-xl focus:ring-2 focus:ring-teal-500 focus:outline-none shadow-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Filter className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
+                <select
+                  className="w-full pl-10 pr-4 py-3 text-base border rounded-xl focus:ring-2 focus:ring-teal-500 appearance-none bg-white cursor-pointer shadow-sm"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="All">All Categories</option>
+                  {Object.keys(itemsByCategory).map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Selection Summary Banner */}
+            {Object.keys(selectedItems).length > 0 && (
+              <div className="bg-teal-600 text-white px-5 py-3 rounded-xl flex justify-between items-center shadow-md animate-in slide-in-from-top duration-300">
+                <span className="font-bold text-base">
+                  {Object.keys(selectedItems).length} item(s) selected
+                </span>
+                <div className="flex items-center gap-4">
+                  <span className="font-black text-lg">
+                    Total: ₹{Object.values(selectedItems).reduce((sum, item) => sum + (item.quantity * item.unit_price), 0).toLocaleString('en-IN')}
+                  </span>
+                  <Button onClick={handleSavePurchase} className="bg-white text-teal-700 hover:bg-teal-50 font-black px-6 py-2 h-auto text-base">
+                    Save to Bill
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-8">
+            {Object.entries(itemsByCategory)
+              .filter(([category]) => selectedCategory === "All" || selectedCategory === category)
+              .map(([category, items]) => {
+                const filteredItems = items.filter(item =>
+                  item.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+
+                if (filteredItems.length === 0) return null;
+
+                return (
+                  <div key={category} className="space-y-4">
+                    <h3 className="text-base font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                      <div className="h-0.5 flex-1 bg-slate-100"></div>
+                      {category}
+                      <div className="h-0.5 flex-1 bg-slate-100"></div>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredItems.map((item) => {
+                        const isSelected = !!selectedItems[item.id];
+                        return (
+                          <div
+                            key={item.id}
+                            onClick={() => toggleSelectItem(item)}
+                            className={`p-5 border-2 rounded-2xl transition-all cursor-pointer relative flex flex-col justify-between ${isSelected ? "border-teal-500 bg-teal-50/50 shadow-md scale-[1.02]" : "border-slate-100 hover:border-teal-200 hover:bg-white hover:shadow-sm"}`}
+                          >
+                            <div className="flex justify-between items-start mb-4">
+                              <div className="flex gap-3">
+                                <div className={`mt-1 shrink-0 ${isSelected ? "text-teal-600" : "text-slate-300"}`}>
+                                  {isSelected ? <CheckSquare className="h-6 w-6" /> : <Square className="h-6 w-6" />}
+                                </div>
+                                <div>
+                                  <h4 className="font-black text-lg text-slate-800 leading-tight mb-1">
+                                    {item.product_name}
+                                  </h4>
+                                  <p className="text-sm font-bold text-teal-600">
+                                    ₹{parseFloat(item.unit_price || 0).toLocaleString('en-IN')}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <span className={`text-xs font-black uppercase px-2 py-1 rounded-md ${item.quantity_in_stock > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                                  {item.quantity_in_stock} stock
+                                </span>
+                              </div>
+                            </div>
+
+                            {isSelected ? (
+                              <div className="mt-4 pt-4 border-t border-teal-200/50" onClick={e => e.stopPropagation()}>
+                                <div className="space-y-1.5 w-full">
+                                  <label className="text-[10px] font-black text-teal-600 uppercase tracking-wider">Quantity to Add</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={item.quantity_in_stock}
+                                    className="w-full p-2.5 text-base font-bold bg-white border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                    value={selectedItems[item.id].quantity}
+                                    onChange={(e) => updateSelectedItem(item.id, 'quantity', e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-100 opcaity-60">
+                                {Object.entries(item).map(([key, value]) => {
+                                  const skipKeys = ['id', 'product_name', 'sku', 'unit_price', 'quantity_in_stock', 'category', 'clinic_id', 'clinic_name', 'status', 'gst_value', 'display_name', 'subtitle'];
+                                  if (skipKeys.includes(key) || !value) return null;
+                                  return (
+                                    <div key={key} className="flex flex-col">
+                                      <span className="text-[10px] text-slate-400 font-bold uppercase">{key.replace(/_/g, ' ')}</span>
+                                      <span className="text-xs text-slate-600 font-medium truncate">{String(value)}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+
+          {Object.keys(itemsByCategory).length === 0 && (
+            <div className="py-20 text-center">
+              <Package className="h-16 w-16 text-slate-100 mx-auto mb-4" />
+              <p className="text-slate-400 font-bold text-lg">No inventory items available</p>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

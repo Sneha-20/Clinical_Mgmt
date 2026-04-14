@@ -13,9 +13,10 @@ export async function login(payload) {
     const data = await apiClient.post(routes.login, payload);
     if (data?.data?.access && data?.data?.user?.role?.name) {
       const role = data?.data?.user?.role?.name;
-       apiClient.setToken(data?.data?.access);
-       localStorage.setItem("userRole", role);
-      //  router.push("/dashboard");
+      const is_main_inventory = data?.data?.clinic?.is_main_inventory || false;
+      apiClient.setToken(data?.data?.access);
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("isMainInventory", is_main_inventory);
     } 
     return data;
   } catch (error) {
@@ -47,7 +48,8 @@ export const register = async (payload) => {
 export const logoutAction = async () => {
   try {
     apiClient.removeToken();
-     localStorage.removeItem("userRole");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("isMainInventory");
     return true;
   } catch (error) {
     throw error;

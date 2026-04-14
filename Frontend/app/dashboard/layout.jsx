@@ -30,6 +30,7 @@ function getTokenFromCookies() {
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userRole, setUserRole] = useState("");
+  const [isMainInventory, setIsMainInventory] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -37,6 +38,7 @@ export default function DashboardLayout({ children }) {
   useEffect(() => {
     // Check if user is authenticated and authorized
     const role = localStorage.getItem("userRole");
+    const mainInv = localStorage.getItem("isMainInventory") === "true";
     const token = getTokenFromCookies();
 
     if (!role || !token) {
@@ -63,6 +65,7 @@ export default function DashboardLayout({ children }) {
     }
 
     setUserRole(mappedRole);
+    setIsMainInventory(mainInv);
     setIsAuthorized(true);
   }, [router, pathname]);
 
@@ -99,7 +102,7 @@ export default function DashboardLayout({ children }) {
           sidebarOpen ? "w-64" : "w-0"
         } lg:w-64 bg-sidebar border-r border-slate-200 transition-all duration-300 flex flex-col fixed lg:static h-full z-50 lg:z-auto overflow-hidden print:hidden`}
       >
-        <SidebarNav role={userRole} onItemClick={() => setSidebarOpen(false)} />
+        <SidebarNav role={userRole} isMainInventory={isMainInventory} onItemClick={() => setSidebarOpen(false)} />
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden w-full">
