@@ -20,35 +20,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
-
-# Debug: Print current working directory and paths
-print(f"Current working directory: {os.getcwd()}")
-print(f"BASE_DIR: {BASE_DIR}")
-print(f"BASE_DIR.parent: {BASE_DIR.parent}")
-print(f"BASE_DIR.parent.parent: {BASE_DIR.parent.parent}")
-
-env_path = os.path.join(BASE_DIR.parent.parent, '.env')
-print(f"Looking for .env at: {env_path}")
-print(f".env file exists: {os.path.exists(env_path)}")
-
-# List files in the parent directory to debug
-parent_dir = BASE_DIR.parent.parent
-if os.path.exists(parent_dir):
-    print(f"Files in {parent_dir}: {os.listdir(parent_dir)}")
-
-load_dotenv(env_path)
-
-# Check if environment variables are loaded
-print(f"DB_NAME from env: {os.getenv('DB_NAME', 'NOT_FOUND')}")
-print(f"DB_HOST from env: {os.getenv('DB_HOST', 'NOT_FOUND')}")
+load_dotenv(os.path.join(BASE_DIR.parent, '.env'))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+DEBUG = True
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,51.20.207.138,3.25.229.158,54.253.141.73').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -79,7 +59,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:3001').split(',')
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    # 'http://51.20.207.138:8000',
+    'http://51.20.207.138:3000',
+    'http://3.25.229.158:3000',
+    'http://54.253.141.73:3000',
+    'http://51.20.207.138'
+    ]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -117,9 +105,9 @@ WSGI_APPLICATION = 'clinical_be.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'clinical_management'),
+        'NAME': os.getenv('DB_NAME', 'clinical_mgmt_dev'),
         'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres123'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'postgres'),
         'HOST': os.getenv('DB_HOST', 'localhost'),
         'PORT': os.getenv('DB_PORT', '5432'),
     }
@@ -181,7 +169,6 @@ USE_TZ = os.getenv('USE_TZ', 'True').lower() == 'true'
 
 # Static files
 STATIC_URL = os.getenv('STATIC_URL', 'static/')
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
