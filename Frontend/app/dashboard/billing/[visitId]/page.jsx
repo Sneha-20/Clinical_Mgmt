@@ -20,7 +20,7 @@ export default function BillingDetailPage() {
   const [itemsByCategory, setItemsByCategory] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [selectedItems, setSelectedItems] = useState({}); // { id: { quantity, custom_price, ... } }
+  const [selectedItems, setSelectedItems] = useState({}); // { id: { ...item, selected_serials or quantity } }
 
   const openDiscountDialog = () => {
     setDiscountFields([{ item_id: "", discount_amount: "" }]);
@@ -73,11 +73,14 @@ export default function BillingDetailPage() {
       if (copy[item.id]) {
         delete copy[item.id];
       } else {
+        const isSerialized = item.stock_info?.type === "serialized";
         copy[item.id] = {
+          ...item,
           inventory_item_id: item.id,
-          product_name: item.product_name,
-          quantity: 1,
-          unit_price: item.unit_price 
+          // For serialized: track selected serial numbers (array)
+          // For non-serialized: track quantity
+          selected_serials: isSerialized ? [] : null,
+          quantity: isSerialized ? null : 1,
         };
       }
       return copy;
@@ -91,17 +94,59 @@ export default function BillingDetailPage() {
     }));
   };
 
-  const handleSavePurchase = async () => {
-    const items = Object.values(selectedItems).map(item => ({
-      inventory_item_id: Number(item.inventory_item_id),
-      quantity: Number(item.quantity),
-      custom_price: Number(item.unit_price) // Using unit_price as custom_price
-    }));
+  const toggleSerialNumber = (itemId, serial) => {
+    setSelectedItems(prev => {
+      const current = prev[itemId];
+      if (!current) return prev;
+      const serials = current.selected_serials || [];
+      const updated = serials.includes(serial)
+        ? serials.filter(s => s !== serial)
+        : [...serials, serial];
+      return { ...prev, [itemId]: { ...current, selected_serials: updated } };
+    });
+  };
 
-    if (items.length === 0) {
+  const handleSavePurchase = async () => {
+    const selected = Object.values(selectedItems);
+
+    if (selected.length === 0) {
       showToast({ type: "error", message: "Please select at least one item." });
       return;
     }
+
+    // Validate serialized items have at least one serial selected
+    const invalidSerialized = selected.filter(
+      item => item.stock_info?.type === "serialized" && (!item.selected_serials || item.selected_serials.length === 0)
+    );
+    if (invalidSerialized.length > 0) {
+      showToast({ type: "error", message: `Please select at least one serial number for: ${invalidSerialized.map(i => i.product_name).join(", ")}` });
+      return;
+    }
+
+    // Validate non-serialized items have quantity > 0
+    const invalidQty = selected.filter(
+      item => item.stock_info?.type === "non_serialized" && (!item.quantity || Number(item.quantity) < 1)
+    );
+    if (invalidQty.length > 0) {
+      showToast({ type: "error", message: `Please enter a valid quantity for: ${invalidQty.map(i => i.product_name).join(", ")}` });
+      return;
+    }
+
+    // Build payload items
+    const items = selected.map(item => {
+      const isSerialized = item.stock_info?.type === "serialized";
+      if (isSerialized) {
+        return {
+          inventory_item_id: Number(item.inventory_item_id),
+          serial_numbers: item.selected_serials
+        };
+      } else {
+        return {
+          inventory_item_id: Number(item.inventory_item_id),
+          quantity: Number(item.quantity)
+        };
+      }
+    });
 
     try {
       dispatch(startLoading());
@@ -650,7 +695,11 @@ export default function BillingDetailPage() {
                 </span>
                 <div className="flex items-center gap-4">
                   <span className="font-black text-lg">
-                    Total: ₹{Object.values(selectedItems).reduce((sum, item) => sum + (item.quantity * item.unit_price), 0).toLocaleString('en-IN')}
+                    Total: ₹{Object.values(selectedItems).reduce((sum, item) => {
+                      const isSerialized = item.stock_info?.type === "serialized";
+                      const count = isSerialized ? (item.selected_serials?.length || 0) : (Number(item.quantity) || 0);
+                      return sum + (count * parseFloat(item.unit_price || 0));
+                    }, 0).toLocaleString('en-IN')}
                   </span>
                   <Button onClick={handleSavePurchase} className="bg-white text-teal-700 hover:bg-teal-50 font-black px-6 py-2 h-auto text-base">
                     Save to Bill
@@ -665,7 +714,8 @@ export default function BillingDetailPage() {
               .filter(([category]) => selectedCategory === "All" || selectedCategory === category)
               .map(([category, items]) => {
                 const filteredItems = items.filter(item =>
-                  item.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+                  item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  (item.subtitle || "").toLowerCase().includes(searchTerm.toLowerCase())
                 );
 
                 if (filteredItems.length === 0) return null;
@@ -692,49 +742,152 @@ export default function BillingDetailPage() {
                                   {isSelected ? <CheckSquare className="h-6 w-6" /> : <Square className="h-6 w-6" />}
                                 </div>
                                 <div>
-                                  <h4 className="font-black text-lg text-slate-800 leading-tight mb-1">
+                                  <h4 className="font-black text-lg text-slate-800 leading-tight mb-0.5">
                                     {item.product_name}
                                   </h4>
+                                  {/* Show subtitle only if it's not just a raw SKU reference */}
+                                  {item.subtitle && !item.subtitle.startsWith("SKU:") && (
+                                    <p className="text-[11px] text-slate-400 font-medium mb-1 leading-snug">
+                                      {item.subtitle}
+                                    </p>
+                                  )}
                                   <p className="text-sm font-bold text-teal-600">
                                     ₹{parseFloat(item.unit_price || 0).toLocaleString('en-IN')}
                                   </p>
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <span className={`text-xs font-black uppercase px-2 py-1 rounded-md ${item.quantity_in_stock > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-                                  {item.quantity_in_stock} stock
-                                </span>
+                              <div className="text-right flex flex-col items-end gap-1">
+                                {/* Status badge */}
+                                {item.status && (
+                                  <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                    item.status === "Good" ? "bg-green-100 text-green-700" :
+                                    item.status === "Low" ? "bg-amber-100 text-amber-700" :
+                                    "bg-red-100 text-red-700"
+                                  }`}>
+                                    {item.status}
+                                  </span>
+                                )}
+                                {/* Stock type + count badge */}
+                                {item.stock_type === "Serialized" ? (
+                                  <span className="text-xs font-black uppercase px-2 py-1 rounded-md bg-purple-100 text-purple-700">
+                                    {item.stock_info?.count || 0} serial(s)
+                                  </span>
+                                ) : (
+                                  <span className={`text-xs font-black uppercase px-2 py-1 rounded-md ${
+                                    (item.stock_info?.quantity || 0) > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                  }`}>
+                                    Qty: {item.stock_info?.quantity ?? 0}
+                                  </span>
+                                )}
                               </div>
                             </div>
 
-                            {isSelected ? (
-                              <div className="mt-4 pt-4 border-t border-teal-200/50" onClick={e => e.stopPropagation()}>
-                                <div className="space-y-1.5 w-full">
-                                  <label className="text-[10px] font-black text-teal-600 uppercase tracking-wider">Quantity to Add</label>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max={item.quantity_in_stock}
-                                    className="w-full p-2.5 text-base font-bold bg-white border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                                    value={selectedItems[item.id].quantity}
-                                    onChange={(e) => updateSelectedItem(item.id, 'quantity', e.target.value)}
-                                  />
+                            {/* Metadata row — all meaningful fields except SKU */}
+                            <div className="flex flex-wrap gap-x-5 gap-y-2 mb-3 border-t border-slate-100 pt-3">
+                              {item.brand_name && (
+                                <div className="flex flex-col min-w-[80px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Brand</span>
+                                  <span className="text-xs text-slate-600 font-medium">{item.brand_name}</span>
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 pt-4 border-t border-slate-100 opcaity-60">
-                                {Object.entries(item).map(([key, value]) => {
-                                  const skipKeys = ['id', 'product_name', 'sku', 'unit_price', 'quantity_in_stock', 'category', 'clinic_id', 'clinic_name', 'status', 'gst_value', 'display_name', 'subtitle'];
-                                  if (skipKeys.includes(key) || !value) return null;
-                                  return (
-                                    <div key={key} className="flex flex-col">
-                                      <span className="text-[10px] text-slate-400 font-bold uppercase">{key.replace(/_/g, ' ')}</span>
-                                      <span className="text-xs text-slate-600 font-medium truncate">{String(value)}</span>
+                              )}
+                              {item.model_type_name && (
+                                <div className="flex flex-col min-w-[80px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Model Type</span>
+                                  <span className="text-xs text-slate-600 font-medium">{item.model_type_name}</span>
+                                </div>
+                              )}
+                              {item.implant_systems && (
+                                <div className="flex flex-col min-w-[80px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Implant System</span>
+                                  <span className="text-xs text-slate-600 font-medium">{item.implant_systems}</span>
+                                </div>
+                              )}
+                              {item.cochlear_accessory && (
+                                <div className="flex flex-col min-w-[80px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Accessory</span>
+                                  <span className="text-xs text-slate-600 font-medium">{item.cochlear_accessory}</span>
+                                </div>
+                              )}
+                              {item.age_groups && (
+                                <div className="flex flex-col min-w-[80px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Age Group</span>
+                                  <span className="text-xs text-slate-600 font-medium">{item.age_groups}</span>
+                                </div>
+                              )}
+                              {item.gst_value && Number(item.gst_value) > 0 && (
+                                <div className="flex flex-col min-w-[80px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">GST</span>
+                                  <span className="text-xs text-slate-600 font-medium">₹{Number(item.gst_value).toFixed(2)}</span>
+                                </div>
+                              )}
+                              {item.description && (
+                                <div className="flex flex-col w-full">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Description</span>
+                                  <span className="text-xs text-slate-600 font-medium">{item.description}</span>
+                                </div>
+                              )}
+                              {item.notes && (
+                                <div className="flex flex-col w-full">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Notes</span>
+                                  <span className="text-xs text-slate-600 font-medium">{item.notes}</span>
+                                </div>
+                              )}
+                              {item.use_in_trial && (
+                                <div className="flex flex-col min-w-[80px]">
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase">Trial Use</span>
+                                  <span className="text-xs text-teal-600 font-bold">Yes</span>
+                                </div>
+                              )}
+                            </div>
+
+
+                            {isSelected ? (
+                              <div className="mt-3 pt-3 border-t border-teal-200/50" onClick={e => e.stopPropagation()}>
+                                {item.stock_info?.type === "serialized" ? (
+                                  // Serialized: show checkboxes for each serial number
+                                  <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-teal-600 uppercase tracking-wider block">
+                                      Select Serial Number(s) — {selectedItems[item.id]?.selected_serials?.length || 0} selected
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                      {(item.stock_info?.serial_numbers || []).map(serial => {
+                                        const isSerialSelected = selectedItems[item.id]?.selected_serials?.includes(serial);
+                                        return (
+                                          <button
+                                            key={serial}
+                                            type="button"
+                                            onClick={() => toggleSerialNumber(item.id, serial)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
+                                              isSerialSelected
+                                                ? "bg-teal-600 border-teal-600 text-white shadow"
+                                                : "bg-white border-slate-200 text-slate-600 hover:border-teal-300 hover:text-teal-700"
+                                            }`}
+                                          >
+                                            {isSerialSelected && <Check className="inline h-3 w-3 mr-1" />}
+                                            {serial}
+                                          </button>
+                                        );
+                                      })}
                                     </div>
-                                  );
-                                })}
+                                  </div>
+                                ) : (
+                                  // Non-serialized: show quantity input
+                                  <div className="space-y-1.5 w-full">
+                                    <label className="text-[10px] font-black text-teal-600 uppercase tracking-wider">
+                                      Quantity to Add (max: {item.stock_info?.quantity ?? 0})
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min="1"
+                                      max={item.stock_info?.quantity ?? 0}
+                                      className="w-full p-2.5 text-base font-bold bg-white border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                      value={selectedItems[item.id]?.quantity || ""}
+                                      onChange={(e) => updateSelectedItem(item.id, 'quantity', e.target.value)}
+                                    />
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         );
                       })}
