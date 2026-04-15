@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from django.db import transaction
 from django.utils import timezone
-from .models import Bill, BillItem, InventoryItem, PatientPurchase
+from .models import Bill, BillItem, InventoryItem, PatientPurchase, InventorySerial
 from .serializers import BillItemSerializer, InventoryItemSerializer
 from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission, ClinicManagerPermission
 from decimal import Decimal
@@ -57,7 +57,7 @@ class BillItemAddView(APIView):
                 for item_data in items:
                     inventory_item_id = item_data.get('inventory_item_id')
                     quantity = item_data.get('quantity', 1)
-                    # custom_price = item_data.get('custom_price')  # Optional custom price
+                    serial_numbers = item_data.get('serial_numbers', [])
                     
                     if not inventory_item_id:
                         continue
@@ -74,43 +74,117 @@ class BillItemAddView(APIView):
                             'error': f'Inventory item with ID {inventory_item_id} not found'
                         }, status=status.HTTP_400_BAD_REQUEST)
 
-                    # Check stock availability
-                    if inventory_item.quantity_in_stock < quantity:
-                        return Response({
-                            'status': status.HTTP_400_BAD_REQUEST,
-                            'error': f'Insufficient stock for {inventory_item.product_name}. Available: {inventory_item.quantity_in_stock}, Requested: {quantity}'
-                        }, status=status.HTTP_400_BAD_REQUEST)
+                    # Handle serialized vs non-serialized items
+                    if inventory_item.stock_type == 'Serialized':
+                        # For serialized items, validate serial numbers
+                        if not serial_numbers:
+                            return Response({
+                                'status': status.HTTP_400_BAD_REQUEST,
+                                'error': f'Serial numbers are required for serialized item {inventory_item.product_name}'
+                            }, status=status.HTTP_400_BAD_REQUEST)
+                        
+                        # Check if all serial numbers exist and are in stock
+                        available_serials = InventorySerial.objects.filter(
+                            inventory_item=inventory_item,
+                            serial_number__in=serial_numbers,
+                            status='In Stock'
+                        )
+                        
+                        if available_serials.count() != len(serial_numbers):
+                            found_serials = list(available_serials.values_list('serial_number', flat=True))
+                            missing_serials = [sn for sn in serial_numbers if sn not in found_serials]
+                            return Response({
+                                'status': status.HTTP_400_BAD_REQUEST,
+                                'error': f'Serial numbers not available for {inventory_item.product_name}: {missing_serials}'
+                            }, status=status.HTTP_400_BAD_REQUEST)
+                        
+                        # Update serial numbers status to 'Sold'
+                        available_serials.update(status='Sold')
+                        
+                        # Calculate price and quantity
+                        actual_quantity = len(serial_numbers)
+                        
+                    else:
+                        # For non-serialized items, validate quantity
+                        if inventory_item.quantity_in_stock < quantity:
+                            return Response({
+                                'status': status.HTTP_400_BAD_REQUEST,
+                                'error': f'Insufficient stock for {inventory_item.product_name}. Available: {inventory_item.quantity_in_stock}, Requested: {quantity}'
+                            }, status=status.HTTP_400_BAD_REQUEST)
+                        
+                        actual_quantity = quantity
 
                     # Calculate price
                     unit_price = inventory_item.unit_price
-                    total_price = unit_price * quantity
+                    total_price = unit_price * actual_quantity
                     
                     # Create bill item
+                    if inventory_item.stock_type == 'Serialized':
+                        description = f"Purchase - {inventory_item.product_name} (S/N: {', '.join(serial_numbers)})"
+                    else:
+                        description = f"Purchase - {inventory_item.product_name}"
+                    
                     bill_item = BillItem.objects.create(
                         bill=bill,
                         item_type='Purchase',
-                        description=f"Purchase - {inventory_item.product_name}",
+                        description=description,
                         cost=unit_price,
-                        quantity=quantity,
+                        quantity=actual_quantity,
                     )
                     created_items.append(bill_item)
 
-                    # Create purchase history record
-                    purchase = PatientPurchase.objects.create(
-                        patient=bill.visit.patient,
-                        clinic=bill.clinic,
-                        visit=bill.visit,
-                        inventory_item_id=inventory_item_id,
-                        quantity=quantity,
-                        unit_price=unit_price,
-                        total_price=total_price,
-                        purchased_at=timezone.now(),
-                        # created_by=request.user
-                    )
-                    created_purchases.append(purchase)
+                   
+                
+                    # Create purchase history record(s)
+                    if inventory_item.stock_type == 'Serialized':
+                        # For serialized items, create separate purchase record for each serial number
+                        for serial_number in serial_numbers:
+                            try:
+                                serial_obj = InventorySerial.objects.get(
+                                    inventory_item=inventory_item,
+                                    serial_number=serial_number
+                                )
+                                purchase = PatientPurchase.objects.create(
+                                    patient=bill.visit.patient,
+                                    clinic=bill.clinic,
+                                    visit=bill.visit,
+                                    inventory_item_id=inventory_item_id,
+                                    inventory_serial=serial_obj,
+                                    quantity=1,
+                                    unit_price=unit_price,
+                                    total_price=unit_price,
+                                    purchased_at=timezone.now(),
+                                    # created_by=request.user
+                                )
+                                created_purchases.append(purchase)
+                            except InventorySerial.DoesNotExist:
+                                continue  # Skip if serial not found
+                    else:
+                        # For non-serialized items, create single purchase record
+                        purchase = PatientPurchase.objects.create(
+                            patient=bill.visit.patient,
+                            clinic=bill.clinic,
+                            visit=bill.visit,
+                            inventory_item_id=inventory_item_id,
+                            quantity=actual_quantity,
+                            unit_price=unit_price,
+                            total_price=total_price,
+                            purchased_at=timezone.now(),
+                            # created_by=request.user
+                        )
+                        created_purchases.append(purchase)
 
                     # Update inventory stock
-                    inventory_item.quantity_in_stock -= quantity
+                    if inventory_item.stock_type == 'Serialized':
+                        # For serialized items, stock is managed by serial status
+                        inventory_item.quantity_in_stock = InventorySerial.objects.filter(
+                            inventory_item=inventory_item, 
+                            status='In Stock'
+                        ).count()
+                    else:
+                        # For non-serialized items, subtract quantity
+                        inventory_item.quantity_in_stock -= actual_quantity
+                    
                     inventory_item.save()
 
                 # Recalculate bill total
