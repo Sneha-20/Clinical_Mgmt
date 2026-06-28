@@ -32,7 +32,7 @@ class TrialCompletionView(APIView):
             
             trial_decision = serializer.validated_data['trial_decision']
             completion_notes = serializer.validated_data.get('completion_notes', '')
-            followup_days = serializer.validated_data.get('followup_days', 3)
+            followup_days = serializer.validated_data.get('next_followup', 1)
             
             with transaction.atomic():
                 # Update trial completion details
@@ -44,198 +44,195 @@ class TrialCompletionView(APIView):
                 # Handle different decision scenarios using BookedDeviceAfterTrial
                 booked_devices = serializer.validated_data.get('booked_devices', [])
 
-                # if booked_device in payload then add trial_decision = 'BOOKED'
-                if booked_devices:
-                    trial.trial_decision = 'BOOKED'
-                    trial.save()
-                
-                
-                if not booked_devices:
-                    return Response({
-                        "status": "error",
-                        "message": "booked_devices array is required when booking devices"
-                    }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Create BookedDeviceAfterTrial records for each device
+                # Only require booked_devices when actually booking devices
+                if trial_decision == 'BOOKED':
+                    if not booked_devices:
+                        return Response({
+                            "status": "error",
+                            "message": "booked_devices array is required when booking devices"
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
                 booked_device_records = []
                 allocated_devices = []
                 awaiting_stock_devices = []
                 customization_devices = []
-                
-                for device_data in booked_devices:
-                    ear_side = device_data.get('ear_side')
-                    inventory_item_id = device_data.get('inventory_item_id')
-                    serial_number = device_data.get('serial_number')
-                    device_trial_decision = device_data.get('booking_status', 'BOOK - Device Allocated')
-                    
-                    # Validate inventory item exists
-                    try:
-                        inventory_item = InventoryItem.objects.get(id=inventory_item_id)
-                    except InventoryItem.DoesNotExist:
-                        return Response({
-                            "status": "error",
-                            "message": f"Inventory item with ID {inventory_item_id} not found"
-                        }, status=status.HTTP_400_BAD_REQUEST)
-                    
-                    # Handle serial number for serialized items
-                    serial_obj = None
-                    if inventory_item.stock_type == 'Serialized' and serial_number:
+
+                if trial_decision == 'BOOKED' and booked_devices:
+                    for device_data in booked_devices:
+                        ear_side = device_data.get('ear_side')
+                        inventory_item_id = device_data.get('inventory_item_id')
+                        serial_number = device_data.get('serial_number')
+                        device_trial_decision = device_data.get('booking_status', 'BOOK - Device Allocated')
+
+                        # Validate inventory item exists
                         try:
-                            serial_obj = InventorySerial.objects.get(
-                                serial_number=serial_number,
-                                inventory_item=inventory_item,
-                                status='In Stock'
-                            )
-                        except InventorySerial.DoesNotExist:
+                            inventory_item = InventoryItem.objects.get(id=inventory_item_id)
+                        except InventoryItem.DoesNotExist:
                             return Response({
                                 "status": "error",
-                                "message": f"Serial number {serial_number} is not available in stock for selected inventory item."
+                                "message": f"Inventory item with ID {inventory_item_id} not found"
                             }, status=status.HTTP_400_BAD_REQUEST)
-                    
-                    # Create BookedDeviceAfterTrial record
-                    booked_device = BookedDeviceAfterTrial.objects.create(
-                        trial=trial,
-                        inventory_item=inventory_item,
-                        serial_number=serial_obj,
-                        ear_side=ear_side,
-                        booking_status=device_trial_decision
-                    )
-                    
-                    booked_device_records.append(booked_device)
-                    
-                    # Categorize devices by decision
-                    if device_trial_decision == 'BOOK - Device Allocated':
-                        allocated_devices.append(booked_device)
-                        
-                        # Create purchase record
-                        PatientPurchase.objects.create(
-                            clinic=trial.clinic,
-                            patient=trial.assigned_patient,
-                            visit=trial.visit,
-                            inventory_item=inventory_item,
-                            inventory_serial=serial_obj,
-                            quantity=1,
-                            unit_price=inventory_item.unit_price,
-                            total_price=inventory_item.unit_price,
-                            ear_side=ear_side
-                        )
-                        
-                        # Update inventory
-                        if serial_obj:
-                            serial_obj.status = 'Sold'
-                            serial_obj.save()
-                            inventory_item.update_quantity_from_serials()
-                        else:
-                            inventory_item.quantity_in_stock -= 1
-                            inventory_item.save()
-                            
-                    elif device_trial_decision == 'BOOK - Awaiting Stock':
-                        awaiting_stock_devices.append(booked_device)
-                        
-                    elif device_trial_decision == 'BOOK - With Customization':
-                        # saved the is_customization_needed in BookedDeviceAfterTrial
-                        booked_device.is_customization_needed = True
-                        booked_device.save()
-                        customization_devices.append(booked_device)
-                        
-                        # Create purchase record
-                        PatientPurchase.objects.create(
-                            clinic=trial.clinic,
-                            patient=trial.assigned_patient,
-                            visit=trial.visit,
-                            inventory_item=inventory_item,
-                            inventory_serial=serial_obj,
-                            quantity=1,
-                            unit_price=inventory_item.unit_price,
-                            total_price=inventory_item.unit_price,
-                            ear_side=ear_side
-                        )
-                        
-                        # Update inventory
-                        if serial_obj:
-                            serial_obj.status = 'Sold'
-                            serial_obj.save()
-                            inventory_item.update_quantity_from_serials()
-                        else:
-                            inventory_item.quantity_in_stock -= 1
-                            inventory_item.save()
-                
-                # Create bill for device purchases (allocated and customization devices)
-                billable_devices = allocated_devices + customization_devices
-                if billable_devices:
-                    # Calculate total GST amount from all billable devices
-                    total_gst_amount = sum(device.inventory_item.gst_value for device in billable_devices)
-                    
-                    bill, created = Bill.objects.get_or_create(
-                        visit=trial.visit,
-                        defaults={
-                            'clinic': trial.clinic,
-                            'created_by': request.user,
-                            'gst_amount': total_gst_amount,
-                        }
-                    )
 
-                    if not created:
-                        Bill.objects.filter(id=bill.id).update(
-                            gst_amount=total_gst_amount
-                        )
-                        bill.refresh_from_db()
+                        # Handle serial number for serialized items
+                        serial_obj = None
+                        if inventory_item.stock_type == 'Serialized' and serial_number:
+                            try:
+                                serial_obj = InventorySerial.objects.get(
+                                    serial_number=serial_number,
+                                    inventory_item=inventory_item,
+                                    status='In Stock'
+                                )
+                            except InventorySerial.DoesNotExist:
+                                return Response({
+                                    "status": "error",
+                                    "message": f"Serial number {serial_number} is not available in stock for selected inventory item."
+                                }, status=status.HTTP_400_BAD_REQUEST)
 
-                    # Add bill items for each billable device
-                    for booked_device in billable_devices:
-                        device_desc = f"Purchase - {booked_device.inventory_item.product_name} ({booked_device.inventory_item.brand} {booked_device.inventory_item.model_type.name or ''}) - {booked_device.ear_side} Ear"
-                        if booked_device.serial_number:
-                            device_desc += f" - Serial: {booked_device.serial_number.serial_number}"
-                        if booked_device.booking_status == 'BOOK - With Customization':
-                            device_desc += " - With Customization"
-                        
-                        BillItem.objects.create(
-                            bill=bill,
-                            item_type='Purchase',
-                            description=device_desc,
-                            cost=booked_device.inventory_item.unit_price,
-                            quantity=1,
+                        # Create BookedDeviceAfterTrial record
+                        booked_device = BookedDeviceAfterTrial.objects.create(
+                            trial=trial,
+                            inventory_item=inventory_item,
+                            serial_number=serial_obj,
+                            ear_side=ear_side,
+                            booking_status=device_trial_decision
                         )
-                    
-                    # Recalculate bill totals
-                    bill.calculate_total()
-                
-                # Determine overall trial status based on device decisions
-                if customization_devices:
-                    trial.visit.status = 'Book - With Customization'
-                    trial.visit.status_note = f'Trial completed, {len(customization_devices)} device(s) with customization'
-                elif awaiting_stock_devices and not allocated_devices:
-                    trial.visit.status = 'Book - Awaiting Stock'
-                    trial.visit.status_note = f'Trial completed, {len(awaiting_stock_devices)} device(s) awaiting stock'
-                elif allocated_devices and not awaiting_stock_devices:
-                    trial.visit.status = 'Book - Device Allocated'
-                    trial.visit.status_note = f'Trial completed, {len(allocated_devices)} device(s) allocated for booking'
-                else:
-                    # Mixed scenario
-                    trial.visit.status = 'Book - Mixed Status'
-                    trial.visit.status_note = f'Trial completed - Mixed: {len(allocated_devices)} allocated, {len(awaiting_stock_devices)} awaiting stock, {len(customization_devices)} with customization'
-                
-                trial.visit.save()
-                trial.save()
-                    
-                if trial_decision == 'TRIAL ACTIVE':
+
+                        booked_device_records.append(booked_device)
+
+                        # Categorize devices by decision
+                        if device_trial_decision == 'BOOK - Device Allocated':
+                            allocated_devices.append(booked_device)
+
+                            # Create purchase record
+                            PatientPurchase.objects.create(
+                                clinic=trial.clinic,
+                                patient=trial.assigned_patient,
+                                visit=trial.visit,
+                                inventory_item=inventory_item,
+                                inventory_serial=serial_obj,
+                                quantity=1,
+                                unit_price=inventory_item.unit_price,
+                                total_price=inventory_item.unit_price,
+                                ear_side=ear_side
+                            )
+
+                            # Update inventory
+                            if serial_obj:
+                                serial_obj.status = 'Sold'
+                                serial_obj.save()
+                                inventory_item.update_quantity_from_serials()
+                            else:
+                                inventory_item.quantity_in_stock -= 1
+                                inventory_item.save()
+
+                        elif device_trial_decision == 'BOOK - Awaiting Stock':
+                            awaiting_stock_devices.append(booked_device)
+
+                        elif device_trial_decision == 'BOOK - With Customization':
+                            # saved the is_customization_needed in BookedDeviceAfterTrial
+                            booked_device.is_customization_needed = True
+                            booked_device.save()
+                            customization_devices.append(booked_device)
+
+                            # Create purchase record
+                            PatientPurchase.objects.create(
+                                clinic=trial.clinic,
+                                patient=trial.assigned_patient,
+                                visit=trial.visit,
+                                inventory_item=inventory_item,
+                                inventory_serial=serial_obj,
+                                quantity=1,
+                                unit_price=inventory_item.unit_price,
+                                total_price=inventory_item.unit_price,
+                                ear_side=ear_side
+                            )
+
+                            # Update inventory
+                            if serial_obj:
+                                serial_obj.status = 'Sold'
+                                serial_obj.save()
+                                inventory_item.update_quantity_from_serials()
+                            else:
+                                inventory_item.quantity_in_stock -= 1
+                                inventory_item.save()
+
+                if trial_decision == 'BOOKED':
+                    # Create bill for device purchases (allocated and customization devices)
+                    billable_devices = allocated_devices + customization_devices
+                    if billable_devices:
+                        # Calculate total GST amount from all billable devices
+                        total_gst_amount = sum(device.inventory_item.gst_value for device in billable_devices)
+
+                        bill, created = Bill.objects.get_or_create(
+                            visit=trial.visit,
+                            defaults={
+                                'clinic': trial.clinic,
+                                'created_by': request.user,
+                                'gst_amount': total_gst_amount,
+                            }
+                        )
+
+                        if not created:
+                            Bill.objects.filter(id=bill.id).update(
+                                gst_amount=total_gst_amount
+                            )
+                            bill.refresh_from_db()
+
+                        # Add bill items for each billable device
+                        for booked_device in billable_devices:
+                            device_desc = f"Purchase - {booked_device.inventory_item.product_name} ({booked_device.inventory_item.brand} {booked_device.inventory_item.model_type.name or ''}) - {booked_device.ear_side} Ear"
+                            if booked_device.serial_number:
+                                device_desc += f" - Serial: {booked_device.serial_number.serial_number}"
+                            if booked_device.booking_status == 'BOOK - With Customization':
+                                device_desc += " - With Customization"
+
+                            BillItem.objects.create(
+                                bill=bill,
+                                item_type='Purchase',
+                                description=device_desc,
+                                cost=booked_device.inventory_item.unit_price,
+                                quantity=1,
+                            )
+
+                        # Recalculate bill totals
+                        bill.calculate_total()
+
+                    # Determine overall trial status based on device decisions
+                    if customization_devices:
+                        trial.visit.status = 'Book - With Customization'
+                        trial.visit.status_note = f'Trial completed, {len(customization_devices)} device(s) with customization'
+                    elif awaiting_stock_devices and not allocated_devices:
+                        trial.visit.status = 'Book - Awaiting Stock'
+                        trial.visit.status_note = f'Trial completed, {len(awaiting_stock_devices)} device(s) awaiting stock'
+                    elif allocated_devices and not awaiting_stock_devices:
+                        trial.visit.status = 'Book - Device Allocated'
+                        trial.visit.status_note = f'Trial completed, {len(allocated_devices)} device(s) allocated for booking'
+                    else:
+                        # Mixed scenario
+                        trial.visit.status = 'Book - Mixed Status'
+                        trial.visit.status_note = f'Trial completed - Mixed: {len(allocated_devices)} allocated, {len(awaiting_stock_devices)} awaiting stock, {len(customization_devices)} with customization'
+
+                elif trial_decision == 'TRIAL_ACTIVE':
                     # Scenario 2: Patient needs time (2-3 days) for decision - followup
                     trial.visit.status = 'Trial Active'
                     trial.extended_trial = True
                     trial.visit.status_note = 'Trial extended for booking device decision'
                     trial.extended_at = timezone.now()
-                    trial.trial_end_date = timezone.now() + timedelta(days=followup_days)
-                    trial.followup_date = timezone.now() + timedelta(days=followup_days + 1)
-                    trial.save()
-                    
+                    trial.trial_start_date = trial.trial_start_date or timezone.now().date()
+                    if trial.trial_end_date:
+                        trial.trial_end_date = trial.trial_end_date + timedelta(days=followup_days)
+                    else:
+                        trial.trial_end_date = trial.trial_start_date + timedelta(days=followup_days)
+                    trial.followup_date = trial.trial_end_date + timedelta(days=1)
+
                 elif trial_decision == 'DECLINE':
                     # Scenario 3: Patient doesn't need new device anymore
                     trial.visit.status = 'Trial Completed - No Device'
                     trial.visit.status_note = 'Trial completed , Device not booked'
                     # No followup needed, trial is complete
-                    trial.save()
-                
+
                 trial.visit.save()
+                trial.save()
         
                 # # Prepare response data with booked devices information
                 # response_data = {
@@ -295,7 +292,10 @@ class AwaitingStockListView(generics.ListAPIView):
 
 
     def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
         queryset = BookedDeviceAfterTrial.objects.filter(booking_status__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
+        if clinic:
+            queryset = queryset.filter(trial__clinic=clinic)
         
         # Filter by trial_decision if provided as query parameter
         booking_status = self.request.query_params.get('booking_status', None)
@@ -323,18 +323,30 @@ class AllocateSerialFlatList(generics.RetrieveAPIView):
     
     permission_classes = [IsAuthenticated]
     serializer_class = AwaitingStockListSerializer
-    queryset = Trial.objects.filter(trial_decision='BOOK - Awaiting Stock')
     lookup_field = 'id'
     lookup_url_kwarg = 'trial_id'
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        queryset = Trial.objects.filter(trial_decision='BOOK - Awaiting Stock')
+        if clinic:
+            queryset = queryset.filter(clinic=clinic)
+        return queryset
 
 
 class AllocateSerialNumber(generics.UpdateAPIView):
     """API endpoint to allocate a serial number to a trial that is awaiting stock."""
     
     permission_classes = [IsAuthenticated]
-    queryset = BookedDeviceAfterTrial.objects.filter(booking_status__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
     lookup_field = 'id'
     lookup_url_kwarg = 'trial_id'
+
+    def get_queryset(self):
+        clinic = getattr(self.request.user, 'clinic', None)
+        queryset = BookedDeviceAfterTrial.objects.filter(booking_status__in=['BOOK - Awaiting Stock', 'BOOK - With Customization'])
+        if clinic:
+            queryset = queryset.filter(trial__clinic=clinic)
+        return queryset
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()

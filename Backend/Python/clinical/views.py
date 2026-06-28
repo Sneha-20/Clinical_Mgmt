@@ -31,7 +31,8 @@ from .serializers import (
     PurchaseInventoryItemSerializer
 )
 from .models import Patient, PatientPurchase, PatientVisit, AudiologistCaseHistory, Bill, VisitTestPerformed, TestUpload,InventorySerial,Trial,InventoryItem,TestType,ClinicTransactions,BookedDeviceAfterTrial,TrialDeviceDetails
-from accounts.models import User
+from accounts.models import User, Clinic
+from accounts.serializers import ClinicSimpleSerializer
 from clinical_be.utils.pagination import StandardResultsSetPagination
 from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
@@ -132,7 +133,7 @@ class PatientDetailView(generics.RetrieveAPIView):
     ''' Retrieve Patient Details along with latest visit and total visits '''
     queryset = Patient.objects.all()
     serializer_class = PatientDetailSerializer
-    permission_classes = [IsAuthenticated,ReceptionistPermission | AuditorPermission]  # Ensure user is logged in
+    permission_classes = [IsAuthenticated]  # Ensure user is logged in
     lookup_field = 'id'  # URL will have patient ID as /patient/<id>/
 
     def retrieve(self, request, *args, **kwargs):
@@ -145,7 +146,7 @@ class PatientDetailView(generics.RetrieveAPIView):
 class PatientVisitsView(generics.ListAPIView):
     ''' List all visits for a specific patient '''
     serializer_class = PatientAllVisitSerializer
-    permission_classes = [IsAuthenticated, ReceptionistPermission | AuditorPermission]
+    permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -414,7 +415,7 @@ class PatientVisitFullDetailsView(generics.RetrieveAPIView):
     """
     queryset = PatientVisit.objects.all()
     serializer_class = PatientVisitFullDetailsSerializer
-    permission_classes = [IsAuthenticated, AuditorPermission | ReceptionistPermission]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'id'  # URL will have visit ID as /patient/visit/<id>/full/
 
     def retrieve(self, request, *args, **kwargs):
@@ -615,6 +616,7 @@ class TrialDeviceReturnView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        trial_id = serializer.validated_data.get('id')
         left_serial_number = serializer.validated_data.get('left_serial_number')
         right_serial_number = serializer.validated_data.get('right_serial_number')
         device_condition_on_return = serializer.validated_data.get('device_condition_on_return', '')
@@ -626,6 +628,7 @@ class TrialDeviceReturnView(APIView):
         if left_serial_number:
             try:
                 result = self._process_device_return(
+                    trial_id,
                     left_serial_number, device_condition_on_return, 'LEFT'
                 )
                 returned_devices.append(result)
@@ -636,6 +639,7 @@ class TrialDeviceReturnView(APIView):
         if right_serial_number:
             try:
                 result = self._process_device_return(
+                    trial_id,
                     right_serial_number, device_condition_on_return, 'RIGHT'
                 )
                 returned_devices.append(result)
@@ -654,7 +658,7 @@ class TrialDeviceReturnView(APIView):
             "data": returned_devices
         })
     
-    def _process_device_return(self, serial_number, device_condition_on_return, ear_side):
+    def _process_device_return(self, trial_id, serial_number, device_condition_on_return, ear_side):
         """Helper method to process individual device return."""
         # Get serial number record
         serial = InventorySerial.objects.get(
@@ -664,7 +668,7 @@ class TrialDeviceReturnView(APIView):
         
         # Get the booked device record for this serial
         booked_device = TrialDeviceDetails.objects.get(
-            serial_number=serial_number
+            serial_number=serial_number , trial__pk=trial_id
         )
         
         # Get the trial from booked device
@@ -1595,6 +1599,20 @@ class CustomerNeedPurchase(APIView):
                 'message': f'Error fetching service queue: {str(e)}',
                 'data': []
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ClinicListView(generics.ListAPIView):
+    """
+    API to get list of clinics with id and name, no authentication required.
+    """
+    queryset = Clinic.objects.all()
+    serializer_class = ClinicSimpleSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"status": 200, "data": serializer.data}, status=status.HTTP_200_OK)
 
     
 

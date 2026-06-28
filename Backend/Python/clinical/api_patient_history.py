@@ -14,7 +14,7 @@ class PatientPurchaseHistoryView(ListAPIView):
     API to get purchase history for a specific patient
     GET /api/clinical/patients/{patient_id}/purchases/
     """
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     serializer_class = PatientPurchaseSerializer
 
@@ -29,7 +29,7 @@ class PatientServiceVisitHistoryView(ListAPIView):
     API to get service visit history for a specific patient
     GET /api/clinical/patients/{patient_id}/service-visits/
     """
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission]
+    permission_classes = [permissions.IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     serializer_class = ServiceVisitListSerializer
 

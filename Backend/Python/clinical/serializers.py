@@ -17,7 +17,8 @@ from .models import (
     Brand,  
     ModelType,
     ClinicTransactions,
-    BookedDeviceAfterTrial
+    BookedDeviceAfterTrial,
+    ClinicFormRecord
 )
 
 from accounts.models import Clinic
@@ -33,6 +34,12 @@ from django.db import models
 from django.db.models import F
 
 
+
+
+class ClinicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Clinic
+        fields = ['id', 'name']
 
 
 class PatientAllVisitSerializer(serializers.ModelSerializer):
@@ -385,7 +392,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             'visit_details'
               # Include the nested field
         ]
-        read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic']
+        read_only_fields = ['created_at', 'updated_at', 'created_by', 'clinic', 'created_at']
 
     def validate_phone_primary(self, value):
         if not re.fullmatch(r'\d{10}', (value or '').strip()):
@@ -1165,6 +1172,55 @@ class TrialDeviceDetailsSerializer(serializers.ModelSerializer):
         return data
 
 
+class ClinicFormRecordSerializer(serializers.ModelSerializer):
+    """Serializer for ClinicFormRecord model."""
+    clinic_name = serializers.CharField(source='clinic.name', read_only=True)
+    contacted_by_name = serializers.CharField(source='contacted_by.name', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = ClinicFormRecord
+        fields = [
+            'id', 'clinic', 'clinic_name', 'patient_name', 'phone', 'email',
+            'purpose', 'created_at', 'contacted', 'contacted_at', 'contacted_by', 'contacted_by_name'
+        ]
+        read_only_fields = ['created_at', 'contacted_at', 'contacted_by']
+
+
+class BillItemCreateSerializer(serializers.Serializer):
+    """Serializer for creating bill items with inventory products"""
+    
+    inventory_item_id = serializers.IntegerField(write_only=True)
+    quantity = serializers.IntegerField(write_only=True, min_value=1, default=1)
+    
+    def validate_inventory_item_id(self, value):
+        """Validate that inventory item exists and is approved"""
+        try:
+            inventory_item = InventoryItem.objects.get(id=value, is_approved=True)
+            return inventory_item
+        except InventoryItem.DoesNotExist:
+            raise serializers.ValidationError("Inventory item not found or not approved")
+    
+    def validate_quantity(self, value):
+        """Validate quantity is positive"""
+        if value <= 0:
+            raise serializers.ValidationError("Quantity must be greater than 0")
+        return value
+
+
+class BasicInventorySerializer(serializers.ModelSerializer):
+    """Basic serializer for inventory items with essential fields"""
+    
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
+    model_name = serializers.CharField(source='model_type.name', read_only=True)
+    
+    class Meta:
+        model = InventoryItem
+        fields = [
+            'id', 'product_name', 'category', 'brand_name', 'model_name', 
+            'unit_price', 'quantity_in_stock', 'stock_type'
+        ]
+
+
 class TrialSerializer(serializers.ModelSerializer):
     device_details_list = TrialDeviceDetailsSerializer(source='device_details_set', many=True, read_only=True)
     
@@ -1666,6 +1722,9 @@ class AudiologistCaseHistoryCreateSerializer(serializers.ModelSerializer):
                 visit.status_note = 'Test Performed by Audiologist'
                 visit.step_process = 2
                 visit.save(update_fields=['status', 'status_note', 'step_process'])
+            else:
+                visit.step_process = 2  # Move to next step even if no tests were performed, since case history is filled
+                visit.save(update_fields=['step_process'])
 
         # Return both case_history and step_process for response
         return {
@@ -2711,6 +2770,7 @@ class ProductInfoBySerialSerializer(serializers.ModelSerializer):
 
 # Return Device Update 
 class TrialDeviceReturnSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=True)
     left_serial_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     right_serial_number = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     device_condition_on_return = serializers.CharField(required=False, allow_blank=True)
@@ -2813,7 +2873,7 @@ class TrialCompletionSerializer(serializers.Serializer):
         help_text="Notes about trial completion and patient decision"
     )
     
-    followup_days = serializers.IntegerField(required=False, allow_null=True)
+    next_followup = serializers.IntegerField(required=False, allow_null=True)
     
     def validate(self, data):
         trial_decision = data.get('trial_decision')

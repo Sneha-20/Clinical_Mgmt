@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from .models import InventoryItem, InventorySerial, InventoryTransfer
 from accounts.models import Clinic
 from .serializers import InventoryTransferSerializer
-from clinical_be.utils.permission import IsClinicAdmin
+from clinical_be.utils.permission import IsClinicAdmin, ReceptionistPermission
 from django.db import models
 
 class InventoryTransferView(APIView):
@@ -14,7 +14,7 @@ class InventoryTransferView(APIView):
     API to transfer inventory items from one clinic to another.
     Handles both Serialized and Non-Serialized items.
     """
-    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin]
+    permission_classes = [permissions.IsAuthenticated, IsClinicAdmin | ReceptionistPermission]
 
     def post(self, request, *args, **kwargs):
         to_clinic_id = request.data.get('to_clinic_id')
@@ -145,9 +145,9 @@ class InventoryTransferView(APIView):
                 dest_item.save()
 
                 transfer_logs.append(InventoryTransfer(
-                    item_name=source_item.product_name,
-                    category=source_item.category,
-                    brand=source_item.brand,
+                    item_name=source_item.product_name or '',
+                    category=source_item.category or '',
+                    brand=source_item.brand.name if source_item.brand else '',
                     model=source_item.model_type.name if source_item.model_type else '',
                     from_clinic=source_item.clinic,
                     to_clinic=to_clinic,

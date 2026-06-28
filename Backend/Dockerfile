@@ -19,15 +19,15 @@ RUN apt-get update \
         && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
-COPY requirements.txt /app/
+COPY latest_requirement.txt /app/
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir -r latest_requirement.txt
+
+# Copy environment file first
+COPY .env /app/.env
 
 # Copy project
 COPY . /app/
-
-# # Copy environment file
-# COPY ../.env /app/.env
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/media /app/static

@@ -26,9 +26,9 @@ load_dotenv(os.path.join(BASE_DIR.parent, '.env'))
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
+DEBUG = False
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,51.20.207.138,3.25.229.158,54.253.141.73').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -59,15 +59,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    # 'http://51.20.207.138:8000',
-    'http://51.20.207.138:3000',
-    'http://3.25.229.158:3000',
-    'http://54.253.141.73:3000',
-    'http://51.20.207.138'
-    ]
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000').split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -169,7 +161,6 @@ USE_TZ = os.getenv('USE_TZ', 'True').lower() == 'true'
 
 # Static files
 STATIC_URL = os.getenv('STATIC_URL', 'static/')
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -195,6 +186,6 @@ CELERY_TIMEZONE = os.getenv('CELERY_TIMEZONE', 'Asia/Kolkata')
 CELERY_BEAT_SCHEDULE = {
     'update-followup-status': {
         'task': 'clinical.tasks.update_followup_status',
-        'schedule': crontab(hour=11, minute=0),  # Runs daily at 11:00 AM
+        'schedule': crontab(minute='*/5'),  # Runs every 5 minutes
     },
 }

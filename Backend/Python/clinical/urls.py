@@ -6,7 +6,7 @@ from .views import (PatientRegistrationView,PatientVisitListView,PatientDetailVi
                     PatientVisitDetailView,PatientVisitFullDetailsView,AudiologistCaseHistoryCreateView,BillDetailView,BillPaidListView,BillPendingListView,TrialDeviceReturnView,
                     TestResultListView,TestUploadDeleteView,TestUploadCreateView,MarkAsPaidView,DeviceBookingDropdownView,DeviceBookingSerialView,PatientVisitFollowupView,
                     MarkPatientContactedView, VisitTestTypesView,TestTypeUpdateListView,ClinicTransactionListView,ClinicTransactionView,ClinicTransactionUpdateDeleteView,
-                    PurchaseInventoryItemListView,PurchaseInventoryItemCreateView,CustomerNeedPurchase)
+                    PurchaseInventoryItemListView,PurchaseInventoryItemCreateView,CustomerNeedPurchase,ClinicListView)
 
 from .api_inventory_item_update import InventoryItemUpdateView,InventorySerialNumberCreateView
 from .api_inventory_dropdowns import InventoryDropdownsView
@@ -25,12 +25,22 @@ from .admin_staff_performance import AdminStaffPerformanceAPIView
 from .api_patient_history import PatientPurchaseHistoryView, PatientServiceVisitHistoryView, PatientPurchaseDetailView, PatientServiceVisitDetailView
 from .api_inventory_transfer import InventoryTransferView, InventoryTransferHistoryView,InventoryFlatListView
 from .api_bill_item_discount import BillItemDiscountUpdateView, BillItemBulkDiscountUpdateView
+from .api_bill_item_add import BillItemAddView
+from .api_inventory_excluding_hearing_aids import InventoryExcludingHearingAidsView
+from .clinic_form_views import (ClinicFormRecordCreateView, ClinicFormRecordListView, 
+                                ClinicFormRecordUpdateView)
+from .views import ClinicListView
 urlpatterns = [
       # Awaiting stock trial endpoints
       path('trials/awaiting-stock/', AwaitingStockListView.as_view(), name='trials_awaiting_stock'),
       path('trials/awaiting-stock/<int:trial_id>/', AllocateSerialFlatList.as_view(), name='trial_awaiting_stock_detail'),
       path('trials/allocate-serial/<int:trial_id>/', AllocateSerialNumber.as_view(), name='trial_allocate_serial'),
       
+   # Clinic form endpoints
+   path('clinics/', ClinicListView.as_view(), name='clinic_list'),
+   path('clinic-forms/', ClinicFormRecordCreateView.as_view(), name='clinic_form_create'),
+   path('clinic-forms/list/', ClinicFormRecordListView.as_view(), name='clinic_form_list'),
+   path('clinic-forms/<int:pk>/update/', ClinicFormRecordUpdateView.as_view(), name='clinic_form_update'),
    path('patient/register/', PatientRegistrationView.as_view(), name='patient_register'),
    path('patient/<int:id>/', PatientDetailView.as_view(), name='patient_detail'), # Retrieve patient details
    
@@ -54,12 +64,14 @@ urlpatterns = [
    path('bill/paid/', BillPaidListView.as_view(), name='bill_list'), # List bills with patient info and status
    path('bill/pending/', BillPendingListView.as_view(), name='bill_list'), # List bills with patient info and status
    path('bill/visit/<int:visit_id>/', BillDetailView.as_view(), name='bill_detail'), # Get bill details by visit ID
+   path('bill/items/add/', BillItemAddView.as_view(), name='bill_item_add'), # Add inventory products to bill
 
    #  # InventoryItem update endpoint
    path('inventory-item/<int:pk>/update/', InventoryItemUpdateView.as_view(), name='inventory_item_update'),
 
    # Inventory dropdowns endpoint
    path('inventory/dropdowns/', InventoryDropdownsView.as_view(), name='inventory_dropdowns'),
+   path('inventory/excluding-hearing-aids/', InventoryExcludingHearingAidsView.as_view(), name='inventory_excluding_hearing_aids'), # Inventory excluding Hearing Aids
 
    # Trial endpoints
    path('trials/create/', TrialCreateView.as_view(), name='trial_create'),

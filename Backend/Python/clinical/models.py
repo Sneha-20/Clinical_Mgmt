@@ -167,6 +167,26 @@ class TestUpload(models.Model):
         ordering = ['-created_at']
 
 
+class ClinicFormRecord(models.Model):
+    """Model to store clinic form records for receptionist dashboard."""
+    
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name='form_records')
+    patient_name = models.CharField(max_length=255)
+    phone = models.CharField(max_length=50)
+    email = models.EmailField(blank=True, null=True)
+    purpose = models.CharField(max_length=255, help_text="Purpose of visit")
+    created_at = models.DateTimeField(auto_now_add=True)
+    contacted = models.BooleanField(default=False)
+    contacted_at = models.DateTimeField(null=True, blank=True)
+    contacted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.patient_name} - {self.clinic.name}"
+
+
 class TrialDeviceDetails(models.Model):
     """Model to store hearing aid specifications for each ear side during trial."""
     
@@ -596,7 +616,7 @@ class PatientPurchase(models.Model):
         blank=True
     )
 
-    ear_side = models.CharField(max_length=50, null=True)
+    ear_side = models.CharField(max_length=50, null=True, blank=True)
 
 #     purchase_type = models.CharField(
 #         max_length=20,
